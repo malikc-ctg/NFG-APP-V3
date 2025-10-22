@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NFG — Sites</title>
+
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN + NFG theme -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            nfgblue: '#0D47A1',
+            nfgdark: '#0A3A84',
+            nfglight: '#E3ECFA',
+            nfgray: '#E5E7EB',
+            nftext: '#1E293B',
+            nfbg: '#F8FAFC'
+          },
+          fontFamily: { inter: ['Inter','sans-serif'] },
+          borderRadius: { xl: '12px' },
+          boxShadow: { nfg: '0 4px 14px rgba(13,71,161,0.06)' }
+        }
+      }
+    }
+  </script>
+
+  <!-- Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Custom Dropdown Styles -->
+  <link rel="stylesheet" href="./css/custom-dropdown.css">
+</head>
+
+<body class="font-inter bg-nfbg min-h-screen flex text-nftext">
+  <!-- ========== SIDEBAR ========== -->
+  <aside id="sidebar" class="w-64 shrink-0 bg-white border-r border-nfgray hidden md:flex md:flex-col transition-all">
+    <div class="p-5 flex items-center justify-center">
+      <!-- Northern Facilities Group Logo -->
+      <img 
+        src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/Horizontal.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL0hvcml6b250YWwucG5nIiwiaWF0IjoxNzYwOTg5Njk2LCJleHAiOjQ4ODMwNTM2OTZ9.GLtv3yHq5zpXr4deUiNn4ilYTKaFJX8Y2tjIQpxyqVw" 
+        alt="Northern Facilities Group" 
+        class="h-32 w-auto"
+      />
+    </div>
+    <nav class="px-3 pb-4 flex-1 space-y-1">
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="dashboard.html">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight text-nfgblue font-medium w-full text-left" href="sites.html">
+        <i data-lucide="map-pin" class="w-4 h-4"></i> Sites
+      </a>
+      <a id="nav-bookings" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="bookings.html">
+        <i data-lucide="calendar" class="w-4 h-4"></i> Bookings
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="jobs.html">
+        <i data-lucide="clipboard-check" class="w-4 h-4"></i> Jobs
+      </a>
+      <a id="nav-reports" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="reports.html">
+        <i data-lucide="file-chart-column" class="w-4 h-4"></i> Reports
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="settings.html">
+        <i data-lucide="settings" class="w-4 h-4"></i> Settings
+      </a>
+    </nav>
+    <div class="p-4 border-t border-nfgray">
+      <button id="logout-btn" class="w-full border border-nfgblue text-nfgblue hover:bg-nfglight rounded-xl py-2 font-medium">
+        Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- ========== MAIN ========== -->
+  <div class="flex-1 flex flex-col min-w-0">
+    <!-- TOPBAR -->
+    <header class="sticky top-0 z-10 bg-white border-b border-nfgray">
+      <div class="h-14 px-4 md:px-6 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <button class="md:hidden p-2 rounded-lg border border-nfgray text-nfgblue" data-action="toggle-sidebar" aria-label="Toggle sidebar">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
+          <h1 class="text-nfgblue font-semibold">Sites</h1>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="add-site-btn" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark"
+                  data-action="open-modal" data-target="addSiteModal">
+            <i data-lucide="plus" class="w-5 h-5"></i>
+            <span class="hidden sm:inline">Add Site</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <main class="p-4 md:p-6 space-y-6">
+      <!-- Sites Header -->
+      <div>
+        <h2 class="text-2xl font-semibold text-nfgblue">All Sites</h2>
+        <p class="text-sm text-gray-500 mt-1">Manage your properties and locations</p>
+      </div>
+
+      <!-- Sites Grid -->
+      <div id="sites-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <!-- Placeholder skeletons (removed when data loads) -->
+        <div class="bg-white border border-nfgray rounded-xl shadow-nfg p-4 animate-pulse">
+          <div class="h-5 bg-nfglight rounded mb-2"></div>
+          <div class="h-4 bg-nfglight rounded w-1/2 mb-3"></div>
+          <div class="h-8 bg-nfglight rounded w-28"></div>
+        </div>
+        <div class="bg-white border border-nfgray rounded-xl shadow-nfg p-4 animate-pulse">
+          <div class="h-5 bg-nfglight rounded mb-2"></div>
+          <div class="h-4 bg-nfglight rounded w-1/2 mb-3"></div>
+          <div class="h-8 bg-nfglight rounded w-28"></div>
+        </div>
+        <div class="bg-white border border-nfgray rounded-xl shadow-nfg p-4 animate-pulse">
+          <div class="h-5 bg-nfglight rounded mb-2"></div>
+          <div class="h-4 bg-nfglight rounded w-1/2 mb-3"></div>
+          <div class="h-8 bg-nfglight rounded w-28"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add Site Modal (same as dashboard) -->
+  <div id="addSiteModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white">
+        <h4 class="text-nfgblue font-semibold text-lg">Add New Site</h4>
+        <button data-action="close-modal" data-target="addSiteModal" class="p-1 rounded-lg hover:bg-nfglight">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="add-site-form" class="p-6 space-y-4">
+        <!-- Site Name -->
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Site Name <span class="text-red-500">*</span></label>
+          <input 
+            type="text"
+            name="name" 
+            required 
+            placeholder="e.g., Downtown Office Tower"
+            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+        </div>
+
+        <!-- Address -->
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Address <span class="text-red-500">*</span></label>
+          <input 
+            type="text"
+            name="address" 
+            required 
+            placeholder="123 Main Street, City, Province, Postal Code"
+            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+        </div>
+
+        <!-- Status and Square Footage Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Status <span class="text-red-500">*</span></label>
+            <select 
+              name="status" 
+              required 
+              data-custom-dropdown="true"
+              data-placeholder="Select status">
+              <option value="Active" selected>Active</option>
+              <option value="In Setup">In Setup</option>
+              <option value="Paused">Paused</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Square Footage</label>
+            <input 
+              type="number"
+              name="square_footage" 
+              placeholder="e.g., 5000"
+              min="0"
+              class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+          </div>
+        </div>
+
+        <!-- Contact Information -->
+        <div class="border-t border-nfgray pt-4">
+          <h5 class="text-sm font-semibold text-nfgblue mb-3">Contact Information</h5>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-1.5">Contact Phone</label>
+              <input 
+                type="tel"
+                name="contact_phone" 
+                placeholder="(123) 456-7890"
+                class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1.5">Contact Email</label>
+              <input 
+                type="email"
+                name="contact_email" 
+                placeholder="contact@example.com"
+                class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Notes</label>
+          <textarea 
+            name="notes" 
+            rows="3" 
+            placeholder="Add any additional information about this site..."
+            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none resize-none"></textarea>
+        </div>
+
+        <!-- Error Message -->
+        <div id="form-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl p-3">
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray">
+          <button 
+            type="button" 
+            data-action="close-modal" 
+            data-target="addSiteModal"
+            class="px-5 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight font-medium transition">
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            id="submit-site-btn"
+            class="px-5 py-2.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark font-medium transition inline-flex items-center gap-2">
+            <span>Create Site</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Site Detail Modal (include from dashboard) -->
+  <!-- ... (I'll add this in a moment) ... -->
+
+  <!-- ========== SCRIPTS ========== -->
+  <script>
+    // Render Lucide icons
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) lucide.createIcons();
+    });
+
+    // Modal functionality
+    document.addEventListener('click', (e) => {
+      // Open modal
+      const openModalBtn = e.target.closest('[data-action="open-modal"]');
+      if (openModalBtn) {
+        const targetId = openModalBtn.dataset.target;
+        const modal = document.getElementById(targetId);
+        if (modal) {
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+          if (window.lucide) lucide.createIcons();
+        }
+      }
+
+      // Close modal
+      const closeModalBtn = e.target.closest('[data-action="close-modal"]');
+      if (closeModalBtn) {
+        const targetId = closeModalBtn.dataset.target;
+        const modal = document.getElementById(targetId);
+        if (modal) {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+          const form = modal.querySelector('form');
+          if (form) form.reset();
+          const errorEl = modal.querySelector('#form-error');
+          if (errorEl) errorEl.classList.add('hidden');
+        }
+      }
+
+      // Close modal when clicking backdrop
+      if (e.target.classList.contains('fixed') && e.target.classList.contains('inset-0')) {
+        e.target.classList.add('hidden');
+        e.target.classList.remove('flex');
+      }
+    });
+
+    // Close modals with Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const modals = document.querySelectorAll('.fixed.inset-0:not(.hidden)');
+        modals.forEach(modal => {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+        });
+      }
+    });
+  </script>
+
+  <!-- Your modules -->
+  <script type="module" src="./js/supabase.js"></script>
+  <script type="module" src="./js/ui.js"></script>
+  <script type="module" src="./js/custom-dropdown.js"></script>
+  <script type="module">
+    import { supabase } from './js/supabase.js'
+    import { renderSites, setSubmitLoading, showFormError, closeAddSiteModal, initializeUI } from './js/ui.js'
+
+    // Logout functionality
+    async function handleLogout() {
+      await supabase.auth.signOut()
+      window.location.href = './index.html'
+    }
+
+    // Global variables for user role
+    let currentUser = null;
+    let currentUserProfile = null;
+
+    // Get current user and their profile
+    async function getCurrentUser() {
+      const { data: { user } } = await supabase.auth.getUser();
+      currentUser = user;
+      
+      if (user) {
+        // Get user profile to check role
+        const { data: profile, error } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (!error && profile) {
+          currentUserProfile = profile;
+          console.log('User role:', profile.role);
+        } else {
+          // Default to staff if no profile found
+          currentUserProfile = { role: 'staff' };
+        }
+      }
+      
+      return user;
+    }
+
+    // Fetch and display sites (with role-based filtering)
+    async function fetchSites() {
+      try {
+        // If user is staff, get only assigned sites
+        if (currentUserProfile && currentUserProfile.role === 'staff') {
+          console.log('🔍 Fetching sites for staff user:', currentUser.id);
+          
+          // Get site IDs assigned to this worker
+          const { data: assignments, error: assignError } = await supabase
+            .from('worker_site_assignments')
+            .select('site_id')
+            .eq('worker_id', currentUser.id);
+          
+          console.log('📋 Assignments found:', assignments);
+          
+          if (assignError) {
+            console.error('❌ Error fetching assignments:', assignError);
+            return [];
+          }
+          
+          if (!assignments || assignments.length === 0) {
+            console.warn('⚠️ No site assignments found for this staff member');
+            return []; // No sites assigned
+          }
+          
+          const siteIds = assignments.map(a => a.site_id);
+          console.log('🏢 Fetching sites with IDs:', siteIds);
+          
+          // Fetch those sites from Supabase
+          const { data: sites, error } = await supabase
+            .from('sites')
+            .select('*')
+            .in('id', siteIds)
+            .order('name', { ascending: true });
+          
+          console.log('✅ Sites fetched:', sites);
+          
+          if (error) {
+            console.error('❌ Error fetching sites:', error);
+            return [];
+          }
+          
+          return sites || [];
+        } else {
+          // Admin/Client - fetch all sites from Supabase
+          const { data: sites, error } = await supabase
+            .from('sites')
+            .select('*')
+            .order('name', { ascending: true });
+          
+          if (error) {
+            console.error('Error fetching sites from Supabase:', error);
+            // Fallback to localStorage if Supabase fails
+            return JSON.parse(localStorage.getItem('nfg_sites') || '[]');
+          }
+          
+          return sites || [];
+        }
+      } catch (error) {
+        console.error('Error fetching sites:', error)
+        return []
+      }
+    }
+
+    // Create new site
+    async function createSite(siteData) {
+      try {
+        console.log('Creating site in Supabase:', siteData);
+        
+        // Create site in Supabase
+        const { data: newSite, error } = await supabase
+          .from('sites')
+          .insert({
+            name: siteData.name,
+            address: siteData.address,
+            status: siteData.status,
+            square_footage: siteData.square_footage,
+            contact_phone: siteData.contact_phone,
+            contact_email: siteData.contact_email,
+            notes: siteData.notes
+          })
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Error creating site in Supabase:', error);
+          throw error;
+        }
+        
+        console.log('✅ Site created in Supabase:', newSite);
+        return newSite;
+      } catch (error) {
+        console.error('Error creating site:', error)
+        throw error
+      }
+    }
+
+    // Handle site form submission
+    async function handleSiteFormSubmit(e) {
+      e.preventDefault()
+      
+      const form = e.target
+      const formData = new FormData(form)
+      
+      const siteData = {
+        name: formData.get('name'),
+        address: formData.get('address'),
+        status: formData.get('status'),
+        square_footage: formData.get('square_footage') ? parseInt(formData.get('square_footage')) : null,
+        contact_phone: formData.get('contact_phone') || null,
+        contact_email: formData.get('contact_email') || null,
+        notes: formData.get('notes') || null
+      }
+      
+      setSubmitLoading(true)
+      
+      try {
+        await createSite(siteData)
+        
+        const sites = await fetchSites()
+        renderSites(sites)
+        
+        closeAddSiteModal()
+        
+        console.log('Site created successfully!')
+        
+      } catch (error) {
+        showFormError(error.message || 'Failed to create site. Please try again.')
+      } finally {
+        setSubmitLoading(false)
+      }
+    }
+
+    // Initialize page
+    async function initPage() {
+      // Get current user first
+      await getCurrentUser();
+      if (!currentUser) {
+        window.location.href = './index.html';
+        return;
+      }
+      
+      // Hide "Add Site" button for staff
+      if (currentUserProfile && currentUserProfile.role === 'staff') {
+        const addSiteBtn = document.getElementById('add-site-btn');
+        if (addSiteBtn) {
+          addSiteBtn.style.display = 'none';
+        }
+        
+        // Hide Bookings and Reports navigation for staff
+        const bookingsNav = document.getElementById('nav-bookings');
+        const reportsNav = document.getElementById('nav-reports');
+        if (bookingsNav) bookingsNav.style.display = 'none';
+        if (reportsNav) reportsNav.style.display = 'none';
+      }
+      
+      const sites = await fetchSites()
+      renderSites(sites)
+      
+      // Initialize UI event handlers (for View Site buttons and modals)
+      initializeUI()
+      
+      // Attach form submit handler
+      const form = document.getElementById('add-site-form')
+      form?.addEventListener('submit', handleSiteFormSubmit)
+      
+      // Attach logout handler
+      document.getElementById('logout-btn')?.addEventListener('click', handleLogout)
+      
+      // Re-render icons after modals are added
+      if (window.lucide) {
+        lucide.createIcons()
+      }
+    }
+
+    // Load page
+    initPage()
+  </script>
+
+  <!-- Site Detail Modal -->
+  <div id="siteDetailModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <!-- Header -->
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white z-10">
+        <div class="flex items-center gap-3">
+          <i data-lucide="building-2" class="w-6 h-6 text-nfgblue"></i>
+          <div>
+            <h4 id="site-detail-name" class="text-nfgblue font-semibold text-lg">Site Name</h4>
+            <p id="site-detail-address" class="text-sm text-gray-500">Address</p>
+          </div>
+        </div>
+        <button data-action="close-modal" data-target="siteDetailModal" class="p-1 rounded-lg hover:bg-nfglight">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-6">
+        <!-- Site Info Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Status Card -->
+          <div class="bg-nfglight/30 border border-nfgblue/20 rounded-xl p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <i data-lucide="activity" class="w-4 h-4 text-nfgblue"></i>
+              <span class="text-sm font-medium text-nftext">Status</span>
+            </div>
+            <p id="site-detail-status" class="text-xl font-semibold text-nfgblue">Active</p>
+          </div>
+
+          <!-- Square Footage Card -->
+          <div class="bg-nfglight/30 border border-nfgblue/20 rounded-xl p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <i data-lucide="ruler" class="w-4 h-4 text-nfgblue"></i>
+              <span class="text-sm font-medium text-nftext">Square Footage</span>
+            </div>
+            <p id="site-detail-sqft" class="text-xl font-semibold text-nfgblue">—</p>
+          </div>
+
+          <!-- Rating Card -->
+          <div class="bg-nfglight/30 border border-nfgblue/20 rounded-xl p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <i data-lucide="star" class="w-4 h-4 text-nfgblue"></i>
+              <span class="text-sm font-medium text-nftext">Rating</span>
+            </div>
+            <p id="site-detail-rating" class="text-xl font-semibold text-nfgblue">0</p>
+          </div>
+        </div>
+
+        <!-- Contact Information -->
+        <div class="bg-white border border-nfgray rounded-xl p-4">
+          <h5 class="text-nfgblue font-semibold mb-3 flex items-center gap-2">
+            <i data-lucide="contact" class="w-4 h-4"></i>
+            Contact Information
+          </h5>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p class="text-sm text-gray-500 mb-1">Phone</p>
+              <p id="site-detail-phone" class="text-nftext font-medium">—</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500 mb-1">Email</p>
+              <p id="site-detail-email" class="text-nftext font-medium">—</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-white border border-nfgray rounded-xl p-4">
+            <h5 class="text-nfgblue font-semibold mb-3 flex items-center gap-2">
+              <i data-lucide="clipboard-check" class="w-4 h-4"></i>
+              Jobs Completed
+            </h5>
+            <p id="site-detail-jobs" class="text-3xl font-bold text-nfgblue">0</p>
+          </div>
+          <div class="bg-white border border-nfgray rounded-xl p-4">
+            <h5 class="text-nfgblue font-semibold mb-3 flex items-center gap-2">
+              <i data-lucide="calendar" class="w-4 h-4"></i>
+              Upcoming Bookings
+            </h5>
+            <p id="site-detail-bookings" class="text-3xl font-bold text-nfgblue">0</p>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="bg-white border border-nfgray rounded-xl p-4">
+          <h5 class="text-nfgblue font-semibold mb-3 flex items-center gap-2">
+            <i data-lucide="file-text" class="w-4 h-4"></i>
+            Notes
+          </h5>
+          <p id="site-detail-notes" class="text-nftext">No notes available.</p>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="bg-white border border-nfgray rounded-xl p-4">
+          <h5 class="text-nfgblue font-semibold mb-3 flex items-center gap-2">
+            <i data-lucide="history" class="w-4 h-4"></i>
+            Recent Activity
+          </h5>
+          <div id="site-detail-activity" class="space-y-2">
+            <p class="text-gray-500 text-sm">No recent activity.</p>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-wrap gap-3 border-t border-nfgray pt-4">
+          <button class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark transition">
+            <i data-lucide="calendar-plus" class="w-4 h-4"></i>
+            Schedule Booking
+          </button>
+          <button class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight transition">
+            <i data-lucide="edit" class="w-4 h-4"></i>
+            Edit Site
+          </button>
+          <button id="delete-site-btn" data-action="delete-site" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition ml-auto">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+            Delete Site
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteSiteConfirmModal" class="hidden fixed inset-0 bg-black/50 items-center justify-center p-4 z-[60]">
+    <div class="bg-white rounded-xl shadow-nfg border border-red-200 w-full max-w-md">
+      <div class="p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+            <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600"></i>
+          </div>
+          <div>
+            <h4 class="text-lg font-semibold text-nftext">Delete Site?</h4>
+            <p class="text-sm text-gray-500">This action cannot be undone</p>
+          </div>
+        </div>
+        
+        <p class="text-nftext mb-6">
+          Are you sure you want to delete <strong id="delete-site-name" class="text-nfgblue">this site</strong>? 
+          All associated data, bookings, and job history will be permanently removed.
+        </p>
+        
+        <div class="flex items-center gap-3">
+          <button 
+            data-action="close-modal" 
+            data-target="deleteSiteConfirmModal"
+            class="flex-1 px-4 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight font-medium transition">
+            Cancel
+          </button>
+          <button 
+            id="confirm-delete-btn"
+            data-action="confirm-delete-site"
+            class="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white hover:bg-red-700 font-medium transition inline-flex items-center justify-center gap-2">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+            <span>Delete Site</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
+
