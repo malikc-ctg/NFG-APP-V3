@@ -1,0 +1,1109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings — NFG Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="./css/custom-dropdown.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            nfgblue: '#0D47A1',
+            nfgdark: '#0A3A84',
+            nfglight: '#E3ECFA',
+            nfgray: '#E5E7EB',
+            nftext: '#1E293B',
+            nfbg: '#F8FAFC'
+          },
+          fontFamily: { inter: ['Inter', 'sans-serif'] },
+          borderRadius: { xl: '12px' },
+          boxShadow: { nfg: '0 4px 14px rgba(13,71,161,0.06)' }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-nfbg font-inter">
+  <div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white border-r border-nfgray flex flex-col">
+      <div class="p-5 flex items-center justify-center">
+        <!-- Northern Facilities Group Logo -->
+        <img 
+          src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/Horizontal.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL0hvcml6b250YWwucG5nIiwiaWF0IjoxNzYwOTg5Njk2LCJleHAiOjQ4ODMwNTM2OTZ9.GLtv3yHq5zpXr4deUiNn4ilYTKaFJX8Y2tjIQpxyqVw" 
+          alt="Northern Facilities Group" 
+          class="h-32 w-auto"
+        />
+      </div>
+
+      <nav class="flex-1 px-3 space-y-1">
+        <a href="./dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-nfglight text-nftext transition">
+          <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+          <span>Overview</span>
+        </a>
+        <a href="./sites.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-nfglight text-nftext transition">
+          <i data-lucide="building-2" class="w-5 h-5"></i>
+          <span>Sites</span>
+        </a>
+        <a id="nav-bookings" href="./bookings.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-nfglight text-nftext transition">
+          <i data-lucide="calendar" class="w-5 h-5"></i>
+          <span>Bookings</span>
+        </a>
+        <a href="./jobs.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-nfglight text-nftext transition">
+          <i data-lucide="briefcase" class="w-5 h-5"></i>
+          <span>Jobs</span>
+        </a>
+        <a id="nav-reports" href="./reports.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-nfglight text-nftext transition">
+          <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+          <span>Reports</span>
+        </a>
+        <a href="./settings.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-nfglight text-nfgblue transition">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+          <span>Settings</span>
+        </a>
+      </nav>
+
+      <div class="p-4 border-t border-nfgray">
+        <button id="logout-btn" class="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight text-nftext transition">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+          <span>Logout</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 overflow-y-auto">
+      <header class="bg-white border-b border-nfgray p-4 md:p-6">
+        <h2 class="text-2xl font-semibold text-nfgblue">Settings</h2>
+        <p class="text-sm text-gray-500">Manage your account and application preferences</p>
+      </header>
+
+      <main class="p-4 md:p-6 space-y-6 max-w-4xl mx-auto">
+        
+        <!-- Account Settings -->
+        <section class="bg-white border border-nfgray rounded-xl shadow-nfg p-6">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-full bg-nfglight flex items-center justify-center">
+              <i data-lucide="user" class="w-5 h-5 text-nfgblue"></i>
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-nfgblue">Account Settings</h3>
+              <p class="text-sm text-gray-500">Manage your profile information</p>
+            </div>
+          </div>
+          
+          <div class="space-y-6">
+            <!-- Profile Picture -->
+            <div>
+              <label class="block text-sm font-medium mb-3">Profile Picture</label>
+              <div class="flex items-center gap-4">
+                <div class="relative">
+                  <img 
+                    id="profile-picture-preview" 
+                    src="https://ui-avatars.com/api/?name=User&size=128&background=E3ECFA&color=0D47A1" 
+                    alt="Profile Picture" 
+                    class="w-24 h-24 rounded-full object-cover border-2 border-nfgray" />
+                  <div id="profile-upload-loading" class="hidden absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                    <i data-lucide="loader" class="w-6 h-6 text-white animate-spin"></i>
+                  </div>
+                </div>
+                <div class="flex-1">
+                  <input 
+                    type="file" 
+                    id="profile-picture-input" 
+                    accept="image/*" 
+                    class="hidden" />
+                  <button 
+                    id="upload-profile-picture-btn" 
+                    class="px-4 py-2 rounded-xl border border-nfgblue text-nfgblue hover:bg-nfglight transition">
+                    <i data-lucide="upload" class="w-4 h-4 inline mr-2"></i>
+                    Upload Photo
+                  </button>
+                  <p class="text-xs text-gray-500 mt-2">JPG, PNG or GIF. Max 5MB.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="border-t border-nfgray pt-6">
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium mb-1.5">Email Address</label>
+                  <input 
+                    id="user-email" 
+                    type="email" 
+                    readonly 
+                    class="w-full border border-nfgray rounded-xl p-2.5 bg-gray-50 text-gray-600" 
+                    value="Loading..." />
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium mb-1.5">Display Name</label>
+                  <input 
+                    id="user-display-name" 
+                    type="text" 
+                    placeholder="Your name" 
+                    class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+                </div>
+                
+                <button id="save-profile-btn" class="px-5 py-2.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark transition">
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- User Management Section -->
+        <section id="user-management-section" class="bg-white border border-nfgray rounded-xl shadow-nfg p-6">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-nfglight flex items-center justify-center">
+                <i data-lucide="users" class="w-5 h-5 text-nfgblue"></i>
+              </div>
+              <div>
+                <h3 class="text-lg font-semibold text-nfgblue">User Management</h3>
+                <p class="text-sm text-gray-500">Invite and manage team members</p>
+              </div>
+            </div>
+            <button id="invite-user-btn" class="hidden items-center gap-2 px-4 py-2 bg-nfgblue text-white rounded-xl hover:bg-nfgdark transition">
+              <i data-lucide="user-plus" class="w-4 h-4"></i>
+              Invite User
+            </button>
+          </div>
+          
+          <div id="users-list" class="space-y-3">
+            <div class="text-center py-8 text-gray-500">
+              <i data-lucide="loader" class="w-8 h-8 mx-auto animate-spin"></i>
+              <p class="mt-2">Loading users...</p>
+            </div>
+          </div>
+
+          <div id="pending-invitations-container" class="mt-6 hidden">
+            <h4 class="text-md font-semibold text-nfgblue mb-3 flex items-center gap-2">
+              <i data-lucide="mail" class="w-4 h-4"></i>
+              Pending Invitations
+            </h4>
+            <div id="pending-invitations-list" class="space-y-2">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- Notifications -->
+        <section class="bg-white border border-nfgray rounded-xl shadow-nfg p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-full bg-nfglight flex items-center justify-center">
+              <i data-lucide="bell" class="w-5 h-5 text-nfgblue"></i>
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-nfgblue">Notifications</h3>
+              <p class="text-sm text-gray-500">Configure your notification preferences</p>
+            </div>
+          </div>
+          
+          <div class="space-y-4">
+            <label class="flex items-center justify-between cursor-pointer">
+              <div>
+                <span class="font-medium">Email Notifications</span>
+                <p class="text-sm text-gray-500">Receive updates via email</p>
+              </div>
+              <input type="checkbox" id="notif-email" class="toggle-checkbox">
+            </label>
+            
+            <label class="flex items-center justify-between cursor-pointer">
+              <div>
+                <span class="font-medium">Job Reminders</span>
+                <p class="text-sm text-gray-500">Get reminders for scheduled jobs</p>
+              </div>
+              <input type="checkbox" id="notif-jobs" class="toggle-checkbox">
+            </label>
+            
+            <label class="flex items-center justify-between cursor-pointer">
+              <div>
+                <span class="font-medium">Emergency Alerts</span>
+                <p class="text-sm text-gray-500">Immediate notifications for urgent requests</p>
+              </div>
+              <input type="checkbox" id="notif-emergency" class="toggle-checkbox" checked>
+            </label>
+          </div>
+        </section>
+
+        <!-- Data Management -->
+        <section class="bg-white border border-nfgray rounded-xl shadow-nfg p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-full bg-nfglight flex items-center justify-center">
+              <i data-lucide="database" class="w-5 h-5 text-nfgblue"></i>
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-nfgblue">Data Management</h3>
+              <p class="text-sm text-gray-500">Export or clear your data</p>
+            </div>
+          </div>
+          
+          <div class="flex flex-wrap gap-3">
+            <button id="export-data-btn" class="px-5 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight transition inline-flex items-center gap-2">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              Export Data
+            </button>
+            <button id="clear-data-btn" class="px-5 py-2.5 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition inline-flex items-center gap-2">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+              Clear All Data
+            </button>
+          </div>
+        </section>
+
+        <!-- About -->
+        <section class="bg-white border border-nfgray rounded-xl shadow-nfg p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-full bg-nfglight flex items-center justify-center">
+              <i data-lucide="info" class="w-5 h-5 text-nfgblue"></i>
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-nfgblue">About</h3>
+              <p class="text-sm text-gray-500">Application information</p>
+            </div>
+          </div>
+          
+          <div class="text-sm text-gray-600 space-y-1">
+            <p><strong>Version:</strong> 3.0.0</p>
+            <p><strong>Last Updated:</strong> January 2025</p>
+            <p class="text-xs text-gray-500 mt-3">© 2025 Northern Facilities Group. All rights reserved.</p>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Invite User Modal -->
+  <div id="inviteUserModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-md">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between">
+        <h4 class="text-nfgblue font-semibold text-lg">Invite New User</h4>
+        <button id="close-invite-modal" class="p-1 rounded-lg hover:bg-nfglight">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="invite-user-form" class="p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Email Address <span class="text-red-500">*</span></label>
+          <input 
+            type="email" 
+            name="email" 
+            required 
+            placeholder="user@example.com"
+            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Role <span class="text-red-500">*</span></label>
+          <select 
+            name="role" 
+            required 
+            data-custom-dropdown="true"
+            data-placeholder="Select role">
+            <option value="staff" selected>Staff</option>
+            <option value="client">Client</option>
+            <option value="admin">Admin</option>
+          </select>
+          <p class="text-xs text-gray-500 mt-1.5">
+            <strong>Staff:</strong> Can view assigned jobs<br>
+            <strong>Client:</strong> Can manage jobs and staff<br>
+            <strong>Admin:</strong> Full system access
+          </p>
+        </div>
+
+        <div id="invite-form-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl p-3"></div>
+
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray">
+          <button 
+            type="button" 
+            id="cancel-invite-btn" 
+            class="px-5 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight font-medium transition">
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            id="submit-invite-btn" 
+            class="px-5 py-2.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark font-medium transition">
+            Send Invitation
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- User Details Modal -->
+  <div id="userDetailsModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white z-10">
+        <h4 class="text-nfgblue font-semibold text-lg">User Details</h4>
+        <button id="close-user-details-modal" class="p-1 rounded-lg hover:bg-nfglight">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      
+      <div class="p-6 space-y-6">
+        <!-- User Info -->
+        <div class="flex items-center gap-4">
+          <div class="w-16 h-16 rounded-full bg-nfglight flex items-center justify-center">
+            <i data-lucide="user" class="w-8 h-8 text-nfgblue"></i>
+          </div>
+          <div class="flex-1">
+            <h5 id="user-detail-name" class="text-xl font-semibold text-nfgblue">User Name</h5>
+            <p id="user-detail-email" class="text-gray-600">user@example.com</p>
+            <div class="flex items-center gap-2 mt-2">
+              <span id="user-detail-role-badge" class="px-2 py-0.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-700">Staff</span>
+              <span id="user-detail-status-badge" class="px-2 py-0.5 rounded-lg text-xs font-medium bg-green-100 text-green-700">Active</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Role Management (Admin/Client only) -->
+        <div id="role-management-section" class="hidden bg-nfglight/30 border border-nfgblue/20 rounded-xl p-4">
+          <h6 class="font-semibold text-nfgblue mb-3">Role & Status</h6>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium mb-1.5">Role</label>
+              <select id="user-detail-role-select" data-custom-dropdown="true" data-placeholder="Select role">
+                <option value="staff">Staff</option>
+                <option value="client">Client</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1.5">Status</label>
+              <select id="user-detail-status-select" data-custom-dropdown="true" data-placeholder="Select status">
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="suspended">Suspended</option>
+              </select>
+            </div>
+          </div>
+          <button id="update-user-role-btn" class="mt-3 px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark text-sm">
+            Update Role & Status
+          </button>
+        </div>
+
+        <!-- Site Assignments (Admin/Client only) -->
+        <div id="site-assignments-section" class="hidden bg-white border border-nfgray rounded-xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h6 class="font-semibold text-nfgblue">Site Assignments</h6>
+            <button id="assign-site-btn" class="text-sm px-3 py-1.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
+              <i data-lucide="plus" class="w-3 h-3 inline"></i>
+              Assign Site
+            </button>
+          </div>
+          <div id="user-sites-list" class="space-y-2">
+            <p class="text-gray-500 text-sm">No sites assigned yet.</p>
+          </div>
+        </div>
+
+        <!-- Danger Zone (Admin/Client only) -->
+        <div id="danger-zone-section" class="hidden border-t border-red-200 pt-4">
+          <h6 class="font-semibold text-red-600 mb-3">Danger Zone</h6>
+          <button id="remove-user-btn" class="px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 text-sm">
+            <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+            Remove User
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Assign Site Modal -->
+  <div id="assignSiteModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-md">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between">
+        <h4 class="text-nfgblue font-semibold text-lg">Assign Site</h4>
+        <button id="close-assign-site-modal" class="p-1 rounded-lg hover:bg-nfglight">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="assign-site-form" class="p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Select Site <span class="text-red-500">*</span></label>
+          <select 
+            name="site_id" 
+            id="assign-site-select"
+            required 
+            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none">
+            <option value="">Select a site</option>
+          </select>
+        </div>
+
+        <div id="assign-site-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl p-3"></div>
+
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray">
+          <button 
+            type="button" 
+            id="cancel-assign-site-btn" 
+            class="px-5 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight font-medium transition">
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            class="px-5 py-2.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark font-medium transition">
+            Assign Site
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+  <script type="module" src="./js/custom-dropdown.js"></script>
+  <script type="module">
+    import { supabase } from './js/supabase.js'
+    import { NFGDropdown } from './js/custom-dropdown.js'
+    import {
+      getCurrentUser,
+      canManageUsers,
+      fetchUsers,
+      sendInvitation,
+      renderUsersList,
+      renderPendingInvitations,
+      updateUserRole,
+      assignUserToSite,
+      removeUser
+    } from './js/user-management.js'
+
+    let currentUserData = null;
+    let selectedUserId = null;
+
+    // Check authentication
+    async function checkAuth() {
+      console.log('=== CHECKING AUTHENTICATION ===');
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (!session || !session.user) {
+        console.error('❌ No active session - user not logged in');
+        alert('You are not logged in. Please log in first.');
+        window.location.href = './index.html';
+        return false;
+      }
+      
+      console.log('✅ User is logged in:', session.user.email);
+      return true;
+    }
+
+    // Load user data
+    async function loadUserData() {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (user) {
+        document.getElementById('user-email').value = user.email || 'No email'
+        
+        // Load user profile from database
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('full_name, profile_picture')
+          .eq('id', user.id)
+          .single()
+        
+        if (profile) {
+          document.getElementById('user-display-name').value = profile.full_name || ''
+          
+          // Load profile picture
+          if (profile.profile_picture) {
+            document.getElementById('profile-picture-preview').src = profile.profile_picture + '?t=' + new Date().getTime()
+          } else {
+            // Generate avatar based on name or email
+            const name = profile.full_name || user.email?.split('@')[0] || 'User'
+            const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=128&background=E3ECFA&color=0D47A1`
+            document.getElementById('profile-picture-preview').src = avatarUrl
+          }
+        } else {
+          // Fallback to localStorage for display name
+          const displayName = localStorage.getItem('nfg_display_name') || ''
+          document.getElementById('user-display-name').value = displayName
+        }
+        
+        // Load notification preferences
+        const prefs = JSON.parse(localStorage.getItem('nfg_notif_prefs') || '{}')
+        document.getElementById('notif-email').checked = prefs.email ?? false
+        document.getElementById('notif-jobs').checked = prefs.jobs ?? false
+        document.getElementById('notif-emergency').checked = prefs.emergency ?? true
+      }
+    }
+
+    // Profile picture upload button
+    document.getElementById('upload-profile-picture-btn')?.addEventListener('click', () => {
+      document.getElementById('profile-picture-input').click()
+    })
+
+    // Handle profile picture file selection
+    document.getElementById('profile-picture-input')?.addEventListener('change', async (e) => {
+      const file = e.target.files[0]
+      if (!file) return
+
+      // Validate file
+      if (!file.type.startsWith('image/')) {
+        alert('⚠️ Please select an image file.')
+        return
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        alert('⚠️ File is too large. Please select an image under 5MB.')
+        return
+      }
+
+      const loadingEl = document.getElementById('profile-upload-loading')
+      const previewEl = document.getElementById('profile-picture-preview')
+
+      try {
+        loadingEl.classList.remove('hidden')
+        console.log('[Profile] Uploading profile picture...', file.name)
+
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) throw new Error('Not authenticated')
+
+        // Upload to Supabase Storage
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${user.id}/profile.${fileExt}`
+
+        const { error: uploadError } = await supabase.storage
+          .from('profile-pictures')
+          .upload(fileName, file, { upsert: true })
+
+        if (uploadError) {
+          console.error('[Profile] Upload error:', uploadError)
+          if (uploadError.message.includes('not found')) {
+            alert('❌ Storage not set up. Please run SETUP_PROFILE_PICTURES_STORAGE.sql')
+          } else {
+            alert('Failed to upload photo: ' + uploadError.message)
+          }
+          return
+        }
+
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from('profile-pictures')
+          .getPublicUrl(fileName)
+
+        console.log('[Profile] ✅ Photo uploaded:', urlData.publicUrl)
+
+        // Update user profile
+        const { error: updateError } = await supabase
+          .from('user_profiles')
+          .update({ profile_picture: urlData.publicUrl })
+          .eq('id', user.id)
+
+        if (updateError) {
+          console.error('[Profile] Update error:', updateError)
+          alert('Failed to update profile: ' + updateError.message)
+        } else {
+          // Update preview
+          previewEl.src = urlData.publicUrl + '?t=' + new Date().getTime()
+          alert('✅ Profile picture updated!')
+        }
+
+      } catch (error) {
+        console.error('[Profile] Error:', error)
+        alert('An error occurred. Please try again.')
+      } finally {
+        loadingEl.classList.add('hidden')
+        e.target.value = '' // Reset input
+      }
+    })
+
+    // Save profile
+    document.getElementById('save-profile-btn')?.addEventListener('click', async () => {
+      const displayName = document.getElementById('user-display-name').value
+      
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) throw new Error('Not authenticated')
+
+        const { error } = await supabase
+          .from('user_profiles')
+          .update({ full_name: displayName })
+          .eq('id', user.id)
+
+        if (error) throw error
+
+        alert('✅ Profile updated successfully!')
+      } catch (error) {
+        console.error('Error updating profile:', error)
+        alert('Failed to update profile. Please try again.')
+      }
+    })
+
+    // Save notification preferences
+    document.querySelectorAll('.toggle-checkbox').forEach(toggle => {
+      toggle.addEventListener('change', () => {
+        const prefs = {
+          email: document.getElementById('notif-email').checked,
+          jobs: document.getElementById('notif-jobs').checked,
+          emergency: document.getElementById('notif-emergency').checked
+        }
+        localStorage.setItem('nfg_notif_prefs', JSON.stringify(prefs))
+      })
+    })
+
+    // Export data
+    document.getElementById('export-data-btn')?.addEventListener('click', () => {
+      const data = {
+        profile: {
+          displayName: localStorage.getItem('nfg_display_name')
+        },
+        notifications: JSON.parse(localStorage.getItem('nfg_notif_prefs') || '{}'),
+        exportDate: new Date().toISOString()
+      }
+      
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `nfg-data-export-${Date.now()}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+    })
+
+    // Clear data
+    document.getElementById('clear-data-btn')?.addEventListener('click', () => {
+      if (confirm('Are you sure you want to clear all local data? This cannot be undone.')) {
+        localStorage.removeItem('nfg_display_name')
+        localStorage.removeItem('nfg_notif_prefs')
+        alert('Local data cleared!')
+        location.reload()
+      }
+    })
+
+    // Logout
+    document.getElementById('logout-btn')?.addEventListener('click', async () => {
+      await supabase.auth.signOut()
+      window.location.href = './index.html'
+    })
+
+    // Modal controls
+    function openInviteModal() {
+      const modal = document.getElementById('inviteUserModal')
+      modal.classList.remove('hidden')
+      modal.classList.add('flex')
+      lucide.createIcons()
+    }
+
+    function closeInviteModal() {
+      const modal = document.getElementById('inviteUserModal')
+      modal.classList.add('hidden')
+      modal.classList.remove('flex')
+      document.getElementById('invite-user-form').reset()
+      document.getElementById('invite-form-error').classList.add('hidden')
+    }
+
+    function closeUserDetailsModal() {
+      const modal = document.getElementById('userDetailsModal')
+      modal.classList.add('hidden')
+      modal.classList.remove('flex')
+    }
+
+    function closeAssignSiteModal() {
+      const modal = document.getElementById('assignSiteModal')
+      modal.classList.add('hidden')
+      modal.classList.remove('flex')
+      document.getElementById('assign-site-form').reset()
+      document.getElementById('assign-site-error').classList.add('hidden')
+    }
+
+    // Event listeners for modal buttons
+    document.getElementById('invite-user-btn')?.addEventListener('click', openInviteModal)
+    document.getElementById('close-invite-modal')?.addEventListener('click', closeInviteModal)
+    document.getElementById('cancel-invite-btn')?.addEventListener('click', closeInviteModal)
+    
+    document.getElementById('close-user-details-modal')?.addEventListener('click', closeUserDetailsModal)
+    
+    document.getElementById('close-assign-site-modal')?.addEventListener('click', closeAssignSiteModal)
+    document.getElementById('cancel-assign-site-btn')?.addEventListener('click', closeAssignSiteModal)
+
+    // Invite user form
+    document.getElementById('invite-user-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const formData = new FormData(e.target)
+      const email = formData.get('email')
+      const role = formData.get('role')
+      
+      const errorEl = document.getElementById('invite-form-error')
+      const submitBtn = document.getElementById('submit-invite-btn')
+      
+      try {
+        submitBtn.disabled = true
+        submitBtn.textContent = 'Sending...'
+        
+        await sendInvitation(email, role)
+        
+        closeInviteModal()
+        await renderPendingInvitations()
+        alert('Invitation sent successfully!')
+      } catch (error) {
+        errorEl.textContent = error.message
+        errorEl.classList.remove('hidden')
+      } finally {
+        submitBtn.disabled = false
+        submitBtn.textContent = 'Send Invitation'
+      }
+    })
+
+    // Update user role
+    document.getElementById('update-user-role-btn')?.addEventListener('click', async () => {
+      if (!selectedUserId) return
+      
+      const role = document.getElementById('user-detail-role-select').value
+      const status = document.getElementById('user-detail-status-select').value
+      
+      try {
+        await updateUserRole(selectedUserId, role, status)
+        alert('User updated successfully!')
+        closeUserDetailsModal()
+        await renderUsersList()
+      } catch (error) {
+        alert('Failed to update user. Please try again.')
+      }
+    })
+
+    // Assign site
+    document.getElementById('assign-site-btn')?.addEventListener('click', async () => {
+      console.log('Loading sites for assignment...');
+      
+      // Load sites from Supabase first, fallback to localStorage
+      let sites = [];
+      const { data: supabaseSites, error } = await supabase.from('sites').select('*').order('name');
+      
+      if (error) {
+        console.error('Error fetching sites from Supabase:', error);
+        // Fallback to localStorage
+        try {
+          sites = JSON.parse(localStorage.getItem('nfg_sites') || '[]');
+          console.log('Loaded sites from localStorage:', sites.length);
+        } catch (e) {
+          console.error('Error loading from localStorage:', e);
+        }
+      } else {
+        sites = supabaseSites || [];
+        console.log('Loaded sites from Supabase:', sites.length);
+      }
+      
+      const select = document.getElementById('assign-site-select');
+      
+      // Clear and populate options
+      select.innerHTML = '<option value="">Select a site</option>';
+      
+      if (sites.length === 0) {
+        select.innerHTML = '<option value="">No sites available</option>';
+        alert('No sites found. Please create sites first in the Sites page.');
+      } else {
+        sites.forEach(site => {
+          const option = document.createElement('option');
+          option.value = site.id;
+          option.textContent = site.name;
+          select.appendChild(option);
+        });
+      }
+      
+      console.log('Total options in dropdown:', select.options.length);
+      
+      // Open modal
+      const modal = document.getElementById('assignSiteModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      
+      // Reinitialize icons
+      if (window.lucide) lucide.createIcons();
+      
+      console.log('Assign site modal opened with', sites.length, 'sites');
+    })
+
+    // Assign site form
+    document.getElementById('assign-site-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      if (!selectedUserId) return
+      
+      const formData = new FormData(e.target)
+      const siteId = formData.get('site_id')
+      
+      try {
+        await assignUserToSite(selectedUserId, parseInt(siteId))
+        closeAssignSiteModal()
+        // Refresh the user's assigned sites list
+        await loadUserSites(selectedUserId);
+        alert('Site assigned successfully!')
+      } catch (error) {
+        const errorEl = document.getElementById('assign-site-error')
+        errorEl.textContent = error.message
+        errorEl.classList.remove('hidden')
+      }
+    })
+
+    // Remove user
+    document.getElementById('remove-user-btn')?.addEventListener('click', async () => {
+      if (!selectedUserId) return
+      
+      if (!confirm('Are you sure you want to remove this user? This action cannot be undone.')) {
+        return
+      }
+      
+      try {
+        await removeUser(selectedUserId)
+        alert('User removed successfully!')
+        closeUserDetailsModal()
+        await renderUsersList()
+      } catch (error) {
+        alert('Failed to remove user. Please try again.')
+      }
+    })
+
+    // Initialize
+    async function init() {
+      try {
+        console.log('Initializing settings page...')
+        
+        // Check authentication FIRST
+        const isAuthenticated = await checkAuth()
+        if (!isAuthenticated) {
+          return // Stop if not authenticated
+        }
+        
+        // Load basic user data
+        await loadUserData()
+        console.log('User data loaded')
+        
+        // Load user management
+        currentUserData = await getCurrentUser()
+        console.log('Current user data:', currentUserData)
+        
+        // Always try to render user list
+        console.log('Rendering users list...')
+        await renderUsersList()
+        console.log('Users list rendered')
+        
+        // Show/hide invite button based on role
+        const inviteBtn = document.getElementById('invite-user-btn')
+        if (inviteBtn) {
+          if (currentUserData && canManageUsers()) {
+            console.log('User can manage - showing invite button')
+            inviteBtn.classList.remove('hidden')
+            inviteBtn.classList.add('inline-flex')
+            await renderPendingInvitations()
+          } else {
+            console.log('User cannot manage - hiding invite button')
+            inviteBtn.classList.add('hidden')
+            inviteBtn.classList.remove('inline-flex')
+            const pendingContainer = document.getElementById('pending-invitations-container')
+            if (pendingContainer) pendingContainer.classList.add('hidden')
+          }
+        }
+        
+        // Hide Bookings and Reports navigation for staff users
+        if (currentUserData && currentUserData.role === 'staff') {
+          const bookingsNav = document.getElementById('nav-bookings');
+          const reportsNav = document.getElementById('nav-reports');
+          if (bookingsNav) bookingsNav.style.display = 'none';
+          if (reportsNav) reportsNav.style.display = 'none';
+        }
+        
+        console.log('Initialization complete')
+      } catch (error) {
+        console.error('Error during initialization:', error)
+        alert('Error loading settings. Check console for details.')
+      }
+    }
+
+    // Open user details modal
+    window.openUserDetails = async function(userId) {
+      selectedUserId = userId;
+      console.log('Opening user details for:', userId);
+      
+      // Get user data
+      const users = await fetchUsers();
+      const user = users.find(u => u.id === userId);
+      
+      if (!user) {
+        alert('User not found');
+        return;
+      }
+      
+      // Populate modal
+      document.getElementById('user-detail-name').textContent = user.full_name || user.email.split('@')[0];
+      document.getElementById('user-detail-email').textContent = user.email;
+      
+      // Role badge
+      const roleColors = {
+        admin: 'bg-purple-100 text-purple-700',
+        client: 'bg-blue-100 text-blue-700',
+        staff: 'bg-gray-100 text-gray-700'
+      };
+      const roleBadge = document.getElementById('user-detail-role-badge');
+      roleBadge.textContent = user.role.toUpperCase();
+      roleBadge.className = `px-2 py-0.5 rounded-lg text-xs font-medium ${roleColors[user.role]}`;
+      
+      // Status badge
+      const statusColors = {
+        active: 'bg-green-100 text-green-700',
+        pending: 'bg-yellow-100 text-yellow-700',
+        inactive: 'bg-gray-100 text-gray-700',
+        suspended: 'bg-red-100 text-red-700'
+      };
+      const statusBadge = document.getElementById('user-detail-status-badge');
+      statusBadge.textContent = user.status;
+      statusBadge.className = `px-2 py-0.5 rounded-lg text-xs font-medium ${statusColors[user.status]}`;
+      
+      // Set role and status dropdowns
+      document.getElementById('user-detail-role-select').value = user.role;
+      document.getElementById('user-detail-status-select').value = user.status;
+      
+      // Show/hide sections based on current user's role
+      if (currentUserData && canManageUsers()) {
+        document.getElementById('role-management-section').classList.remove('hidden');
+        document.getElementById('site-assignments-section').classList.remove('hidden');
+        document.getElementById('danger-zone-section').classList.remove('hidden');
+        
+        // Load assigned sites
+        await loadUserSites(userId);
+      } else {
+        document.getElementById('role-management-section').classList.add('hidden');
+        document.getElementById('site-assignments-section').classList.add('hidden');
+        document.getElementById('danger-zone-section').classList.add('hidden');
+      }
+      
+      // Open modal
+      const modal = document.getElementById('userDetailsModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      lucide.createIcons();
+    }
+    
+    // Load user's assigned sites
+    async function loadUserSites(userId) {
+      console.log('Loading sites for user:', userId);
+      
+      const list = document.getElementById('user-sites-list');
+      
+      if (!list) {
+        console.error('user-sites-list element not found');
+        return;
+      }
+      
+      // Show loading state
+      list.innerHTML = '<p class="text-gray-500 text-sm animate-pulse">Loading sites...</p>';
+      
+      try {
+        // First, get the assignments
+        const { data: assignments, error: assignError } = await supabase
+          .from('worker_site_assignments')
+          .select('*')
+          .eq('worker_id', userId);
+        
+        if (assignError) {
+          console.error('Error loading site assignments:', assignError);
+          
+          // Check if it's a permissions issue
+          if (assignError.code === 'PGRST116' || assignError.message.includes('permission') || assignError.message.includes('policy')) {
+            list.innerHTML = `
+              <div class="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg p-3">
+                <p class="font-semibold mb-2">⚠️ Database Permission Error</p>
+                <p class="mb-2">The RLS policies need to be fixed. Please run this SQL in Supabase:</p>
+                <code class="block bg-white p-2 rounded text-xs mt-2">FIX_SITE_ASSIGNMENTS_RLS.sql</code>
+                <p class="mt-2 text-xs">This file updates the policies to work with 'client' role.</p>
+              </div>
+            `;
+          } else {
+            list.innerHTML = '<p class="text-red-500 text-sm">Error loading sites: ' + assignError.message + '</p>';
+          }
+          return;
+        }
+        
+        console.log('Site assignments loaded:', assignments);
+        
+        if (!assignments || assignments.length === 0) {
+          list.innerHTML = '<p class="text-gray-500 text-sm">No sites assigned yet.</p>';
+          return;
+        }
+        
+        // Get all sites to match names
+        const { data: sites, error: sitesError } = await supabase
+          .from('sites')
+          .select('id, name');
+        
+        if (sitesError) {
+          console.error('Error loading sites:', sitesError);
+        }
+        
+        console.log('Sites loaded:', sites);
+        
+        // Create a map of site IDs to names
+        const siteMap = {};
+        if (sites && sites.length > 0) {
+          sites.forEach(site => {
+            siteMap[site.id] = site.name;
+          });
+        }
+        
+        list.innerHTML = assignments.map(assignment => {
+          const siteName = siteMap[assignment.site_id] || `Site #${assignment.site_id}`;
+          return `
+            <div class="flex items-center justify-between p-3 bg-nfglight/30 rounded-lg">
+              <div class="flex items-center gap-2">
+                <i data-lucide="building-2" class="w-4 h-4 text-nfgblue"></i>
+                <span class="font-medium">${siteName}</span>
+              </div>
+              <button onclick="removeAssignment('${assignment.id}')" class="text-red-600 hover:bg-red-50 p-1 rounded">
+                <i data-lucide="x" class="w-4 h-4"></i>
+              </button>
+            </div>
+          `;
+        }).join('');
+        
+        lucide.createIcons();
+      } catch (err) {
+        console.error('Exception loading site assignments:', err);
+        list.innerHTML = '<p class="text-red-500 text-sm">Error loading sites: ' + err.message + '</p>';
+      }
+    }
+    
+    // Remove site assignment
+    window.removeAssignment = async function(assignmentId) {
+      if (!confirm('Remove this site assignment?')) return;
+      
+      console.log('Removing assignment:', assignmentId);
+      
+      try {
+        const { error } = await supabase
+          .from('worker_site_assignments')
+          .delete()
+          .eq('id', assignmentId);
+        
+        if (error) {
+          console.error('Error removing assignment:', error);
+          alert('Failed to remove assignment: ' + error.message);
+          return;
+        }
+        
+        console.log('Assignment removed successfully');
+        await loadUserSites(selectedUserId);
+        alert('Site assignment removed successfully!');
+      } catch (err) {
+        console.error('Exception removing assignment:', err);
+        alert('Failed to remove assignment');
+      }
+    }
+
+    // Make closeUserDetailsModal global for user-management.js
+    window.closeUserDetailsModal = closeUserDetailsModal
+
+    // Start initialization
+    init()
+  </script>
+</body>
+</html>
+
+
+
+

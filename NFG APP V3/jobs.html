@@ -1,0 +1,1607 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NFG — Jobs</title>
+
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN + NFG theme -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            nfgblue: '#0D47A1',
+            nfgdark: '#0A3A84',
+            nfglight: '#E3ECFA',
+            nfgray: '#E5E7EB',
+            nftext: '#1E293B',
+            nfbg: '#F8FAFC'
+          },
+          fontFamily: { inter: ['Inter','sans-serif'] },
+          borderRadius: { xl: '12px' },
+          boxShadow: { nfg: '0 4px 14px rgba(13,71,161,0.06)' }
+        }
+      }
+    }
+  </script>
+
+  <!-- Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Custom Dropdown Styles -->
+  <link rel="stylesheet" href="./css/custom-dropdown.css">
+</head>
+
+<body class="font-inter bg-nfbg min-h-screen flex text-nftext">
+  <!-- ========== SIDEBAR ========== -->
+  <aside id="sidebar" class="w-64 shrink-0 bg-white border-r border-nfgray hidden md:flex md:flex-col transition-all">
+    <div class="p-5 flex items-center justify-center">
+      <!-- Northern Facilities Group Logo -->
+      <img 
+        src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/Horizontal.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL0hvcml6b250YWwucG5nIiwiaWF0IjoxNzYwOTg5Njk2LCJleHAiOjQ4ODMwNTM2OTZ9.GLtv3yHq5zpXr4deUiNn4ilYTKaFJX8Y2tjIQpxyqVw" 
+        alt="Northern Facilities Group" 
+        class="h-32 w-auto"
+      />
+    </div>
+    <nav class="px-3 pb-4 flex-1 space-y-1">
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="dashboard.html">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="sites.html">
+        <i data-lucide="map-pin" class="w-4 h-4"></i> Sites
+      </a>
+      <a id="nav-bookings" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="bookings.html">
+        <i data-lucide="calendar" class="w-4 h-4"></i> Bookings
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight text-nfgblue font-medium w-full text-left" href="jobs.html">
+        <i data-lucide="clipboard-check" class="w-4 h-4"></i> Jobs
+      </a>
+      <a id="nav-reports" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="reports.html">
+        <i data-lucide="file-chart-column" class="w-4 h-4"></i> Reports
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="settings.html">
+        <i data-lucide="settings" class="w-4 h-4"></i> Settings
+      </a>
+    </nav>
+    <div class="p-4 border-t border-nfgray">
+      <button id="logout-btn" class="w-full border border-nfgblue text-nfgblue hover:bg-nfglight rounded-xl py-2 font-medium">
+        Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- ========== MAIN ========== -->
+  <div class="flex-1 flex flex-col min-w-0">
+    <!-- TOPBAR -->
+    <header class="sticky top-0 z-10 bg-white border-b border-nfgray">
+      <div class="h-14 px-4 md:px-6 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <button class="md:hidden p-2 rounded-lg border border-nfgray text-nfgblue" aria-label="Toggle sidebar">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
+          <h1 class="text-nfgblue font-semibold">Jobs</h1>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="create-job-btn" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
+            <i data-lucide="plus" class="w-5 h-5"></i>
+            <span class="hidden sm:inline">Create Job</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <main class="p-4 md:p-6 space-y-6">
+      <div>
+        <h2 class="text-2xl font-semibold text-nfgblue">Jobs</h2>
+        <p class="text-sm text-gray-500 mt-1">Track active jobs and work orders</p>
+      </div>
+
+      <!-- Status Tabs -->
+      <div class="flex gap-2 border-b border-nfgray overflow-x-auto">
+        <button class="job-filter-tab px-4 py-2 font-medium text-nfgblue border-b-2 border-nfgblue whitespace-nowrap" data-status="all">
+          All Jobs
+        </button>
+        <button class="job-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue border-b-2 border-transparent whitespace-nowrap" data-status="pending">
+          Pending
+        </button>
+        <button class="job-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue border-b-2 border-transparent whitespace-nowrap" data-status="in-progress">
+          In Progress
+        </button>
+        <button class="job-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue border-b-2 border-transparent whitespace-nowrap" data-status="completed">
+          Completed
+        </button>
+        <button class="job-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue border-b-2 border-transparent whitespace-nowrap" data-status="cancelled">
+          Cancelled
+        </button>
+      </div>
+
+      <!-- Jobs Grid -->
+      <div id="jobs-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <!-- Loading placeholder -->
+        <div class="bg-white border border-nfgray rounded-xl shadow-nfg p-4 animate-pulse">
+          <div class="h-5 bg-nfglight rounded mb-2"></div>
+          <div class="h-4 bg-nfglight rounded w-1/2 mb-3"></div>
+          <div class="h-8 bg-nfglight rounded w-28"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Job Details Modal -->
+  <div id="jobDetailModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white z-10">
+        <div class="flex items-center gap-3 flex-1">
+          <i data-lucide="clipboard-check" class="w-6 h-6 text-nfgblue"></i>
+          <div>
+            <h4 id="job-detail-title" class="text-nfgblue font-semibold text-lg">Job Title</h4>
+            <p id="job-detail-site" class="text-sm text-gray-500">Site Name</p>
+          </div>
+          <div id="job-timer-display" class="hidden px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg font-mono text-sm font-semibold ml-4">
+            <i data-lucide="clock" class="w-4 h-4 inline mr-1"></i>
+            <span id="timer-value">00:00:00</span>
+          </div>
+        </div>
+        <button data-action="close-modal" data-target="jobDetailModal" class="p-1 rounded-lg hover:bg-nfglight">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-6">
+        <!-- Job Info -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="bg-nfglight/30 border border-nfgblue/20 rounded-xl p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <i data-lucide="tag" class="w-4 h-4 text-nfgblue"></i>
+              <span class="text-sm font-medium">Status</span>
+            </div>
+            <p id="job-detail-status" class="text-xl font-semibold text-nfgblue capitalize">Pending</p>
+          </div>
+          <div class="bg-nfglight/30 border border-nfgblue/20 rounded-xl p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <i data-lucide="repeat" class="w-4 h-4 text-nfgblue"></i>
+              <span class="text-sm font-medium">Frequency</span>
+            </div>
+            <p id="job-detail-frequency" class="text-xl font-semibold text-nfgblue capitalize">Single Visit</p>
+          </div>
+          <div class="bg-nfglight/30 border border-nfgblue/20 rounded-xl p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <i data-lucide="calendar" class="w-4 h-4 text-nfgblue"></i>
+              <span class="text-sm font-medium">Scheduled</span>
+            </div>
+            <p id="job-detail-date" class="text-xl font-semibold text-nfgblue">—</p>
+          </div>
+        </div>
+
+        <!-- Assigned Worker -->
+        <div class="bg-white border border-nfgray rounded-xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h5 class="text-nfgblue font-semibold flex items-center gap-2">
+              <i data-lucide="user-check" class="w-4 h-4"></i>
+              Assigned Worker
+            </h5>
+            <button id="assign-worker-btn" class="text-sm px-3 py-1.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
+              <i data-lucide="user-plus" class="w-4 h-4 inline"></i>
+              Assign
+            </button>
+          </div>
+          <div id="job-assigned-worker" class="space-y-2">
+            <p class="text-gray-500 text-sm">No worker assigned yet.</p>
+          </div>
+        </div>
+
+        <!-- Job Details -->
+        <div class="bg-white border border-nfgray rounded-xl p-4">
+          <h5 class="text-nfgblue font-semibold mb-3 flex items-center gap-2">
+            <i data-lucide="file-text" class="w-4 h-4"></i>
+            Job Details
+          </h5>
+          <div class="space-y-2">
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Job Type:</span>
+              <span id="job-detail-type" class="font-medium capitalize">—</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Estimated Hours:</span>
+              <span id="job-detail-hours" class="font-medium">—</span>
+            </div>
+            <div class="border-t border-nfgray pt-2 mt-2">
+              <span class="text-gray-500 text-sm">Description:</span>
+              <p id="job-detail-description" class="text-nftext mt-1">—</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Assigned Employees -->
+        <div class="bg-white border border-nfgray rounded-xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h5 class="text-nfgblue font-semibold flex items-center gap-2">
+              <i data-lucide="users" class="w-4 h-4"></i>
+              Assigned Employees
+            </h5>
+            <button id="assign-employee-btn" class="text-sm px-3 py-1.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
+              <i data-lucide="user-plus" class="w-4 h-4 inline"></i>
+              Assign
+            </button>
+          </div>
+          <div id="job-employees-list" class="space-y-2">
+            <p class="text-gray-500 text-sm">No employees assigned yet.</p>
+          </div>
+        </div>
+
+        <!-- Task Checklist -->
+        <div class="bg-white border border-nfgray rounded-xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h5 class="text-nfgblue font-semibold flex items-center gap-2">
+              <i data-lucide="list-checks" class="w-4 h-4"></i>
+              Task Checklist
+            </h5>
+            <button id="add-task-btn" class="text-sm px-3 py-1.5 rounded-xl border border-nfgblue text-nfgblue hover:bg-nfglight">
+              <i data-lucide="plus" class="w-4 h-4 inline"></i>
+              Add Task
+            </button>
+          </div>
+          <div id="job-tasks-list" class="space-y-3">
+            <p class="text-gray-500 text-sm">No tasks added yet.</p>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-wrap gap-3 border-t border-nfgray pt-4">
+          <!-- For Staff: Begin/End Work buttons -->
+          <button id="begin-work-btn" class="hidden inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700">
+            <i data-lucide="play-circle" class="w-4 h-4"></i>
+            Begin Work
+          </button>
+          <button id="end-work-btn" class="hidden inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700">
+            <i data-lucide="stop-circle" class="w-4 h-4"></i>
+            End Work
+          </button>
+          
+          <!-- For Admin/Client: Update Status button -->
+          <button id="update-status-btn" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            Update Status
+          </button>
+          
+          <button id="archive-job-btn" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 ml-auto">
+            <i data-lucide="x-circle" class="w-4 h-4"></i>
+            Cancel Job
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Task Modal -->
+  <div id="addTaskModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-[60]">
+    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-lg">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between">
+        <h4 class="text-nfgblue font-semibold">Add Task</h4>
+        <button data-action="close-modal" data-target="addTaskModal" class="p-1 rounded-lg hover:bg-nfglight">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="add-task-form" class="p-4 space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Task Title <span class="text-red-500">*</span></label>
+          <input type="text" name="task_title" required placeholder="e.g., Clean all windows" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Description</label>
+          <textarea name="task_description" rows="2" placeholder="Task details..." class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none resize-none"></textarea>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="checkbox" name="task_required" id="task-required" checked class="w-4 h-4 text-nfgblue rounded border-nfgray focus:ring-2 focus:ring-nfgblue">
+          <label for="task-required" class="text-sm font-medium">Photo required to complete</label>
+        </div>
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray">
+          <button type="button" data-action="close-modal" data-target="addTaskModal" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight">
+            Cancel
+          </button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
+            Add Task
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Upload Photo Modal -->
+  <div id="uploadPhotoModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-[60]">
+    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-lg">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between">
+        <h4 class="text-nfgblue font-semibold">Upload Task Photo</h4>
+        <button data-action="close-modal" data-target="uploadPhotoModal" class="p-1 rounded-lg hover:bg-nfglight">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-4 space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-2">Select Photo <span class="text-red-500">*</span></label>
+          <input type="file" id="task-photo-input" accept="image/*" capture="environment" class="w-full border border-nfgray rounded-xl p-2.5 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-nfgblue file:text-white file:cursor-pointer hover:file:bg-nfgdark" />
+          <p class="text-xs text-gray-500 mt-1">Take a photo or upload from your device</p>
+        </div>
+        <div id="photo-preview" class="hidden">
+          <img id="preview-image" src="" alt="Preview" class="w-full h-48 object-cover rounded-xl border border-nfgray" />
+        </div>
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray">
+          <button type="button" data-action="close-modal" data-target="uploadPhotoModal" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight">
+            Cancel
+          </button>
+          <button id="upload-photo-btn" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
+            Upload & Complete Task
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Assign Worker Modal -->
+  <div id="assignWorkerModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-[60]">
+    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-lg">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between">
+        <h4 class="text-nfgblue font-semibold">Assign Worker</h4>
+        <button data-action="close-modal" data-target="assignWorkerModal" class="p-1 rounded-lg hover:bg-nfglight">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="assign-worker-form" class="p-4 space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Select Worker <span class="text-red-500">*</span></label>
+          <select name="worker_id" id="worker-select" required data-custom-dropdown="true" data-placeholder="Select a worker">
+            <option value="">Select a worker</option>
+          </select>
+          <p class="text-xs text-gray-500 mt-1">Only staff members will appear in this list</p>
+        </div>
+        <div id="assign-worker-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl p-3"></div>
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray">
+          <button type="button" data-action="close-modal" data-target="assignWorkerModal" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight">
+            Cancel
+          </button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
+            Assign Worker
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create Job Modal -->
+  <div id="createJobModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white">
+        <h4 class="text-nfgblue font-semibold text-lg">Create New Job</h4>
+        <button data-action="close-modal" data-target="createJobModal" class="p-1 rounded-lg hover:bg-nfglight">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="create-job-form" class="p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Job Title <span class="text-red-500">*</span></label>
+          <input type="text" name="title" required placeholder="e.g., Office Deep Clean" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Site <span class="text-red-500">*</span></label>
+          <select name="site_id" id="job-site-select" required data-custom-dropdown="true" data-placeholder="Select a site">
+            <option value="">Select a site</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Job Type <span class="text-red-500">*</span></label>
+            <select name="job_type" required data-custom-dropdown="true" data-placeholder="Select job type">
+              <option value="cleaning">Cleaning</option>
+              <option value="maintenance">Maintenance</option>
+              <option value="repair">Repair</option>
+              <option value="inspection">Inspection</option>
+              <option value="emergency">Emergency</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Frequency</label>
+            <select name="frequency" data-custom-dropdown="true" data-placeholder="Select frequency">
+              <option value="single visit" selected>Single Visit</option>
+              <option value="recurring">Recurring</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Scheduled Date</label>
+            <input type="date" name="scheduled_date" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Estimated Hours</label>
+            <input type="number" name="estimated_hours" min="0" step="0.5" placeholder="4" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Description</label>
+          <textarea name="description" rows="3" placeholder="Add job details..." class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none resize-none"></textarea>
+        </div>
+
+        <div id="job-form-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl p-3"></div>
+
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray">
+          <button type="button" data-action="close-modal" data-target="createJobModal" class="px-5 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight font-medium transition">
+            Cancel
+          </button>
+          <button type="submit" id="submit-job-btn" class="px-5 py-2.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark font-medium transition">
+            Create Job
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========== SCRIPTS ========== -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) lucide.createIcons();
+    });
+
+    // Modal functionality
+    document.addEventListener('click', (e) => {
+      const openModalBtn = e.target.closest('[data-action="open-modal"]');
+      if (openModalBtn) {
+        const targetId = openModalBtn.dataset.target;
+        const modal = document.getElementById(targetId);
+        if (modal) {
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+          if (window.lucide) lucide.createIcons();
+        }
+      }
+
+      const closeModalBtn = e.target.closest('[data-action="close-modal"]');
+      if (closeModalBtn) {
+        const targetId = closeModalBtn.dataset.target;
+        const modal = document.getElementById(targetId);
+        if (modal) {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+          const form = modal.querySelector('form');
+          if (form) form.reset();
+        }
+      }
+
+      if (e.target.classList.contains('fixed') && e.target.classList.contains('inset-0')) {
+        e.target.classList.add('hidden');
+        e.target.classList.remove('flex');
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const modals = document.querySelectorAll('.fixed.inset-0:not(.hidden)');
+        modals.forEach(modal => {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+        });
+      }
+    });
+  </script>
+
+  <script type="module">
+    import { supabase } from './js/supabase.js'
+    import { NFGDropdown } from './js/custom-dropdown.js'
+
+    let currentFilter = 'all';
+    let currentJobId = null;
+    let currentTaskId = null;
+    let currentUser = null;
+    let currentUserProfile = null;
+
+    // Get current user and their profile
+    async function getCurrentUser() {
+      const { data: { user } } = await supabase.auth.getUser();
+      currentUser = user;
+      
+      if (user) {
+        // Get user profile to check role
+        const { data: profile, error } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (!error && profile) {
+          currentUserProfile = profile;
+          console.log('User role:', profile.role);
+        } else {
+          // Default to staff if no profile found
+          currentUserProfile = { role: 'staff' };
+        }
+      }
+      
+      return user;
+    }
+
+    // Fetch jobs from Supabase (filtered by role)
+    async function getJobs() {
+      let query = supabase
+        .from('jobs')
+        .select('*');
+      
+      // If user is staff, only show jobs assigned to them
+      if (currentUserProfile && currentUserProfile.role === 'staff') {
+        query = query.eq('assigned_worker_id', currentUser.id);
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching jobs:', error);
+        return [];
+      }
+      return data || [];
+    }
+
+    // Fetch sites from Supabase
+    async function getSites() {
+      const { data, error } = await supabase
+        .from('sites')
+        .select('*')
+        .order('name', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching sites:', error);
+        // Fallback to localStorage if sites table doesn't exist yet
+        return JSON.parse(localStorage.getItem('nfg_sites') || '[]');
+      }
+      return data || [];
+    }
+
+    // Get job tasks from Supabase
+    async function getJobTasks(jobId) {
+      const { data, error } = await supabase
+        .from('job_tasks')
+        .select('*')
+        .eq('job_id', jobId)
+        .order('created_at', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching tasks:', error);
+        return [];
+      }
+      return data || [];
+    }
+
+    // Get job employees from Supabase
+    async function getJobEmployees(jobId) {
+      const { data, error } = await supabase
+        .from('job_employees')
+        .select('*')
+        .eq('job_id', jobId)
+        .order('assigned_at', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching employees:', error);
+        return [];
+      }
+      return data || [];
+    }
+
+    // Render jobs
+    async function renderJobs() {
+      const jobs = await getJobs();
+      const sites = await getSites();
+      const grid = document.getElementById('jobs-grid');
+      
+      const filtered = currentFilter === 'all' ? jobs : jobs.filter(j => j.status === currentFilter);
+
+      if (filtered.length === 0) {
+        const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
+        grid.innerHTML = `
+          <div class="col-span-full text-center py-12">
+            <div class="bg-white border-2 border-dashed border-nfgray rounded-xl p-12 max-w-md mx-auto">
+              <i data-lucide="clipboard-check" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
+              <h3 class="text-nfgblue font-semibold text-xl mb-2">No Jobs Found</h3>
+              <p class="text-gray-500 mb-6">${isStaff ? 'No jobs have been assigned to you yet.' : 'Create your first job to get started.'}</p>
+              ${!isStaff ? `
+                <button data-action="open-modal" data-target="createJobModal" class="inline-flex items-center gap-2 px-6 py-3 bg-nfgblue text-white rounded-xl hover:bg-nfgdark transition">
+                  <i data-lucide="plus" class="w-5 h-5"></i>
+                  Create Job
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+        if (window.lucide) lucide.createIcons();
+        return;
+      }
+
+      grid.innerHTML = filtered.map(job => {
+        const site = sites.find(s => s.id == job.site_id);
+        const statusColors = {
+          'pending': 'bg-yellow-100 text-yellow-700',
+          'in-progress': 'bg-blue-100 text-blue-700',
+          'completed': 'bg-green-100 text-green-700',
+          'cancelled': 'bg-red-100 text-red-700'
+        };
+
+        return `
+          <div class="bg-white border border-nfgray rounded-xl p-4 shadow-nfg hover:shadow-lg transition-shadow">
+            <div class="flex justify-between items-start mb-3">
+              <div class="flex-1">
+                <h3 class="text-nfgblue font-semibold text-lg">${job.title}</h3>
+                <p class="text-gray-500 text-sm mt-1">${site ? site.name : 'Unknown Site'}</p>
+              </div>
+              <span class="px-2 py-1 rounded-lg text-xs font-medium ${statusColors[job.status]}">${job.status.replace('-', ' ')}</span>
+            </div>
+            
+            <div class="space-y-2 mb-4 py-3 border-t border-b border-nfgray">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-500">Type:</span>
+                <span class="font-medium capitalize">${job.job_type}</span>
+              </div>
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-500">Frequency:</span>
+                <span class="font-medium capitalize">${job.frequency}</span>
+              </div>
+              ${job.scheduled_date ? `
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-gray-500">Scheduled:</span>
+                  <span class="font-medium">${new Date(job.scheduled_date).toLocaleDateString()}</span>
+                </div>
+              ` : ''}
+            </div>
+            
+            <button 
+              onclick="viewJob('${job.id}')" 
+              class="w-full bg-nfgblue hover:bg-nfgdark text-white rounded-xl py-2 text-sm font-medium transition cursor-pointer">
+              View Details
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // View job details
+    window.viewJob = async function(jobId) {
+      console.log('[Jobs] ✅ viewJob function called! Job ID:', jobId, 'Type:', typeof jobId);
+      console.log('[Jobs] Opening job details for ID:', jobId);
+      const jobs = await getJobs();
+      const sites = await getSites();
+      console.log('[Jobs] All jobs:', jobs);
+      console.log('[Jobs] Looking for job with ID:', jobId);
+      // Use loose equality to handle both string and number IDs
+      const job = jobs.find(j => j.id == jobId);
+      
+      if (!job) {
+        console.error('[Jobs] ❌ Job not found:', jobId);
+        console.error('[Jobs] Available job IDs:', jobs.map(j => j.id));
+        alert('Job not found! ID: ' + jobId);
+        return;
+      }
+
+      currentJobId = jobId;
+      const site = sites.find(s => s.id == job.site_id);
+
+      // Populate job details
+      document.getElementById('job-detail-title').textContent = job.title;
+      document.getElementById('job-detail-site').textContent = site ? site.name : 'Unknown Site';
+      document.getElementById('job-detail-status').textContent = job.status.replace('-', ' ');
+      document.getElementById('job-detail-frequency').textContent = job.frequency || 'single visit';
+      document.getElementById('job-detail-date').textContent = job.scheduled_date ? new Date(job.scheduled_date).toLocaleDateString() : '—';
+      document.getElementById('job-detail-type').textContent = job.job_type;
+      document.getElementById('job-detail-hours').textContent = job.estimated_hours ? `${job.estimated_hours} hrs` : '—';
+      document.getElementById('job-detail-description').textContent = job.description || 'No description provided.';
+
+      // Load assigned worker, employees and tasks
+      await renderAssignedWorker();
+      await renderJobEmployees();
+      await renderJobTasks();
+
+      // Hide assign worker button for staff (they can't assign workers)
+      const assignWorkerBtn = document.getElementById('assign-worker-btn');
+      if (assignWorkerBtn && currentUserProfile && currentUserProfile.role === 'staff') {
+        assignWorkerBtn.style.display = 'none';
+      } else if (assignWorkerBtn) {
+        assignWorkerBtn.style.display = '';
+      }
+
+      // Hide archive job button for staff
+      const archiveJobBtn = document.getElementById('archive-job-btn');
+      if (archiveJobBtn && currentUserProfile && currentUserProfile.role === 'staff') {
+        archiveJobBtn.style.display = 'none';
+      } else if (archiveJobBtn) {
+        archiveJobBtn.style.display = '';
+      }
+
+      // Hide add task button for staff
+      const addTaskBtn = document.getElementById('add-task-btn');
+      if (addTaskBtn && currentUserProfile && currentUserProfile.role === 'staff') {
+        addTaskBtn.style.display = 'none';
+      } else if (addTaskBtn) {
+        addTaskBtn.style.display = '';
+      }
+
+      // Handle timer and button visibility for staff vs admin/client
+      const beginWorkBtn = document.getElementById('begin-work-btn');
+      const endWorkBtn = document.getElementById('end-work-btn');
+      const updateStatusBtn = document.getElementById('update-status-btn');
+      const timerDisplay = document.getElementById('job-timer-display');
+      const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
+
+      if (isStaff) {
+        // Staff user - show Begin/End Work buttons, hide Update Status
+        updateStatusBtn.style.display = 'none';
+        
+        if (job.work_started_at && !job.work_ended_at) {
+          // Work in progress - show timer and End Work button
+          beginWorkBtn.classList.add('hidden');
+          endWorkBtn.classList.remove('hidden');
+          timerDisplay.classList.remove('hidden');
+          startTimer(job.work_started_at);
+        } else if (!job.work_started_at) {
+          // Not started - show Begin Work button
+          beginWorkBtn.classList.remove('hidden');
+          endWorkBtn.classList.add('hidden');
+          timerDisplay.classList.add('hidden');
+        } else {
+          // Work completed - hide both buttons, show final time
+          beginWorkBtn.classList.add('hidden');
+          endWorkBtn.classList.add('hidden');
+          if (job.total_duration) {
+            timerDisplay.classList.remove('hidden');
+            document.getElementById('timer-value').textContent = formatDuration(job.total_duration);
+          }
+        }
+      } else {
+        // Admin/Client - show Update Status, hide Begin/End Work
+        updateStatusBtn.style.display = '';
+        beginWorkBtn.classList.add('hidden');
+        endWorkBtn.classList.add('hidden');
+        timerDisplay.classList.add('hidden');
+      }
+
+      // Show modal
+      const modal = document.getElementById('jobDetailModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      if (window.lucide) lucide.createIcons();
+      console.log('[Jobs] ✅ Job details modal opened');
+    };
+
+    // Timer variables
+    let timerInterval = null;
+
+    // Format duration in seconds to HH:MM:SS
+    function formatDuration(seconds) {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    // Start the timer display
+    function startTimer(startTime) {
+      // Clear any existing timer
+      if (timerInterval) clearInterval(timerInterval);
+      
+      const startTimestamp = new Date(startTime).getTime();
+      
+      function updateTimer() {
+        const now = Date.now();
+        const elapsed = Math.floor((now - startTimestamp) / 1000); // seconds
+        document.getElementById('timer-value').textContent = formatDuration(elapsed);
+      }
+      
+      // Update immediately
+      updateTimer();
+      
+      // Update every second
+      timerInterval = setInterval(updateTimer, 1000);
+    }
+
+    // Stop the timer
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    // Format timestamp to readable time
+    function formatTimestamp(timestamp) {
+      if (!timestamp) return '';
+      const date = new Date(timestamp);
+      return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    }
+
+    // Calculate task duration
+    function calculateTaskDuration(startTime, endTime) {
+      if (!startTime || !endTime) return null;
+      const start = new Date(startTime).getTime();
+      const end = new Date(endTime).getTime();
+      const duration = Math.floor((end - start) / 1000); // seconds
+      return duration;
+    }
+
+    // Render assigned worker
+    async function renderAssignedWorker() {
+      const jobs = await getJobs();
+      const job = jobs.find(j => j.id === currentJobId);
+      const list = document.getElementById('job-assigned-worker');
+      
+      if (!job || !job.assigned_worker_id) {
+        list.innerHTML = '<p class="text-gray-500 text-sm">No worker assigned yet.</p>';
+        return;
+      }
+
+      // Fetch worker profile
+      const { data: worker, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', job.assigned_worker_id)
+        .single();
+
+      if (error || !worker) {
+        console.error('Error fetching worker:', error);
+        list.innerHTML = '<p class="text-gray-500 text-sm">Worker not found.</p>';
+        return;
+      }
+
+      const initials = (worker.full_name || worker.email).charAt(0).toUpperCase();
+      const displayName = worker.full_name || worker.email.split('@')[0];
+
+      list.innerHTML = `
+        <div class="flex items-center justify-between p-3 bg-nfglight/30 rounded-xl">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-nfgblue text-white flex items-center justify-center font-semibold">
+              ${initials}
+            </div>
+            <div>
+              <p class="font-medium text-nfgblue">${displayName}</p>
+              <p class="text-xs text-gray-500">${worker.email}</p>
+            </div>
+          </div>
+          <button onclick="unassignWorker()" class="p-1.5 hover:bg-red-100 rounded-lg text-red-600" title="Unassign worker">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+      `;
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // Render job employees
+    async function renderJobEmployees() {
+      const employees = await getJobEmployees(currentJobId);
+      const list = document.getElementById('job-employees-list');
+      
+      if (employees.length === 0) {
+        list.innerHTML = '<p class="text-gray-500 text-sm">No employees assigned yet.</p>';
+        return;
+      }
+
+      list.innerHTML = employees.map(emp => `
+        <div class="flex items-center justify-between p-3 bg-nfglight/30 rounded-xl">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-nfgblue text-white flex items-center justify-center font-semibold">
+              ${emp.name.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <p class="font-medium text-nfgblue">${emp.name}</p>
+              <p class="text-xs text-gray-500">${emp.role || 'Employee'}</p>
+            </div>
+          </div>
+          <button onclick="removeEmployee('${emp.id}')" class="p-1.5 hover:bg-red-100 rounded-lg text-red-600">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+      `).join('');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // Render job tasks
+    async function renderJobTasks() {
+      const tasks = await getJobTasks(currentJobId);
+      const list = document.getElementById('job-tasks-list');
+      
+      if (tasks.length === 0) {
+        list.innerHTML = '<p class="text-gray-500 text-sm">No tasks added yet.</p>';
+        return;
+      }
+
+      // Check if user is staff to hide delete button
+      const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
+
+      list.innerHTML = tasks.map(task => {
+        const hasPhoto = task.photo_url && task.photo_url.length > 0;
+        const isCompleted = task.completed;
+        
+        return `
+          <div class="border border-nfgray rounded-xl p-4 ${isCompleted ? 'bg-green-50' : ''}">
+            <div class="flex items-start justify-between mb-2">
+              <div class="flex items-start gap-3 flex-1">
+                <input type="checkbox" ${isCompleted ? 'checked' : ''} 
+                  onchange="toggleTask('${task.id}')" 
+                  class="w-5 h-5 mt-0.5 text-nfgblue rounded border-nfgray focus:ring-2 focus:ring-nfgblue" />
+                <div class="flex-1">
+                  <h6 class="font-medium text-nfgblue ${isCompleted ? 'line-through' : ''}">${task.title}</h6>
+                  ${task.description ? `<p class="text-sm text-gray-600 mt-1">${task.description}</p>` : ''}
+                  ${task.photo_required ? '<p class="text-xs text-orange-600 mt-1">📸 Photo required</p>' : ''}
+                </div>
+              </div>
+              ${!isStaff ? `
+                <button onclick="deleteTask('${task.id}')" class="p-1 hover:bg-red-100 rounded text-red-600">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              ` : ''}
+            </div>
+            
+            ${isCompleted && task.completed_at ? `
+              <div class="mt-3 pt-3 border-t border-gray-200">
+                <div class="flex items-center justify-between text-xs text-gray-500 mb-2">
+                  <span>✅ Completed at ${formatTimestamp(task.completed_at)}</span>
+                </div>
+                ${hasPhoto ? `
+                  <button onclick="viewTaskPhoto('${task.id}')" class="text-sm px-3 py-1.5 rounded-lg border border-green-200 text-green-700 hover:bg-green-50 w-full">
+                    <i data-lucide="image" class="w-4 h-4 inline"></i>
+                    View Photo
+                  </button>
+                ` : ''}
+              </div>
+            ` : (task.photo_required && !isCompleted ? `
+              <button onclick="uploadTaskPhoto('${task.id}')" class="mt-3 w-full text-sm px-3 py-2 rounded-lg border border-nfgblue text-nfgblue hover:bg-nfglight">
+                <i data-lucide="camera" class="w-4 h-4 inline"></i>
+                Upload Photo
+              </button>
+            ` : '')}
+          </div>
+        `;
+      }).join('');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // Toggle task completion
+    window.toggleTask = async function(taskId) {
+      const tasks = await getJobTasks(currentJobId);
+      const task = tasks.find(t => t.id === taskId);
+      if (task) {
+        // If photo required and not uploaded, prevent completion
+        if (task.photo_required && !task.photo_url && !task.completed) {
+          alert('⚠️ Please upload a photo before completing this task.');
+          await renderJobTasks(); // Reset checkbox
+          return;
+        }
+        
+        const newCompleted = !task.completed;
+        const { error } = await supabase
+          .from('job_tasks')
+          .update({
+            completed: newCompleted,
+            completed_at: newCompleted ? new Date().toISOString() : null
+          })
+          .eq('id', taskId);
+
+        if (error) {
+          console.error('Error updating task:', error);
+          alert('Failed to update task. Please try again.');
+        } else {
+          await renderJobTasks();
+          
+          // Check if all tasks are now complete
+          const updatedTasks = await getJobTasks(currentJobId);
+          const allComplete = updatedTasks.length > 0 && updatedTasks.every(t => t.completed);
+          
+          if (allComplete && newCompleted) {
+            console.log('🎉 All tasks completed!');
+            
+            // Get job to check if work is in progress
+            const jobs = await getJobs();
+            const job = jobs.find(j => j.id === currentJobId);
+            
+            if (job && job.work_started_at && !job.work_ended_at) {
+              // Auto-complete job and stop timer
+              const now = new Date().toISOString();
+              const startTime = new Date(job.work_started_at).getTime();
+              const endTime = new Date(now).getTime();
+              const totalDuration = Math.floor((endTime - startTime) / 1000);
+              
+              const { error: jobError } = await supabase
+                .from('jobs')
+                .update({
+                  status: 'completed',
+                  work_ended_at: now,
+                  total_duration: totalDuration
+                })
+                .eq('id', currentJobId);
+              
+              if (!jobError) {
+                stopTimer();
+                alert(`🎉 All tasks completed! Job finished!\nTotal time: ${formatDuration(totalDuration)}`);
+                document.getElementById('jobDetailModal').classList.add('hidden');
+                document.getElementById('jobDetailModal').classList.remove('flex');
+                await renderJobs();
+              }
+            }
+          }
+        }
+      }
+    };
+
+    // Delete task
+    window.deleteTask = async function(taskId) {
+      if (confirm('Delete this task?')) {
+        const { error } = await supabase
+          .from('job_tasks')
+          .delete()
+          .eq('id', taskId);
+
+        if (error) {
+          console.error('Error deleting task:', error);
+          alert('Failed to delete task. Please try again.');
+        } else {
+          await renderJobTasks();
+        }
+      }
+    };
+
+    // Upload task photo
+    window.uploadTaskPhoto = function(taskId) {
+      currentTaskId = taskId;
+      document.getElementById('task-photo-input').value = '';
+      document.getElementById('photo-preview').classList.add('hidden');
+      const modal = document.getElementById('uploadPhotoModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    };
+
+    // View task photo
+    window.viewTaskPhoto = async function(taskId) {
+      const tasks = await getJobTasks(currentJobId);
+      const task = tasks.find(t => t.id === taskId);
+      if (task && task.photo_url) {
+        window.open(task.photo_url, '_blank');
+      }
+    };
+
+    // Photo preview
+    document.getElementById('task-photo-input')?.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          document.getElementById('preview-image').src = event.target.result;
+          document.getElementById('photo-preview').classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Upload photo button
+    document.getElementById('upload-photo-btn')?.addEventListener('click', async () => {
+      const fileInput = document.getElementById('task-photo-input');
+      const uploadBtn = document.getElementById('upload-photo-btn');
+      
+      if (!fileInput.files[0]) {
+        alert('Please select a photo first.');
+        return;
+      }
+
+      const file = fileInput.files[0];
+      
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('⚠️ File is too large. Please select an image under 10MB.');
+        return;
+      }
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('⚠️ Please select a valid image file.');
+        return;
+      }
+      
+      console.log('[Upload] Starting photo upload for task:', currentTaskId);
+      console.log('[Upload] File:', file.name, 'Size:', (file.size / 1024).toFixed(2), 'KB');
+      
+      // Show loading state
+      uploadBtn.disabled = true;
+      uploadBtn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 inline animate-spin"></i> Uploading...';
+      if (window.lucide) lucide.createIcons();
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${currentUser.id}/${currentJobId}/${currentTaskId}_${Date.now()}.${fileExt}`;
+
+      try {
+        // Upload to Supabase Storage
+        console.log('[Upload] Uploading to Supabase storage:', fileName);
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('job-photos')
+          .upload(fileName, file);
+
+        if (uploadError) {
+          console.error('[Upload] ❌ Error uploading photo:', uploadError);
+          if (uploadError.message.includes('not found')) {
+            alert('❌ Storage bucket not set up. Please see SETUP_PHOTO_STORAGE.md');
+          } else {
+            alert('Failed to upload photo: ' + uploadError.message);
+          }
+          return;
+        }
+
+        console.log('[Upload] ✅ Photo uploaded successfully:', uploadData);
+
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from('job-photos')
+          .getPublicUrl(fileName);
+
+        console.log('[Upload] Public URL:', urlData.publicUrl);
+
+        // Update task with photo URL
+        const { error: updateError } = await supabase
+          .from('job_tasks')
+          .update({
+            photo_url: urlData.publicUrl,
+            completed: true,
+            completed_at: new Date().toISOString()
+          })
+          .eq('id', currentTaskId);
+
+        if (updateError) {
+          console.error('[Upload] ❌ Error updating task with photo:', updateError);
+          alert('Failed to save photo: ' + updateError.message);
+        } else {
+          console.log('[Upload] ✅ Task updated with photo URL and marked complete');
+          // Close modal
+          document.getElementById('uploadPhotoModal').classList.add('hidden');
+          document.getElementById('uploadPhotoModal').classList.remove('flex');
+          await renderJobTasks();
+          alert('✅ Photo uploaded and task completed!');
+        }
+      } catch (err) {
+        console.error('[Upload] ❌ Exception:', err);
+        alert('An error occurred. Please try again.');
+      } finally {
+        // Reset button
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = 'Upload & Complete Task';
+        if (window.lucide) lucide.createIcons();
+      }
+    });
+
+    // Add task
+    document.getElementById('add-task-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      
+      const { error } = await supabase
+        .from('job_tasks')
+        .insert({
+          job_id: currentJobId,
+          title: formData.get('task_title'),
+          description: formData.get('task_description') || null,
+          photo_required: formData.get('task_required') === 'on',
+          completed: false,
+          photo_url: null
+        });
+
+      if (error) {
+        console.error('Error adding task:', error);
+        alert('Failed to add task. Please try again.');
+      } else {
+        // Close modal
+        document.getElementById('addTaskModal').classList.add('hidden');
+        document.getElementById('addTaskModal').classList.remove('flex');
+        e.target.reset();
+        await renderJobTasks();
+      }
+    });
+
+    // Assign employee
+    document.getElementById('assign-employee-btn')?.addEventListener('click', async () => {
+      const name = prompt('Enter employee name:');
+      if (name && name.trim()) {
+        const { error } = await supabase
+          .from('job_employees')
+          .insert({
+            job_id: currentJobId,
+            name: name.trim(),
+            role: 'Employee'
+          });
+
+        if (error) {
+          console.error('Error assigning employee:', error);
+          alert('Failed to assign employee. Please try again.');
+        } else {
+          await renderJobEmployees();
+        }
+      }
+    });
+
+    // Remove employee
+    window.removeEmployee = async function(empId) {
+      if (confirm('Remove this employee from the job?')) {
+        const { error } = await supabase
+          .from('job_employees')
+          .delete()
+          .eq('id', empId);
+
+        if (error) {
+          console.error('Error removing employee:', error);
+          alert('Failed to remove employee. Please try again.');
+        } else {
+          await renderJobEmployees();
+        }
+      }
+    };
+
+    // Update job status
+    document.getElementById('update-status-btn')?.addEventListener('click', async () => {
+      const statuses = ['pending', 'in-progress', 'completed', 'cancelled'];
+      const jobs = await getJobs();
+      const job = jobs.find(j => j.id === currentJobId);
+      
+      if (job) {
+        const currentIndex = statuses.indexOf(job.status);
+        const nextIndex = (currentIndex + 1) % statuses.length;
+        const newStatus = statuses[nextIndex];
+        
+        const { error } = await supabase
+          .from('jobs')
+          .update({ status: newStatus })
+          .eq('id', currentJobId);
+
+        if (error) {
+          console.error('Error updating job status:', error);
+          alert('Failed to update status. Please try again.');
+        } else {
+          // Update display
+          document.getElementById('job-detail-status').textContent = newStatus.replace('-', ' ');
+          await renderJobs();
+        }
+      }
+    });
+
+    // Cancel job (keeps for paper trail)
+    document.getElementById('archive-job-btn')?.addEventListener('click', async () => {
+      if (confirm('❌ Cancel this job? It will be marked as cancelled but kept for records.')) {
+        const { error } = await supabase
+          .from('jobs')
+          .update({ 
+            status: 'cancelled',
+            cancelled_at: new Date().toISOString()
+          })
+          .eq('id', currentJobId);
+
+        if (error) {
+          console.error('Error cancelling job:', error);
+          alert('Failed to cancel job. Please try again.');
+        } else {
+          // Close modal and refresh
+          document.getElementById('jobDetailModal').classList.add('hidden');
+          document.getElementById('jobDetailModal').classList.remove('flex');
+          await renderJobs();
+          alert('✅ Job cancelled successfully!');
+        }
+      }
+    });
+
+    // Begin Work button (for staff)
+    document.getElementById('begin-work-btn')?.addEventListener('click', async () => {
+      const now = new Date().toISOString();
+      
+      const { error } = await supabase
+        .from('jobs')
+        .update({ 
+          status: 'in-progress',
+          work_started_at: now
+        })
+        .eq('id', currentJobId);
+
+      if (error) {
+        console.error('Error starting work:', error);
+        alert('Failed to start work. Please try again.');
+      } else {
+        console.log('✅ Work started!');
+        // Refresh the job view to show timer
+        await viewJob(currentJobId);
+      }
+    });
+
+    // End Work button (for staff)
+    document.getElementById('end-work-btn')?.addEventListener('click', async () => {
+      if (confirm('🛑 End work on this job? The timer will stop.')) {
+        const now = new Date().toISOString();
+        
+        // Get current job to calculate duration
+        const jobs = await getJobs();
+        const job = jobs.find(j => j.id === currentJobId);
+        
+        if (!job || !job.work_started_at) {
+          alert('Error: Job start time not found.');
+          return;
+        }
+        
+        const startTime = new Date(job.work_started_at).getTime();
+        const endTime = new Date(now).getTime();
+        const totalDuration = Math.floor((endTime - startTime) / 1000); // seconds
+        
+        // Check if all tasks are completed
+        const tasks = await getJobTasks(currentJobId);
+        const allTasksComplete = tasks.length > 0 && tasks.every(t => t.completed);
+        
+        const updateData = {
+          work_ended_at: now,
+          total_duration: totalDuration
+        };
+        
+        // If all tasks complete, mark job as completed
+        if (allTasksComplete) {
+          updateData.status = 'completed';
+        }
+        
+        const { error } = await supabase
+          .from('jobs')
+          .update(updateData)
+          .eq('id', currentJobId);
+
+        if (error) {
+          console.error('Error ending work:', error);
+          alert('Failed to end work. Please try again.');
+        } else {
+          stopTimer();
+          console.log('✅ Work ended! Duration:', formatDuration(totalDuration));
+          if (allTasksComplete) {
+            alert(`✅ Job completed! Total time: ${formatDuration(totalDuration)}`);
+            document.getElementById('jobDetailModal').classList.add('hidden');
+            document.getElementById('jobDetailModal').classList.remove('flex');
+            await renderJobs();
+          } else {
+            alert(`⏹️ Work stopped. Total time: ${formatDuration(totalDuration)}`);
+            await viewJob(currentJobId);
+          }
+        }
+      }
+    });
+
+    // Add task button
+    document.getElementById('add-task-btn')?.addEventListener('click', () => {
+      const modal = document.getElementById('addTaskModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      if (window.lucide) lucide.createIcons();
+    });
+
+    // Create job
+    document.getElementById('create-job-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      
+      const { error } = await supabase
+        .from('jobs')
+        .insert({
+          title: formData.get('title'),
+          site_id: formData.get('site_id'),
+          job_type: formData.get('job_type'),
+          frequency: formData.get('frequency'),
+          status: 'pending',
+          scheduled_date: formData.get('scheduled_date') || null,
+          estimated_hours: formData.get('estimated_hours') || null,
+          description: formData.get('description') || null,
+          user_id: currentUser.id
+        });
+
+      if (error) {
+        console.error('Error creating job:', error);
+        document.getElementById('job-form-error').textContent = 'Failed to create job. Please try again.';
+        document.getElementById('job-form-error').classList.remove('hidden');
+      } else {
+        document.getElementById('createJobModal').classList.add('hidden');
+        document.getElementById('createJobModal').classList.remove('flex');
+        e.target.reset();
+        await renderJobs();
+      }
+    });
+
+    // Filter tabs
+    document.querySelectorAll('.job-filter-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        currentFilter = tab.dataset.status;
+        document.querySelectorAll('.job-filter-tab').forEach(t => {
+          t.classList.remove('text-nfgblue', 'border-nfgblue');
+          t.classList.add('text-gray-500', 'border-transparent');
+        });
+        tab.classList.remove('text-gray-500', 'border-transparent');
+        tab.classList.add('text-nfgblue', 'border-nfgblue');
+        renderJobs();
+      });
+    });
+
+    // Load sites for dropdown
+    async function loadSitesDropdown() {
+      const sites = await getSites();
+      const select = document.getElementById('job-site-select');
+      if (select) {
+        select.innerHTML = '<option value="">Select a site</option>' + 
+          sites.map(site => `<option value="${site.id}">${site.name}</option>`).join('');
+        
+        // Reinitialize custom dropdown for this select
+        const wrapper = select.previousElementSibling;
+        if (wrapper && wrapper.classList.contains('nfg-select-wrapper')) {
+          wrapper.remove();
+        }
+        select.style.display = '';
+        new NFGDropdown(select);
+      }
+    }
+
+    // Load workers for dropdown
+    async function loadWorkersDropdown() {
+      // Fetch all staff members
+      const { data: workers, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('role', 'staff')
+        .eq('status', 'active')
+        .order('full_name', { ascending: true });
+
+      const select = document.getElementById('worker-select');
+      if (select) {
+        if (error || !workers || workers.length === 0) {
+          select.innerHTML = '<option value="">No staff members available</option>';
+        } else {
+          select.innerHTML = '<option value="">Select a worker</option>' + 
+            workers.map(worker => {
+              const displayName = worker.full_name || worker.email.split('@')[0];
+              return `<option value="${worker.id}">${displayName} (${worker.email})</option>`;
+            }).join('');
+        }
+        
+        // Reinitialize custom dropdown
+        const wrapper = select.previousElementSibling;
+        if (wrapper && wrapper.classList.contains('nfg-select-wrapper')) {
+          wrapper.remove();
+        }
+        select.style.display = '';
+        new NFGDropdown(select);
+      }
+    }
+
+    // Assign worker button
+    document.getElementById('assign-worker-btn')?.addEventListener('click', async () => {
+      await loadWorkersDropdown();
+      const modal = document.getElementById('assignWorkerModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      if (window.lucide) lucide.createIcons();
+    });
+
+    // Assign worker form submission
+    document.getElementById('assign-worker-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const workerId = formData.get('worker_id');
+
+      if (!workerId) {
+        document.getElementById('assign-worker-error').textContent = 'Please select a worker';
+        document.getElementById('assign-worker-error').classList.remove('hidden');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('jobs')
+        .update({ assigned_worker_id: workerId })
+        .eq('id', currentJobId);
+
+      if (error) {
+        console.error('Error assigning worker:', error);
+        document.getElementById('assign-worker-error').textContent = 'Failed to assign worker. Please try again.';
+        document.getElementById('assign-worker-error').classList.remove('hidden');
+      } else {
+        document.getElementById('assignWorkerModal').classList.add('hidden');
+        document.getElementById('assignWorkerModal').classList.remove('flex');
+        e.target.reset();
+        await renderAssignedWorker();
+        await renderJobs();
+        alert('✅ Worker assigned successfully!');
+      }
+    });
+
+    // Unassign worker
+    window.unassignWorker = async function() {
+      if (!confirm('Remove the assigned worker from this job?')) return;
+
+      const { error } = await supabase
+        .from('jobs')
+        .update({ assigned_worker_id: null })
+        .eq('id', currentJobId);
+
+      if (error) {
+        console.error('Error unassigning worker:', error);
+        alert('Failed to unassign worker. Please try again.');
+      } else {
+        await renderAssignedWorker();
+        await renderJobs();
+        alert('✅ Worker unassigned successfully!');
+      }
+    };
+
+    // Update "Create Job" button
+    const createJobBtn = document.querySelector('[data-action="open-modal"][data-target="createJobModal"]');
+    if (!createJobBtn) {
+      const header = document.querySelector('header .flex.items-center.gap-2:last-child');
+      if (header) {
+        const btn = header.querySelector('button');
+        if (btn) {
+          btn.setAttribute('data-action', 'open-modal');
+          btn.setAttribute('data-target', 'createJobModal');
+        }
+      }
+    }
+
+    // Logout
+    document.getElementById('logout-btn')?.addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      window.location.href = './index.html';
+    });
+
+    // Initialize
+    async function init() {
+      console.log('[Jobs] 🚀 Initializing jobs page...');
+      
+      await getCurrentUser();
+      if (!currentUser) {
+        window.location.href = './index.html';
+        return;
+      }
+      
+      console.log('[Jobs] Current user:', currentUser.email);
+      console.log('[Jobs] Current user profile:', currentUserProfile);
+      
+      // Test if viewJob is accessible
+      console.log('[Jobs] viewJob function available:', typeof window.viewJob);
+      
+      // Hide "Create Job" button for staff users
+      if (currentUserProfile && currentUserProfile.role === 'staff') {
+        const createJobBtn = document.getElementById('create-job-btn');
+        if (createJobBtn) {
+          createJobBtn.style.display = 'none';
+        }
+        
+        // Hide Bookings and Reports navigation for staff
+        const bookingsNav = document.getElementById('nav-bookings');
+        const reportsNav = document.getElementById('nav-reports');
+        if (bookingsNav) bookingsNav.style.display = 'none';
+        if (reportsNav) reportsNav.style.display = 'none';
+      }
+      
+      await loadSitesDropdown();
+      await renderJobs();
+      
+      console.log('[Jobs] ✅ Initialization complete');
+      
+      // Check if we need to auto-open a specific job (from URL parameter)
+      const urlParams = new URLSearchParams(window.location.search);
+      const jobIdParam = urlParams.get('job');
+      if (jobIdParam) {
+        console.log('[Jobs] 🔗 Auto-opening job from URL:', jobIdParam);
+        setTimeout(() => {
+          window.viewJob(jobIdParam);
+        }, 500); // Small delay to ensure everything is loaded
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
+

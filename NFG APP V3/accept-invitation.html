@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Accept Invitation — NFG</title>
+
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN + NFG theme -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            nfgblue: '#0D47A1',
+            nfgdark: '#0A3A84',
+            nfglight: '#E3ECFA',
+            nfgray: '#E5E7EB',
+            nftext: '#1E293B',
+            nfbg: '#F8FAFC'
+          },
+          fontFamily: { inter: ['Inter','sans-serif'] },
+          borderRadius: { xl: '12px' },
+          boxShadow: { nfg: '0 4px 14px rgba(13,71,161,0.06)' }
+        }
+      }
+    }
+  </script>
+
+  <!-- Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="font-inter bg-gradient-to-br from-nfglight via-white to-nfglight min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-md">
+    <!-- Logo -->
+    <div class="text-center mb-8">
+      <img 
+        src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/Horizontal.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL0hvcml6b250YWwucG5nIiwiaWF0IjoxNzYwOTg5Njk2LCJleHAiOjQ4ODMwNTM2OTZ9.GLtv3yHq5zpXr4deUiNn4ilYTKaFJX8Y2tjIQpxyqVw" 
+        alt="Northern Facilities Group" 
+        class="h-24 w-auto mx-auto"
+      />
+    </div>
+
+    <!-- Main Card -->
+    <div id="invitation-card" class="bg-white border border-nfgray rounded-xl shadow-nfg p-8">
+      <!-- Loading State -->
+      <div id="loading-state" class="text-center py-8">
+        <i data-lucide="loader" class="w-12 h-12 mx-auto text-nfgblue animate-spin"></i>
+        <p class="mt-4 text-gray-500">Verifying invitation...</p>
+      </div>
+
+      <!-- Invalid/Expired -->
+      <div id="invalid-state" class="hidden text-center py-8">
+        <i data-lucide="x-circle" class="w-16 h-16 mx-auto text-red-500 mb-4"></i>
+        <h2 class="text-2xl font-semibold text-nfgblue mb-2">Invalid Invitation</h2>
+        <p class="text-gray-500 mb-6">This invitation link is invalid or has expired.</p>
+        <a href="./index.html" class="inline-block px-6 py-3 bg-nfgblue text-white rounded-xl hover:bg-nfgdark transition">
+          Return to Login
+        </a>
+      </div>
+
+      <!-- Valid Invitation -->
+      <div id="valid-state" class="hidden">
+        <div class="text-center mb-6">
+          <i data-lucide="mail-check" class="w-12 h-12 mx-auto text-green-500 mb-3"></i>
+          <h2 class="text-2xl font-semibold text-nfgblue mb-2">You're Invited!</h2>
+          <p class="text-gray-500" id="invitation-message">You've been invited to join Northern Facilities Group</p>
+        </div>
+
+        <form id="accept-invitation-form" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Email Address</label>
+            <input 
+              type="email" 
+              id="invitation-email" 
+              disabled
+              class="w-full border border-nfgray rounded-xl p-2.5 bg-gray-50 text-gray-500"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Full Name <span class="text-red-500">*</span></label>
+            <input 
+              type="text" 
+              name="full_name" 
+              required
+              placeholder="Enter your full name"
+              class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Password <span class="text-red-500">*</span></label>
+            <input 
+              type="password" 
+              name="password" 
+              required
+              minlength="6"
+              placeholder="Create a password (min. 6 characters)"
+              class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Confirm Password <span class="text-red-500">*</span></label>
+            <input 
+              type="password" 
+              name="confirm_password" 
+              required
+              minlength="6"
+              placeholder="Confirm your password"
+              class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Phone (Optional)</label>
+            <input 
+              type="tel" 
+              name="phone" 
+              placeholder="Your phone number"
+              class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
+            />
+          </div>
+
+          <div class="bg-nfglight/50 border border-nfgblue/20 rounded-xl p-3 text-sm">
+            <p class="text-nfgblue font-medium mb-1">Role: <span id="invitation-role" class="capitalize"></span></p>
+            <p class="text-gray-600 text-xs" id="role-description"></p>
+          </div>
+
+          <div id="form-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl p-3"></div>
+
+          <button 
+            type="submit" 
+            id="accept-btn"
+            class="w-full px-6 py-3 bg-nfgblue text-white rounded-xl hover:bg-nfgdark transition font-medium">
+            Accept Invitation & Create Account
+          </button>
+        </form>
+      </div>
+
+      <!-- Success State -->
+      <div id="success-state" class="hidden text-center py-8">
+        <i data-lucide="check-circle" class="w-16 h-16 mx-auto text-green-500 mb-4"></i>
+        <h2 class="text-2xl font-semibold text-nfgblue mb-2">Welcome Aboard!</h2>
+        <p class="text-gray-500 mb-6">Your account has been created successfully. Redirecting to dashboard...</p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="text-center mt-6 text-sm text-gray-500">
+      <p>© 2025 Northern Facilities Group. All rights reserved.</p>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) lucide.createIcons();
+    });
+  </script>
+
+  <script type="module">
+    import { supabase } from './js/supabase.js'
+
+    let invitationData = null;
+
+    // Get token from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+
+    // Verify invitation
+    async function verifyInvitation() {
+      if (!token) {
+        showInvalidState();
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('user_invitations')
+          .select('*')
+          .eq('invitation_token', token)
+          .eq('status', 'pending')
+          .single();
+
+        if (error || !data) {
+          showInvalidState();
+          return;
+        }
+
+        // Check if expired
+        if (new Date(data.expires_at) < new Date()) {
+          showInvalidState();
+          return;
+        }
+
+        invitationData = data;
+        showValidState();
+      } catch (error) {
+        console.error('Error verifying invitation:', error);
+        showInvalidState();
+      }
+    }
+
+    function showInvalidState() {
+      document.getElementById('loading-state').classList.add('hidden');
+      document.getElementById('invalid-state').classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function showValidState() {
+      document.getElementById('loading-state').classList.add('hidden');
+      document.getElementById('valid-state').classList.remove('hidden');
+      
+      // Populate invitation details
+      document.getElementById('invitation-email').value = invitationData.email;
+      document.getElementById('invitation-role').textContent = invitationData.role;
+      
+      const roleDescriptions = {
+        worker: 'You can view assigned jobs and complete tasks.',
+        manager: 'You can manage jobs, workers, and sites.',
+        admin: 'You have full system access and can manage everything.'
+      };
+      document.getElementById('role-description').textContent = roleDescriptions[invitationData.role] || '';
+      
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function showSuccessState() {
+      document.getElementById('valid-state').classList.add('hidden');
+      document.getElementById('success-state').classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+      
+      // Redirect after 2 seconds
+      setTimeout(() => {
+        window.location.href = './dashboard.html';
+      }, 2000);
+    }
+
+    // Handle form submission
+    document.getElementById('accept-invitation-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(e.target);
+      const password = formData.get('password');
+      const confirmPassword = formData.get('confirm_password');
+      const fullName = formData.get('full_name');
+      const phone = formData.get('phone');
+      
+      const errorDiv = document.getElementById('form-error');
+      const submitBtn = document.getElementById('accept-btn');
+      
+      // Validate passwords match
+      if (password !== confirmPassword) {
+        errorDiv.textContent = 'Passwords do not match.';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+      
+      errorDiv.classList.add('hidden');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating account...';
+      
+      try {
+        // Sign up the user
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({
+          email: invitationData.email,
+          password: password,
+          options: {
+            data: {
+              full_name: fullName,
+              role: invitationData.role
+            }
+          }
+        });
+
+        if (signUpError) throw signUpError;
+
+        // Update invitation status
+        await supabase
+          .from('user_invitations')
+          .update({
+            status: 'accepted',
+            accepted_at: new Date().toISOString()
+          })
+          .eq('id', invitationData.id);
+
+        // Update user profile
+        await supabase
+          .from('user_profiles')
+          .update({
+            full_name: fullName,
+            phone: phone || null,
+            status: 'active'
+          })
+          .eq('id', authData.user.id);
+
+        showSuccessState();
+      } catch (error) {
+        console.error('Error accepting invitation:', error);
+        errorDiv.textContent = error.message || 'Failed to create account. Please try again.';
+        errorDiv.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Accept Invitation & Create Account';
+      }
+    });
+
+    // Initialize
+    verifyInvitation();
+  </script>
+</body>
+</html>
+
+

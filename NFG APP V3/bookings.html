@@ -1,0 +1,894 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NFG — Bookings</title>
+
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN + NFG theme -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            nfgblue: '#0D47A1',
+            nfgdark: '#0A3A84',
+            nfglight: '#E3ECFA',
+            nfgray: '#E5E7EB',
+            nftext: '#1E293B',
+            nfbg: '#F8FAFC'
+          },
+          fontFamily: { inter: ['Inter','sans-serif'] },
+          borderRadius: { xl: '12px' },
+          boxShadow: { nfg: '0 4px 14px rgba(13,71,161,0.06)' }
+        }
+      }
+    }
+  </script>
+
+  <!-- Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="font-inter bg-nfbg min-h-screen flex text-nftext">
+  <!-- ========== SIDEBAR ========== -->
+  <aside id="sidebar" class="w-64 shrink-0 bg-white border-r border-nfgray hidden md:flex md:flex-col transition-all">
+    <div class="p-5 flex items-center justify-center">
+      <img 
+        src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/Horizontal.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL0hvcml6b250YWwucG5nIiwiaWF0IjoxNzYwOTg5Njk2LCJleHAiOjQ4ODMwNTM2OTZ9.GLtv3yHq5zpXr4deUiNn4ilYTKaFJX8Y2tjIQpxyqVw" 
+        alt="Northern Facilities Group" 
+        class="h-32 w-auto"
+      />
+    </div>
+    <nav class="px-3 pb-4 flex-1 space-y-1">
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="dashboard.html">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="sites.html">
+        <i data-lucide="map-pin" class="w-4 h-4"></i> Sites
+      </a>
+      <a id="nav-bookings" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight text-nfgblue font-medium w-full text-left" href="bookings.html">
+        <i data-lucide="calendar" class="w-4 h-4"></i> Bookings
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="jobs.html">
+        <i data-lucide="clipboard-check" class="w-4 h-4"></i> Jobs
+      </a>
+      <a id="nav-reports" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="reports.html">
+        <i data-lucide="file-chart-column" class="w-4 h-4"></i> Reports
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="settings.html">
+        <i data-lucide="settings" class="w-4 h-4"></i> Settings
+      </a>
+    </nav>
+    <div class="p-4 border-t border-nfgray">
+      <button id="logout-btn" class="w-full border border-nfgblue text-nfgblue hover:bg-nfglight rounded-xl py-2 font-medium">
+        Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- ========== MAIN ========== -->
+  <div class="flex-1 flex flex-col min-w-0">
+    <!-- TOPBAR -->
+    <header class="sticky top-0 z-10 bg-white border-b border-nfgray">
+      <div class="h-14 px-4 md:px-6 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <button class="md:hidden p-2 rounded-lg border border-nfgray text-nfgblue" aria-label="Toggle sidebar">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
+          <h1 class="text-nfgblue font-semibold">Bookings</h1>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="create-booking-btn" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
+            <i data-lucide="plus" class="w-5 h-5"></i>
+            <span class="hidden sm:inline">New Booking</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <main class="p-4 md:p-6 space-y-6">
+      <!-- Filter Tabs -->
+      <div class="flex gap-2 overflow-x-auto">
+        <button class="filter-btn px-4 py-2 rounded-lg bg-nfgblue text-white font-medium" data-status="all">
+          All
+        </button>
+        <button class="filter-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight" data-status="pending">
+          Pending
+        </button>
+        <button class="filter-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight" data-status="completed">
+          Completed
+        </button>
+        <button class="filter-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight" data-status="cancelled">
+          Cancelled
+        </button>
+      </div>
+
+      <!-- Bookings Table -->
+      <div class="bg-white border border-nfgray rounded-xl shadow-nfg overflow-hidden">
+        <table class="w-full">
+          <thead class="bg-nfglight border-b border-nfgray">
+            <tr>
+              <th class="text-left p-4 text-sm font-semibold text-nfgblue">Title</th>
+              <th class="text-left p-4 text-sm font-semibold text-nfgblue">Site</th>
+              <th class="text-left p-4 text-sm font-semibold text-nfgblue">Date</th>
+              <th class="text-left p-4 text-sm font-semibold text-nfgblue">Status</th>
+              <th class="text-left p-4 text-sm font-semibold text-nfgblue">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="bookings-table-body">
+            <!-- Bookings will be rendered here -->
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- ========== CREATE BOOKING MODAL ========== -->
+  <div id="createBookingModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-8">
+      <div class="border-b border-nfgray p-6 flex items-center justify-between">
+        <h2 class="text-xl font-semibold text-nfgblue">Create New Booking</h2>
+        <button class="close-modal p-2 rounded-lg hover:bg-nfglight">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Title *</label>
+          <input 
+            id="booking-title" 
+            type="text" 
+            placeholder="e.g. Weekly Office Cleaning" 
+            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
+            required
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Site *</label>
+          <select 
+            id="booking-site" 
+            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
+            required
+          >
+            <option value="">Select a site...</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Scheduled Date *</label>
+          <input 
+            id="booking-date" 
+            type="date" 
+            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
+            required
+          />
+        </div>
+
+        <!-- Emergency Request Checkbox -->
+        <div class="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded-xl">
+          <input 
+            id="booking-emergency" 
+            type="checkbox" 
+            class="w-5 h-5 text-red-600 rounded focus:ring-2 focus:ring-red-500"
+          />
+          <label for="booking-emergency" class="flex items-center gap-2 cursor-pointer">
+            <i data-lucide="alert-circle" class="w-5 h-5 text-red-600"></i>
+            <span class="font-medium text-red-900">Emergency Request</span>
+          </label>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Description</label>
+          <textarea 
+            id="booking-description" 
+            rows="3" 
+            placeholder="Additional notes (optional)"
+            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
+          ></textarea>
+        </div>
+
+        <!-- Service Selection -->
+        <div class="border-t border-nfgray pt-4">
+          <label class="block text-sm font-medium mb-1.5">Services</label>
+          
+          <!-- Category Filter -->
+          <div class="mb-3">
+            <select 
+              id="service-category-filter" 
+              class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none text-sm"
+            >
+              <option value="">All Categories</option>
+            </select>
+          </div>
+
+          <!-- Service Search -->
+          <div class="relative mb-3">
+            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+            <input 
+              id="service-search" 
+              type="text" 
+              placeholder="Search services..." 
+              class="w-full border border-nfgray rounded-xl p-2.5 pl-10 focus:ring-2 focus:ring-nfgblue outline-none text-sm"
+            />
+          </div>
+
+          <!-- Service List (scrollable) -->
+          <div id="service-list" class="border border-nfgray rounded-xl max-h-48 overflow-y-auto divide-y divide-nfgray">
+            <!-- Services will be rendered here -->
+          </div>
+
+          <!-- Selected Services -->
+          <div id="selected-services" class="mt-3 flex flex-wrap gap-2">
+            <!-- Selected service tags will appear here -->
+          </div>
+        </div>
+
+        <div class="flex gap-3 pt-4">
+          <button class="close-modal flex-1 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight font-medium">
+            Cancel
+          </button>
+          <button id="create-booking-submit" class="flex-1 py-2.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark font-medium">
+            Create Booking
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== VIEW BOOKING MODAL ========== -->
+  <div id="viewBookingModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+      <div class="border-b border-nfgray p-6 flex items-center justify-between">
+        <h2 class="text-xl font-semibold text-nfgblue">Booking Details</h2>
+        <button class="close-modal p-2 rounded-lg hover:bg-nfglight">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-500 mb-1">Title</label>
+          <p id="view-booking-title" class="font-medium text-nfgblue">-</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-500 mb-1">Site</label>
+          <p id="view-booking-site" class="font-medium">-</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-500 mb-1">Scheduled Date</label>
+          <p id="view-booking-date" class="font-medium">-</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-500 mb-1">Status</label>
+          <span id="view-booking-status" class="px-3 py-1 rounded-full text-sm font-medium">-</span>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-500 mb-1">Description</label>
+          <p id="view-booking-description" class="text-gray-700">-</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-500 mb-1">Services</label>
+          <div id="view-booking-services" class="space-y-1">
+            <!-- Services will be rendered here -->
+          </div>
+        </div>
+
+        <div id="linked-job-section" class="hidden">
+          <label class="block text-sm font-medium text-gray-500 mb-1">Linked Job</label>
+          <button id="view-linked-job-btn" class="w-full flex items-center justify-between p-3 bg-nfglight rounded-lg hover:bg-blue-50 border border-nfgblue">
+            <span class="text-nfgblue font-medium">View Job Details</span>
+            <i data-lucide="external-link" class="w-4 h-4 text-nfgblue"></i>
+          </button>
+        </div>
+
+        <div class="flex gap-3 pt-4 border-t border-nfgray">
+          <button id="cancel-booking-btn" class="flex-1 py-2.5 rounded-xl border border-red-500 text-red-500 hover:bg-red-50 font-medium">
+            Cancel Booking
+          </button>
+          <button class="close-modal flex-1 py-2.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark font-medium">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SCRIPTS ========== -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) lucide.createIcons();
+    });
+  </script>
+
+  <script type="module">
+    import { supabase } from './js/supabase.js'
+
+    let currentUser = null;
+    let currentUserProfile = null;
+    let bookings = [];
+    let sites = [];
+    let currentFilter = 'all';
+    let currentBooking = null;
+    let categories = [];
+    let services = [];
+    let selectedServices = new Set();
+
+    // ========== AUTH & INIT ==========
+    async function getCurrentUser() {
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+        if (!user) {
+          window.location.href = './index.html';
+          return null;
+        }
+        
+        currentUser = user;
+        
+        const { data: profile, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+        }
+        
+        currentUserProfile = profile;
+        
+        // Staff users cannot access bookings
+        if (currentUserProfile && currentUserProfile.role === 'staff') {
+          alert('Staff cannot access the Bookings page.');
+          window.location.href = './dashboard.html';
+          return null;
+        }
+        
+        return user;
+      } catch (error) {
+        console.error('Error getting current user:', error);
+        window.location.href = './index.html';
+        return null;
+      }
+    }
+
+    async function init() {
+      await getCurrentUser();
+      await loadSites();
+      await loadCategories();
+      await loadServices();
+      await loadBookings();
+      
+      // Hide Bookings and Reports nav for staff
+      if (currentUserProfile && currentUserProfile.role === 'staff') {
+        const bookingsNav = document.getElementById('nav-bookings');
+        const reportsNav = document.getElementById('nav-reports');
+        if (bookingsNav) bookingsNav.style.display = 'none';
+        if (reportsNav) reportsNav.style.display = 'none';
+      }
+    }
+
+    // ========== DATA LOADING ==========
+    async function loadSites() {
+      try {
+        const { data, error } = await supabase
+          .from('sites')
+          .select('*')
+          .order('name', { ascending: true });
+
+        if (error) throw error;
+        sites = data || [];
+        
+        // Populate site dropdown
+        const siteSelect = document.getElementById('booking-site');
+        siteSelect.innerHTML = '<option value="">Select a site...</option>';
+        sites.forEach(site => {
+          const option = document.createElement('option');
+          option.value = site.id;
+          option.textContent = site.name;
+          siteSelect.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error loading sites:', error);
+      }
+    }
+
+    async function loadBookings() {
+      try {
+        const { data, error } = await supabase
+          .from('bookings')
+          .select('*, sites(name)')
+          .order('scheduled_date', { ascending: false });
+
+        if (error) throw error;
+        bookings = data || [];
+        renderBookings();
+      } catch (error) {
+        console.error('Error loading bookings:', error);
+        alert('Failed to load bookings. Please refresh the page.');
+      }
+    }
+
+    async function loadCategories() {
+      try {
+        const { data, error } = await supabase
+          .from('service_categories')
+          .select('*')
+          .order('display_order', { ascending: true });
+
+        if (error) throw error;
+        categories = data || [];
+        
+        // Populate category dropdown
+        const categorySelect = document.getElementById('service-category-filter');
+        categorySelect.innerHTML = '<option value="">All Categories</option>';
+        categories.forEach(cat => {
+          const option = document.createElement('option');
+          option.value = cat.id;
+          option.textContent = cat.name;
+          categorySelect.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error loading categories:', error);
+      }
+    }
+
+    async function loadServices() {
+      try {
+        const { data, error } = await supabase
+          .from('services')
+          .select('*, service_categories(name)')
+          .order('name', { ascending: true });
+
+        if (error) throw error;
+        services = data || [];
+        renderServices();
+      } catch (error) {
+        console.error('Error loading services:', error);
+      }
+    }
+
+    // ========== RENDER FUNCTIONS ==========
+    function renderBookings() {
+      const tbody = document.getElementById('bookings-table-body');
+      
+      let filteredBookings = bookings;
+      if (currentFilter !== 'all') {
+        filteredBookings = bookings.filter(b => b.status === currentFilter);
+      }
+
+      if (filteredBookings.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="p-8 text-center text-gray-500">
+              <div class="flex flex-col items-center gap-2">
+                <i data-lucide="calendar-x" class="w-12 h-12 text-gray-400"></i>
+                <p>No bookings found</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        if (window.lucide) lucide.createIcons();
+        return;
+      }
+
+      tbody.innerHTML = filteredBookings.map(booking => {
+        const statusColors = {
+          'pending': 'bg-yellow-100 text-yellow-800',
+          'completed': 'bg-green-100 text-green-800',
+          'cancelled': 'bg-red-100 text-red-800'
+        };
+
+        const date = new Date(booking.scheduled_date).toLocaleDateString();
+
+        return `
+          <tr class="border-b border-nfgray hover:bg-nfglight/50 transition">
+            <td class="p-4">
+              <p class="font-medium text-nfgblue">${booking.title}</p>
+            </td>
+            <td class="p-4">
+              <p class="text-gray-700">${booking.sites?.name || 'Unknown'}</p>
+            </td>
+            <td class="p-4">
+              <p class="text-gray-700">${date}</p>
+            </td>
+            <td class="p-4">
+              <span class="px-3 py-1 rounded-full text-xs font-medium ${statusColors[booking.status] || 'bg-gray-100 text-gray-800'}">
+                ${booking.status}
+              </span>
+            </td>
+            <td class="p-4">
+              <button onclick="viewBooking('${booking.id}')" class="px-3 py-1.5 rounded-lg border border-nfgblue text-nfgblue hover:bg-nfglight text-sm font-medium">
+                View Details
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function renderServices() {
+      const categoryFilter = document.getElementById('service-category-filter').value;
+      const searchQuery = document.getElementById('service-search').value.toLowerCase();
+      
+      let filteredServices = services;
+      
+      // Filter by category
+      if (categoryFilter) {
+        filteredServices = filteredServices.filter(s => s.category_id === categoryFilter);
+      }
+      
+      // Filter by search
+      if (searchQuery) {
+        filteredServices = filteredServices.filter(s => 
+          s.name.toLowerCase().includes(searchQuery) ||
+          (s.service_categories?.name || '').toLowerCase().includes(searchQuery)
+        );
+      }
+
+      const serviceList = document.getElementById('service-list');
+      
+      if (filteredServices.length === 0) {
+        serviceList.innerHTML = `
+          <div class="p-4 text-center text-gray-500 text-sm">
+            No services found
+          </div>
+        `;
+        return;
+      }
+
+      serviceList.innerHTML = filteredServices.map(service => {
+        const isSelected = selectedServices.has(service.id);
+        const duration = service.estimated_duration ? `${service.estimated_duration} min` : '';
+        
+        return `
+          <div 
+            class="p-3 hover:bg-nfglight cursor-pointer transition flex items-start gap-2 ${isSelected ? 'bg-nfglight' : ''}"
+            onclick="toggleService('${service.id}')"
+          >
+            <input 
+              type="checkbox" 
+              ${isSelected ? 'checked' : ''} 
+              class="mt-1"
+              onclick="event.stopPropagation(); toggleService('${service.id}')"
+            />
+            <div class="flex-1">
+              <p class="font-medium text-sm text-nfgblue">${service.name}</p>
+              <p class="text-xs text-gray-500">${service.service_categories?.name || 'Unknown'}</p>
+              ${duration ? `<p class="text-xs text-gray-400 mt-0.5">Est. ${duration}</p>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderSelectedServices() {
+      const container = document.getElementById('selected-services');
+      
+      if (selectedServices.size === 0) {
+        container.innerHTML = '<p class="text-sm text-gray-500">No services selected</p>';
+        return;
+      }
+
+      const selectedList = Array.from(selectedServices).map(serviceId => {
+        const service = services.find(s => s.id === serviceId);
+        if (!service) return '';
+        
+        return `
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-nfgblue text-white rounded-full text-xs">
+            ${service.name}
+            <button onclick="toggleService('${serviceId}')" class="hover:bg-nfgdark rounded-full p-0.5">
+              <i data-lucide="x" class="w-3 h-3"></i>
+            </button>
+          </span>
+        `;
+      }).join('');
+
+      container.innerHTML = selectedList;
+      if (window.lucide) lucide.createIcons();
+    }
+
+    window.toggleService = function(serviceId) {
+      if (selectedServices.has(serviceId)) {
+        selectedServices.delete(serviceId);
+      } else {
+        selectedServices.add(serviceId);
+      }
+      renderServices();
+      renderSelectedServices();
+    };
+
+    // ========== MODAL FUNCTIONS ==========
+    function openCreateBookingModal() {
+      document.getElementById('createBookingModal').classList.remove('hidden');
+      document.getElementById('booking-title').value = '';
+      document.getElementById('booking-site').value = '';
+      document.getElementById('booking-date').value = '';
+      document.getElementById('booking-description').value = '';
+      document.getElementById('booking-emergency').checked = false; // Reset emergency checkbox
+      document.getElementById('service-category-filter').value = '';
+      document.getElementById('service-search').value = '';
+      selectedServices.clear();
+      renderServices();
+      renderSelectedServices();
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeModals() {
+      document.getElementById('createBookingModal').classList.add('hidden');
+      document.getElementById('viewBookingModal').classList.add('hidden');
+    }
+
+    window.viewBooking = async function(bookingId) {
+      try {
+        const { data, error } = await supabase
+          .from('bookings')
+          .select('*, sites(name)')
+          .eq('id', bookingId)
+          .single();
+
+        if (error) throw error;
+        
+        currentBooking = data;
+
+        // Update modal content
+        document.getElementById('view-booking-title').textContent = data.title;
+        document.getElementById('view-booking-site').textContent = data.sites?.name || 'Unknown';
+        document.getElementById('view-booking-date').textContent = new Date(data.scheduled_date).toLocaleDateString();
+        document.getElementById('view-booking-description').textContent = data.description || 'No description provided.';
+        
+        const statusBadge = document.getElementById('view-booking-status');
+        const statusColors = {
+          'pending': 'bg-yellow-100 text-yellow-800',
+          'completed': 'bg-green-100 text-green-800',
+          'cancelled': 'bg-red-100 text-red-800'
+        };
+        statusBadge.textContent = data.status;
+        statusBadge.className = `px-3 py-1 rounded-full text-sm font-medium ${statusColors[data.status]}`;
+
+        // Load and display services
+        const { data: bookingServices, error: servicesError } = await supabase
+          .from('booking_services')
+          .select('*, services(name, service_categories(name))')
+          .eq('booking_id', bookingId);
+
+        if (servicesError) throw servicesError;
+
+        const servicesContainer = document.getElementById('view-booking-services');
+        if (!bookingServices || bookingServices.length === 0) {
+          servicesContainer.innerHTML = '<p class="text-sm text-gray-500">No services selected</p>';
+        } else {
+          servicesContainer.innerHTML = bookingServices.map(bs => `
+            <div class="flex items-start gap-2 p-2 bg-nfglight rounded-lg">
+              <i data-lucide="check-circle" class="w-4 h-4 text-nfgblue mt-0.5"></i>
+              <div>
+                <p class="text-sm font-medium text-nfgblue">${bs.services.name}</p>
+                <p class="text-xs text-gray-500">${bs.services.service_categories?.name || 'Unknown'}</p>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        // Show/hide linked job section
+        const linkedJobSection = document.getElementById('linked-job-section');
+        if (data.job_id) {
+          linkedJobSection.classList.remove('hidden');
+          const viewJobBtn = document.getElementById('view-linked-job-btn');
+          viewJobBtn.onclick = () => {
+            window.location.href = `jobs.html?job=${data.job_id}`;
+          };
+        } else {
+          linkedJobSection.classList.add('hidden');
+        }
+
+        // Show/hide cancel button based on status
+        const cancelBtn = document.getElementById('cancel-booking-btn');
+        if (data.status === 'cancelled' || data.status === 'completed') {
+          cancelBtn.classList.add('hidden');
+        } else {
+          cancelBtn.classList.remove('hidden');
+        }
+
+        document.getElementById('viewBookingModal').classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
+      } catch (error) {
+        console.error('Error loading booking:', error);
+        alert('Failed to load booking details.');
+      }
+    };
+
+    // ========== BOOKING ACTIONS ==========
+    async function createBooking() {
+      try {
+        const title = document.getElementById('booking-title').value.trim();
+        const siteId = document.getElementById('booking-site').value;
+        const scheduledDate = document.getElementById('booking-date').value;
+        const description = document.getElementById('booking-description').value.trim();
+        const isEmergency = document.getElementById('booking-emergency').checked;
+
+        if (!title || !siteId || !scheduledDate) {
+          alert('Please fill in all required fields.');
+          return;
+        }
+
+        // Get site details (including assigned worker)
+        const { data: site, error: siteError } = await supabase
+          .from('sites')
+          .select('*, assigned_worker_id')
+          .eq('id', parseInt(siteId))
+          .single();
+
+        if (siteError) throw siteError;
+
+        // Step 1: Create the job first
+        const { data: job, error: jobError } = await supabase
+          .from('jobs')
+          .insert({
+            client_id: currentUser.id,
+            site_id: parseInt(siteId),
+            assigned_worker_id: site.assigned_worker_id, // Auto-assign to site's worker
+            title: title,
+            job_type: isEmergency ? 'emergency' : 'cleaning', // Emergency or cleaning
+            description: description || 'Job created from booking',
+            scheduled_date: scheduledDate,
+            status: 'pending',
+            frequency: 'single visit'
+          })
+          .select()
+          .single();
+
+        if (jobError) throw jobError;
+
+        console.log('✅ Job created:', job.id);
+
+        // Step 2: Create booking and link to job
+        const { data: booking, error: bookingError } = await supabase
+          .from('bookings')
+          .insert({
+            client_id: currentUser.id,
+            site_id: parseInt(siteId),
+            job_id: job.id, // Link to the job
+            title,
+            description,
+            scheduled_date: scheduledDate,
+            status: 'pending'
+          })
+          .select()
+          .single();
+
+        if (bookingError) throw bookingError;
+
+        console.log('✅ Booking created:', booking.id);
+
+        // Step 3: Save selected services to booking_services
+        if (selectedServices.size > 0) {
+          const serviceRecords = Array.from(selectedServices).map(serviceId => ({
+            booking_id: booking.id,
+            service_id: serviceId,
+            quantity: 1
+          }));
+
+          const { error: servicesError } = await supabase
+            .from('booking_services')
+            .insert(serviceRecords);
+
+          if (servicesError) throw servicesError;
+
+          console.log('✅ Services linked to booking');
+
+          // Step 4: Create job tasks from selected services
+          const taskRecords = [];
+          for (const serviceId of selectedServices) {
+            const service = services.find(s => s.id === serviceId);
+            if (service) {
+              taskRecords.push({
+                job_id: job.id,
+                title: service.name, // Column is 'title', not 'task_name'
+                completed: false,
+                photo_required: true // All service tasks require photos
+              });
+            }
+          }
+
+          if (taskRecords.length > 0) {
+            const { error: tasksError } = await supabase
+              .from('job_tasks')
+              .insert(taskRecords);
+
+            if (tasksError) throw tasksError;
+
+            console.log('✅ Tasks created from services:', taskRecords.length);
+          }
+        }
+
+        const assignedTo = site.assigned_worker_id ? 'assigned to site worker' : 'unassigned';
+        const emergencyNote = isEmergency ? '\n🚨 EMERGENCY REQUEST - Priority handling!' : '';
+        alert(`✅ Booking & Job created successfully!\n\nJob is ${assignedTo}.\nStaff will see it in their feed.${emergencyNote}`);
+        closeModals();
+        await loadBookings();
+      } catch (error) {
+        console.error('Error creating booking:', error);
+        alert('Failed to create booking: ' + error.message);
+      }
+    }
+
+    async function cancelBooking() {
+      if (!currentBooking) return;
+
+      if (!confirm('Are you sure you want to cancel this booking?')) return;
+
+      try {
+        const { error } = await supabase
+          .from('bookings')
+          .update({ 
+            status: 'cancelled',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', currentBooking.id);
+
+        if (error) throw error;
+
+        alert('✅ Booking cancelled.');
+        closeModals();
+        await loadBookings();
+      } catch (error) {
+        console.error('Error cancelling booking:', error);
+        alert('Failed to cancel booking: ' + error.message);
+      }
+    }
+
+    // ========== EVENT LISTENERS ==========
+    document.getElementById('create-booking-btn')?.addEventListener('click', openCreateBookingModal);
+
+    document.querySelectorAll('.close-modal').forEach(btn => {
+      btn.addEventListener('click', closeModals);
+    });
+
+    document.getElementById('create-booking-submit')?.addEventListener('click', createBooking);
+    document.getElementById('cancel-booking-btn')?.addEventListener('click', cancelBooking);
+
+    // Service filtering
+    document.getElementById('service-category-filter')?.addEventListener('change', renderServices);
+    document.getElementById('service-search')?.addEventListener('input', renderServices);
+
+    // Filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => {
+          b.classList.remove('bg-nfgblue', 'text-white');
+          b.classList.add('border', 'border-nfgray', 'hover:bg-nfglight');
+        });
+        btn.classList.add('bg-nfgblue', 'text-white');
+        btn.classList.remove('border', 'border-nfgray', 'hover:bg-nfglight');
+        
+        currentFilter = btn.dataset.status;
+        renderBookings();
+      });
+    });
+
+    // Logout
+    document.getElementById('logout-btn')?.addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      window.location.href = './index.html';
+    });
+
+    init();
+  </script>
+</body>
+</html>
