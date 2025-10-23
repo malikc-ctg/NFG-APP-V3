@@ -215,4 +215,9 @@
   }
 }
 
+/* Mobile sidebar helpers (minimal; JS toggles Tailwind classes) */
+@media (max-width: 767px) {
+  /* Intentionally blank: layout handled via Tailwind classes toggled by JS */
+}
+
 

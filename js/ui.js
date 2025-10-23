@@ -263,6 +263,85 @@ export function initializeUI() {
   initUserProfile()
 }
 
+// ========== MOBILE SIDEBAR (HAMBURGER) ==========
+// Lightweight, page-agnostic mobile sidebar toggle. Works wherever there's
+// an element with [data-action="toggle-sidebar"] and an <aside id="sidebar">.
+function openMobileSidebar() {
+  const sidebar = document.getElementById('sidebar')
+  if (!sidebar) return
+
+  // Ensure visible on mobile and overlay on top
+  sidebar.classList.remove('hidden')
+  sidebar.classList.add('flex', 'fixed', 'top-0', 'left-0', 'h-full', 'z-50')
+
+  // Backdrop
+  let backdrop = document.getElementById('sidebar-backdrop')
+  if (!backdrop) {
+    backdrop = document.createElement('div')
+    backdrop.id = 'sidebar-backdrop'
+    backdrop.className = 'fixed inset-0 bg-black/40 z-40'
+    backdrop.addEventListener('click', closeMobileSidebar)
+    document.body.appendChild(backdrop)
+  }
+  // Prevent background scroll
+  document.documentElement.classList.add('overflow-hidden')
+}
+
+function closeMobileSidebar() {
+  const sidebar = document.getElementById('sidebar')
+  if (!sidebar) return
+
+  // Hide on mobile
+  sidebar.classList.add('hidden')
+  // Remove only the classes we added during open
+  sidebar.classList.remove('flex', 'fixed', 'top-0', 'left-0', 'h-full', 'z-50')
+
+  const backdrop = document.getElementById('sidebar-backdrop')
+  if (backdrop) backdrop.remove()
+
+  document.documentElement.classList.remove('overflow-hidden')
+}
+
+function toggleMobileSidebar() {
+  const sidebar = document.getElementById('sidebar')
+  if (!sidebar) return
+  const isHidden = sidebar.classList.contains('hidden')
+  if (isHidden) openMobileSidebar()
+  else closeMobileSidebar()
+}
+
+// Global handlers so pages don't need to import anything explicitly
+document.addEventListener('click', (e) => {
+  const toggleBtn = e.target.closest('[data-action="toggle-sidebar"]')
+  if (toggleBtn) {
+    e.preventDefault()
+    toggleMobileSidebar()
+  }
+
+  // Close sidebar after navigating via a sidebar link (mobile only)
+  const sidebarLink = e.target.closest('#sidebar a')
+  if (sidebarLink) {
+    // If backdrop exists, we are in mobile open state
+    if (document.getElementById('sidebar-backdrop')) {
+      closeMobileSidebar()
+    }
+  }
+})
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.getElementById('sidebar-backdrop')) {
+    closeMobileSidebar()
+  }
+})
+
+// Close mobile sidebar if viewport grows to md and above
+window.addEventListener('resize', () => {
+  const isMdUp = window.matchMedia('(min-width: 768px)').matches
+  if (isMdUp) {
+    if (document.getElementById('sidebar-backdrop')) closeMobileSidebar()
+  }
+})
+
 // Sidebar toggle functionality
 function initSidebarToggle() {
   const sidebar = document.getElementById('sidebar')
