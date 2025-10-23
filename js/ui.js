@@ -444,11 +444,17 @@ let currentSiteId = null
 // Calculate and display real-time site metrics
 async function calculateAndDisplaySiteMetrics(siteId) {
   try {
-    const supabase = window.supabase
+    // Import supabase properly
+    const { supabase } = await import('./supabase.js')
+    
     if (!supabase) {
-      console.error('[UI] Supabase not available')
+      console.error('[UI] ❌ Supabase not available after import')
+      document.getElementById('site-detail-jobs').textContent = '0'
+      document.getElementById('site-detail-bookings').textContent = '0'
       return
     }
+
+    console.log('[UI] ✅ Supabase loaded successfully for metrics calculation')
 
     // Show loading state
     document.getElementById('site-detail-jobs').textContent = '...'
