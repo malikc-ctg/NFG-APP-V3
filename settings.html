@@ -8,6 +8,10 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="stylesheet" href="./css/custom-dropdown.css">
+  
+  <!-- Mobile Menu Styles -->
+  <link rel="stylesheet" href="./css/mobile-menu.css">
+  
   <script>
     tailwind.config = {
       theme: {
@@ -31,7 +35,7 @@
 <body class="bg-nfbg font-inter">
   <div class="flex min-h-screen">
     <!-- Sidebar -->
-    <aside class="w-64 bg-white border-r border-nfgray flex flex-col">
+    <aside id="sidebar" class="w-64 bg-white border-r border-nfgray hidden md:flex md:flex-col transition-all">
       <div class="p-5 flex items-center justify-center">
         <!-- Northern Facilities Group Logo -->
         <img 
@@ -77,13 +81,23 @@
     </aside>
 
     <!-- Main Content -->
-    <div class="flex-1 overflow-y-auto">
-      <header class="bg-white border-b border-nfgray p-4 md:p-6">
-        <h2 class="text-2xl font-semibold text-nfgblue">Settings</h2>
-        <p class="text-sm text-gray-500">Manage your account and application preferences</p>
+    <div class="flex-1 flex flex-col min-w-0">
+      <!-- TOPBAR -->
+      <header class="sticky top-0 z-10 bg-white border-b border-nfgray">
+        <div class="h-14 px-4 md:px-6 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <button class="md:hidden p-2 rounded-lg border border-nfgray text-nfgblue" data-action="toggle-sidebar" aria-label="Toggle sidebar">
+              <i data-lucide="menu" class="w-5 h-5"></i>
+            </button>
+            <h1 class="text-nfgblue font-semibold">Settings</h1>
+          </div>
+        </div>
       </header>
-
-      <main class="p-4 md:p-6 space-y-6 max-w-4xl mx-auto">
+      
+      <main class="flex-1 overflow-y-auto p-4 md:p-6">
+        <p class="text-sm text-gray-500 mb-6">Manage your account and application preferences</p>
+        
+        <div class="space-y-6 max-w-4xl mx-auto">
         
         <!-- Account Settings -->
         <section class="bg-white border border-nfgray rounded-xl shadow-nfg p-6">
@@ -275,7 +289,8 @@
             <p class="text-xs text-gray-500 mt-3">© 2025 Northern Facilities Group. All rights reserved.</p>
           </div>
         </section>
-
+        
+        </div>
       </main>
     </div>
   </div>

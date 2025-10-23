@@ -285,20 +285,53 @@ function initMobileSidebar() {
   // Toggle sidebar function
   function toggleSidebar() {
     if (sidebar && overlay) {
-      const isHidden = sidebar.classList.contains('hidden');
+      const isHidden = sidebar.classList.contains('hidden') || !sidebar.classList.contains('mobile-sidebar-open');
       
       if (isHidden) {
-        // Show sidebar
+        // Show sidebar with better mobile styling
         sidebar.classList.remove('hidden');
-        sidebar.classList.add('flex', 'fixed', 'inset-y-0', 'left-0', 'z-50');
+        sidebar.classList.add(
+          'mobile-sidebar-open',
+          'flex', 
+          'flex-col',
+          'fixed', 
+          'inset-y-0', 
+          'left-0', 
+          'z-50',
+          'w-64',
+          'max-w-[80vw]',
+          'shadow-2xl',
+          'animate-slide-in'
+        );
         overlay.classList.remove('hidden');
+        overlay.classList.add('animate-fade-in');
         document.body.style.overflow = 'hidden'; // Prevent scrolling
       } else {
-        // Hide sidebar
-        sidebar.classList.add('hidden');
-        sidebar.classList.remove('flex', 'fixed', 'inset-y-0', 'left-0', 'z-50');
-        overlay.classList.add('hidden');
-        document.body.style.overflow = ''; // Restore scrolling
+        // Hide sidebar with animation
+        sidebar.classList.add('animate-slide-out');
+        overlay.classList.add('animate-fade-out');
+        
+        // Wait for animation to complete
+        setTimeout(() => {
+          sidebar.classList.add('hidden');
+          sidebar.classList.remove(
+            'mobile-sidebar-open',
+            'flex',
+            'flex-col',
+            'fixed', 
+            'inset-y-0', 
+            'left-0', 
+            'z-50',
+            'w-64',
+            'max-w-[80vw]',
+            'shadow-2xl',
+            'animate-slide-in',
+            'animate-slide-out'
+          );
+          overlay.classList.add('hidden');
+          overlay.classList.remove('animate-fade-in', 'animate-fade-out');
+          document.body.style.overflow = ''; // Restore scrolling
+        }, 200);
       }
     }
   }
