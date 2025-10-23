@@ -77,7 +77,7 @@
     <header class="sticky top-0 z-10 bg-white border-b border-nfgray">
       <div class="h-14 px-4 md:px-6 flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <button class="md:hidden p-2 rounded-lg border border-nfgray text-nfgblue" aria-label="Toggle sidebar">
+          <button class="md:hidden p-2 rounded-lg border border-nfgray text-nfgblue" data-action="toggle-sidebar" aria-label="Toggle sidebar">
             <i data-lucide="menu" class="w-5 h-5"></i>
           </button>
           <h1 class="text-nfgblue font-semibold">Bookings</h1>
@@ -308,6 +308,9 @@
   </div>
 
   <!-- ========== SCRIPTS ========== -->
+  <!-- Shared UI (hamburger toggle) -->
+  <script type="module" src="./js/ui.js"></script>
+
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       if (window.lucide) lucide.createIcons();
