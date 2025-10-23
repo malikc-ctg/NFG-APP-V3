@@ -309,6 +309,123 @@ async function fetchRecentJobs() {
   }
 }
 
+// Fetch and display upcoming bookings
+async function fetchUpcomingBookings() {
+  try {
+    console.log('📅 Fetching upcoming bookings...');
+    
+    // Get today's date in YYYY-MM-DD format
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Fetch bookings with site info
+    const { data: bookings, error } = await supabase
+      .from('bookings')
+      .select(`
+        id, 
+        title, 
+        status, 
+        scheduled_date,
+        emergency,
+        site_id,
+        created_at
+      `)
+      .eq('status', 'pending')
+      .gte('scheduled_date', today)
+      .order('scheduled_date', { ascending: true })
+      .limit(5);
+    
+    if (error) {
+      console.error('❌ Error fetching upcoming bookings:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      
+      // Show error in UI
+      const bookingsList = document.getElementById('bookings-list');
+      if (bookingsList) {
+        bookingsList.innerHTML = `
+          <div class="py-6 text-center text-red-500">
+            <i data-lucide="alert-circle" class="w-12 h-12 mx-auto mb-2"></i>
+            <p class="font-medium">Error loading bookings</p>
+            <p class="text-sm text-gray-500 mt-1">${error.message || 'Database query failed'}</p>
+          </div>
+        `;
+        if (window.lucide) lucide.createIcons();
+      }
+      return;
+    }
+    
+    console.log('📅 Bookings fetched:', bookings);
+    
+    const bookingsList = document.getElementById('bookings-list');
+    if (!bookingsList) {
+      console.error('❌ bookings-list element not found!');
+      return;
+    }
+    
+    console.log('📅 Rendering bookings to DOM...');
+    
+    if (!bookings || bookings.length === 0) {
+      console.log('📅 No upcoming bookings found, showing empty state');
+      bookingsList.innerHTML = `
+        <div class="py-6 text-center text-gray-500">
+          <i data-lucide="calendar" class="w-12 h-12 mx-auto mb-2 text-gray-300"></i>
+          <p>No upcoming bookings</p>
+        </div>
+      `;
+      if (window.lucide) lucide.createIcons();
+      return;
+    }
+    
+    // Fetch site names for all bookings
+    const siteIds = [...new Set(bookings.map(b => b.site_id).filter(Boolean))];
+    const { data: sites } = await supabase
+      .from('sites')
+      .select('id, name')
+      .in('id', siteIds);
+    
+    const siteMap = {};
+    if (sites) {
+      sites.forEach(site => {
+        siteMap[site.id] = site.name;
+      });
+    }
+    
+    bookingsList.innerHTML = bookings.map(booking => {
+      const siteName = siteMap[booking.site_id] || 'Unknown site';
+      const isEmergency = booking.emergency;
+      const bookingDate = new Date(booking.scheduled_date);
+      const formattedDate = bookingDate.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        year: bookingDate.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+      });
+      
+      return `
+        <div class="py-3 flex justify-between items-center hover:bg-nfglight/50 transition rounded-lg px-2 cursor-pointer" 
+             onclick="window.location.href='bookings.html'">
+          <div class="flex items-center gap-3 flex-1 min-w-0">
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <i data-lucide="calendar" class="w-4 h-4 ${isEmergency ? 'text-red-600' : 'text-nfgblue'}"></i>
+              ${isEmergency ? '<i data-lucide="alert-circle" class="w-3 h-3 text-red-600"></i>' : ''}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-medium text-sm ${isEmergency ? 'text-red-600' : 'text-nfgblue'} truncate">${booking.title}</p>
+              <p class="text-xs text-gray-500 truncate">${siteName}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <span class="text-xs text-gray-600 font-medium">${formattedDate}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+    
+    if (window.lucide) lucide.createIcons();
+    console.log('📅 Upcoming Bookings loaded:', bookings.length);
+  } catch (error) {
+    console.error('Error fetching upcoming bookings:', error);
+  }
+}
+
 // Fetch and display dashboard statistics
 async function fetchDashboardStats() {
   try {
@@ -381,6 +498,9 @@ async function initDashboard() {
   
   // Fetch and display recent jobs
   await fetchRecentJobs()
+  
+  // Fetch and display upcoming bookings
+  await fetchUpcomingBookings()
   
   // Hide "New Booking" button for staff users
   if (currentUserProfile && currentUserProfile.role === 'staff') {

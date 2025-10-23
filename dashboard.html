@@ -205,7 +205,10 @@
       <!-- Upcoming Bookings -->
       <section class="bg-white border border-nfgray rounded-xl shadow-nfg p-4">
         <div class="flex items-center justify-between mb-2">
-          <h3 class="text-nfgblue font-semibold">Upcoming Bookings</h3>
+          <div class="flex items-center gap-3">
+            <h3 class="text-nfgblue font-semibold">Upcoming Bookings</h3>
+            <button onclick="window.location.href='bookings.html'" class="text-sm px-3 py-1.5 rounded-xl border border-nfgray hover:bg-nfglight">View all</button>
+          </div>
           <button id="new-booking-btn" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark"
                   data-action="open-modal" data-target="newBookingModal">
             <i data-lucide="plus" class="w-4 h-4"></i> New Booking
