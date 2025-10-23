@@ -529,14 +529,14 @@
     <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-4xl max-h-[90vh] overflow-y-auto">
       <!-- Header -->
       <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white z-10">
-        <div class="flex items-center gap-3">
-          <i data-lucide="building-2" class="w-6 h-6 text-nfgblue"></i>
-          <div>
+        <div class="flex items-center gap-3 flex-1 min-w-0">
+          <i data-lucide="building-2" class="w-6 h-6 text-nfgblue flex-shrink-0"></i>
+          <div class="flex-1 min-w-0">
             <h4 id="site-detail-name" class="text-nfgblue font-semibold text-lg">Site Name</h4>
-            <p id="site-detail-address" class="text-sm text-gray-500">Address</p>
+            <div id="site-detail-address" class="text-sm text-gray-500">Address</div>
           </div>
         </div>
-        <button data-action="close-modal" data-target="siteDetailModal" class="p-1 rounded-lg hover:bg-nfglight">
+        <button data-action="close-modal" data-target="siteDetailModal" class="p-1 rounded-lg hover:bg-nfglight flex-shrink-0">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>

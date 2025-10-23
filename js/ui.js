@@ -486,7 +486,25 @@ export async function openSiteDetailModal(siteId) {
     
     // Populate modal with site data
     document.getElementById('site-detail-name').textContent = site.name || 'Unknown Site'
-    document.getElementById('site-detail-address').textContent = site.address || 'No address'
+    
+    // Display address with copy button
+    const addressContainer = document.getElementById('site-detail-address')
+    if (site.address) {
+      addressContainer.innerHTML = `
+        <div class="flex items-center gap-2">
+          <span class="truncate">${site.address}</span>
+          <button 
+            onclick="copyAddress('${site.address.replace(/'/g, "\\'")}', event)" 
+            class="text-gray-400 hover:text-nfgblue transition p-0.5 rounded hover:bg-nfglight flex-shrink-0"
+            title="Copy address">
+            <i data-lucide="copy" class="w-3 h-3"></i>
+          </button>
+        </div>
+      `
+      if (window.lucide) lucide.createIcons()
+    } else {
+      addressContainer.textContent = 'No address'
+    }
     document.getElementById('site-detail-status').textContent = site.status || 'Unknown'
     document.getElementById('site-detail-sqft').textContent = site.square_footage ? `${site.square_footage.toLocaleString()} sq ft` : '—'
     document.getElementById('site-detail-rating').textContent = site.rating || '0'
