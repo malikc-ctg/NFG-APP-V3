@@ -176,6 +176,35 @@
           />
         </div>
 
+        <!-- Frequency Selection -->
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Frequency *</label>
+          <select 
+            id="booking-frequency" 
+            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
+            required
+          >
+            <option value="single visit">Single Visit</option>
+            <option value="recurring">Recurring</option>
+          </select>
+          </div>
+
+        <!-- Recurrence Pattern (only shown for recurring bookings) -->
+        <div id="booking-recurrence-pattern-section" class="hidden">
+          <label class="block text-sm font-medium mb-1.5">Recurrence Pattern *</label>
+          <select 
+            id="booking-recurrence-pattern" 
+            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
+          >
+            <option value="weekly" selected>Weekly</option>
+            <option value="biweekly">Every 2 Weeks</option>
+            <option value="monthly">Monthly</option>
+          </select>
+          <p class="text-xs text-gray-500 mt-1.5">
+            📅 The next booking will automatically be created when the job is completed.
+          </p>
+        </div>
+
         <!-- Emergency Request Checkbox -->
         <div class="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded-xl">
           <input 
@@ -802,6 +831,8 @@
         const scheduledDate = document.getElementById('booking-date').value;
         const description = document.getElementById('booking-description').value.trim();
         const isEmergency = document.getElementById('booking-emergency').checked;
+        const frequency = document.getElementById('booking-frequency').value;
+        const recurrencePattern = document.getElementById('booking-recurrence-pattern').value;
 
         if (!title || !siteId || !scheduledDate) {
           alert('Please fill in all required fields.');
@@ -817,20 +848,31 @@
 
         if (siteError) throw siteError;
 
+        // Generate recurrence series ID if this is a recurring booking
+        const recurrenceSeriesId = frequency === 'recurring' ? crypto.randomUUID() : null;
+
         // Step 1: Create the job first
+        const jobData = {
+          client_id: currentUser.id,
+          site_id: parseInt(siteId),
+          assigned_worker_id: site.assigned_worker_id, // Auto-assign to site's worker
+          title: title,
+          job_type: isEmergency ? 'emergency' : 'cleaning', // Emergency or cleaning
+          description: description || 'Job created from booking',
+          scheduled_date: scheduledDate,
+          status: 'pending',
+          frequency: frequency
+        };
+
+        // Add recurrence fields if recurring
+        if (frequency === 'recurring') {
+          jobData.recurrence_pattern = recurrencePattern;
+          jobData.recurrence_series_id = recurrenceSeriesId;
+        }
+
         const { data: job, error: jobError } = await supabase
           .from('jobs')
-          .insert({
-            client_id: currentUser.id,
-            site_id: parseInt(siteId),
-            assigned_worker_id: site.assigned_worker_id, // Auto-assign to site's worker
-            title: title,
-            job_type: isEmergency ? 'emergency' : 'cleaning', // Emergency or cleaning
-            description: description || 'Job created from booking',
-            scheduled_date: scheduledDate,
-            status: 'pending',
-            frequency: 'single visit'
-          })
+          .insert(jobData)
           .select()
           .single();
 
@@ -839,17 +881,27 @@
         console.log('✅ Job created:', job.id);
 
         // Step 2: Create booking and link to job
+        const bookingData = {
+          client_id: currentUser.id,
+          site_id: parseInt(siteId),
+          job_id: job.id, // Link to the job
+          title,
+          description,
+          scheduled_date: scheduledDate,
+          status: 'pending',
+          frequency: frequency
+        };
+
+        // Add recurrence fields if recurring
+        if (frequency === 'recurring') {
+          bookingData.recurrence_pattern = recurrencePattern;
+          bookingData.recurrence_series_id = recurrenceSeriesId;
+          bookingData.is_recurring_template = true; // Mark as the original
+        }
+
         const { data: booking, error: bookingError } = await supabase
           .from('bookings')
-          .insert({
-            client_id: currentUser.id,
-            site_id: parseInt(siteId),
-            job_id: job.id, // Link to the job
-            title,
-            description,
-            scheduled_date: scheduledDate,
-            status: 'pending'
-          })
+          .insert(bookingData)
           .select()
           .single();
 
@@ -900,7 +952,8 @@
 
         const assignedTo = site.assigned_worker_id ? 'assigned to site worker' : 'unassigned';
         const emergencyNote = isEmergency ? '\n🚨 EMERGENCY REQUEST - Priority handling!' : '';
-        alert(`✅ Booking & Job created successfully!\n\nJob is ${assignedTo}.\nStaff will see it in their feed.${emergencyNote}`);
+        const recurrenceNote = frequency === 'recurring' ? `\n🔄 RECURRING: Next booking will auto-create when job completes (${recurrencePattern})` : '';
+        alert(`✅ Booking & Job created successfully!\n\nJob is ${assignedTo}.\nStaff will see it in their feed.${emergencyNote}${recurrenceNote}`);
         closeModals();
         await loadBookings();
       } catch (error) {
@@ -943,6 +996,16 @@
 
     document.getElementById('create-booking-submit')?.addEventListener('click', createBooking);
     document.getElementById('cancel-booking-btn')?.addEventListener('click', cancelBooking);
+
+    // Frequency selection - show/hide recurrence pattern
+    document.getElementById('booking-frequency')?.addEventListener('change', (e) => {
+      const recurrenceSection = document.getElementById('booking-recurrence-pattern-section');
+      if (e.target.value === 'recurring') {
+        recurrenceSection?.classList.remove('hidden');
+      } else {
+        recurrenceSection?.classList.add('hidden');
+      }
+    });
 
     // Service filtering
     document.getElementById('service-category-filter')?.addEventListener('change', renderServices);

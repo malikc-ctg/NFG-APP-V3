@@ -162,13 +162,36 @@ async function copyTasksToNewJob(sourceJobId, targetJobId) {
 export async function handleJobCompletion(job) {
   if (job.frequency === 'recurring' && job.status === 'completed') {
     console.log('🔄 Job completed, checking for recurring creation')
-    const nextJob = await createNextRecurringInstance(job)
     
-    if (nextJob) {
-      return {
-        success: true,
-        message: `✅ Job completed! Next occurrence scheduled for ${new Date(nextJob.scheduled_date).toLocaleDateString()}`,
-        nextJob
+    // Check if this job is linked to a booking
+    const { data: booking, error: bookingError } = await supabase
+      .from('bookings')
+      .select('*')
+      .eq('job_id', job.id)
+      .single()
+    
+    if (!bookingError && booking && booking.frequency === 'recurring') {
+      // If linked to a recurring booking, create the next booking (which will auto-create its job)
+      console.log('📅 Job is linked to recurring booking, creating next booking instance')
+      const nextBooking = await createNextBookingInstance(booking)
+      
+      if (nextBooking) {
+        return {
+          success: true,
+          message: `✅ Job completed! Next booking scheduled for ${new Date(nextBooking.scheduled_date).toLocaleDateString()}`,
+          nextBooking
+        }
+      }
+    } else {
+      // Standalone recurring job (not linked to booking), create next job directly
+      const nextJob = await createNextRecurringInstance(job)
+      
+      if (nextJob) {
+        return {
+          success: true,
+          message: `✅ Job completed! Next occurrence scheduled for ${new Date(nextJob.scheduled_date).toLocaleDateString()}`,
+          nextJob
+        }
       }
     }
   }
@@ -176,6 +199,139 @@ export async function handleJobCompletion(job) {
   return {
     success: true,
     message: '✅ Job completed successfully!'
+  }
+}
+
+/**
+ * Create the next instance of a recurring booking (and its job)
+ * @param {object} completedBooking - The booking whose job was just completed
+ * @returns {object} - The newly created booking or null if error
+ */
+async function createNextBookingInstance(completedBooking) {
+  try {
+    console.log('📅 Creating next recurring booking instance for:', completedBooking.id)
+    
+    // Get the recurrence pattern (default to weekly if not set)
+    const pattern = completedBooking.recurrence_pattern || 'weekly'
+    
+    // Calculate next occurrence date
+    const currentDate = new Date(completedBooking.scheduled_date)
+    const nextDate = calculateNextOccurrence(currentDate, pattern)
+    
+    // Generate recurrence series ID if not exists
+    const seriesId = completedBooking.recurrence_series_id || completedBooking.id
+    
+    // Step 1: Fetch the site to get the assigned worker
+    const { data: site, error: siteError } = await supabase
+      .from('sites')
+      .select('assigned_worker_id')
+      .eq('id', completedBooking.site_id)
+      .single()
+    
+    if (siteError) throw siteError
+    
+    // Step 2: Create the new job first
+    const newJobData = {
+      title: completedBooking.title,
+      site_id: completedBooking.site_id,
+      client_id: completedBooking.client_id,
+      assigned_worker_id: site?.assigned_worker_id,
+      job_type: 'cleaning', // Default for recurring bookings
+      description: completedBooking.description,
+      scheduled_date: nextDate.toISOString().split('T')[0],
+      frequency: 'recurring',
+      recurrence_pattern: pattern,
+      recurrence_series_id: seriesId,
+      status: 'pending'
+    }
+    
+    const { data: newJob, error: newJobError } = await supabase
+      .from('jobs')
+      .insert([newJobData])
+      .select()
+      .single()
+    
+    if (newJobError) throw newJobError
+    
+    console.log('✅ Job created for next booking instance:', newJob.id)
+    
+    // Step 3: Create the new booking and link to the job
+    const newBookingData = {
+      title: completedBooking.title,
+      site_id: completedBooking.site_id,
+      client_id: completedBooking.client_id,
+      description: completedBooking.description,
+      scheduled_date: nextDate.toISOString().split('T')[0],
+      frequency: 'recurring',
+      recurrence_pattern: pattern,
+      recurrence_series_id: seriesId,
+      status: 'pending',
+      job_id: newJob.id
+    }
+    
+    const { data: newBooking, error: newBookingError } = await supabase
+      .from('bookings')
+      .insert([newBookingData])
+      .select()
+      .single()
+    
+    if (newBookingError) throw newBookingError
+    
+    console.log('✅ Next recurring booking created:', newBooking.id)
+    
+    // Step 4: Copy services from the completed booking to the new booking
+    const { data: bookingServices, error: servicesError } = await supabase
+      .from('booking_services')
+      .select('service_id, quantity')
+      .eq('booking_id', completedBooking.id)
+    
+    if (!servicesError && bookingServices && bookingServices.length > 0) {
+      const newServices = bookingServices.map(bs => ({
+        booking_id: newBooking.id,
+        service_id: bs.service_id,
+        quantity: bs.quantity || 1
+      }))
+      
+      await supabase
+        .from('booking_services')
+        .insert(newServices)
+      
+      console.log(`✅ Copied ${bookingServices.length} services to new booking`)
+      
+      // Step 5: Create job tasks from services
+      const { data: services } = await supabase
+        .from('services')
+        .select('id, name')
+        .in('id', bookingServices.map(bs => bs.service_id))
+      
+      if (services && services.length > 0) {
+        const tasks = services.map(service => ({
+          job_id: newJob.id,
+          title: service.name,
+          photo_required: true,
+          completed: false
+        }))
+        
+        await supabase
+          .from('job_tasks')
+          .insert(tasks)
+        
+        console.log(`✅ Created ${tasks.length} tasks for new job`)
+      }
+    }
+    
+    // Update the completed booking's recurrence_series_id if it wasn't set
+    if (!completedBooking.recurrence_series_id) {
+      await supabase
+        .from('bookings')
+        .update({ recurrence_series_id: seriesId })
+        .eq('id', completedBooking.id)
+    }
+    
+    return newBooking
+  } catch (error) {
+    console.error('Error in createNextBookingInstance:', error)
+    return null
   }
 }
 
