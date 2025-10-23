@@ -470,7 +470,7 @@
       try {
         const { data, error } = await supabase
           .from('bookings')
-          .select('*, sites(name)')
+          .select('*, sites(name, address)')
           .order('scheduled_date', { ascending: false });
 
         if (error) throw error;
@@ -698,7 +698,7 @@
       try {
         const { data, error } = await supabase
           .from('bookings')
-          .select('*, sites(name)')
+          .select('*, sites(name, address)')
           .eq('id', bookingId)
           .single();
 
@@ -708,7 +708,29 @@
 
         // Update modal content
         document.getElementById('view-booking-title').textContent = data.title;
-        document.getElementById('view-booking-site').textContent = data.sites?.name || 'Unknown';
+        
+        // Display site name and address
+        const siteContainer = document.getElementById('view-booking-site');
+        if (data.sites?.address) {
+          siteContainer.innerHTML = `
+            <div class="flex flex-col gap-1">
+              <p class="font-medium text-nfgblue">${data.sites?.name || 'Unknown'}</p>
+              <div class="flex items-center gap-2">
+                <p class="text-sm text-gray-600">${data.sites.address}</p>
+                <button 
+                  onclick="copyAddress('${data.sites.address.replace(/'/g, "\\'")}', event)" 
+                  class="text-gray-400 hover:text-nfgblue transition p-1 rounded hover:bg-nfglight flex-shrink-0"
+                  title="Copy address">
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                </button>
+              </div>
+            </div>
+          `;
+          if (window.lucide) lucide.createIcons();
+        } else {
+          siteContainer.textContent = data.sites?.name || 'Unknown';
+        }
+        
         document.getElementById('view-booking-date').textContent = new Date(data.scheduled_date).toLocaleDateString();
         document.getElementById('view-booking-description').textContent = data.description || 'No description provided.';
         
@@ -946,6 +968,34 @@
       await supabase.auth.signOut();
       window.location.href = './index.html';
     });
+
+    // Copy address to clipboard
+    window.copyAddress = async function(address, event) {
+      event?.stopPropagation();
+      event?.preventDefault();
+      
+      try {
+        await navigator.clipboard.writeText(address);
+        
+        // Show success feedback
+        const button = event?.target.closest('button');
+        if (button) {
+          const originalHTML = button.innerHTML;
+          button.innerHTML = '<i data-lucide="check" class="w-3 h-3"></i>';
+          button.classList.add('text-green-600');
+          if (window.lucide) lucide.createIcons();
+          
+          setTimeout(() => {
+            button.innerHTML = originalHTML;
+            button.classList.remove('text-green-600');
+            if (window.lucide) lucide.createIcons();
+          }, 1500);
+        }
+      } catch (err) {
+        console.error('Failed to copy address:', err);
+        alert('Failed to copy address');
+      }
+    }
 
     init();
   </script>
