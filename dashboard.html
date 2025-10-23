@@ -1087,10 +1087,15 @@
 
     // Edit Site button handler
     document.getElementById('edit-site-btn')?.addEventListener('click', () => {
+      console.log('[Edit] Edit button clicked! Current site:', currentEditSite);
+      
       if (!currentEditSite) {
-        console.error('No site selected for editing');
+        console.error('[Edit] ❌ No site selected for editing');
+        alert('Error: No site selected. Please close and reopen the site details.');
         return;
       }
+
+      console.log('[Edit] ✅ Opening edit modal for:', currentEditSite.name);
 
       // Populate form with current site data
       document.getElementById('edit-site-id').value = currentEditSite.id;

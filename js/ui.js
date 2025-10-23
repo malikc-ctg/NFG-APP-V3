@@ -483,9 +483,8 @@ export async function openSiteDetailModal(siteId) {
     currentSiteId = siteId
     
     // Store current site data for edit operation (global variable in dashboard.html)
-    if (typeof window.currentEditSite !== 'undefined' || window.parent) {
-      window.currentEditSite = site;
-    }
+    window.currentEditSite = site;
+    console.log('[UI] Stored current site for editing:', site.name);
     
     console.log('[UI] Populating modal with site data...')
     
