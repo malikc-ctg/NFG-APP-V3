@@ -407,6 +407,129 @@
     </div>
   </div>
 
+  <!-- Edit Site Modal -->
+  <div id="editSiteModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white">
+        <h4 class="text-nfgblue font-semibold text-lg">Edit Site</h4>
+        <button data-action="close-modal" data-target="editSiteModal" class="p-1 rounded-lg hover:bg-nfglight">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="edit-site-form" class="p-6 space-y-4">
+        <input type="hidden" id="edit-site-id" name="id" />
+        
+        <!-- Site Name -->
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Site Name <span class="text-red-500">*</span></label>
+          <input 
+            type="text"
+            id="edit-site-name"
+            name="name" 
+            required 
+            placeholder="e.g., Downtown Office Tower"
+            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+        </div>
+
+        <!-- Address -->
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Address <span class="text-red-500">*</span></label>
+          <input 
+            type="text"
+            id="edit-site-address"
+            name="address" 
+            required 
+            placeholder="123 Main Street, City, Province, Postal Code"
+            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+        </div>
+
+        <!-- Status and Square Footage Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Status <span class="text-red-500">*</span></label>
+            <select 
+              id="edit-site-status"
+              name="status" 
+              required 
+              data-custom-dropdown="true"
+              data-placeholder="Select status">
+              <option value="Active">Active</option>
+              <option value="In Setup">In Setup</option>
+              <option value="Paused">Paused</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Square Footage</label>
+            <input 
+              type="number"
+              id="edit-site-sqft"
+              name="square_footage" 
+              placeholder="e.g., 5000"
+              min="0"
+              class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+          </div>
+        </div>
+
+        <!-- Contact Information -->
+        <div class="border-t border-nfgray pt-4">
+          <h5 class="text-sm font-semibold text-nfgblue mb-3">Contact Information</h5>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-1.5">Contact Phone</label>
+              <input 
+                type="tel"
+                id="edit-site-phone"
+                name="contact_phone" 
+                placeholder="(123) 456-7890"
+                class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1.5">Contact Email</label>
+              <input 
+                type="email"
+                id="edit-site-email"
+                name="contact_email" 
+                placeholder="contact@example.com"
+                class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Notes</label>
+          <textarea 
+            id="edit-site-notes"
+            name="notes" 
+            rows="3" 
+            placeholder="Add any additional information about this site..."
+            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none resize-none"></textarea>
+        </div>
+
+        <!-- Error Message -->
+        <div id="edit-form-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl p-3">
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray">
+          <button 
+            type="button" 
+            data-action="close-modal" 
+            data-target="editSiteModal"
+            class="px-5 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight font-medium transition">
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            id="update-site-btn"
+            class="px-5 py-2.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark font-medium transition inline-flex items-center gap-2">
+            <span>Update Site</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- New Booking Modal -->
   <div id="newBookingModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4">
     <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-md">
@@ -558,7 +681,7 @@
             <i data-lucide="calendar-plus" class="w-4 h-4"></i>
             Schedule Booking
           </button>
-          <button class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight transition">
+          <button id="edit-site-btn" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight transition">
             <i data-lucide="edit" class="w-4 h-4"></i>
             Edit Site
           </button>
@@ -958,6 +1081,87 @@
         alert('Failed to copy address');
       }
     }
+
+    // Store current site being edited
+    let currentEditSite = null;
+
+    // Edit Site button handler
+    document.getElementById('edit-site-btn')?.addEventListener('click', () => {
+      if (!currentEditSite) {
+        console.error('No site selected for editing');
+        return;
+      }
+
+      // Populate form with current site data
+      document.getElementById('edit-site-id').value = currentEditSite.id;
+      document.getElementById('edit-site-name').value = currentEditSite.name || '';
+      document.getElementById('edit-site-address').value = currentEditSite.address || '';
+      document.getElementById('edit-site-status').value = currentEditSite.status || 'Active';
+      document.getElementById('edit-site-sqft').value = currentEditSite.square_footage || '';
+      document.getElementById('edit-site-phone').value = currentEditSite.contact_phone || '';
+      document.getElementById('edit-site-email').value = currentEditSite.contact_email || '';
+      document.getElementById('edit-site-notes').value = currentEditSite.notes || '';
+
+      // Reinitialize custom dropdowns
+      if (window.NFGDropdown) {
+        const statusSelect = document.getElementById('edit-site-status');
+        if (statusSelect) {
+          new NFGDropdown(statusSelect);
+        }
+      }
+
+      // Close site detail modal and open edit modal
+      document.getElementById('siteDetailModal').classList.add('hidden');
+      document.getElementById('siteDetailModal').classList.remove('flex');
+      document.getElementById('editSiteModal').classList.remove('hidden');
+      document.getElementById('editSiteModal').classList.add('flex');
+
+      // Re-render icons
+      if (window.lucide) lucide.createIcons();
+    });
+
+    // Handle edit site form submission
+    document.getElementById('edit-site-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(e.target);
+      const siteId = formData.get('id');
+      
+      const updateData = {
+        name: formData.get('name'),
+        address: formData.get('address'),
+        status: formData.get('status'),
+        square_footage: formData.get('square_footage') ? parseInt(formData.get('square_footage')) : null,
+        contact_phone: formData.get('contact_phone') || null,
+        contact_email: formData.get('contact_email') || null,
+        notes: formData.get('notes') || null
+      };
+
+      try {
+        const { error } = await supabase
+          .from('sites')
+          .update(updateData)
+          .eq('id', siteId);
+
+        if (error) throw error;
+
+        // Close modal
+        document.getElementById('editSiteModal').classList.add('hidden');
+        document.getElementById('editSiteModal').classList.remove('flex');
+
+        // Refresh sites display
+        await renderSites();
+
+        alert('✅ Site updated successfully!');
+      } catch (error) {
+        console.error('Error updating site:', error);
+        const errorEl = document.getElementById('edit-form-error');
+        if (errorEl) {
+          errorEl.textContent = 'Failed to update site: ' + error.message;
+          errorEl.classList.remove('hidden');
+        }
+      }
+    });
   </script>
 
   <!-- Your modules (must exist in /js) -->
