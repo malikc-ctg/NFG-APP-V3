@@ -382,6 +382,14 @@ async function initDashboard() {
   // Fetch and display recent jobs
   await fetchRecentJobs()
   
+  // Hide "New Booking" button for staff users
+  if (currentUserProfile && currentUserProfile.role === 'staff') {
+    const newBookingBtn = document.getElementById('new-booking-btn');
+    if (newBookingBtn) {
+      newBookingBtn.style.display = 'none';
+    }
+  }
+  
   // Attach form submit handler
   const form = document.getElementById('add-site-form')
   form?.addEventListener('submit', handleSiteFormSubmit)
