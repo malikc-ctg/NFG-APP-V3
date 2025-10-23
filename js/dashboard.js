@@ -423,6 +423,120 @@ async function fetchUpcomingBookings() {
   }
 }
 
+// Fetch and display recurring jobs
+async function fetchRecurringJobs() {
+  try {
+    console.log('🔄 Fetching recurring jobs...');
+    
+    // Fetch recurring jobs
+    const { data: jobs, error } = await supabase
+      .from('jobs')
+      .select(`
+        id, 
+        title, 
+        status, 
+        job_type, 
+        scheduled_date,
+        site_id,
+        frequency
+      `)
+      .eq('frequency', 'recurring')
+      .order('scheduled_date', { ascending: true })
+      .limit(5);
+    
+    if (error) {
+      console.error('❌ Error fetching recurring jobs:', error);
+      
+      const recurringJobsList = document.getElementById('recurring-jobs-list');
+      if (recurringJobsList) {
+        recurringJobsList.innerHTML = `
+          <div class="py-6 text-center text-red-500">
+            <i data-lucide="alert-circle" class="w-12 h-12 mx-auto mb-2"></i>
+            <p class="font-medium">Error loading recurring jobs</p>
+            <p class="text-sm text-gray-500 mt-1">${error.message || 'Database query failed'}</p>
+          </div>
+        `;
+        if (window.lucide) lucide.createIcons();
+      }
+      return;
+    }
+    
+    console.log('🔄 Recurring jobs fetched:', jobs);
+    
+    const recurringJobsList = document.getElementById('recurring-jobs-list');
+    if (!recurringJobsList) {
+      console.error('❌ recurring-jobs-list element not found!');
+      return;
+    }
+    
+    if (!jobs || jobs.length === 0) {
+      recurringJobsList.innerHTML = `
+        <div class="py-6 text-center text-gray-500">
+          <i data-lucide="repeat" class="w-12 h-12 mx-auto mb-2 text-gray-300"></i>
+          <p>No recurring jobs</p>
+        </div>
+      `;
+      if (window.lucide) lucide.createIcons();
+      return;
+    }
+    
+    // Fetch site names for all jobs
+    const siteIds = [...new Set(jobs.map(j => j.site_id).filter(Boolean))];
+    const { data: sites } = await supabase
+      .from('sites')
+      .select('id, name')
+      .in('id', siteIds);
+    
+    const siteMap = {};
+    if (sites) {
+      sites.forEach(site => {
+        siteMap[site.id] = site.name;
+      });
+    }
+    
+    recurringJobsList.innerHTML = jobs.map(job => {
+      const siteName = siteMap[job.site_id] || 'Unknown site';
+      const statusColors = {
+        'pending': 'text-yellow-600',
+        'in-progress': 'text-blue-600',
+        'completed': 'text-green-600',
+        'cancelled': 'text-red-600'
+      };
+      
+      const statusIcons = {
+        'pending': 'clock',
+        'in-progress': 'play-circle',
+        'completed': 'check-circle',
+        'cancelled': 'x-circle'
+      };
+      
+      const statusColor = statusColors[job.status] || 'text-gray-600';
+      const statusIcon = statusIcons[job.status] || 'circle';
+      
+      return `
+        <div class="py-3 flex justify-between items-center hover:bg-nfglight/50 transition rounded-lg px-2 cursor-pointer" 
+             onclick="window.location.href='jobs.html?job=${job.id}'">
+          <div class="flex items-center gap-3 flex-1 min-w-0">
+            <i data-lucide="repeat" class="w-4 h-4 text-nfgblue flex-shrink-0"></i>
+            <div class="flex-1 min-w-0">
+              <p class="font-medium text-sm text-nfgblue truncate">${job.title}</p>
+              <p class="text-xs text-gray-500 truncate">${siteName}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <i data-lucide="${statusIcon}" class="w-4 h-4 ${statusColor}"></i>
+          </div>
+        </div>
+      `;
+    }).join('');
+    
+    if (window.lucide) lucide.createIcons();
+    console.log('🔄 Recurring Jobs loaded:', jobs.length);
+  } catch (error) {
+    console.error('Error fetching recurring jobs:', error);
+  }
+}
+
 // Fetch and display dashboard statistics
 async function fetchDashboardStats() {
   try {
@@ -495,6 +609,9 @@ async function initDashboard() {
   
   // Fetch and display recent jobs
   await fetchRecentJobs()
+  
+  // Fetch and display recurring jobs
+  await fetchRecurringJobs()
   
   // Fetch and display upcoming bookings
   await fetchUpcomingBookings()
