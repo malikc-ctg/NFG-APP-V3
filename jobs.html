@@ -278,6 +278,12 @@
             <i data-lucide="x-circle" class="w-4 h-4"></i>
             Cancel Job
           </button>
+
+          <!-- Delete Permanently (only for cancelled jobs) -->
+          <button id="delete-job-permanently-btn" class="hidden inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 ml-2">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+            Delete Permanently
+          </button>
         </div>
       </div>
     </div>
@@ -815,6 +821,24 @@
         archiveJobBtn.style.display = 'none';
       } else if (archiveJobBtn) {
         archiveJobBtn.style.display = '';
+      }
+
+      // Show/hide delete permanently button
+      const deleteJobBtn = document.getElementById('delete-job-permanently-btn');
+      if (deleteJobBtn) {
+        // Only show for cancelled jobs and only for admin/client
+        const isCancelled = job.status === 'cancelled';
+        const canDelete = currentUserProfile && ['admin', 'client'].includes(currentUserProfile.role);
+        
+        if (isCancelled && canDelete) {
+          deleteJobBtn.classList.remove('hidden');
+          deleteJobBtn.classList.add('inline-flex');
+          // Hide cancel button when showing delete button
+          if (archiveJobBtn) archiveJobBtn.style.display = 'none';
+        } else {
+          deleteJobBtn.classList.add('hidden');
+          deleteJobBtn.classList.remove('inline-flex');
+        }
       }
 
       // Hide add task button for staff
@@ -1400,6 +1424,102 @@
           await renderJobs();
           alert('✅ Job cancelled successfully!');
         }
+      }
+    });
+
+    // Delete job permanently (only for cancelled jobs)
+    document.getElementById('delete-job-permanently-btn')?.addEventListener('click', async () => {
+      const confirmMessage = 
+        '⚠️ PERMANENTLY DELETE THIS JOB?\n\n' +
+        'This action CANNOT be undone!\n\n' +
+        'The following will be permanently deleted:\n' +
+        '• Job record\n' +
+        '• All tasks\n' +
+        '• All uploaded photos\n\n' +
+        'Type "DELETE" to confirm:';
+      
+      const userInput = prompt(confirmMessage);
+      
+      if (userInput !== 'DELETE') {
+        if (userInput !== null) {
+          alert('❌ Deletion cancelled. You must type "DELETE" exactly to confirm.');
+        }
+        return;
+      }
+
+      try {
+        console.log('🗑️ Permanently deleting job:', currentJobId);
+        
+        // 1. Get all tasks to find photos
+        const { data: tasks, error: tasksError } = await supabase
+          .from('job_tasks')
+          .select('photo_url')
+          .eq('job_id', currentJobId);
+        
+        if (tasksError) throw tasksError;
+        
+        // 2. Delete photos from storage
+        if (tasks && tasks.length > 0) {
+          for (const task of tasks) {
+            if (task.photo_url) {
+              try {
+                // Extract file path from URL
+                const urlParts = task.photo_url.split('/job-photos/');
+                if (urlParts.length === 2) {
+                  const filePath = urlParts[1].split('?')[0]; // Remove query params
+                  await supabase.storage
+                    .from('job-photos')
+                    .remove([filePath]);
+                  console.log('🗑️ Deleted photo:', filePath);
+                }
+              } catch (photoError) {
+                console.warn('Could not delete photo:', photoError);
+                // Continue even if photo deletion fails
+              }
+            }
+          }
+        }
+        
+        // 3. Delete all tasks
+        const { error: deleteTasksError } = await supabase
+          .from('job_tasks')
+          .delete()
+          .eq('job_id', currentJobId);
+        
+        if (deleteTasksError) throw deleteTasksError;
+        console.log('✅ Deleted all tasks');
+        
+        // 4. Unlink from any bookings (don't delete bookings)
+        const { error: unlinkError } = await supabase
+          .from('bookings')
+          .update({ job_id: null })
+          .eq('job_id', currentJobId);
+        
+        if (unlinkError) {
+          console.warn('Could not unlink bookings:', unlinkError);
+          // Continue even if unlinking fails
+        }
+        
+        // 5. Finally, delete the job
+        const { error: deleteJobError } = await supabase
+          .from('jobs')
+          .delete()
+          .eq('id', currentJobId);
+        
+        if (deleteJobError) throw deleteJobError;
+        
+        console.log('✅ Job permanently deleted');
+        
+        // Close modal and refresh
+        document.getElementById('jobDetailModal').classList.add('hidden');
+        document.getElementById('jobDetailModal').classList.remove('flex');
+        await renderJobs();
+        
+        alert('✅ Job permanently deleted!\n\nAll related data has been removed from the system.');
+        
+      } catch (error) {
+        console.error('Error deleting job permanently:', error);
+        alert('❌ Failed to delete job: ' + error.message);
       }
     });
 
