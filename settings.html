@@ -173,20 +173,20 @@
         </section>
 
         <!-- User Management Section -->
-        <section id="user-management-section" class="bg-white border border-nfgray rounded-xl shadow-nfg p-6">
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-nfglight flex items-center justify-center">
-                <i data-lucide="users" class="w-5 h-5 text-nfgblue"></i>
+        <section id="user-management-section" class="bg-white border border-nfgray rounded-xl shadow-nfg p-4 md:p-6">
+          <div class="flex items-center justify-between gap-3 mb-4">
+            <div class="flex items-center gap-2 md:gap-3 min-w-0">
+              <div class="w-8 h-8 md:w-10 md:h-10 flex-shrink-0 rounded-full bg-nfglight flex items-center justify-center">
+                <i data-lucide="users" class="w-4 h-4 md:w-5 md:h-5 text-nfgblue"></i>
               </div>
-              <div>
-                <h3 class="text-lg font-semibold text-nfgblue">User Management</h3>
-                <p class="text-sm text-gray-500">Invite and manage team members</p>
+              <div class="min-w-0">
+                <h3 class="text-base md:text-lg font-semibold text-nfgblue">User Management</h3>
+                <p class="text-xs md:text-sm text-gray-500 truncate">Invite and manage team members</p>
               </div>
             </div>
-            <button id="invite-user-btn" class="hidden items-center gap-2 px-4 py-2 bg-nfgblue text-white rounded-xl hover:bg-nfgdark transition">
+            <button id="invite-user-btn" class="hidden items-center gap-1.5 md:gap-2 px-3 py-2 md:px-4 bg-nfgblue text-white rounded-xl hover:bg-nfgdark transition text-sm flex-shrink-0">
               <i data-lucide="user-plus" class="w-4 h-4"></i>
-              Invite User
+              <span class="hidden sm:inline">Invite User</span>
             </button>
           </div>
           
@@ -197,12 +197,12 @@
             </div>
           </div>
 
-          <div id="pending-invitations-container" class="mt-6 hidden">
-            <h4 class="text-md font-semibold text-nfgblue mb-3 flex items-center gap-2">
+          <div id="pending-invitations-container" class="mt-6 pt-4 border-t border-nfgray hidden">
+            <h4 class="text-sm md:text-base font-semibold text-nfgblue mb-3 flex items-center gap-2">
               <i data-lucide="mail" class="w-4 h-4"></i>
               Pending Invitations
             </h4>
-            <div id="pending-invitations-list" class="space-y-2">
+            <div id="pending-invitations-list" class="space-y-2 md:space-y-3">
               <!-- Populated by JS -->
             </div>
           </div>

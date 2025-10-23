@@ -378,22 +378,22 @@ export async function renderUsersList() {
     
     // Only show View button for admin/client users
     const viewButton = canManageUsers() ? `
-      <button onclick="openUserDetails('${user.id}')" class="px-4 py-2 rounded-xl border border-nfgblue text-nfgblue hover:bg-nfglight transition flex items-center gap-2">
+      <button onclick="openUserDetails('${user.id}')" class="px-3 py-2 md:px-4 rounded-xl border border-nfgblue text-nfgblue hover:bg-nfglight transition flex items-center gap-2 flex-shrink-0 text-sm">
         <i data-lucide="eye" class="w-4 h-4"></i>
-        View
+        <span class="hidden sm:inline">View</span>
       </button>
     ` : '';
     
     return `
-      <div class="flex items-center justify-between p-4 bg-white border border-nfgray rounded-xl hover:shadow-md transition-shadow">
-        <div class="flex items-center gap-3 flex-1">
-          <div class="w-12 h-12 rounded-full bg-gradient-to-br from-nfgblue to-nfgdark text-white flex items-center justify-center font-semibold text-lg">
+      <div class="flex items-center gap-3 p-3 md:p-4 bg-white border border-nfgray rounded-xl hover:shadow-md transition-shadow">
+        <div class="flex items-center gap-3 flex-1 min-w-0">
+          <div class="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 rounded-full bg-gradient-to-br from-nfgblue to-nfgdark text-white flex items-center justify-center font-semibold text-base md:text-lg">
             ${initials}
           </div>
-          <div class="flex-1">
-            <h5 class="font-semibold text-nfgblue">${displayName}</h5>
-            <p class="text-sm text-gray-500">${user.email}</p>
-            <div class="flex items-center gap-2 mt-1">
+          <div class="flex-1 min-w-0">
+            <h5 class="font-semibold text-nfgblue text-sm md:text-base truncate">${displayName}</h5>
+            <p class="text-xs md:text-sm text-gray-500 truncate">${user.email}</p>
+            <div class="flex items-center gap-1.5 md:gap-2 mt-1 flex-wrap">
               <span class="px-2 py-0.5 rounded-lg text-xs font-medium ${roleColors[user.role]}">${user.role.toUpperCase()}</span>
               <span class="px-2 py-0.5 rounded-lg text-xs font-medium ${statusColors[user.status]}">${user.status}</span>
             </div>
@@ -429,27 +429,27 @@ export async function renderPendingInvitations() {
     const expired = daysLeft < 0;
     
     return `
-      <div class="flex items-center justify-between p-3 ${expired ? 'bg-red-50 border-red-200' : 'bg-yellow-50 border-yellow-200'} border rounded-xl">
-        <div class="flex-1">
+      <div class="flex items-center gap-2 md:gap-3 p-3 md:p-4 ${expired ? 'bg-red-50 border-red-200' : 'bg-yellow-50 border-yellow-200'} border rounded-xl">
+        <div class="flex-1 min-w-0 pr-2">
           <div class="flex items-center gap-2">
-            <i data-lucide="mail" class="w-4 h-4 text-nfgblue"></i>
-            <p class="font-medium text-nfgblue">${inv.email}</p>
+            <i data-lucide="mail" class="w-4 h-4 text-nfgblue flex-shrink-0"></i>
+            <p class="font-medium text-nfgblue text-sm md:text-base truncate">${inv.email}</p>
           </div>
           <p class="text-xs text-gray-600 mt-1">
             Role: <span class="font-medium">${inv.role}</span> • 
             ${expired ? '<span class="text-red-600 font-semibold">EXPIRED</span>' : `Expires in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`}
           </p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1 md:gap-2 flex-shrink-0">
           <button 
             onclick="copyInvitationLink('${inv.invitation_token}')" 
-            class="p-2 rounded-lg hover:bg-yellow-100 text-nfgblue"
+            class="p-2 rounded-lg hover:bg-yellow-100 text-nfgblue transition"
             title="Copy invitation link">
             <i data-lucide="copy" class="w-4 h-4"></i>
           </button>
           <button 
             onclick="cancelInvite('${inv.id}')" 
-            class="p-2 rounded-lg hover:bg-red-100 text-red-600"
+            class="p-2 rounded-lg hover:bg-red-100 text-red-600 transition"
             title="Cancel invitation">
             <i data-lucide="x" class="w-4 h-4"></i>
           </button>
