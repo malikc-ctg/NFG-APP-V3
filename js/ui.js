@@ -478,13 +478,13 @@ async function calculateAndDisplaySiteMetrics(siteId) {
 
     // 2. Count UPCOMING bookings (pending + future dates) for this site
     const today = new Date().toISOString().split('T')[0]
-    console.log('[UI] Querying upcoming bookings for site_id:', siteId, 'with status="pending" and scheduled_for >=', today)
+    console.log('[UI] Querying upcoming bookings for site_id:', siteId, 'with status="pending" and scheduled_date >=', today)
     const { count: upcomingBookings, error: bookingsError } = await supabase
       .from('bookings')
       .select('*', { count: 'exact', head: true })
       .eq('site_id', siteId)
       .eq('status', 'pending')
-      .gte('scheduled_for', today)
+      .gte('scheduled_date', today)
 
     if (bookingsError) {
       console.error('[UI] ❌ Error counting upcoming bookings:', bookingsError)

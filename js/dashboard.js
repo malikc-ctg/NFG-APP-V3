@@ -54,7 +54,7 @@ async function calculateSiteMetrics(sites) {
       .from('bookings')
       .select('site_id')
       .eq('status', 'pending')
-      .gte('scheduled_for', today)
+      .gte('scheduled_date', today)
       .in('site_id', siteIds);
     
     if (bookingsError) {
