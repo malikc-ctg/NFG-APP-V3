@@ -1010,9 +1010,9 @@
                   <span>✅ Completed at ${formatTimestamp(task.completed_at)}</span>
                 </div>
                 ${hasPhoto ? `
-                  <button onclick="viewTaskPhoto('${task.id}')" class="text-sm px-3 py-1.5 rounded-lg border border-green-200 text-green-700 hover:bg-green-50 w-full">
-                    <i data-lucide="image" class="w-4 h-4 inline"></i>
-                    View Photo
+                  <button onclick="viewTaskPhoto('${task.photo_url}')" class="text-sm px-3 py-1.5 rounded-lg border border-green-200 text-green-700 hover:bg-green-50 w-full flex items-center justify-center gap-2">
+                    <i data-lucide="image" class="w-4 h-4"></i>
+                    <span>View Photo</span>
                   </button>
                 ` : ''}
               </div>
@@ -1123,11 +1123,11 @@
     };
 
     // View task photo
-    window.viewTaskPhoto = async function(taskId) {
-      const tasks = await getJobTasks(currentJobId);
-      const task = tasks.find(t => t.id === taskId);
-      if (task && task.photo_url) {
-        window.open(task.photo_url, '_blank');
+    window.viewTaskPhoto = function(photoUrl) {
+      if (photoUrl) {
+        window.open(photoUrl, '_blank');
+      } else {
+        alert('Photo not found');
       }
     };
 
