@@ -453,6 +453,62 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       if (window.lucide) lucide.createIcons();
+      
+      // Initialize mobile sidebar
+      const sidebar = document.getElementById('sidebar');
+      const toggleButtons = document.querySelectorAll('[data-action="toggle-sidebar"], button[aria-label="Toggle sidebar"]');
+      
+      let overlay = document.getElementById('sidebar-overlay');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'sidebar-overlay';
+        overlay.className = 'fixed inset-0 bg-black/50 z-40 hidden';
+        document.body.appendChild(overlay);
+      }
+      
+      function toggleSidebar() {
+        if (sidebar && overlay) {
+          const isHidden = sidebar.classList.contains('hidden') || !sidebar.classList.contains('mobile-sidebar-open');
+          
+          if (isHidden) {
+            sidebar.classList.remove('hidden');
+            sidebar.classList.add('mobile-sidebar-open', 'flex', 'flex-col', 'fixed', 'inset-y-0', 'left-0', 'z-50', 'w-64', 'max-w-[80vw]', 'shadow-2xl', 'animate-slide-in');
+            overlay.classList.remove('hidden');
+            overlay.classList.add('animate-fade-in');
+            document.body.style.overflow = 'hidden';
+          } else {
+            sidebar.classList.add('animate-slide-out');
+            overlay.classList.add('animate-fade-out');
+            
+            setTimeout(() => {
+              sidebar.classList.add('hidden');
+              sidebar.classList.remove('mobile-sidebar-open', 'flex', 'flex-col', 'fixed', 'inset-y-0', 'left-0', 'z-50', 'w-64', 'max-w-[80vw]', 'shadow-2xl', 'animate-slide-in', 'animate-slide-out');
+              overlay.classList.add('hidden');
+              overlay.classList.remove('animate-fade-in', 'animate-fade-out');
+              document.body.style.overflow = '';
+            }, 200);
+          }
+        }
+      }
+      
+      toggleButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleSidebar();
+        });
+      });
+      
+      overlay?.addEventListener('click', toggleSidebar);
+      
+      const navLinks = sidebar?.querySelectorAll('a');
+      navLinks?.forEach(link => {
+        link.addEventListener('click', () => {
+          if (window.innerWidth < 768) {
+            toggleSidebar();
+          }
+        });
+      });
     });
 
     // Modal functionality
