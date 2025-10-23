@@ -455,6 +455,7 @@ async function calculateAndDisplaySiteMetrics(siteId) {
     document.getElementById('site-detail-bookings').textContent = '...'
 
     // 1. Count COMPLETED jobs for this site
+    console.log('[UI] Querying completed jobs for site_id:', siteId, 'with status="completed"')
     const { count: completedJobs, error: jobsError } = await supabase
       .from('jobs')
       .select('*', { count: 'exact', head: true })
@@ -462,15 +463,16 @@ async function calculateAndDisplaySiteMetrics(siteId) {
       .eq('status', 'completed')
 
     if (jobsError) {
-      console.error('[UI] Error counting completed jobs:', jobsError)
+      console.error('[UI] ❌ Error counting completed jobs:', jobsError)
       document.getElementById('site-detail-jobs').textContent = '0'
     } else {
-      console.log('[UI] ✅ Completed jobs:', completedJobs)
+      console.log('[UI] ✅ Jobs Completed for this site:', completedJobs)
       document.getElementById('site-detail-jobs').textContent = completedJobs || '0'
     }
 
     // 2. Count UPCOMING bookings (pending + future dates) for this site
-    const today = new Date().toISOString()
+    const today = new Date().toISOString().split('T')[0]
+    console.log('[UI] Querying upcoming bookings for site_id:', siteId, 'with status="pending" and scheduled_for >=', today)
     const { count: upcomingBookings, error: bookingsError } = await supabase
       .from('bookings')
       .select('*', { count: 'exact', head: true })
@@ -479,10 +481,10 @@ async function calculateAndDisplaySiteMetrics(siteId) {
       .gte('scheduled_for', today)
 
     if (bookingsError) {
-      console.error('[UI] Error counting upcoming bookings:', bookingsError)
+      console.error('[UI] ❌ Error counting upcoming bookings:', bookingsError)
       document.getElementById('site-detail-bookings').textContent = '0'
     } else {
-      console.log('[UI] ✅ Upcoming bookings:', upcomingBookings)
+      console.log('[UI] ✅ Upcoming Bookings for this site:', upcomingBookings)
       document.getElementById('site-detail-bookings').textContent = upcomingBookings || '0'
     }
 
