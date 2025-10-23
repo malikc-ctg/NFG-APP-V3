@@ -39,6 +39,69 @@ async function handleLogout() {
   window.location.href = './index.html'
 }
 
+// Calculate metrics for each site
+async function calculateSiteMetrics(sites) {
+  if (!sites || sites.length === 0) return sites;
+  
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Get all site IDs
+    const siteIds = sites.map(s => s.id);
+    
+    // Fetch upcoming bookings count for each site
+    const { data: bookingCounts, error: bookingsError } = await supabase
+      .from('bookings')
+      .select('site_id')
+      .eq('status', 'pending')
+      .gte('scheduled_date', today)
+      .in('site_id', siteIds);
+    
+    if (bookingsError) {
+      console.error('Error fetching booking counts:', bookingsError);
+    }
+    
+    // Fetch completed jobs count for each site
+    const { data: jobCounts, error: jobsError } = await supabase
+      .from('jobs')
+      .select('site_id')
+      .eq('status', 'completed')
+      .in('site_id', siteIds);
+    
+    if (jobsError) {
+      console.error('Error fetching job counts:', jobsError);
+    }
+    
+    // Create maps for counts
+    const upcomingBookingsMap = {};
+    const completedJobsMap = {};
+    
+    // Count bookings per site
+    if (bookingCounts) {
+      bookingCounts.forEach(booking => {
+        upcomingBookingsMap[booking.site_id] = (upcomingBookingsMap[booking.site_id] || 0) + 1;
+      });
+    }
+    
+    // Count jobs per site
+    if (jobCounts) {
+      jobCounts.forEach(job => {
+        completedJobsMap[job.site_id] = (completedJobsMap[job.site_id] || 0) + 1;
+      });
+    }
+    
+    // Attach metrics to each site
+    return sites.map(site => ({
+      ...site,
+      upcoming_bookings: upcomingBookingsMap[site.id] || 0,
+      jobs_completed: completedJobsMap[site.id] || 0
+    }));
+  } catch (error) {
+    console.error('Error calculating site metrics:', error);
+    return sites;
+  }
+}
+
 // Fetch and display sites
 async function fetchSites() {
   try {
@@ -46,6 +109,8 @@ async function fetchSites() {
     if (!currentUser) {
       await getCurrentUser();
     }
+
+    let sites = [];
 
     if (currentUserProfile && currentUserProfile.role === 'staff') {
       console.log('🔍 Dashboard - Fetching sites for staff user:', currentUser.id);
@@ -69,21 +134,21 @@ async function fetchSites() {
       const siteIds = assignments.map(a => a.site_id);
       console.log('🏢 Dashboard - Fetching sites with IDs:', siteIds);
       
-      const { data: sites, error } = await supabase
+      const { data: fetchedSites, error } = await supabase
         .from('sites')
         .select('*')
         .in('id', siteIds)
         .order('name', { ascending: true });
       
-      console.log('✅ Dashboard - Sites fetched:', sites);
+      console.log('✅ Dashboard - Sites fetched:', fetchedSites);
       if (error) {
         console.error('❌ Dashboard - Error fetching sites:', error);
         return [];
       }
-      return sites || [];
+      sites = fetchedSites || [];
     } else {
       // Admin/Client - fetch all sites from Supabase
-      const { data: sites, error } = await supabase
+      const { data: fetchedSites, error } = await supabase
         .from('sites')
         .select('*')
         .order('created_at', { ascending: false });
@@ -93,9 +158,15 @@ async function fetchSites() {
         return [];
       }
       
-      console.log('Dashboard - Sites fetched:', sites);
-      return sites || [];
+      console.log('Dashboard - Sites fetched:', fetchedSites);
+      sites = fetchedSites || [];
     }
+    
+    // Calculate metrics for all sites
+    const sitesWithMetrics = await calculateSiteMetrics(sites);
+    console.log('Dashboard - Sites with metrics:', sitesWithMetrics);
+    
+    return sitesWithMetrics;
   } catch (error) {
     console.error('Error fetching sites:', error)
     return []
