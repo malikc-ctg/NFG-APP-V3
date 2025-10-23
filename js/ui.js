@@ -441,6 +441,58 @@ export function closeAddSiteModal() {
 // Store current site ID for delete operation
 let currentSiteId = null
 
+// Calculate and display real-time site metrics
+async function calculateAndDisplaySiteMetrics(siteId) {
+  try {
+    const supabase = window.supabase
+    if (!supabase) {
+      console.error('[UI] Supabase not available')
+      return
+    }
+
+    // Show loading state
+    document.getElementById('site-detail-jobs').textContent = '...'
+    document.getElementById('site-detail-bookings').textContent = '...'
+
+    // 1. Count COMPLETED jobs for this site
+    const { count: completedJobs, error: jobsError } = await supabase
+      .from('jobs')
+      .select('*', { count: 'exact', head: true })
+      .eq('site_id', siteId)
+      .eq('status', 'completed')
+
+    if (jobsError) {
+      console.error('[UI] Error counting completed jobs:', jobsError)
+      document.getElementById('site-detail-jobs').textContent = '0'
+    } else {
+      console.log('[UI] ✅ Completed jobs:', completedJobs)
+      document.getElementById('site-detail-jobs').textContent = completedJobs || '0'
+    }
+
+    // 2. Count UPCOMING bookings (pending + future dates) for this site
+    const today = new Date().toISOString()
+    const { count: upcomingBookings, error: bookingsError } = await supabase
+      .from('bookings')
+      .select('*', { count: 'exact', head: true })
+      .eq('site_id', siteId)
+      .eq('status', 'pending')
+      .gte('scheduled_for', today)
+
+    if (bookingsError) {
+      console.error('[UI] Error counting upcoming bookings:', bookingsError)
+      document.getElementById('site-detail-bookings').textContent = '0'
+    } else {
+      console.log('[UI] ✅ Upcoming bookings:', upcomingBookings)
+      document.getElementById('site-detail-bookings').textContent = upcomingBookings || '0'
+    }
+
+  } catch (error) {
+    console.error('[UI] Error calculating site metrics:', error)
+    document.getElementById('site-detail-jobs').textContent = '0'
+    document.getElementById('site-detail-bookings').textContent = '0'
+  }
+}
+
 // Open site detail modal and populate with data
 export async function openSiteDetailModal(siteId) {
   console.log('[UI] Opening modal for site ID:', siteId, 'Type:', typeof siteId)
@@ -514,9 +566,11 @@ export async function openSiteDetailModal(siteId) {
     document.getElementById('site-detail-rating').textContent = site.rating || '0'
     document.getElementById('site-detail-phone').textContent = site.contact_phone || '—'
     document.getElementById('site-detail-email').textContent = site.contact_email || '—'
-    document.getElementById('site-detail-jobs').textContent = site.jobsCompleted || site.jobs_completed || '0'
-    document.getElementById('site-detail-bookings').textContent = site.upcomingBookings || site.upcoming_bookings || '0'
     document.getElementById('site-detail-notes').textContent = site.notes || 'No notes available.'
+    
+    // Calculate and display REAL-TIME metrics
+    console.log('[UI] 📊 Calculating real-time site metrics...')
+    await calculateAndDisplaySiteMetrics(siteId)
     
     // Show modal
     const modal = document.getElementById('siteDetailModal')
