@@ -325,7 +325,6 @@ async function fetchUpcomingBookings() {
         title, 
         status, 
         scheduled_date,
-        emergency,
         site_id,
         created_at
       `)
@@ -391,7 +390,6 @@ async function fetchUpcomingBookings() {
     
     bookingsList.innerHTML = bookings.map(booking => {
       const siteName = siteMap[booking.site_id] || 'Unknown site';
-      const isEmergency = booking.emergency;
       const bookingDate = new Date(booking.scheduled_date);
       const formattedDate = bookingDate.toLocaleDateString('en-US', { 
         month: 'short', 
@@ -404,11 +402,10 @@ async function fetchUpcomingBookings() {
              onclick="window.location.href='bookings.html'">
           <div class="flex items-center gap-3 flex-1 min-w-0">
             <div class="flex items-center gap-1.5 flex-shrink-0">
-              <i data-lucide="calendar" class="w-4 h-4 ${isEmergency ? 'text-red-600' : 'text-nfgblue'}"></i>
-              ${isEmergency ? '<i data-lucide="alert-circle" class="w-3 h-3 text-red-600"></i>' : ''}
+              <i data-lucide="calendar" class="w-4 h-4 text-nfgblue"></i>
             </div>
             <div class="flex-1 min-w-0">
-              <p class="font-medium text-sm ${isEmergency ? 'text-red-600' : 'text-nfgblue'} truncate">${booking.title}</p>
+              <p class="font-medium text-sm text-nfgblue truncate">${booking.title}</p>
               <p class="text-xs text-gray-500 truncate">${siteName}</p>
             </div>
           </div>
