@@ -1082,30 +1082,30 @@
       }
     }
 
-    // Store current site being edited
-    let currentEditSite = null;
+    // Store current site being edited (use window scope to match ui.js)
+    window.currentEditSite = null;
 
     // Edit Site button handler
     document.getElementById('edit-site-btn')?.addEventListener('click', () => {
-      console.log('[Edit] Edit button clicked! Current site:', currentEditSite);
+      console.log('[Edit] Edit button clicked! Current site:', window.currentEditSite);
       
-      if (!currentEditSite) {
+      if (!window.currentEditSite) {
         console.error('[Edit] ❌ No site selected for editing');
         alert('Error: No site selected. Please close and reopen the site details.');
         return;
       }
 
-      console.log('[Edit] ✅ Opening edit modal for:', currentEditSite.name);
+      console.log('[Edit] ✅ Opening edit modal for:', window.currentEditSite.name);
 
       // Populate form with current site data
-      document.getElementById('edit-site-id').value = currentEditSite.id;
-      document.getElementById('edit-site-name').value = currentEditSite.name || '';
-      document.getElementById('edit-site-address').value = currentEditSite.address || '';
-      document.getElementById('edit-site-status').value = currentEditSite.status || 'Active';
-      document.getElementById('edit-site-sqft').value = currentEditSite.square_footage || '';
-      document.getElementById('edit-site-phone').value = currentEditSite.contact_phone || '';
-      document.getElementById('edit-site-email').value = currentEditSite.contact_email || '';
-      document.getElementById('edit-site-notes').value = currentEditSite.notes || '';
+      document.getElementById('edit-site-id').value = window.currentEditSite.id;
+      document.getElementById('edit-site-name').value = window.currentEditSite.name || '';
+      document.getElementById('edit-site-address').value = window.currentEditSite.address || '';
+      document.getElementById('edit-site-status').value = window.currentEditSite.status || 'Active';
+      document.getElementById('edit-site-sqft').value = window.currentEditSite.square_footage || '';
+      document.getElementById('edit-site-phone').value = window.currentEditSite.contact_phone || '';
+      document.getElementById('edit-site-email').value = window.currentEditSite.contact_email || '';
+      document.getElementById('edit-site-notes').value = window.currentEditSite.notes || '';
 
       // Reinitialize custom dropdowns
       if (window.NFGDropdown) {
