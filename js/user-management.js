@@ -376,6 +376,11 @@ export async function renderUsersList() {
     const displayName = user.full_name || user.email.split('@')[0];
     const initials = displayName.charAt(0).toUpperCase();
     
+    // Determine avatar display (profile picture or initials)
+    const avatarHtml = user.profile_picture 
+      ? `<img src="${user.profile_picture}" alt="${displayName}" class="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 rounded-full object-cover border-2 border-nfgray" />`
+      : `<div class="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 rounded-full bg-gradient-to-br from-nfgblue to-nfgdark text-white flex items-center justify-center font-semibold text-base md:text-lg">${initials}</div>`;
+    
     // Only show View button for admin/client users
     const viewButton = canManageUsers() ? `
       <button onclick="openUserDetails('${user.id}')" class="px-3 py-2 md:px-4 rounded-xl border border-nfgblue text-nfgblue hover:bg-nfglight transition flex items-center gap-2 flex-shrink-0 text-sm">
@@ -387,9 +392,7 @@ export async function renderUsersList() {
     return `
       <div class="flex items-center gap-3 p-3 md:p-4 bg-white border border-nfgray rounded-xl hover:shadow-md transition-shadow">
         <div class="flex items-center gap-3 flex-1 min-w-0">
-          <div class="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 rounded-full bg-gradient-to-br from-nfgblue to-nfgdark text-white flex items-center justify-center font-semibold text-base md:text-lg">
-            ${initials}
-          </div>
+          ${avatarHtml}
           <div class="flex-1 min-w-0">
             <h5 class="font-semibold text-nfgblue text-sm md:text-base truncate">${displayName}</h5>
             <p class="text-xs md:text-sm text-gray-500 truncate">${user.email}</p>
@@ -472,8 +475,15 @@ window.openUserDetails = async function(userId) {
   const displayName = user.full_name || user.email.split('@')[0];
   const initials = displayName.charAt(0).toUpperCase();
   
+  // Populate user avatar (profile picture or initials)
+  const avatarContainer = document.getElementById('user-detail-avatar-container');
+  if (user.profile_picture) {
+    avatarContainer.innerHTML = `<img src="${user.profile_picture}" alt="${displayName}" class="w-16 h-16 rounded-full object-cover border-2 border-nfgray" />`;
+  } else {
+    avatarContainer.innerHTML = `<div class="w-16 h-16 rounded-full bg-gradient-to-br from-nfgblue to-nfgdark text-white flex items-center justify-center font-semibold text-2xl">${initials}</div>`;
+  }
+  
   // Populate user info
-  document.getElementById('user-detail-avatar').textContent = initials;
   document.getElementById('user-detail-name').textContent = displayName;
   document.getElementById('user-detail-email').textContent = user.email;
   
