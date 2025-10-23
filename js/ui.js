@@ -441,6 +441,81 @@ export function closeAddSiteModal() {
 // Store current site ID for delete operation
 let currentSiteId = null
 
+// Fetch and display recent pending/in-progress jobs for a site
+async function fetchAndDisplayRecentSiteActivity(siteId) {
+  try {
+    const { supabase } = await import('./supabase.js');
+    
+    if (!supabase) {
+      console.error('[UI] ❌ Supabase not available for recent activity');
+      return;
+    }
+
+    console.log('[UI] 📋 Fetching recent pending/in-progress jobs for site:', siteId);
+
+    // Query jobs that are pending OR in-progress for this site
+    const { data: jobs, error } = await supabase
+      .from('jobs')
+      .select('id, title, status, job_type, created_at')
+      .eq('site_id', siteId)
+      .in('status', ['pending', 'in-progress'])
+      .order('created_at', { ascending: false })
+      .limit(5); // Show up to 5 recent jobs
+
+    const recentActivityContainer = document.getElementById('site-detail-activity');
+    if (!recentActivityContainer) {
+      console.error('[UI] ❌ Recent activity container not found');
+      return;
+    }
+
+    if (error) {
+      console.error('[UI] ❌ Error fetching recent site activity:', error);
+      recentActivityContainer.innerHTML = '<p class="text-gray-500 text-sm">Error loading recent jobs.</p>';
+      return;
+    }
+
+    if (jobs && jobs.length > 0) {
+      console.log('[UI] ✅ Found', jobs.length, 'active jobs for Recent Activity');
+      
+      // Build HTML for recent activity
+      let activityHTML = '<div class="space-y-2">';
+      jobs.forEach(job => {
+        const statusIcon = job.status === 'pending' ? 'clock' : 'loader';
+        const statusColor = job.status === 'pending' ? 'text-yellow-600' : 'text-blue-600';
+        const isEmergency = job.job_type === 'emergency';
+        
+        activityHTML += `
+          <div class="flex items-center gap-2 p-2 rounded-lg hover:bg-nfglight transition cursor-pointer border border-nfgray" 
+               onclick="window.location.href='jobs.html?job=${job.id}'">
+            <i data-lucide="${statusIcon}" class="w-4 h-4 ${statusColor} flex-shrink-0"></i>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-nftext truncate">
+                ${isEmergency ? '🚨 ' : ''}${job.title}
+              </p>
+              <p class="text-xs text-gray-500 capitalize">${job.status.replace('-', ' ')}</p>
+            </div>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 flex-shrink-0"></i>
+          </div>
+        `;
+      });
+      activityHTML += '</div>';
+      
+      recentActivityContainer.innerHTML = activityHTML;
+      
+      // Re-render lucide icons
+      if (window.lucide) {
+        setTimeout(() => window.lucide.createIcons(), 50);
+      }
+    } else {
+      console.log('[UI] No active jobs found for Recent Activity');
+      recentActivityContainer.innerHTML = '<p class="text-gray-500 text-sm">No pending or in-progress jobs.</p>';
+    }
+
+  } catch (error) {
+    console.error('[UI] Unexpected error in fetchAndDisplayRecentSiteActivity:', error);
+  }
+}
+
 // Calculate and display real-time site metrics
 async function calculateAndDisplaySiteMetrics(siteId) {
   try {
@@ -579,6 +654,10 @@ export async function openSiteDetailModal(siteId) {
     // Calculate and display REAL-TIME metrics
     console.log('[UI] 📊 Calculating real-time site metrics...')
     await calculateAndDisplaySiteMetrics(siteId)
+    
+    // Fetch and display recent activity (pending/in-progress jobs)
+    console.log('[UI] 📋 Fetching recent activity...')
+    await fetchAndDisplayRecentSiteActivity(siteId)
     
     // Show modal
     const modal = document.getElementById('siteDetailModal')
