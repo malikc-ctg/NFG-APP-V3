@@ -809,11 +809,19 @@
           return `
             <div class="bg-white border border-nfgray rounded-xl p-4 shadow-nfg hover:shadow-lg transition-shadow">
               <div class="flex justify-between items-start mb-3">
-                <div>
+                <div class="flex-1 min-w-0">
                   <h3 class="text-nfgblue font-semibold text-lg">${site.name}</h3>
-                  <p class="text-gray-500 text-xs mt-1">${site.address}</p>
+                  <div class="flex items-center gap-2 mt-1">
+                    <p class="text-gray-500 text-xs truncate">${site.address}</p>
+                    <button 
+                      onclick="copyAddress('${site.address.replace(/'/g, "\\'")}', event)" 
+                      class="text-gray-400 hover:text-nfgblue transition p-1 rounded hover:bg-nfglight flex-shrink-0"
+                      title="Copy address">
+                      <i data-lucide="copy" class="w-3 h-3"></i>
+                    </button>
+                  </div>
                 </div>
-                <span class="px-2 py-1 rounded-lg text-xs font-medium ${statusClass}">${site.status}</span>
+                <span class="px-2 py-1 rounded-lg text-xs font-medium ${statusClass} ml-2 flex-shrink-0">${site.status}</span>
               </div>
               
               <div class="grid grid-cols-3 gap-2 mb-4 py-3 border-t border-b border-nfgray">
@@ -919,6 +927,34 @@
         });
       }
     });
+
+    // Copy address to clipboard
+    window.copyAddress = async function(address, event) {
+      event?.stopPropagation();
+      event?.preventDefault();
+      
+      try {
+        await navigator.clipboard.writeText(address);
+        
+        // Show success feedback
+        const button = event?.target.closest('button');
+        if (button) {
+          const originalHTML = button.innerHTML;
+          button.innerHTML = '<i data-lucide="check" class="w-3 h-3"></i>';
+          button.classList.add('text-green-600');
+          if (window.lucide) lucide.createIcons();
+          
+          setTimeout(() => {
+            button.innerHTML = originalHTML;
+            button.classList.remove('text-green-600');
+            if (window.lucide) lucide.createIcons();
+          }, 1500);
+        }
+      } catch (err) {
+        console.error('Failed to copy address:', err);
+        alert('Failed to copy address');
+      }
+    }
   </script>
 
   <!-- Your modules (must exist in /js) -->
