@@ -259,11 +259,75 @@ export function initializeUI() {
   // Initialize sidebar toggle
   initSidebarToggle()
   
+  // Initialize mobile sidebar
+  initMobileSidebar()
+  
   // Initialize user profile
   initUserProfile()
 }
 
-// Sidebar toggle functionality
+// Mobile sidebar toggle functionality
+function initMobileSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  
+  // Find all toggle buttons (hamburger menu buttons)
+  const toggleButtons = document.querySelectorAll('[data-action="toggle-sidebar"], button[aria-label="Toggle sidebar"]');
+  
+  // Create overlay for mobile
+  let overlay = document.getElementById('sidebar-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'sidebar-overlay';
+    overlay.className = 'fixed inset-0 bg-black/50 z-40 hidden';
+    document.body.appendChild(overlay);
+  }
+  
+  // Toggle sidebar function
+  function toggleSidebar() {
+    if (sidebar && overlay) {
+      const isHidden = sidebar.classList.contains('hidden');
+      
+      if (isHidden) {
+        // Show sidebar
+        sidebar.classList.remove('hidden');
+        sidebar.classList.add('flex', 'fixed', 'inset-y-0', 'left-0', 'z-50');
+        overlay.classList.remove('hidden');
+        document.body.style.overflow = 'hidden'; // Prevent scrolling
+      } else {
+        // Hide sidebar
+        sidebar.classList.add('hidden');
+        sidebar.classList.remove('flex', 'fixed', 'inset-y-0', 'left-0', 'z-50');
+        overlay.classList.add('hidden');
+        document.body.style.overflow = ''; // Restore scrolling
+      }
+    }
+  }
+  
+  // Attach click handlers to all toggle buttons
+  toggleButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleSidebar();
+    });
+  });
+  
+  // Close sidebar when clicking overlay
+  overlay?.addEventListener('click', toggleSidebar);
+  
+  // Close sidebar when clicking a nav link on mobile
+  const navLinks = sidebar?.querySelectorAll('a');
+  navLinks?.forEach(link => {
+    link.addEventListener('click', () => {
+      // Only close on mobile
+      if (window.innerWidth < 768) {
+        toggleSidebar();
+      }
+    });
+  });
+}
+
+// Legacy sidebar toggle functionality (keep for compatibility)
 function initSidebarToggle() {
   const sidebar = document.getElementById('sidebar')
   const toggleBtn = document.getElementById('sidebar-toggle')
