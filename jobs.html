@@ -412,11 +412,24 @@
           </div>
           <div>
             <label class="block text-sm font-medium mb-1.5">Frequency</label>
-            <select name="frequency" data-custom-dropdown="true" data-placeholder="Select frequency">
+            <select name="frequency" id="job-frequency-select" data-custom-dropdown="true" data-placeholder="Select frequency">
               <option value="single visit" selected>Single Visit</option>
               <option value="recurring">Recurring</option>
             </select>
           </div>
+        </div>
+        
+        <!-- Recurrence Pattern (only shown for recurring jobs) -->
+        <div id="recurrence-pattern-section" class="hidden">
+          <label class="block text-sm font-medium mb-1.5">Recurrence Pattern <span class="text-red-500">*</span></label>
+          <select name="recurrence_pattern" data-custom-dropdown="true" data-placeholder="How often should this job repeat?">
+            <option value="weekly" selected>Weekly</option>
+            <option value="biweekly">Every 2 Weeks</option>
+            <option value="monthly">Monthly</option>
+          </select>
+          <p class="text-xs text-gray-500 mt-1.5">
+            📅 The next instance will automatically be created when this job is completed.
+          </p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -556,6 +569,7 @@
   <script type="module">
     import { supabase } from './js/supabase.js'
     import { NFGDropdown } from './js/custom-dropdown.js'
+    import { handleJobCompletion } from './js/recurring-jobs.js'
 
     let currentFilter = 'all';
     let currentJobId = null;
@@ -1105,7 +1119,12 @@
               
               if (!jobError) {
                 stopTimer();
-                alert(`🎉 All tasks completed! Job finished!\nTotal time: ${formatDuration(totalDuration)}`);
+                
+                // Handle recurring job creation if applicable
+                const completedJob = { ...job, status: 'completed' };
+                const recurrenceResult = await handleJobCompletion(completedJob);
+                
+                alert(`🎉 ${recurrenceResult.message}\nTotal time: ${formatDuration(totalDuration)}`);
                 document.getElementById('jobDetailModal').classList.add('hidden');
                 document.getElementById('jobDetailModal').classList.remove('flex');
                 await renderJobs();
@@ -1344,6 +1363,15 @@
           console.error('Error updating job status:', error);
           alert('Failed to update status. Please try again.');
         } else {
+          // Handle recurring job creation if status changed to completed
+          if (newStatus === 'completed') {
+            const completedJob = { ...job, status: 'completed' };
+            const recurrenceResult = await handleJobCompletion(completedJob);
+            if (recurrenceResult.nextJob) {
+              alert(recurrenceResult.message);
+            }
+          }
+          
           // Update display
           document.getElementById('job-detail-status').textContent = newStatus.replace('-', ' ');
           await renderJobs();
@@ -1441,7 +1469,11 @@
           stopTimer();
           console.log('✅ Work ended! Duration:', formatDuration(totalDuration));
           if (allTasksComplete) {
-            alert(`✅ Job completed! Total time: ${formatDuration(totalDuration)}`);
+            // Handle recurring job creation if applicable
+            const updatedJob = { ...job, status: 'completed' };
+            const recurrenceResult = await handleJobCompletion(updatedJob);
+            
+            alert(recurrenceResult.message + `\nTotal time: ${formatDuration(totalDuration)}`);
             document.getElementById('jobDetailModal').classList.add('hidden');
             document.getElementById('jobDetailModal').classList.remove('flex');
             await renderJobs();
@@ -1461,24 +1493,42 @@
       if (window.lucide) lucide.createIcons();
     });
 
+    // Show/hide recurrence pattern based on frequency selection
+    document.getElementById('job-frequency-select')?.addEventListener('change', (e) => {
+      const recurrenceSection = document.getElementById('recurrence-pattern-section');
+      if (e.target.value === 'recurring') {
+        recurrenceSection?.classList.remove('hidden');
+      } else {
+        recurrenceSection?.classList.add('hidden');
+      }
+    });
+    
     // Create job
     document.getElementById('create-job-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const formData = new FormData(e.target);
       
+      const jobData = {
+        title: formData.get('title'),
+        site_id: formData.get('site_id'),
+        job_type: formData.get('job_type'),
+        frequency: formData.get('frequency'),
+        status: 'pending',
+        scheduled_date: formData.get('scheduled_date') || null,
+        estimated_hours: formData.get('estimated_hours') || null,
+        description: formData.get('description') || null,
+        user_id: currentUser.id
+      };
+      
+      // Add recurrence pattern if this is a recurring job
+      if (jobData.frequency === 'recurring') {
+        jobData.recurrence_pattern = formData.get('recurrence_pattern') || 'weekly';
+        jobData.recurrence_series_id = crypto.randomUUID();
+      }
+      
       const { error } = await supabase
         .from('jobs')
-        .insert({
-          title: formData.get('title'),
-          site_id: formData.get('site_id'),
-          job_type: formData.get('job_type'),
-          frequency: formData.get('frequency'),
-          status: 'pending',
-          scheduled_date: formData.get('scheduled_date') || null,
-          estimated_hours: formData.get('estimated_hours') || null,
-          description: formData.get('description') || null,
-          user_id: currentUser.id
-        });
+        .insert(jobData);
 
       if (error) {
         console.error('Error creating job:', error);
