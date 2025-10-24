@@ -1,5 +1,8 @@
 console.log('UI module loaded.')
 
+// Import notification system
+import { showNotification, showConfirm, showPrompt, toast, notify } from './notifications.js'
+
 // Current filter state
 let currentFilter = 'all'
 
@@ -610,7 +613,7 @@ export async function openSiteDetailModal(siteId) {
     if (!site) {
       console.error('[UI] ❌ Site not found! ID:', siteId)
       console.error('[UI] Available sites:', JSON.parse(localStorage.getItem('nfg_sites') || '[]'))
-      alert(`Site not found (ID: ${siteId}). The site may have been deleted.`)
+      toast.error(`Site not found (ID: ${siteId}). The site may have been deleted.`, 'Site Not Found')
       return
     }
     
@@ -675,7 +678,7 @@ export async function openSiteDetailModal(siteId) {
     }
   } catch (error) {
     console.error('[UI] Error opening site modal:', error)
-    alert('Error opening site details. Check console for details.')
+    toast.error('Error opening site details. Check console for details.', 'Error')
   }
 }
 
@@ -743,7 +746,7 @@ export function deleteSite() {
     
   } catch (error) {
     console.error('Error deleting site:', error)
-    alert('Failed to delete site. Please try again.')
+    toast.error('Failed to delete site. Please try again.', 'Delete Error')
   }
 }
 
@@ -818,7 +821,7 @@ window.copyAddress = async function(address, event) {
     }
   } catch (err) {
     console.error('Failed to copy address:', err);
-    alert('Failed to copy address');
+    toast.error('Failed to copy address', 'Copy Error');
   }
 }
 
