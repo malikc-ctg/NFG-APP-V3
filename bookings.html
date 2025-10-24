@@ -35,6 +35,9 @@
   
   <!-- Mobile Menu Styles -->
   <link rel="stylesheet" href="./css/mobile-menu.css">
+  
+  <!-- Notification System -->
+  <link rel="stylesheet" href="./css/notifications.css">
 </head>
 
 <body class="font-inter bg-nfbg min-h-screen flex text-nftext">
@@ -404,6 +407,7 @@
 
   <script type="module">
     import { supabase } from './js/supabase.js'
+    import { showNotification, showConfirm, showPrompt, toast, notify } from './js/notifications.js'
 
     let currentUser = null;
     let currentUserProfile = null;
