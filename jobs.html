@@ -1098,7 +1098,7 @@
       if (task) {
         // If photo required and not uploaded, prevent completion
         if (task.photo_required && !task.photo_url && !task.completed) {
-          alert('⚠️ Please upload a photo before completing this task.');
+          toast.warning('Please upload a photo before completing this task.', 'Photo Required');
           await renderJobTasks(); // Reset checkbox
           return;
         }
@@ -1114,7 +1114,7 @@
 
         if (error) {
           console.error('Error updating task:', error);
-          alert('Failed to update task. Please try again.');
+          toast.error('Failed to update task. Please try again.', 'Update Error');
         } else {
           await renderJobTasks();
           
@@ -1152,7 +1152,7 @@
                 const completedJob = { ...job, status: 'completed' };
                 const recurrenceResult = await handleJobCompletion(completedJob);
                 
-                alert(`🎉 ${recurrenceResult.message}\nTotal time: ${formatDuration(totalDuration)}`);
+                toast.success(`${recurrenceResult.message}\nTotal time: ${formatDuration(totalDuration)}`, 'Job Completed! 🎉');
                 document.getElementById('jobDetailModal').classList.add('hidden');
                 document.getElementById('jobDetailModal').classList.remove('flex');
                 await renderJobs();
@@ -1165,7 +1165,8 @@
 
     // Delete task
     window.deleteTask = async function(taskId) {
-      if (confirm('Delete this task?')) {
+      const confirmed = await showConfirm('Are you sure you want to delete this task?', 'Delete Task', 'warning');
+      if (confirmed) {
         const { error } = await supabase
           .from('job_tasks')
           .delete()
@@ -1173,7 +1174,7 @@
 
         if (error) {
           console.error('Error deleting task:', error);
-          alert('Failed to delete task. Please try again.');
+          toast.error('Failed to delete task. Please try again.', 'Delete Error');
         } else {
           await renderJobTasks();
         }
@@ -1195,7 +1196,7 @@
       if (photoUrl) {
         window.open(photoUrl, '_blank');
       } else {
-        alert('Photo not found');
+        toast.error('Photo not found', 'View Photo');
       }
     };
 
@@ -1218,7 +1219,7 @@
       const uploadBtn = document.getElementById('upload-photo-btn');
       
       if (!fileInput.files[0]) {
-        alert('Please select a photo first.');
+        toast.warning('Please select a photo first.', 'No Photo Selected');
         return;
       }
 
@@ -1226,13 +1227,13 @@
       
       // Validate file size (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
-        alert('⚠️ File is too large. Please select an image under 10MB.');
+        toast.warning('File is too large. Please select an image under 10MB.', 'File Too Large');
         return;
       }
-      
+
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        alert('⚠️ Please select a valid image file.');
+        toast.warning('Please select a valid image file.', 'Invalid File Type');
         return;
       }
       
@@ -1257,9 +1258,9 @@
         if (uploadError) {
           console.error('[Upload] ❌ Error uploading photo:', uploadError);
           if (uploadError.message.includes('not found')) {
-            alert('❌ Storage bucket not set up. Please see SETUP_PHOTO_STORAGE.md');
+            toast.error('Storage bucket not set up. Please see SETUP_PHOTO_STORAGE.md', 'Storage Error');
           } else {
-            alert('Failed to upload photo: ' + uploadError.message);
+            toast.error('Failed to upload photo: ' + uploadError.message, 'Upload Error');
           }
           return;
         }
@@ -1285,18 +1286,18 @@
 
         if (updateError) {
           console.error('[Upload] ❌ Error updating task with photo:', updateError);
-          alert('Failed to save photo: ' + updateError.message);
+          toast.error('Failed to save photo: ' + updateError.message, 'Save Error');
         } else {
           console.log('[Upload] ✅ Task updated with photo URL and marked complete');
           // Close modal
           document.getElementById('uploadPhotoModal').classList.add('hidden');
           document.getElementById('uploadPhotoModal').classList.remove('flex');
           await renderJobTasks();
-          alert('✅ Photo uploaded and task completed!');
+          toast.success('Photo uploaded and task completed!', 'Upload Complete');
         }
       } catch (err) {
         console.error('[Upload] ❌ Exception:', err);
-        alert('An error occurred. Please try again.');
+        toast.error('An error occurred. Please try again.', 'Error');
       } finally {
         // Reset button
         uploadBtn.disabled = false;
@@ -1323,7 +1324,7 @@
 
       if (error) {
         console.error('Error adding task:', error);
-        alert('Failed to add task. Please try again.');
+        toast.error('Failed to add task. Please try again.', 'Add Task Error');
       } else {
         // Close modal
         document.getElementById('addTaskModal').classList.add('hidden');
@@ -1335,7 +1336,7 @@
 
     // Assign employee
     document.getElementById('assign-employee-btn')?.addEventListener('click', async () => {
-      const name = prompt('Enter employee name:');
+      const name = await showPrompt('Enter the employee name to assign to this job:', 'Assign Employee', '');
       if (name && name.trim()) {
         const { error } = await supabase
           .from('job_employees')
@@ -1347,7 +1348,7 @@
 
         if (error) {
           console.error('Error assigning employee:', error);
-          alert('Failed to assign employee. Please try again.');
+          toast.error('Failed to assign employee. Please try again.', 'Assignment Error');
         } else {
           await renderJobEmployees();
         }
@@ -1356,7 +1357,8 @@
 
     // Remove employee
     window.removeEmployee = async function(empId) {
-      if (confirm('Remove this employee from the job?')) {
+      const confirmed = await showConfirm('Are you sure you want to remove this employee from the job?', 'Remove Employee', 'warning');
+      if (confirmed) {
         const { error } = await supabase
           .from('job_employees')
           .delete()
@@ -1364,7 +1366,7 @@
 
         if (error) {
           console.error('Error removing employee:', error);
-          alert('Failed to remove employee. Please try again.');
+          toast.error('Failed to remove employee. Please try again.', 'Remove Error');
         } else {
           await renderJobEmployees();
         }
@@ -1389,14 +1391,14 @@
 
         if (error) {
           console.error('Error updating job status:', error);
-          alert('Failed to update status. Please try again.');
+          toast.error('Failed to update status. Please try again.', 'Update Error');
         } else {
           // Handle recurring job creation if status changed to completed
           if (newStatus === 'completed') {
             const completedJob = { ...job, status: 'completed' };
             const recurrenceResult = await handleJobCompletion(completedJob);
             if (recurrenceResult.nextJob) {
-              alert(recurrenceResult.message);
+              toast.success(recurrenceResult.message, 'Job Completed! 🎉');
             }
           }
           
@@ -1409,7 +1411,8 @@
 
     // Cancel job (keeps for paper trail)
     document.getElementById('archive-job-btn')?.addEventListener('click', async () => {
-      if (confirm('❌ Cancel this job? It will be marked as cancelled but kept for records.')) {
+      const confirmed = await showConfirm('Cancel this job? It will be marked as cancelled but kept for records.', 'Cancel Job', 'warning');
+      if (confirmed) {
         const { error } = await supabase
           .from('jobs')
           .update({ 
@@ -1420,33 +1423,34 @@
 
         if (error) {
           console.error('Error cancelling job:', error);
-          alert('Failed to cancel job. Please try again.');
+          toast.error('Failed to cancel job. Please try again.', 'Cancel Error');
         } else {
           // Close modal and refresh
           document.getElementById('jobDetailModal').classList.add('hidden');
           document.getElementById('jobDetailModal').classList.remove('flex');
           await renderJobs();
-          alert('✅ Job cancelled successfully!');
+          toast.success('Job has been cancelled successfully!', 'Job Cancelled');
         }
       }
     });
 
     // Delete job permanently (only for cancelled jobs)
     document.getElementById('delete-job-permanently-btn')?.addEventListener('click', async () => {
-      const confirmMessage = 
+      const userInput = await showPrompt(
         '⚠️ PERMANENTLY DELETE THIS JOB?\n\n' +
         'This action CANNOT be undone!\n\n' +
         'The following will be permanently deleted:\n' +
         '• Job record\n' +
         '• All tasks\n' +
         '• All uploaded photos\n\n' +
-        'Type "DELETE" to confirm:';
-      
-      const userInput = prompt(confirmMessage);
+        'Type "DELETE" to confirm:',
+        'Permanent Deletion Warning',
+        ''
+      );
       
       if (userInput !== 'DELETE') {
-        if (userInput !== null) {
-          alert('❌ Deletion cancelled. You must type "DELETE" exactly to confirm.');
+        if (userInput !== null && userInput !== '') {
+          toast.warning('Deletion cancelled. You must type "DELETE" exactly to confirm.', 'Cancelled');
         }
         return;
       }
@@ -1519,11 +1523,11 @@
         document.getElementById('jobDetailModal').classList.remove('flex');
         await renderJobs();
         
-        alert('✅ Job permanently deleted!\n\nAll related data has been removed from the system.');
+        toast.success('Job permanently deleted! All related data has been removed from the system.', 'Deletion Complete');
         
       } catch (error) {
         console.error('Error deleting job permanently:', error);
-        alert('❌ Failed to delete job: ' + error.message);
+        toast.error('Failed to delete job: ' + error.message, 'Deletion Error');
       }
     });
 
@@ -1541,7 +1545,7 @@
 
       if (error) {
         console.error('Error starting work:', error);
-        alert('Failed to start work. Please try again.');
+        toast.error('Failed to start work. Please try again.', 'Start Error');
       } else {
         console.log('✅ Work started!');
         // Refresh the job view to show timer
@@ -1551,7 +1555,8 @@
 
     // End Work button (for staff)
     document.getElementById('end-work-btn')?.addEventListener('click', async () => {
-      if (confirm('🛑 End work on this job? The timer will stop.')) {
+      const confirmed = await showConfirm('End work on this job? The timer will stop.', 'End Work', 'info');
+      if (confirmed) {
         const now = new Date().toISOString();
         
         // Get current job to calculate duration
@@ -1559,7 +1564,7 @@
         const job = jobs.find(j => j.id === currentJobId);
         
         if (!job || !job.work_started_at) {
-          alert('Error: Job start time not found.');
+          toast.error('Job start time not found.', 'Error');
           return;
         }
         
@@ -1588,7 +1593,7 @@
 
         if (error) {
           console.error('Error ending work:', error);
-          alert('Failed to end work. Please try again.');
+          toast.error('Failed to end work. Please try again.', 'End Work Error');
         } else {
           stopTimer();
           console.log('✅ Work ended! Duration:', formatDuration(totalDuration));
@@ -1597,12 +1602,12 @@
             const updatedJob = { ...job, status: 'completed' };
             const recurrenceResult = await handleJobCompletion(updatedJob);
             
-            alert(recurrenceResult.message + `\nTotal time: ${formatDuration(totalDuration)}`);
+            toast.success(`${recurrenceResult.message}\nTotal time: ${formatDuration(totalDuration)}`, 'Job Completed! 🎉');
             document.getElementById('jobDetailModal').classList.add('hidden');
             document.getElementById('jobDetailModal').classList.remove('flex');
             await renderJobs();
           } else {
-            alert(`⏹️ Work stopped. Total time: ${formatDuration(totalDuration)}`);
+            toast.info(`Work stopped. Total time: ${formatDuration(totalDuration)}`, 'Work Ended');
             await viewJob(currentJobId);
           }
         }
@@ -1766,14 +1771,15 @@
         e.target.reset();
         await renderAssignedWorker();
         await renderJobs();
-        alert('✅ Worker assigned successfully!');
+        toast.success('Worker has been assigned successfully!', 'Worker Assigned');
       }
     });
 
     // Unassign worker
     window.unassignWorker = async function() {
-      if (!confirm('Remove the assigned worker from this job?')) return;
-
+      const confirmed = await showConfirm('Are you sure you want to remove the assigned worker from this job?', 'Unassign Worker', 'warning');
+      if (!confirmed) return;
+      
       const { error } = await supabase
         .from('jobs')
         .update({ assigned_worker_id: null })
@@ -1781,11 +1787,11 @@
 
       if (error) {
         console.error('Error unassigning worker:', error);
-        alert('Failed to unassign worker. Please try again.');
+        toast.error('Failed to unassign worker. Please try again.', 'Unassign Error');
       } else {
         await renderAssignedWorker();
         await renderJobs();
-        alert('✅ Worker unassigned successfully!');
+        toast.success('Worker has been unassigned successfully!', 'Worker Unassigned');
       }
     };
 
@@ -1878,7 +1884,7 @@
         }
       } catch (err) {
         console.error('Failed to copy address:', err);
-        alert('Failed to copy address');
+        toast.error('Failed to copy address', 'Copy Error');
       }
     }
 
