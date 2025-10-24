@@ -39,6 +39,9 @@
   
   <!-- Mobile Menu Styles -->
   <link rel="stylesheet" href="./css/mobile-menu.css">
+  
+  <!-- Notification System -->
+  <link rel="stylesheet" href="./css/notifications.css">
 </head>
 
 <body class="font-inter bg-nfbg min-h-screen flex text-nftext">
@@ -737,6 +740,7 @@
     // Import Supabase and UI module
     import { supabase } from './js/supabase.js';
     import { initializeUI } from './js/ui.js';
+    import { showNotification, showConfirm, showPrompt, toast, notify } from './js/notifications.js';
 
     let currentUser = null;
     let currentUserProfile = null;
@@ -1078,7 +1082,7 @@
         }
       } catch (err) {
         console.error('Failed to copy address:', err);
-        alert('Failed to copy address');
+        toast.error('Failed to copy address', 'Copy Error');
       }
     }
 
@@ -1091,7 +1095,7 @@
       
       if (!window.currentEditSite) {
         console.error('[Edit] ❌ No site selected for editing');
-        alert('Error: No site selected. Please close and reopen the site details.');
+        toast.error('No site selected. Please close and reopen the site details.', 'Edit Error');
         return;
       }
 
@@ -1157,7 +1161,7 @@
         // Refresh sites display
         await renderSites();
 
-        alert('✅ Site updated successfully!');
+        toast.success('Site has been updated successfully!', 'Site Updated');
       } catch (error) {
         console.error('Error updating site:', error);
         const errorEl = document.getElementById('edit-form-error');

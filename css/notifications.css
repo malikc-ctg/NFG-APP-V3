@@ -1,0 +1,333 @@
+/* Toast Notification System - Card Style with NFG Logo */
+
+/* Container for all toasts (top-right corner) */
+#toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  pointer-events: none;
+  max-width: 400px;
+}
+
+/* Individual toast card */
+.toast-notification {
+  pointer-events: auto;
+  position: relative;
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  border-radius: 12px;
+  background-color: white;
+  background-clip: border-box;
+  color: #374151;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  animation: slideInRight 0.3s ease-out;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.3s ease;
+}
+
+.toast-notification:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.toast-notification.removing {
+  animation: slideOutRight 0.3s ease-in forwards;
+}
+
+/* Logo/Icon container with gradient */
+.toast-header {
+  position: relative;
+  margin: -24px 16px 0 16px;
+  height: 100px;
+  overflow: hidden;
+  border-radius: 12px;
+  background-clip: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Different gradient colors for different types */
+.toast-header.success {
+  background: linear-gradient(to right, #10b981, #059669);
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4);
+}
+
+.toast-header.error {
+  background: linear-gradient(to right, #ef4444, #dc2626);
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.4);
+}
+
+.toast-header.warning {
+  background: linear-gradient(to right, #f59e0b, #d97706);
+  box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.4);
+}
+
+.toast-header.info {
+  background: linear-gradient(to right, #3b82f6, #2563eb);
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.4);
+}
+
+.toast-header.default {
+  background: linear-gradient(to right, #0D47A1, #0A3A84);
+  box-shadow: 0 4px 6px -1px rgba(13, 71, 161, 0.4);
+}
+
+/* NFG Logo in header */
+.toast-logo {
+  height: 60px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Content area */
+.toast-body {
+  padding: 24px;
+  padding-top: 16px;
+}
+
+.toast-title {
+  margin-bottom: 8px;
+  display: block;
+  font-family: 'Inter', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #1e293b;
+}
+
+.toast-message {
+  display: block;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: #64748b;
+  white-space: pre-wrap;
+}
+
+/* Close button */
+.toast-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  color: white;
+  font-size: 18px;
+  line-height: 1;
+  transition: background 0.2s ease;
+  z-index: 10;
+}
+
+.toast-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Progress bar for auto-dismiss */
+.toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: rgba(13, 71, 161, 0.3);
+  border-radius: 0 0 12px 12px;
+  animation: progressShrink 5s linear forwards;
+}
+
+/* Animations */
+@keyframes slideInRight {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+}
+
+@keyframes progressShrink {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+  #toast-container {
+    left: 20px;
+    right: 20px;
+    max-width: none;
+  }
+
+  .toast-notification {
+    width: 100%;
+  }
+
+  .toast-header {
+    height: 80px;
+  }
+
+  .toast-logo {
+    height: 50px;
+  }
+
+  .toast-title {
+    font-size: 16px;
+  }
+
+  .toast-message {
+    font-size: 13px;
+  }
+}
+
+/* Confirmation Modal Styles */
+.notification-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.notification-modal {
+  position: relative;
+  display: flex;
+  width: 100%;
+  max-width: 500px;
+  flex-direction: column;
+  border-radius: 12px;
+  background-color: white;
+  background-clip: border-box;
+  color: #374151;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: scaleIn 0.2s ease-out;
+}
+
+.notification-modal .toast-header {
+  margin: -24px 16px 0 16px;
+}
+
+.notification-modal .toast-body {
+  padding: 24px;
+  padding-top: 16px;
+}
+
+.notification-modal-actions {
+  padding: 16px 24px 24px 24px;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.notification-modal-btn {
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  outline: none;
+}
+
+.notification-modal-btn.primary {
+  background: linear-gradient(to right, #0D47A1, #0A3A84);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(13, 71, 161, 0.2);
+}
+
+.notification-modal-btn.primary:hover {
+  box-shadow: 0 10px 15px -3px rgba(13, 71, 161, 0.3);
+  transform: translateY(-1px);
+}
+
+.notification-modal-btn.secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+
+.notification-modal-btn.secondary:hover {
+  background: #e5e7eb;
+}
+
+.notification-modal-btn.danger {
+  background: linear-gradient(to right, #ef4444, #dc2626);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);
+}
+
+.notification-modal-btn.danger:hover {
+  box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Input field for prompts */
+.notification-modal-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  margin-top: 12px;
+}
+
+.notification-modal-input:focus {
+  border-color: #0D47A1;
+  box-shadow: 0 0 0 3px rgba(13, 71, 161, 0.1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
