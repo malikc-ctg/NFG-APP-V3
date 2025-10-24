@@ -578,6 +578,85 @@
       // Initialize UI event handlers (for View Site buttons and modals)
       initializeUI()
       
+      // Initialize global variable for editing
+      window.currentEditSite = null;
+      
+      // Edit Site button handler
+      document.getElementById('edit-site-btn')?.addEventListener('click', () => {
+        console.log('[Edit] Edit button clicked! Current site:', window.currentEditSite);
+        
+        if (!window.currentEditSite) {
+          console.error('[Edit] ❌ No site selected for editing');
+          alert('Error: No site selected. Please close and reopen the site details.');
+          return;
+        }
+
+        console.log('[Edit] ✅ Opening edit modal for:', window.currentEditSite.name);
+
+        // Populate form with current site data
+        document.getElementById('edit-site-id').value = window.currentEditSite.id;
+        document.getElementById('edit-site-name').value = window.currentEditSite.name || '';
+        document.getElementById('edit-site-address').value = window.currentEditSite.address || '';
+        document.getElementById('edit-site-status').value = window.currentEditSite.status || 'Active';
+        document.getElementById('edit-site-sqft').value = window.currentEditSite.square_footage || '';
+        document.getElementById('edit-site-phone').value = window.currentEditSite.contact_phone || '';
+        document.getElementById('edit-site-email').value = window.currentEditSite.contact_email || '';
+        document.getElementById('edit-site-notes').value = window.currentEditSite.notes || '';
+
+        // Close site detail modal and open edit modal
+        document.getElementById('siteDetailModal').classList.add('hidden');
+        document.getElementById('siteDetailModal').classList.remove('flex');
+        document.getElementById('editSiteModal').classList.remove('hidden');
+        document.getElementById('editSiteModal').classList.add('flex');
+
+        // Re-render icons
+        if (window.lucide) lucide.createIcons();
+      });
+
+      // Handle edit site form submission
+      document.getElementById('edit-site-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(e.target);
+        const siteId = formData.get('id');
+        
+        const updateData = {
+          name: formData.get('name'),
+          address: formData.get('address'),
+          status: formData.get('status'),
+          square_footage: formData.get('square_footage') ? parseInt(formData.get('square_footage')) : null,
+          contact_phone: formData.get('contact_phone') || null,
+          contact_email: formData.get('contact_email') || null,
+          notes: formData.get('notes') || null
+        };
+
+        try {
+          const { error } = await supabase
+            .from('sites')
+            .update(updateData)
+            .eq('id', siteId);
+
+          if (error) throw error;
+
+          // Close modal
+          document.getElementById('editSiteModal').classList.add('hidden');
+          document.getElementById('editSiteModal').classList.remove('flex');
+
+          // Refresh sites display
+          const sites = await fetchSites();
+          renderSites(sites);
+
+          alert('✅ Site updated successfully!');
+        } catch (error) {
+          console.error('Error updating site:', error);
+          const errorEl = document.getElementById('edit-form-error');
+          if (errorEl) {
+            errorEl.textContent = 'Failed to update site: ' + error.message;
+            errorEl.classList.remove('hidden');
+          }
+        }
+      });
+      
       // Attach form submit handler
       const form = document.getElementById('add-site-form')
       form?.addEventListener('submit', handleSiteFormSubmit)
@@ -705,7 +784,7 @@
             <i data-lucide="calendar-plus" class="w-4 h-4"></i>
             Schedule Booking
           </button>
-          <button class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight transition">
+          <button id="edit-site-btn" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight transition">
             <i data-lucide="edit" class="w-4 h-4"></i>
             Edit Site
           </button>
@@ -753,6 +832,120 @@
           </button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Edit Site Modal -->
+  <div id="editSiteModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white">
+        <h4 class="text-nfgblue font-semibold text-lg">Edit Site</h4>
+        <button data-action="close-modal" data-target="editSiteModal" class="p-1 rounded-lg hover:bg-nfglight">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="edit-site-form" class="p-6 space-y-4">
+        <input type="hidden" id="edit-site-id" name="id" />
+        
+        <!-- Site Name -->
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Site Name <span class="text-red-500">*</span></label>
+          <input 
+            type="text"
+            id="edit-site-name"
+            name="name" 
+            required 
+            placeholder="e.g., Downtown Office Tower"
+            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+        </div>
+
+        <!-- Address -->
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Address</label>
+          <input 
+            type="text"
+            id="edit-site-address"
+            name="address" 
+            placeholder="e.g., 123 Main St, Toronto, ON"
+            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+        </div>
+
+        <!-- Status -->
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Status</label>
+          <select 
+            id="edit-site-status" 
+            name="status"
+            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none">
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+            <option value="Under Maintenance">Under Maintenance</option>
+          </select>
+        </div>
+
+        <!-- Square Footage -->
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Square Footage</label>
+          <input 
+            type="number"
+            id="edit-site-sqft"
+            name="square_footage" 
+            placeholder="e.g., 5000"
+            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+        </div>
+
+        <!-- Contact Phone -->
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Contact Phone</label>
+          <input 
+            type="tel"
+            id="edit-site-phone"
+            name="contact_phone" 
+            placeholder="e.g., 416-555-0100"
+            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+        </div>
+
+        <!-- Contact Email -->
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Contact Email</label>
+          <input 
+            type="email"
+            id="edit-site-email"
+            name="contact_email" 
+            placeholder="e.g., contact@site.com"
+            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+        </div>
+
+        <!-- Notes -->
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Notes</label>
+          <textarea 
+            id="edit-site-notes"
+            name="notes" 
+            rows="3"
+            placeholder="Additional notes about the site..."
+            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none resize-none"></textarea>
+        </div>
+
+        <div id="edit-form-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl p-3">
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray">
+          <button 
+            type="button" 
+            data-action="close-modal" 
+            data-target="editSiteModal"
+            class="px-5 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight font-medium transition">
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            id="update-site-btn"
+            class="px-5 py-2.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark font-medium transition inline-flex items-center gap-2">
+            <span>Update Site</span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
