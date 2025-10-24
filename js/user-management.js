@@ -5,6 +5,7 @@
 
 import { supabase } from './supabase.js'
 import { NFGDropdown } from './custom-dropdown.js'
+import { showNotification, showConfirm, showPrompt, toast, notify } from './notifications.js'
 
 let currentUser = null;
 let currentUserProfile = null;
@@ -166,11 +167,9 @@ export async function sendInvitation(email, role) {
     const mailtoLink = `mailto:${email}?subject=${subject}&body=${body}`;
     
     // Show success and offer to open email client
-    const openEmail = confirm(
-      `✅ Invitation created successfully!\n\n` +
-      `📧 Ready to send to: ${email}\n\n` +
-      `Click OK to open your email client with a pre-filled message,\n` +
-      `or Cancel to copy the invitation link instead.`
+    const openEmail = await showConfirm(
+      'Invitation Created',
+      `Invitation ready to send to: ${email}\n\nClick OK to open your email client with a pre-filled message, or Cancel to copy the invitation link instead.`
     );
     
     if (openEmail) {
@@ -179,11 +178,11 @@ export async function sendInvitation(email, role) {
       
       // Also copy link as backup
       await navigator.clipboard.writeText(invitationLink);
-      alert('✓ Email client opened!\n\nPlease review and send the invitation.\n\n(Link also copied to clipboard as backup)');
+      toast.success('Email client opened! Please review and send the invitation.\n\n(Link also copied to clipboard as backup)');
     } else {
       // Just copy link to clipboard
       await navigator.clipboard.writeText(invitationLink);
-      alert(`✓ Link copied to clipboard!\n\nPlease email this link to ${email}:\n\n${invitationLink}`);
+      notify('Link Copied', `Please email this link to ${email}:\n\n${invitationLink}`, 'info');
     }
     
     return data;
@@ -585,38 +584,53 @@ function generateToken() {
 }
 
 // Copy invitation link
-window.copyInvitationLink = function(token) {
+window.copyInvitationLink = async function(token) {
   const link = `${window.location.origin}/accept-invitation.html?token=${token}`;
-  navigator.clipboard.writeText(link).then(() => {
-    alert('✓ Invitation link copied to clipboard!');
-  }).catch(() => {
-    prompt('Copy this invitation link:', link);
-  });
+  try {
+    await navigator.clipboard.writeText(link);
+    toast.success('Invitation link copied to clipboard!');
+  } catch (error) {
+    // Fallback if clipboard API fails
+    const result = await showPrompt('Copy this invitation link:', link);
+    if (result) {
+      toast.info('Please manually copy the link');
+    }
+  }
 };
 
 // Cancel invitation
 window.cancelInvite = async function(invitationId) {
-  if (!confirm('Cancel this invitation?')) return;
+  const confirmed = await showConfirm(
+    'Cancel Invitation',
+    'Are you sure you want to cancel this invitation?'
+  );
+  
+  if (!confirmed) return;
   
   try {
     await cancelInvitation(invitationId);
     await renderPendingInvitations();
-    alert('✓ Invitation cancelled');
+    toast.success('Invitation cancelled');
   } catch (error) {
-    alert('Failed to cancel invitation. Please try again.');
+    toast.error('Failed to cancel invitation. Please try again.');
   }
 };
 
 // Remove site assignment
 window.removeSiteAssignment = async function(assignmentId) {
-  if (!confirm('Remove this site assignment?')) return;
+  const confirmed = await showConfirm(
+    'Remove Assignment',
+    'Are you sure you want to remove this site assignment?'
+  );
+  
+  if (!confirmed) return;
   
   try {
     await removeUserFromSite(assignmentId);
     await loadUserSiteAssignments(selectedUserId);
-    alert('✓ Site assignment removed');
+    toast.success('Site assignment removed');
   } catch (error) {
-    alert('Failed to remove assignment: ' + error.message);
+    toast.error('Failed to remove assignment: ' + error.message);
   }
 };
 

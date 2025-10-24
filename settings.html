@@ -15,6 +15,9 @@
   <!-- Page Loader -->
   <link rel="stylesheet" href="./css/loader.css">
   
+  <!-- Notifications -->
+  <link rel="stylesheet" href="./css/notifications.css">
+  
   <script>
     tailwind.config = {
       theme: {
@@ -559,6 +562,7 @@
   <script type="module">
     import { supabase } from './js/supabase.js'
     import { NFGDropdown } from './js/custom-dropdown.js'
+    import { showNotification, showConfirm, showPrompt, toast, notify } from './js/notifications.js'
     import {
       getCurrentUser,
       canManageUsers,
@@ -581,8 +585,10 @@
       
       if (!session || !session.user) {
         console.error('❌ No active session - user not logged in');
-        alert('You are not logged in. Please log in first.');
-        window.location.href = './index.html';
+        toast.error('You are not logged in. Please log in first.');
+        setTimeout(() => {
+          window.location.href = './index.html';
+        }, 2000);
         return false;
       }
       
@@ -642,12 +648,12 @@
 
       // Validate file
       if (!file.type.startsWith('image/')) {
-        alert('⚠️ Please select an image file.')
+        toast.warning('Please select an image file.')
         return
       }
 
       if (file.size > 5 * 1024 * 1024) {
-        alert('⚠️ File is too large. Please select an image under 5MB.')
+        toast.warning('File is too large. Please select an image under 5MB.')
         return
       }
 
@@ -673,9 +679,9 @@
         if (uploadError) {
           console.error('[Profile] Upload error:', uploadError)
           if (uploadError.message.includes('not found')) {
-            alert('❌ Storage not set up. Please run SETUP_PROFILE_PICTURES_STORAGE.sql')
+            toast.error('Storage not set up. Please run SETUP_PROFILE_PICTURES_STORAGE.sql')
           } else {
-            alert('Failed to upload photo: ' + uploadError.message)
+            toast.error('Failed to upload photo: ' + uploadError.message)
           }
           return
         }
@@ -695,16 +701,16 @@
 
         if (updateError) {
           console.error('[Profile] Update error:', updateError)
-          alert('Failed to update profile: ' + updateError.message)
+          toast.error('Failed to update profile: ' + updateError.message)
         } else {
           // Update preview
           previewEl.src = urlData.publicUrl + '?t=' + new Date().getTime()
-          alert('✅ Profile picture updated!')
+          toast.success('Profile picture updated!')
         }
 
       } catch (error) {
         console.error('[Profile] Error:', error)
-        alert('An error occurred. Please try again.')
+        toast.error('An error occurred. Please try again.')
       } finally {
         loadingEl.classList.add('hidden')
         e.target.value = '' // Reset input
@@ -726,10 +732,10 @@
 
         if (error) throw error
 
-        alert('✅ Profile updated successfully!')
+        toast.success('Profile updated successfully!')
       } catch (error) {
         console.error('Error updating profile:', error)
-        alert('Failed to update profile. Please try again.')
+        toast.error('Failed to update profile. Please try again.')
       }
     })
 
@@ -765,12 +771,17 @@
     })
 
     // Clear data
-    document.getElementById('clear-data-btn')?.addEventListener('click', () => {
-      if (confirm('Are you sure you want to clear all local data? This cannot be undone.')) {
+    document.getElementById('clear-data-btn')?.addEventListener('click', async () => {
+      const confirmed = await showConfirm(
+        'Clear All Data',
+        'Are you sure you want to clear all local data? This cannot be undone.'
+      );
+      
+      if (confirmed) {
         localStorage.removeItem('nfg_display_name')
         localStorage.removeItem('nfg_notif_prefs')
-        alert('Local data cleared!')
-        location.reload()
+        toast.success('Local data cleared!');
+        setTimeout(() => location.reload(), 1500);
       }
     })
 
@@ -838,7 +849,7 @@
         
         closeInviteModal()
         await renderPendingInvitations()
-        alert('Invitation sent successfully!')
+        toast.success('Invitation sent successfully!')
       } catch (error) {
         errorEl.textContent = error.message
         errorEl.classList.remove('hidden')
@@ -857,11 +868,11 @@
       
       try {
         await updateUserRole(selectedUserId, role, status)
-        alert('User updated successfully!')
+        toast.success('User updated successfully!')
         closeUserDetailsModal()
         await renderUsersList()
       } catch (error) {
-        alert('Failed to update user. Please try again.')
+        toast.error('Failed to update user. Please try again.')
       }
     })
 
@@ -894,7 +905,7 @@
       
       if (sites.length === 0) {
         select.innerHTML = '<option value="">No sites available</option>';
-        alert('No sites found. Please create sites first in the Sites page.');
+        toast.warning('No sites found. Please create sites first in the Sites page.');
       } else {
         sites.forEach(site => {
           const option = document.createElement('option');
@@ -930,7 +941,7 @@
         closeAssignSiteModal()
         // Refresh the user's assigned sites list
         await loadUserSites(selectedUserId);
-        alert('Site assigned successfully!')
+        toast.success('Site assigned successfully!')
       } catch (error) {
         const errorEl = document.getElementById('assign-site-error')
         errorEl.textContent = error.message
@@ -942,17 +953,20 @@
     document.getElementById('remove-user-btn')?.addEventListener('click', async () => {
       if (!selectedUserId) return
       
-      if (!confirm('Are you sure you want to remove this user? This action cannot be undone.')) {
-        return
-      }
+      const confirmed = await showConfirm(
+        'Remove User',
+        'Are you sure you want to remove this user? This action cannot be undone.'
+      );
+      
+      if (!confirmed) return;
       
       try {
         await removeUser(selectedUserId)
-        alert('User removed successfully!')
+        toast.success('User removed successfully!')
         closeUserDetailsModal()
         await renderUsersList()
       } catch (error) {
-        alert('Failed to remove user. Please try again.')
+        toast.error('Failed to remove user. Please try again.')
       }
     })
 
@@ -1008,7 +1022,7 @@
         console.log('Initialization complete')
       } catch (error) {
         console.error('Error during initialization:', error)
-        alert('Error loading settings. Check console for details.')
+        toast.error('Error loading settings. Check console for details.')
       }
     }
 
@@ -1022,7 +1036,7 @@
       const user = users.find(u => u.id === userId);
       
       if (!user) {
-        alert('User not found');
+        toast.error('User not found');
         return;
       }
       
@@ -1166,7 +1180,12 @@
     
     // Remove site assignment
     window.removeAssignment = async function(assignmentId) {
-      if (!confirm('Remove this site assignment?')) return;
+      const confirmed = await showConfirm(
+        'Remove Assignment',
+        'Are you sure you want to remove this site assignment?'
+      );
+      
+      if (!confirmed) return;
       
       console.log('Removing assignment:', assignmentId);
       
@@ -1178,16 +1197,16 @@
         
         if (error) {
           console.error('Error removing assignment:', error);
-          alert('Failed to remove assignment: ' + error.message);
+          toast.error('Failed to remove assignment: ' + error.message);
           return;
         }
         
         console.log('Assignment removed successfully');
         await loadUserSites(selectedUserId);
-        alert('Site assignment removed successfully!');
+        toast.success('Site assignment removed successfully!');
       } catch (err) {
         console.error('Exception removing assignment:', err);
-        alert('Failed to remove assignment');
+        toast.error('Failed to remove assignment');
       }
     }
 
