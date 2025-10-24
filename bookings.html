@@ -571,6 +571,19 @@
           .order('name', { ascending: true });
 
         if (error) throw error;
+        
+        console.log('[Bookings] 📋 Loaded services:', data?.length || 0);
+        
+        // Check for duplicates in the loaded data
+        const serviceNames = {};
+        data?.forEach(service => {
+          const key = `${service.name}_${service.category_id}`;
+          if (serviceNames[key]) {
+            console.warn('[Bookings] ⚠️ DUPLICATE SERVICE FOUND:', service.name, 'in category', service.category_id);
+          }
+          serviceNames[key] = (serviceNames[key] || 0) + 1;
+        });
+        
         services = data || [];
         renderServices();
       } catch (error) {
