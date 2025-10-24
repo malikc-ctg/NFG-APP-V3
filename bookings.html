@@ -957,19 +957,20 @@
         const assignedTo = site.assigned_worker_id ? 'assigned to site worker' : 'unassigned';
         const emergencyNote = isEmergency ? '\n🚨 EMERGENCY REQUEST - Priority handling!' : '';
         const recurrenceNote = frequency === 'recurring' ? `\n🔄 RECURRING: Next booking will auto-create when job completes (${recurrencePattern})` : '';
-        alert(`✅ Booking & Job created successfully!\n\nJob is ${assignedTo}.\nStaff will see it in their feed.${emergencyNote}${recurrenceNote}`);
+        toast.success(`Booking & Job created successfully!\n\nJob is ${assignedTo}.\nStaff will see it in their feed.${emergencyNote}${recurrenceNote}`, 'Booking Created');
         closeModals();
         await loadBookings();
       } catch (error) {
         console.error('Error creating booking:', error);
-        alert('Failed to create booking: ' + error.message);
+        toast.error('Failed to create booking: ' + error.message, 'Creation Error');
       }
     }
 
     async function cancelBooking() {
       if (!currentBooking) return;
 
-      if (!confirm('Are you sure you want to cancel this booking?')) return;
+      const confirmed = await showConfirm('Are you sure you want to cancel this booking?', 'Cancel Booking', 'warning');
+      if (!confirmed) return;
 
       try {
         const { error } = await supabase
@@ -982,12 +983,12 @@
 
         if (error) throw error;
 
-        alert('✅ Booking cancelled.');
+        toast.success('Booking has been cancelled.', 'Booking Cancelled');
         closeModals();
         await loadBookings();
       } catch (error) {
         console.error('Error cancelling booking:', error);
-        alert('Failed to cancel booking: ' + error.message);
+        toast.error('Failed to cancel booking: ' + error.message, 'Cancel Error');
       }
     }
 
