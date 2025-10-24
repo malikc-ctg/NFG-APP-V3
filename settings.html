@@ -12,6 +12,9 @@
   <!-- Mobile Menu Styles -->
   <link rel="stylesheet" href="./css/mobile-menu.css">
   
+  <!-- Page Loader -->
+  <link rel="stylesheet" href="./css/loader.css">
+  
   <script>
     tailwind.config = {
       theme: {
@@ -33,6 +36,26 @@
   </script>
 </head>
 <body class="bg-nfbg font-inter">
+  <!-- Full-Page Loader -->
+  <div id="page-loader">
+    <div class="loader-logo">
+      <img src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/Horizontal.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL0hvcml6b250YWwucG5nIiwiaWF0IjoxNzYwOTg5Njk2LCJleHAiOjQ4ODMwNTM2OTZ9.GLtv3yHq5zpXr4deUiNn4ilYTKaFJX8Y2tjIQpxyqVw" alt="NFG">
+    </div>
+    <div class="banter-loader">
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+    </div>
+    <div class="loader-text">Loading Settings...</div>
+    <div class="loader-text-subtitle">Please wait</div>
+  </div>
+
   <div class="flex min-h-screen">
     <!-- Sidebar -->
     <aside id="sidebar" class="w-64 bg-white border-r border-nfgray hidden md:flex md:flex-col transition-all">
@@ -1173,6 +1196,15 @@
 
     // Start initialization
     init()
+  </script>
+  
+  <!-- Hide loader when page is ready -->
+  <script>
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        document.getElementById('page-loader')?.classList.add('hidden');
+      }, 300);
+    });
   </script>
 </body>
 </html>
