@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NFG — Inventory</title>
+  <link rel="icon" type="image/png" href="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/Banner%20Logo%20-%20NFG.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL0Jhbm5lciBMb2dvIC0gTkZHLnBuZyIsImlhdCI6MTc2MTQwODAwNywiZXhwIjo0ODgzNDcyMDA3fQ.ioiCAXNeXFBkHluCdCLF25y527mxnjBDcLPtDMV1Jds">
+
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN + NFG theme -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            nfgblue: '#0D47A1',
+            nfgdark: '#0A3A84',
+            nfglight: '#E3ECFA',
+            nfgray: '#E5E7EB',
+            nftext: '#1E293B',
+            nfbg: '#F8FAFC'
+          },
+          fontFamily: { inter: ['Inter','sans-serif'] },
+          borderRadius: { xl: '12px' },
+          boxShadow: { nfg: '0 4px 14px rgba(13,71,161,0.06)' }
+        }
+      }
+    }
+  </script>
+
+  <!-- Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Custom Dropdown Styles -->
+  <link rel="stylesheet" href="./css/custom-dropdown.css">
+  
+  <!-- Mobile Menu Styles -->
+  <link rel="stylesheet" href="./css/mobile-menu.css">
+  
+  <!-- Notification System -->
+  <link rel="stylesheet" href="./css/notifications.css">
+  
+  <!-- Page Loader -->
+  <link rel="stylesheet" href="./css/loader.css">
+</head>
+
+<body class="font-inter bg-nfbg min-h-screen flex text-nftext">
+  <!-- Full-Page Loader -->
+  <div id="page-loader">
+    <div class="loader-logo">
+      <img src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/Horizontal.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL0hvcml6b250YWwucG5nIiwiaWF0IjoxNzYwOTg5Njk2LCJleHAiOjQ4ODMwNTM2OTZ9.GLtv3yHq5zpXr4deUiNn4ilYTKaFJX8Y2tjIQpxyqVw" alt="NFG">
+    </div>
+    <div class="banter-loader">
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+    </div>
+    <div class="loader-text">Loading Inventory...</div>
+    <div class="loader-text-subtitle">Please wait</div>
+  </div>
+
+  
+  <!-- ========== SIDEBAR ========== -->
+  <aside id="sidebar" class="w-64 shrink-0 bg-white border-r border-nfgray hidden md:flex md:flex-col transition-all">
+    <div class="p-5 flex items-center justify-center">
+      <!-- Northern Facilities Group Logo -->
+      <img 
+        src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/Horizontal.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL0hvcml6b250YWwucG5nIiwiaWF0IjoxNzYwOTg5Njk2LCJleHAiOjQ4ODMwNTM2OTZ9.GLtv3yHq5zpXr4deUiNn4ilYTKaFJX8Y2tjIQpxyqVw" 
+        alt="Northern Facilities Group" 
+        class="h-32 w-auto"
+      />
+    </div>
+    <nav class="px-3 pb-4 flex-1 space-y-1">
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="dashboard.html">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="sites.html">
+        <i data-lucide="map-pin" class="w-4 h-4"></i> Sites
+      </a>
+      <a id="nav-bookings" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="bookings.html">
+        <i data-lucide="calendar" class="w-4 h-4"></i> Bookings
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="jobs.html">
+        <i data-lucide="clipboard-check" class="w-4 h-4"></i> Jobs
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight text-nfgblue font-medium w-full text-left" href="inventory.html">
+        <i data-lucide="package" class="w-4 h-4"></i> Inventory
+      </a>
+      <a id="nav-reports" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="reports.html">
+        <i data-lucide="file-chart-column" class="w-4 h-4"></i> Reports
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="settings.html">
+        <i data-lucide="settings" class="w-4 h-4"></i> Settings
+      </a>
+    </nav>
+    <div class="p-4 border-t border-nfgray">
+      <button id="logout-btn" class="w-full border border-nfgblue text-nfgblue hover:bg-nfglight rounded-xl py-2 font-medium">
+        Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- ========== MAIN ========== -->
+  <div class="flex-1 flex flex-col min-w-0">
+    <!-- TOPBAR -->
+    <header class="sticky top-0 z-10 bg-white border-b border-nfgray">
+      <div class="h-14 px-4 md:px-6 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <button class="md:hidden p-2 rounded-lg border border-nfgray text-nfgblue" data-action="toggle-sidebar" aria-label="Toggle sidebar">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
+          <h1 class="text-nfgblue font-semibold">Inventory</h1>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Site Filter -->
+          <select id="site-filter" class="px-3 py-1.5 rounded-xl border border-nfgray bg-white text-sm">
+            <option value="all">All Sites</option>
+          </select>
+          
+          <!-- Add Item Button -->
+          <button id="add-item-btn" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
+            <i data-lucide="plus" class="w-5 h-5"></i>
+            <span class="hidden sm:inline">Add Item</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <main class="p-4 md:p-6 space-y-6">
+      <div>
+        <h2 class="text-2xl font-semibold text-nfgblue">Inventory Management</h2>
+        <p class="text-sm text-gray-500 mt-1">Track supplies and equipment across all sites</p>
+      </div>
+
+      <!-- Category Tabs -->
+      <div class="flex gap-2 border-b border-nfgray overflow-x-auto">
+        <button class="inventory-filter-tab px-4 py-2 font-medium text-nfgblue border-b-2 border-nfgblue whitespace-nowrap" data-category="all">
+          All Items
+        </button>
+        <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue border-b-2 border-transparent whitespace-nowrap" data-category="Cleaning Supplies">
+          🧹 Cleaning
+        </button>
+        <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue border-b-2 border-transparent whitespace-nowrap" data-category="Chemicals">
+          🧴 Chemicals
+        </button>
+        <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue border-b-2 border-transparent whitespace-nowrap" data-category="Tools">
+          🔧 Tools
+        </button>
+        <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue border-b-2 border-transparent whitespace-nowrap" data-category="Paper Products">
+          🧻 Paper
+        </button>
+        <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue border-b-2 border-transparent whitespace-nowrap" data-category="PPE">
+          🦺 PPE
+        </button>
+      </div>
+
+      <!-- Inventory Table -->
+      <div class="bg-white border border-nfgray rounded-xl shadow-nfg overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-nfglight/50 border-b border-nfgray">
+              <tr>
+                <th class="px-4 py-3 text-left text-sm font-medium text-nfgblue">Item</th>
+                <th class="px-4 py-3 text-left text-sm font-medium text-nfgblue hidden md:table-cell">Category</th>
+                <th class="px-4 py-3 text-center text-sm font-medium text-nfgblue">Quantity</th>
+                <th class="px-4 py-3 text-center text-sm font-medium text-nfgblue">Status</th>
+                <th class="px-4 py-3 text-center text-sm font-medium text-nfgblue">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="inventory-table-body" class="divide-y divide-nfgray">
+              <tr>
+                <td colspan="5" class="px-4 py-8 text-center text-gray-500">Loading inventory...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add/Edit Item Modal -->
+  <div id="itemModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white">
+        <h4 id="modal-title" class="text-nfgblue font-semibold text-lg">Add Item</h4>
+        <button data-action="close-modal" data-target="itemModal" class="p-1 rounded-lg hover:bg-nfglight">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="item-form" class="p-6 space-y-4">
+        <input type="hidden" id="item-id" name="id" />
+        
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Item Name <span class="text-red-500">*</span></label>
+          <input type="text" id="item-name" name="name" required placeholder="e.g., Bleach (5L)" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Category <span class="text-red-500">*</span></label>
+            <select id="item-category" name="category_id" required class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none">
+              <option value="">Select category</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Unit <span class="text-red-500">*</span></label>
+            <select id="item-unit" name="unit" required class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none">
+              <option value="pieces">Pieces</option>
+              <option value="bottles">Bottles</option>
+              <option value="boxes">Boxes</option>
+              <option value="packs">Packs</option>
+              <option value="rolls">Rolls</option>
+              <option value="liters">Liters</option>
+              <option value="gallons">Gallons</option>
+              <option value="kilograms">Kilograms</option>
+              <option value="pairs">Pairs</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Low Stock Threshold</label>
+            <input type="number" id="item-threshold" name="low_stock_threshold" min="0" value="5" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+            <p class="text-xs text-gray-500 mt-1">Alert when quantity falls below this number</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Reorder Quantity</label>
+            <input type="number" id="item-reorder" name="reorder_quantity" min="0" value="20" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+            <p class="text-xs text-gray-500 mt-1">Suggested quantity to order</p>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Notes</label>
+          <textarea id="item-notes" name="notes" rows="2" placeholder="Additional information..." class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none resize-none"></textarea>
+        </div>
+
+        <div id="item-form-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl p-3"></div>
+
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray">
+          <button type="button" data-action="close-modal" data-target="itemModal" class="px-5 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight font-medium transition">
+            Cancel
+          </button>
+          <button type="submit" id="submit-item-btn" class="px-5 py-2.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark font-medium transition">
+            Save Item
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Manage Stock Modal (Use/Restock) -->
+  <div id="stockModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-lg">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between">
+        <h4 id="stock-modal-title" class="text-nfgblue font-semibold">Manage Stock</h4>
+        <button data-action="close-modal" data-target="stockModal" class="p-1 rounded-lg hover:bg-nfglight">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="stock-form" class="p-6 space-y-4">
+        <input type="hidden" id="stock-site-id" name="site_id" />
+        <input type="hidden" id="stock-item-id" name="item_id" />
+        
+        <div class="bg-nfglight/30 rounded-xl p-4 border border-nfgblue/20">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm text-gray-600">Item:</span>
+            <span id="stock-item-name" class="font-semibold text-nfgblue"></span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-600">Current Stock:</span>
+            <span id="stock-current-qty" class="text-2xl font-bold text-nfgblue"></span>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Action <span class="text-red-500">*</span></label>
+          <select id="stock-action" name="transaction_type" required class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none">
+            <option value="restock">➕ Restock (Add)</option>
+            <option value="use">➖ Use (Remove)</option>
+            <option value="adjustment">🔧 Adjustment (Set Exact Qty)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Quantity <span class="text-red-500">*</span></label>
+          <input type="number" id="stock-quantity" name="quantity" min="1" required class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Notes</label>
+          <textarea id="stock-notes" name="notes" rows="2" placeholder="Why are you changing the stock?" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none resize-none"></textarea>
+        </div>
+
+        <div id="stock-form-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl p-3"></div>
+
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray">
+          <button type="button" data-action="close-modal" data-target="stockModal" class="px-5 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight font-medium transition">
+            Cancel
+          </button>
+          <button type="submit" id="submit-stock-btn" class="px-5 py-2.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark font-medium transition">
+            Update Stock
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- View History Modal -->
+  <div id="historyModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white">
+        <h4 class="text-nfgblue font-semibold text-lg">Transaction History</h4>
+        <button data-action="close-modal" data-target="historyModal" class="p-1 rounded-lg hover:bg-nfglight">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6">
+        <div class="bg-nfglight/30 rounded-xl p-4 border border-nfgblue/20 mb-4">
+          <div class="flex items-center justify-between">
+            <span id="history-item-name" class="font-semibold text-nfgblue text-lg"></span>
+            <span id="history-site-name" class="text-sm text-gray-600"></span>
+          </div>
+        </div>
+        
+        <div id="history-list" class="space-y-3">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SCRIPTS ========== -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) lucide.createIcons();
+      
+      // Initialize mobile sidebar
+      const sidebar = document.getElementById('sidebar');
+      const toggleButtons = document.querySelectorAll('[data-action="toggle-sidebar"], button[aria-label="Toggle sidebar"]');
+      
+      let overlay = document.getElementById('sidebar-overlay');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'sidebar-overlay';
+        overlay.className = 'fixed inset-0 bg-black/50 z-40 hidden';
+        document.body.appendChild(overlay);
+      }
+      
+      function toggleSidebar() {
+        if (sidebar && overlay) {
+          const isHidden = sidebar.classList.contains('hidden') || !sidebar.classList.contains('mobile-sidebar-open');
+          
+          if (isHidden) {
+            sidebar.classList.remove('hidden');
+            sidebar.classList.add('mobile-sidebar-open', 'flex', 'flex-col', 'fixed', 'inset-y-0', 'left-0', 'z-50', 'w-64', 'max-w-[80vw]', 'shadow-2xl', 'animate-slide-in');
+            overlay.classList.remove('hidden');
+            overlay.classList.add('animate-fade-in');
+            document.body.style.overflow = 'hidden';
+          } else {
+            sidebar.classList.add('animate-slide-out');
+            overlay.classList.add('animate-fade-out');
+            
+            setTimeout(() => {
+              sidebar.classList.add('hidden');
+              sidebar.classList.remove('mobile-sidebar-open', 'flex', 'flex-col', 'fixed', 'inset-y-0', 'left-0', 'z-50', 'w-64', 'max-w-[80vw]', 'shadow-2xl', 'animate-slide-in', 'animate-slide-out');
+              overlay.classList.add('hidden');
+              overlay.classList.remove('animate-fade-in', 'animate-fade-out');
+              document.body.style.overflow = '';
+            }, 200);
+          }
+        }
+      }
+      
+      toggleButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleSidebar();
+        });
+      });
+      
+      overlay?.addEventListener('click', toggleSidebar);
+      
+      const navLinks = sidebar?.querySelectorAll('a');
+      navLinks?.forEach(link => {
+        link.addEventListener('click', () => {
+          if (window.innerWidth < 768) {
+            toggleSidebar();
+          }
+        });
+      });
+    });
+
+    // Modal functionality
+    document.addEventListener('click', (e) => {
+      const openModalBtn = e.target.closest('[data-action="open-modal"]');
+      if (openModalBtn) {
+        const targetId = openModalBtn.dataset.target;
+        const modal = document.getElementById(targetId);
+        if (modal) {
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+          if (window.lucide) lucide.createIcons();
+        }
+      }
+
+      const closeModalBtn = e.target.closest('[data-action="close-modal"]');
+      if (closeModalBtn) {
+        const targetId = closeModalBtn.dataset.target;
+        const modal = document.getElementById(targetId);
+        if (modal) {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+          const form = modal.querySelector('form');
+          if (form) form.reset();
+        }
+      }
+
+      if (e.target.classList.contains('fixed') && e.target.classList.contains('inset-0')) {
+        e.target.classList.add('hidden');
+        e.target.classList.remove('flex');
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const modals = document.querySelectorAll('.fixed.inset-0:not(.hidden)');
+        modals.forEach(modal => {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+        });
+      }
+    });
+  </script>
+
+  <script type="module" src="./js/inventory.js"></script>
+  
+  <!-- Hide loader when page is ready -->
+  <script>
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        document.getElementById('page-loader')?.classList.add('hidden');
+      }, 300);
+    });
+  </script>
+</body>
+</html>
+
