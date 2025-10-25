@@ -141,6 +141,22 @@
                   data-action="open-modal" data-target="addSiteModal">
             <i data-lucide="plus" class="w-4 h-4"></i> Add Site
           </button>
+
+          <!-- Clock In/Out Button (Staff Only) -->
+          <div id="time-clock-container" class="hidden items-center gap-2">
+            <button id="clock-in-btn" class="hidden items-center gap-2 px-4 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700 font-medium shadow-md transition">
+              <i data-lucide="clock" class="w-4 h-4"></i>
+              <span>Clock In</span>
+            </button>
+            <button id="clock-out-btn" class="hidden items-center gap-2 px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 font-medium shadow-md transition">
+              <i data-lucide="clock" class="w-4 h-4"></i>
+              <span>Clock Out</span>
+            </button>
+            <div id="clock-status" class="hidden items-center gap-2 px-3 py-2 rounded-xl bg-blue-50 border border-blue-200 text-sm">
+              <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+              <span id="clock-time" class="font-medium text-blue-900">00:00:00</span>
+            </div>
+          </div>
         </div>
       </div>
     </header>
@@ -1195,6 +1211,189 @@
           errorEl.classList.remove('hidden');
         }
       }
+    });
+
+    // ========== TIME CLOCK FUNCTIONALITY (STAFF ONLY) ==========
+    let currentTimeEntry = null;
+    let clockTimer = null;
+
+    async function initializeTimeClock() {
+      const { supabase } = await import('./js/supabase.js');
+      const { toast } = await import('./js/notifications.js');
+      
+      console.log('[TimeClock] 🕐 Initializing time clock...');
+      
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) return;
+
+      // Get user profile
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      // Only show for staff
+      if (profile?.role !== 'staff') {
+        console.log('[TimeClock] ℹ️ Not staff user, hiding time clock');
+        return;
+      }
+
+      console.log('[TimeClock] ✅ Staff user detected, showing time clock');
+      const container = document.getElementById('time-clock-container');
+      container.classList.remove('hidden');
+      container.classList.add('flex');
+
+      // Check if already clocked in today
+      await checkClockStatus(supabase);
+
+      // Set up button listeners
+      document.getElementById('clock-in-btn').addEventListener('click', () => handleClockIn(supabase, toast));
+      document.getElementById('clock-out-btn').addEventListener('click', () => handleClockOut(supabase, toast));
+    }
+
+    async function checkClockStatus(supabase) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Check for today's entry that hasn't been clocked out
+        const today = new Date().toISOString().split('T')[0];
+        const { data, error } = await supabase
+          .from('time_entries')
+          .select('*')
+          .eq('user_id', user.id)
+          .gte('clock_in', `${today}T00:00:00`)
+          .is('clock_out', null)
+          .order('clock_in', { ascending: false })
+          .limit(1);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          // Already clocked in
+          currentTimeEntry = data[0];
+          showClockedInState();
+          startTimer();
+          console.log('[TimeClock] ✅ Already clocked in since', new Date(currentTimeEntry.clock_in).toLocaleTimeString());
+        } else {
+          // Not clocked in
+          showClockedOutState();
+          console.log('[TimeClock] ℹ️ Not currently clocked in');
+        }
+      } catch (error) {
+        console.error('[TimeClock] Error checking clock status:', error);
+      }
+    }
+
+    async function handleClockIn(supabase, toast) {
+      try {
+        console.log('[TimeClock] 🟢 Clocking in...');
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabase
+          .from('time_entries')
+          .insert({
+            user_id: user.id,
+            clock_in: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        currentTimeEntry = data;
+        showClockedInState();
+        startTimer();
+        
+        toast.success('Successfully clocked in!', 'Clocked In');
+        console.log('[TimeClock] ✅ Clocked in at', new Date(data.clock_in).toLocaleTimeString());
+      } catch (error) {
+        console.error('[TimeClock] Error clocking in:', error);
+        toast.error('Failed to clock in: ' + error.message, 'Clock In Failed');
+      }
+    }
+
+    async function handleClockOut(supabase, toast) {
+      try {
+        console.log('[TimeClock] 🔴 Clocking out...');
+        if (!currentTimeEntry) return;
+
+        const { error } = await supabase
+          .from('time_entries')
+          .update({
+            clock_out: new Date().toISOString()
+          })
+          .eq('id', currentTimeEntry.id);
+
+        if (error) throw error;
+
+        const clockInTime = new Date(currentTimeEntry.clock_in);
+        const clockOutTime = new Date();
+        const hoursWorked = ((clockOutTime - clockInTime) / (1000 * 60 * 60)).toFixed(2);
+
+        stopTimer();
+        showClockedOutState();
+        currentTimeEntry = null;
+        
+        toast.success(`Clocked out! Hours worked: ${hoursWorked}`, 'Clocked Out');
+        console.log('[TimeClock] ✅ Clocked out. Total hours:', hoursWorked);
+      } catch (error) {
+        console.error('[TimeClock] Error clocking out:', error);
+        toast.error('Failed to clock out: ' + error.message, 'Clock Out Failed');
+      }
+    }
+
+    function showClockedInState() {
+      document.getElementById('clock-in-btn').classList.add('hidden');
+      document.getElementById('clock-in-btn').classList.remove('flex');
+      document.getElementById('clock-out-btn').classList.remove('hidden');
+      document.getElementById('clock-out-btn').classList.add('flex');
+      document.getElementById('clock-status').classList.remove('hidden');
+      document.getElementById('clock-status').classList.add('flex');
+    }
+
+    function showClockedOutState() {
+      document.getElementById('clock-in-btn').classList.remove('hidden');
+      document.getElementById('clock-in-btn').classList.add('flex');
+      document.getElementById('clock-out-btn').classList.add('hidden');
+      document.getElementById('clock-out-btn').classList.remove('flex');
+      document.getElementById('clock-status').classList.add('hidden');
+      document.getElementById('clock-status').classList.remove('flex');
+    }
+
+    function startTimer() {
+      if (!currentTimeEntry) return;
+      
+      const updateTimer = () => {
+        const clockInTime = new Date(currentTimeEntry.clock_in);
+        const now = new Date();
+        const diff = now - clockInTime;
+        
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        
+        const timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        document.getElementById('clock-time').textContent = timeStr;
+      };
+      
+      updateTimer(); // Update immediately
+      clockTimer = setInterval(updateTimer, 1000);
+    }
+
+    function stopTimer() {
+      if (clockTimer) {
+        clearInterval(clockTimer);
+        clockTimer = null;
+      }
+    }
+
+    // Initialize time clock when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeTimeClock();
     });
   </script>
 
