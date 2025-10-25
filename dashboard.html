@@ -137,13 +137,14 @@
             </div>
           </div>
 
-          <button class="hidden md:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark"
+          <!-- Add Site Button (Admin/Client Only) -->
+          <button id="add-site-btn" class="hidden md:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark"
                   data-action="open-modal" data-target="addSiteModal">
             <i data-lucide="plus" class="w-4 h-4"></i> Add Site
           </button>
 
-          <!-- Clock In/Out Button (Staff Only) -->
-          <div id="time-clock-container" class="hidden items-center gap-2">
+          <!-- Clock In/Out (Staff Only) -->
+          <div id="time-clock-container" class="hidden md:flex items-center gap-2">
             <button id="clock-in-btn" class="hidden items-center gap-2 px-4 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700 font-medium shadow-md transition">
               <i data-lucide="clock" class="w-4 h-4"></i>
               <span>Clock In</span>
@@ -1234,23 +1235,36 @@
         .eq('id', user.id)
         .single();
 
-      // Only show for staff
-      if (profile?.role !== 'staff') {
-        console.log('[TimeClock] ℹ️ Not staff user, hiding time clock');
-        return;
+      const addSiteBtn = document.getElementById('add-site-btn');
+      const timeClockContainer = document.getElementById('time-clock-container');
+
+      // Show/hide based on role
+      if (profile?.role === 'staff') {
+        // Staff: Show clock, hide add site
+        console.log('[TimeClock] ✅ Staff user detected');
+        if (addSiteBtn) {
+          addSiteBtn.classList.add('hidden');
+          addSiteBtn.classList.remove('md:inline-flex');
+        }
+        timeClockContainer.classList.remove('hidden');
+        timeClockContainer.classList.add('md:flex');
+
+        // Check if already clocked in today
+        await checkClockStatus(supabase);
+
+        // Set up button listeners
+        document.getElementById('clock-in-btn').addEventListener('click', () => handleClockIn(supabase, toast));
+        document.getElementById('clock-out-btn').addEventListener('click', () => handleClockOut(supabase, toast));
+      } else {
+        // Admin/Client: Show add site, hide clock
+        console.log('[TimeClock] ℹ️ Admin/Client user - showing Add Site button');
+        if (addSiteBtn) {
+          addSiteBtn.classList.remove('hidden');
+          addSiteBtn.classList.add('md:inline-flex');
+        }
+        timeClockContainer.classList.add('hidden');
+        timeClockContainer.classList.remove('md:flex');
       }
-
-      console.log('[TimeClock] ✅ Staff user detected, showing time clock');
-      const container = document.getElementById('time-clock-container');
-      container.classList.remove('hidden');
-      container.classList.add('flex');
-
-      // Check if already clocked in today
-      await checkClockStatus(supabase);
-
-      // Set up button listeners
-      document.getElementById('clock-in-btn').addEventListener('click', () => handleClockIn(supabase, toast));
-      document.getElementById('clock-out-btn').addEventListener('click', () => handleClockOut(supabase, toast));
     }
 
     async function checkClockStatus(supabase) {
