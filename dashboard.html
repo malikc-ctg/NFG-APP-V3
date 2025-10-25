@@ -1283,7 +1283,12 @@
           .order('clock_in', { ascending: false })
           .limit(1);
 
-        if (error) throw error;
+        if (error) {
+          console.warn('[TimeClock] ⚠️ Could not check clock status (table may not exist yet):', error.message);
+          // Show clocked out state by default if table doesn't exist
+          showClockedOutState();
+          return;
+        }
 
         if (data && data.length > 0) {
           // Already clocked in
@@ -1297,7 +1302,9 @@
           console.log('[TimeClock] ℹ️ Not currently clocked in');
         }
       } catch (error) {
-        console.error('[TimeClock] Error checking clock status:', error);
+        console.error('[TimeClock] ❌ Error checking clock status:', error);
+        // Show clocked out state by default on error
+        showClockedOutState();
       }
     }
 
@@ -1316,7 +1323,16 @@
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          // Check if it's a "table not found" error
+          if (error.message.includes('relation') || error.code === '42P01') {
+            toast.error('Time tracking table not set up. Please run SETUP_TIME_TRACKING.sql in Supabase first.', 'Setup Required');
+            console.error('[TimeClock] ❌ Table does not exist. Run SETUP_TIME_TRACKING.sql');
+          } else {
+            toast.error('Failed to clock in: ' + error.message, 'Clock In Failed');
+          }
+          throw error;
+        }
 
         currentTimeEntry = data;
         showClockedInState();
@@ -1325,8 +1341,7 @@
         toast.success('Successfully clocked in!', 'Clocked In');
         console.log('[TimeClock] ✅ Clocked in at', new Date(data.clock_in).toLocaleTimeString());
       } catch (error) {
-        console.error('[TimeClock] Error clocking in:', error);
-        toast.error('Failed to clock in: ' + error.message, 'Clock In Failed');
+        console.error('[TimeClock] ❌ Error clocking in:', error);
       }
     }
 
