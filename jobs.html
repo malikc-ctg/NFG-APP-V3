@@ -1567,6 +1567,37 @@
         return;
       }
       
+      // Check if staff is clocked in (only for staff users)
+      if (currentUserProfile && currentUserProfile.role === 'staff') {
+        try {
+          const { data: activeClockIn, error: clockError } = await supabase
+            .from('time_entries')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .is('clock_out', null)
+            .order('clock_in', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (clockError && !clockError.message.includes('does not exist')) {
+            console.error('Error checking clock status:', clockError);
+          }
+
+          if (!activeClockIn) {
+            toast.warning(
+              'You must clock in before starting a job. Go to the Overview page and click "Clock In" first.',
+              '🕐 Not Clocked In'
+            );
+            return;
+          }
+          
+          console.log('✅ Staff is clocked in, can proceed with job');
+        } catch (err) {
+          console.warn('Could not verify clock status:', err);
+          // If time_entries table doesn't exist, allow job start
+        }
+      }
+      
       // Check if job has a scheduled date and if it's in the future
       if (job.scheduled_date) {
         const scheduledDate = new Date(job.scheduled_date);
