@@ -886,12 +886,14 @@
 
     // Refresh all reports
     async function refreshReports() {
-      const days = document.getElementById('time-period').value;
+      const days = document.getElementById('time-period')?.value || '30';
       const refreshBtn = document.getElementById('refresh-btn');
-      const icon = refreshBtn.querySelector('i');
+      const icon = refreshBtn?.querySelector('i');
       
-      // Add spin animation
-      icon.classList.add('animate-spin');
+      // Add spin animation (if icon exists)
+      if (icon) {
+        icon.classList.add('animate-spin');
+      }
       
       const success = await fetchData(days);
       
@@ -906,10 +908,12 @@
         toast.success('Reports refreshed!');
       }
       
-      // Remove spin animation
-      setTimeout(() => {
-        icon.classList.remove('animate-spin');
-      }, 500);
+      // Remove spin animation (if icon exists)
+      if (icon) {
+        setTimeout(() => {
+          icon.classList.remove('animate-spin');
+        }, 500);
+      }
     }
 
     // Export to CSV
@@ -974,10 +978,21 @@
       document.getElementById('export-csv-btn')?.addEventListener('click', exportToCSV);
       document.getElementById('print-btn')?.addEventListener('click', printReport);
       
+      // Initialize Lucide icons
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+        console.log('[Reports] 🎨 Lucide icons initialized');
+      }
+      
       console.log('[Reports] ✅ Initialization complete!');
     }
 
-    init();
+    // Wait for DOM to be fully loaded before initializing
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
 
     // Logout functionality
     document.getElementById('logout-btn')?.addEventListener('click', async () => {
