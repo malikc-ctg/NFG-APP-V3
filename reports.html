@@ -752,9 +752,11 @@
     async function createWorkerPerformanceChart() {
       const ctx = document.getElementById('worker-performance-chart');
       if (!ctx) {
-        console.warn('[Reports] Worker performance chart canvas not found');
+        console.warn('[Reports] ⚠️ Worker performance chart canvas not found');
         return;
       }
+
+      console.log('[Reports] 📊 Creating worker performance chart...');
 
       // Calculate worker stats
       const workerStats = await calculateWorkerStats();
@@ -767,8 +769,11 @@
       const workerNames = topWorkers.map(w => w.name);
       const completedCounts = topWorkers.map(w => w.completed);
 
+      console.log('[Reports] 📈 Chart data:', workerNames, completedCounts);
+
       // Handle empty data
       if (workerNames.length === 0) {
+        console.warn('[Reports] ⚠️ No worker data for chart, showing empty state');
         workerNames.push('No Workers');
         completedCounts.push(0);
       }
@@ -822,11 +827,15 @@
           }
         }
       });
+      
+      console.log('[Reports] ✅ Worker performance chart created successfully');
     }
 
     // Calculate worker statistics
     async function calculateWorkerStats() {
       try {
+        console.log('[Reports] 👷 Calculating worker statistics...');
+        
         // Fetch all user profiles (workers)
         const { data: profiles, error } = await supabase
           .from('user_profiles')
@@ -834,14 +843,19 @@
           .in('role', ['staff', 'admin']);
 
         if (error) {
-          console.error('[Reports] Error fetching user profiles:', error);
+          console.error('[Reports] ❌ Error fetching user profiles:', error);
           return [];
         }
+
+        console.log('[Reports] 📋 Fetched', profiles?.length || 0, 'worker profiles');
+        console.log('[Reports] 📊 Total jobs to analyze:', reportsData.jobs.length);
 
         const workerStats = [];
         const timeRange = document.getElementById('time-period')?.value || '30';
         const daysInPeriod = timeRange === 'all' ? 365 : parseInt(timeRange);
         const weeksInPeriod = daysInPeriod / 7;
+
+        console.log('[Reports] 📅 Time period:', timeRange, 'days =', weeksInPeriod.toFixed(1), 'weeks');
 
         profiles?.forEach(profile => {
           const workerId = profile.id;
@@ -853,6 +867,7 @@
 
           // Only include workers who have at least some activity
           if (completed > 0 || active > 0) {
+            console.log(`[Reports] ✅ ${profile.full_name}: ${completed} completed, ${active} active, ${rate}/wk`);
             workerStats.push({
               id: workerId,
               name: profile.full_name || 'Unknown Worker',
@@ -863,9 +878,10 @@
           }
         });
 
+        console.log('[Reports] 🏆 Found', workerStats.length, 'workers with activity');
         return workerStats;
       } catch (error) {
-        console.error('[Reports] Error calculating worker stats:', error);
+        console.error('[Reports] ❌ Error calculating worker stats:', error);
         return [];
       }
     }
@@ -874,6 +890,7 @@
     async function updateWorkerStatsTable() {
       const tbody = document.getElementById('worker-stats-table');
       
+      console.log('[Reports] 📊 Updating worker stats table...');
       const workerStats = await calculateWorkerStats();
       
       // Sort by completed jobs and get top 5
@@ -881,7 +898,10 @@
         .sort((a, b) => b.completed - a.completed)
         .slice(0, 5);
 
+      console.log('[Reports] 🏅 Top 5 workers:', topWorkers.map(w => w.name).join(', '));
+
       if (topWorkers.length === 0) {
+        console.warn('[Reports] ⚠️ No worker data to display');
         tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-gray-500">No worker data available</td></tr>';
         return;
       }
@@ -902,6 +922,8 @@
           <td class="py-3 text-right text-gray-700 font-medium">${worker.rate}/wk</td>
         </tr>
       `).join('');
+      
+      console.log('[Reports] ✅ Worker stats table updated successfully');
     }
 
     // Update Top Sites Table
