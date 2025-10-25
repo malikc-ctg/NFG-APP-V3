@@ -227,11 +227,41 @@
         </div>
       </div>
 
-      <!-- Jobs by Site Chart -->
+      <!-- Worker Performance -->
       <div class="bg-white border border-nfgray rounded-xl p-6 shadow-nfg">
-        <h3 class="text-lg font-semibold text-nfgblue mb-4">Jobs by Site (Top 10)</h3>
-        <div style="height: 250px; position: relative;">
-          <canvas id="jobs-by-site-chart"></canvas>
+        <div class="flex items-center gap-2 mb-4">
+          <i data-lucide="users" class="w-5 h-5 text-nfgblue"></i>
+          <h3 class="text-lg font-semibold text-nfgblue">Worker Performance</h3>
+        </div>
+        
+        <!-- Bar Chart: Top Workers by Completed Jobs -->
+        <div class="mb-6">
+          <p class="text-sm text-gray-500 mb-3">Top 5 Workers (By Completed Jobs)</p>
+          <div style="height: 220px; position: relative;">
+            <canvas id="worker-performance-chart"></canvas>
+          </div>
+        </div>
+        
+        <!-- Stats Table -->
+        <div class="border-t border-nfgray pt-4">
+          <p class="text-sm font-medium text-gray-600 mb-3">Detailed Breakdown</p>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="border-b border-nfgray">
+                <tr class="text-left">
+                  <th class="pb-2 font-medium text-gray-500">Worker</th>
+                  <th class="pb-2 font-medium text-gray-500 text-center">Done ✅</th>
+                  <th class="pb-2 font-medium text-gray-500 text-center">Active 🔵</th>
+                  <th class="pb-2 font-medium text-gray-500 text-right">Rate 📊</th>
+                </tr>
+              </thead>
+              <tbody id="worker-stats-table">
+                <tr>
+                  <td colspan="4" class="py-4 text-center text-gray-500">Loading...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -382,7 +412,7 @@
     // Chart instances
     let jobsOverTimeChart = null;
     let jobsByStatusChart = null;
-    let jobsBySiteChart = null;
+    let workerPerformanceChart = null;
 
     // Get current user and their profile
     async function getCurrentUser() {
@@ -718,47 +748,43 @@
       });
     }
 
-    // Create Jobs by Site Chart
-    function createJobsBySiteChart() {
-      const ctx = document.getElementById('jobs-by-site-chart');
+    // Create Worker Performance Chart
+    async function createWorkerPerformanceChart() {
+      const ctx = document.getElementById('worker-performance-chart');
       if (!ctx) {
-        console.warn('[Reports] Jobs by site chart canvas not found');
+        console.warn('[Reports] Worker performance chart canvas not found');
         return;
       }
 
-      // Count jobs per site
-      const jobsBySite = {};
-      reportsData.jobs.forEach(job => {
-        const siteName = job.sites?.name || 'Unknown Site';
-        jobsBySite[siteName] = (jobsBySite[siteName] || 0) + 1;
-      });
+      // Calculate worker stats
+      const workerStats = await calculateWorkerStats();
+      
+      // Sort by completed jobs and get top 5
+      const topWorkers = workerStats
+        .sort((a, b) => b.completed - a.completed)
+        .slice(0, 5);
 
-      // Sort and get top 10
-      const sortedSites = Object.entries(jobsBySite)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 10);
-
-      const siteNames = sortedSites.map(s => s[0]);
-      const jobCounts = sortedSites.map(s => s[1]);
+      const workerNames = topWorkers.map(w => w.name);
+      const completedCounts = topWorkers.map(w => w.completed);
 
       // Handle empty data
-      if (siteNames.length === 0) {
-        siteNames.push('No Data');
-        jobCounts.push(0);
+      if (workerNames.length === 0) {
+        workerNames.push('No Workers');
+        completedCounts.push(0);
       }
 
-      if (jobsBySiteChart) {
-        jobsBySiteChart.destroy();
+      if (workerPerformanceChart) {
+        workerPerformanceChart.destroy();
       }
 
-      jobsBySiteChart = new Chart(ctx, {
+      workerPerformanceChart = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: siteNames,
+          labels: workerNames,
           datasets: [{
-            label: 'Number of Jobs',
-            data: jobCounts,
-            backgroundColor: '#0D47A1',
+            label: 'Completed Jobs',
+            data: completedCounts,
+            backgroundColor: '#4CAF50',
             borderRadius: 6,
             borderWidth: 0
           }]
@@ -773,7 +799,7 @@
             tooltip: {
               callbacks: {
                 label: function(context) {
-                  return 'Jobs: ' + context.parsed.y;
+                  return 'Completed: ' + context.parsed.y + ' jobs';
                 }
               }
             }
@@ -788,8 +814,6 @@
             },
             x: {
               ticks: {
-                maxRotation: 45,
-                minRotation: 45,
                 font: {
                   size: 11
                 }
@@ -798,6 +822,86 @@
           }
         }
       });
+    }
+
+    // Calculate worker statistics
+    async function calculateWorkerStats() {
+      try {
+        // Fetch all user profiles (workers)
+        const { data: profiles, error } = await supabase
+          .from('user_profiles')
+          .select('id, full_name, role')
+          .in('role', ['staff', 'admin']);
+
+        if (error) {
+          console.error('[Reports] Error fetching user profiles:', error);
+          return [];
+        }
+
+        const workerStats = [];
+        const timeRange = document.getElementById('time-period')?.value || '30';
+        const daysInPeriod = timeRange === 'all' ? 365 : parseInt(timeRange);
+        const weeksInPeriod = daysInPeriod / 7;
+
+        profiles?.forEach(profile => {
+          const workerId = profile.id;
+          const workerJobs = reportsData.jobs.filter(j => j.assigned_to === workerId);
+          
+          const completed = workerJobs.filter(j => j.status === 'completed').length;
+          const active = workerJobs.filter(j => j.status === 'pending' || j.status === 'in-progress').length;
+          const rate = weeksInPeriod > 0 ? (completed / weeksInPeriod).toFixed(1) : '0.0';
+
+          // Only include workers who have at least some activity
+          if (completed > 0 || active > 0) {
+            workerStats.push({
+              id: workerId,
+              name: profile.full_name || 'Unknown Worker',
+              completed: completed,
+              active: active,
+              rate: rate
+            });
+          }
+        });
+
+        return workerStats;
+      } catch (error) {
+        console.error('[Reports] Error calculating worker stats:', error);
+        return [];
+      }
+    }
+
+    // Update Worker Stats Table
+    async function updateWorkerStatsTable() {
+      const tbody = document.getElementById('worker-stats-table');
+      
+      const workerStats = await calculateWorkerStats();
+      
+      // Sort by completed jobs and get top 5
+      const topWorkers = workerStats
+        .sort((a, b) => b.completed - a.completed)
+        .slice(0, 5);
+
+      if (topWorkers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-gray-500">No worker data available</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = topWorkers.map(worker => `
+        <tr class="border-b border-nfgray last:border-0">
+          <td class="py-3 font-medium text-nfgblue">${worker.name}</td>
+          <td class="py-3 text-center">
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-700 font-semibold text-sm">
+              ${worker.completed}
+            </span>
+          </td>
+          <td class="py-3 text-center">
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-semibold text-sm">
+              ${worker.active}
+            </span>
+          </td>
+          <td class="py-3 text-right text-gray-700 font-medium">${worker.rate}/wk</td>
+        </tr>
+      `).join('');
     }
 
     // Update Top Sites Table
@@ -916,7 +1020,8 @@
         updateMetrics();
         createJobsOverTimeChart();
         createJobsByStatusChart();
-        createJobsBySiteChart();
+        await createWorkerPerformanceChart();
+        await updateWorkerStatsTable();
         updateTopSitesTable();
         updateTopServicesTable();
         updateRecentJobsTable();
