@@ -752,8 +752,15 @@
         // Handle empty data
         if (names.length === 0) {
           console.warn('[Reports] ⚠️ No staff hours data available');
-          names.push('No Data');
-          hours.push(0);
+          console.log('[Reports] 💡 Reason: Staff need to clock in and clock out to generate hours data');
+          console.log('[Reports] 📋 Time entries found:', timeEntries?.length || 0);
+          console.log('[Reports] 👥 Worker profiles found:', profiles?.length || 0);
+          if (timeEntries && timeEntries.length > 0) {
+            console.log('[Reports] 🔍 Sample time entry:', timeEntries[0]);
+            console.log('[Reports] 📊 Hours calculated:', timeEntries.map(e => `${e.user_id}: ${e.total_hours} hrs`));
+          }
+          names.push('No Data Yet');
+          hours.push(1); // Show something on chart
         }
 
         if (staffHoursChart) {
@@ -948,6 +955,33 @@
         });
 
         console.log('[Reports] 🏆 Found', workerStats.length, 'workers with activity');
+        
+        // Debug: Show why no workers found
+        if (workerStats.length === 0 && reportsData.jobs.length > 0) {
+          console.warn('[Reports] ⚠️ No workers with activity found!');
+          console.log('[Reports] 🔍 Debugging info:');
+          console.log('[Reports] 📊 Total jobs:', reportsData.jobs.length);
+          console.log('[Reports] 👥 Worker IDs:', profiles?.map(p => p.id));
+          
+          // Check if jobs have assigned_to field
+          const sampleJob = reportsData.jobs[0];
+          console.log('[Reports] 📋 Sample job:', {
+            id: sampleJob.id,
+            title: sampleJob.title,
+            assigned_to: sampleJob.assigned_to,
+            status: sampleJob.status
+          });
+          
+          // Count jobs with assigned_to
+          const assignedJobs = reportsData.jobs.filter(j => j.assigned_to != null).length;
+          console.log('[Reports] 🎯 Jobs with assigned_to:', assignedJobs, 'out of', reportsData.jobs.length);
+          
+          if (assignedJobs === 0) {
+            console.error('[Reports] ❌ PROBLEM: No jobs have assigned_to field set!');
+            console.log('[Reports] 💡 Solution: Assign jobs to workers in the Jobs page');
+          }
+        }
+        
         return workerStats;
       } catch (error) {
         console.error('[Reports] ❌ Error calculating worker stats:', error);
