@@ -432,17 +432,10 @@
           dateFilter = date.toISOString();
         }
 
-        // Fetch jobs with site details
+        // Fetch jobs (without site join since FK might not exist)
         let jobsQuery = supabase
           .from('jobs')
-          .select(`
-            *,
-            sites (
-              id,
-              name,
-              status
-            )
-          `);
+          .select('*');
         
         if (dateFilter) {
           jobsQuery = jobsQuery.gte('created_at', dateFilter);
@@ -453,7 +446,6 @@
           console.error('[Reports] Jobs error:', jobsError);
           throw jobsError;
         }
-        reportsData.jobs = jobs || [];
         console.log('[Reports] ✅ Loaded', jobs?.length || 0, 'jobs');
 
         // Fetch sites
@@ -464,18 +456,27 @@
           console.error('[Reports] Sites error:', sitesError);
           throw sitesError;
         }
-        reportsData.sites = sites || [];
         console.log('[Reports] ✅ Loaded', sites?.length || 0, 'sites');
 
-        // Fetch bookings with services and emergency flag
+        // Manually join jobs with sites data
+        const sitesMap = {};
+        (sites || []).forEach(site => {
+          sitesMap[site.id] = site;
+        });
+
+        reportsData.jobs = (jobs || []).map(job => ({
+          ...job,
+          sites: job.site_id ? sitesMap[job.site_id] : null
+        }));
+        reportsData.sites = sites || [];
+        
+        console.log('[Reports] 🔗 Jobs linked with sites successfully');
+
+        // Fetch bookings with services (without site join)
         let bookingsQuery = supabase
           .from('bookings')
           .select(`
             *,
-            sites (
-              id,
-              name
-            ),
             booking_services (
               service_id,
               quantity,
@@ -497,7 +498,11 @@
           console.warn('[Reports] ⚠️ Continuing without bookings data');
           reportsData.bookings = [];
         } else {
-          reportsData.bookings = bookings || [];
+          // Manually link bookings with sites
+          reportsData.bookings = (bookings || []).map(booking => ({
+            ...booking,
+            sites: booking.site_id ? sitesMap[booking.site_id] : null
+          }));
           console.log('[Reports] ✅ Loaded', bookings?.length || 0, 'bookings');
           
           // Log emergency bookings for debugging
