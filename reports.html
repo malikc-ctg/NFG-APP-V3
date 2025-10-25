@@ -430,46 +430,75 @@
           dateFilter = date.toISOString();
         }
 
-        // Fetch jobs
+        // Fetch jobs with site details
         let jobsQuery = supabase
           .from('jobs')
-          .select('*, sites(name)');
+          .select(`
+            *,
+            sites (
+              id,
+              name,
+              status
+            )
+          `);
         
         if (dateFilter) {
           jobsQuery = jobsQuery.gte('created_at', dateFilter);
         }
 
         const { data: jobs, error: jobsError } = await jobsQuery.order('created_at', { ascending: false });
-        if (jobsError) throw jobsError;
+        if (jobsError) {
+          console.error('[Reports] Jobs error:', jobsError);
+          throw jobsError;
+        }
         reportsData.jobs = jobs || [];
-        console.log('[Reports] Loaded', jobs?.length || 0, 'jobs');
+        console.log('[Reports] ✅ Loaded', jobs?.length || 0, 'jobs');
 
         // Fetch sites
         const { data: sites, error: sitesError } = await supabase
           .from('sites')
           .select('*');
-        if (sitesError) throw sitesError;
+        if (sitesError) {
+          console.error('[Reports] Sites error:', sitesError);
+          throw sitesError;
+        }
         reportsData.sites = sites || [];
-        console.log('[Reports] Loaded', sites?.length || 0, 'sites');
+        console.log('[Reports] ✅ Loaded', sites?.length || 0, 'sites');
 
         // Fetch bookings with services
         let bookingsQuery = supabase
           .from('bookings')
-          .select('*, booking_services(service_id, services(name))');
+          .select(`
+            *,
+            booking_services (
+              service_id,
+              quantity,
+              services (
+                id,
+                name
+              )
+            )
+          `);
         
         if (dateFilter) {
           bookingsQuery = bookingsQuery.gte('created_at', dateFilter);
         }
 
-        const { data: bookings, error: bookingsError } = await bookingsQuery;
-        if (bookingsError) throw bookingsError;
-        reportsData.bookings = bookings || [];
-        console.log('[Reports] Loaded', bookings?.length || 0, 'bookings');
+        const { data: bookings, error: bookingsError } = await bookingsQuery.order('created_at', { ascending: false });
+        if (bookingsError) {
+          console.error('[Reports] Bookings error:', bookingsError);
+          // Don't fail if bookings error - just log it
+          console.warn('[Reports] ⚠️ Continuing without bookings data');
+          reportsData.bookings = [];
+        } else {
+          reportsData.bookings = bookings || [];
+          console.log('[Reports] ✅ Loaded', bookings?.length || 0, 'bookings');
+        }
 
         return true;
       } catch (error) {
-        console.error('[Reports] Error fetching data:', error);
-        toast.error('Failed to load reports data');
+        console.error('[Reports] ❌ Error fetching data:', error);
+        toast.error('Failed to load reports data: ' + error.message);
         return false;
       }
     }
@@ -490,18 +519,29 @@
     // Create Jobs Over Time Chart
     function createJobsOverTimeChart() {
       const ctx = document.getElementById('jobs-over-time-chart');
-      if (!ctx) return;
+      if (!ctx) {
+        console.warn('[Reports] Jobs over time chart canvas not found');
+        return;
+      }
 
       // Group jobs by date
       const jobsByDate = {};
       reportsData.jobs.forEach(job => {
-        const date = new Date(job.created_at).toLocaleDateString();
-        jobsByDate[date] = (jobsByDate[date] || 0) + 1;
+        if (job.created_at) {
+          const date = new Date(job.created_at).toLocaleDateString();
+          jobsByDate[date] = (jobsByDate[date] || 0) + 1;
+        }
       });
 
       // Sort by date and get last 30 days
       const dates = Object.keys(jobsByDate).sort((a, b) => new Date(a) - new Date(b)).slice(-30);
       const counts = dates.map(date => jobsByDate[date]);
+
+      // Handle empty data
+      if (dates.length === 0) {
+        dates.push(new Date().toLocaleDateString());
+        counts.push(0);
+      }
 
       if (jobsOverTimeChart) {
         jobsOverTimeChart.destroy();
@@ -526,13 +566,21 @@
           plugins: {
             legend: {
               display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return 'Jobs: ' + context.parsed.y;
+                }
+              }
             }
           },
           scales: {
             y: {
               beginAtZero: true,
               ticks: {
-                stepSize: 1
+                stepSize: 1,
+                precision: 0
               }
             }
           }
@@ -543,7 +591,10 @@
     // Create Jobs by Status Chart
     function createJobsByStatusChart() {
       const ctx = document.getElementById('jobs-by-status-chart');
-      if (!ctx) return;
+      if (!ctx) {
+        console.warn('[Reports] Jobs by status chart canvas not found');
+        return;
+      }
 
       const statusCounts = {
         pending: 0,
@@ -553,10 +604,13 @@
       };
 
       reportsData.jobs.forEach(job => {
-        if (statusCounts.hasOwnProperty(job.status)) {
+        if (job.status && statusCounts.hasOwnProperty(job.status)) {
           statusCounts[job.status]++;
         }
       });
+
+      // Calculate total for percentage display
+      const total = Object.values(statusCounts).reduce((a, b) => a + b, 0);
 
       if (jobsByStatusChart) {
         jobsByStatusChart.destroy();
@@ -578,7 +632,9 @@
               '#0D47A1',
               '#4CAF50',
               '#F44336'
-            ]
+            ],
+            borderWidth: 2,
+            borderColor: '#fff'
           }]
         },
         options: {
@@ -586,7 +642,23 @@
           maintainAspectRatio: false,
           plugins: {
             legend: {
-              position: 'bottom'
+              position: 'bottom',
+              labels: {
+                padding: 15,
+                font: {
+                  size: 12
+                }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = context.parsed || 0;
+                  const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                  return `${label}: ${value} (${percentage}%)`;
+                }
+              }
             }
           }
         }
@@ -596,12 +668,15 @@
     // Create Jobs by Site Chart
     function createJobsBySiteChart() {
       const ctx = document.getElementById('jobs-by-site-chart');
-      if (!ctx) return;
+      if (!ctx) {
+        console.warn('[Reports] Jobs by site chart canvas not found');
+        return;
+      }
 
       // Count jobs per site
       const jobsBySite = {};
       reportsData.jobs.forEach(job => {
-        const siteName = job.sites?.name || 'Unknown';
+        const siteName = job.sites?.name || 'Unknown Site';
         jobsBySite[siteName] = (jobsBySite[siteName] || 0) + 1;
       });
 
@@ -612,6 +687,12 @@
 
       const siteNames = sortedSites.map(s => s[0]);
       const jobCounts = sortedSites.map(s => s[1]);
+
+      // Handle empty data
+      if (siteNames.length === 0) {
+        siteNames.push('No Data');
+        jobCounts.push(0);
+      }
 
       if (jobsBySiteChart) {
         jobsBySiteChart.destroy();
@@ -624,7 +705,9 @@
           datasets: [{
             label: 'Number of Jobs',
             data: jobCounts,
-            backgroundColor: '#0D47A1'
+            backgroundColor: '#0D47A1',
+            borderRadius: 6,
+            borderWidth: 0
           }]
         },
         options: {
@@ -633,13 +716,27 @@
           plugins: {
             legend: {
               display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return 'Jobs: ' + context.parsed.y;
+                }
+              }
             }
           },
           scales: {
             y: {
               beginAtZero: true,
               ticks: {
-                stepSize: 1
+                stepSize: 1,
+                precision: 0
+              }
+            },
+            x: {
+              ticks: {
+                maxRotation: 45,
+                minRotation: 45
               }
             }
           }
@@ -807,8 +904,16 @@
 
     // Initialize
     async function init() {
+      console.log('[Reports] 🚀 Initializing Reports page...');
+      
       const user = await getCurrentUser();
-      if (!user) return;
+      if (!user) {
+        console.error('[Reports] ❌ No user found, initialization aborted');
+        return;
+      }
+      
+      console.log('[Reports] ✅ User authenticated:', user.email);
+      console.log('[Reports] 👤 User role:', currentUserProfile?.role || 'unknown');
       
       // Hide Bookings and Reports navigation for staff (shouldn't reach here, but just in case)
       if (currentUserProfile && currentUserProfile.role === 'staff') {
@@ -819,6 +924,7 @@
       }
 
       // Load initial data
+      console.log('[Reports] 📊 Loading initial reports data...');
       await refreshReports();
 
       // Event listeners
@@ -826,6 +932,8 @@
       document.getElementById('refresh-btn')?.addEventListener('click', refreshReports);
       document.getElementById('export-csv-btn')?.addEventListener('click', exportToCSV);
       document.getElementById('print-btn')?.addEventListener('click', printReport);
+      
+      console.log('[Reports] ✅ Initialization complete!');
     }
 
     init();
