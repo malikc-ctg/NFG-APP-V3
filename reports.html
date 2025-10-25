@@ -218,11 +218,14 @@
           </div>
         </div>
 
-        <!-- Jobs by Status Chart -->
+        <!-- Staff Hours Worked Chart -->
         <div class="bg-white border border-nfgray rounded-xl p-6 shadow-nfg">
-          <h3 class="text-lg font-semibold text-nfgblue mb-4">Jobs by Status</h3>
+          <div class="flex items-center gap-2 mb-4">
+            <i data-lucide="clock" class="w-5 h-5 text-nfgblue"></i>
+            <h3 class="text-lg font-semibold text-nfgblue">Staff Hours Worked</h3>
+          </div>
           <div style="height: 200px; position: relative;">
-            <canvas id="jobs-by-status-chart"></canvas>
+            <canvas id="staff-hours-chart"></canvas>
           </div>
         </div>
       </div>
@@ -411,7 +414,7 @@
 
     // Chart instances
     let jobsOverTimeChart = null;
-    let jobsByStatusChart = null;
+    let staffHoursChart = null;
     let workerPerformanceChart = null;
 
     // Get current user and their profile
@@ -670,82 +673,148 @@
       });
     }
 
-    // Create Jobs by Status Chart
-    function createJobsByStatusChart() {
-      const ctx = document.getElementById('jobs-by-status-chart');
+    // Create Staff Hours Worked Chart
+    async function createStaffHoursChart() {
+      const ctx = document.getElementById('staff-hours-chart');
       if (!ctx) {
-        console.warn('[Reports] Jobs by status chart canvas not found');
+        console.warn('[Reports] Staff hours chart canvas not found');
         return;
       }
 
-      const statusCounts = {
-        pending: 0,
-        'in-progress': 0,
-        completed: 0,
-        cancelled: 0
-      };
+      console.log('[Reports] 🕐 Creating staff hours chart...');
 
-      reportsData.jobs.forEach(job => {
-        if (job.status && statusCounts.hasOwnProperty(job.status)) {
-          statusCounts[job.status]++;
+      try {
+        // Fetch time entries
+        const timeRange = document.getElementById('time-period')?.value || '30';
+        let dateFilter = null;
+        
+        if (timeRange !== 'all') {
+          const date = new Date();
+          date.setDate(date.getDate() - parseInt(timeRange));
+          dateFilter = date.toISOString();
         }
-      });
 
-      // Calculate total for percentage display
-      const total = Object.values(statusCounts).reduce((a, b) => a + b, 0);
+        let query = supabase
+          .from('time_entries')
+          .select('user_id, total_hours, clock_in, clock_out')
+          .not('clock_out', 'is', null); // Only completed shifts
 
-      if (jobsByStatusChart) {
-        jobsByStatusChart.destroy();
-      }
+        if (dateFilter) {
+          query = query.gte('clock_in', dateFilter);
+        }
 
-      jobsByStatusChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: ['Pending', 'In Progress', 'Completed', 'Cancelled'],
-          datasets: [{
-            data: [
-              statusCounts.pending,
-              statusCounts['in-progress'],
-              statusCounts.completed,
-              statusCounts.cancelled
-            ],
-            backgroundColor: [
-              '#FFC107',
-              '#0D47A1',
-              '#4CAF50',
-              '#F44336'
-            ],
-            borderWidth: 2,
-            borderColor: '#fff'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: {
-                padding: 8,
-                font: {
-                  size: 11
-                },
-                boxWidth: 12
-              }
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  const label = context.label || '';
-                  const value = context.parsed || 0;
-                  const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                  return `${label}: ${value} (${percentage}%)`;
+        const { data: timeEntries, error } = await query;
+
+        if (error) {
+          console.warn('[Reports] ⚠️ Could not fetch time entries (table may not exist):', error.message);
+          // Show empty state
+          if (staffHoursChart) staffHoursChart.destroy();
+          return;
+        }
+
+        console.log('[Reports] ⏱️ Loaded', timeEntries?.length || 0, 'time entries');
+
+        // Fetch user profiles to get names
+        const { data: profiles } = await supabase
+          .from('user_profiles')
+          .select('id, full_name, role')
+          .in('role', ['staff', 'admin']);
+
+        // Calculate total hours per worker
+        const workerHours = {};
+        timeEntries?.forEach(entry => {
+          const userId = entry.user_id;
+          const hours = parseFloat(entry.total_hours) || 0;
+          workerHours[userId] = (workerHours[userId] || 0) + hours;
+        });
+
+        // Map to names and prepare data
+        const staffData = [];
+        profiles?.forEach(profile => {
+          const hours = workerHours[profile.id] || 0;
+          if (hours > 0) {
+            staffData.push({
+              name: profile.full_name || 'Unknown',
+              hours: hours
+            });
+          }
+        });
+
+        // Sort by hours and prepare chart data
+        staffData.sort((a, b) => b.hours - a.hours);
+        
+        const names = staffData.map(s => s.name);
+        const hours = staffData.map(s => s.hours);
+        const total = hours.reduce((a, b) => a + b, 0);
+
+        console.log('[Reports] 📊 Staff hours data:', names, hours);
+
+        // Handle empty data
+        if (names.length === 0) {
+          console.warn('[Reports] ⚠️ No staff hours data available');
+          names.push('No Data');
+          hours.push(0);
+        }
+
+        if (staffHoursChart) {
+          staffHoursChart.destroy();
+        }
+
+        // Generate colors for each staff member
+        const colors = [
+          '#0D47A1', // Blue
+          '#4CAF50', // Green
+          '#FFC107', // Yellow
+          '#F44336', // Red
+          '#9C27B0', // Purple
+          '#00BCD4', // Cyan
+          '#FF9800', // Orange
+          '#795548'  // Brown
+        ];
+
+        staffHoursChart = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: names,
+            datasets: [{
+              data: hours,
+              backgroundColor: colors.slice(0, names.length),
+              borderWidth: 2,
+              borderColor: '#fff'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: {
+                  padding: 8,
+                  font: {
+                    size: 11
+                  },
+                  boxWidth: 12
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    const label = context.label || '';
+                    const value = context.parsed || 0;
+                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                    return `${label}: ${value.toFixed(1)} hrs (${percentage}%)`;
+                  }
                 }
               }
             }
           }
-        }
-      });
+        });
+
+        console.log('[Reports] ✅ Staff hours chart created successfully');
+      } catch (error) {
+        console.error('[Reports] ❌ Error creating staff hours chart:', error);
+      }
     }
 
     // Create Worker Performance Chart
@@ -1041,7 +1110,7 @@
       if (success) {
         updateMetrics();
         createJobsOverTimeChart();
-        createJobsByStatusChart();
+        await createStaffHoursChart();
         await createWorkerPerformanceChart();
         await updateWorkerStatsTable();
         updateTopSitesTable();
