@@ -1558,6 +1558,38 @@
 
     // Begin Work button (for staff)
     document.getElementById('begin-work-btn')?.addEventListener('click', async () => {
+      // Get current job to check scheduled date
+      const jobs = await getJobs();
+      const job = jobs.find(j => j.id === currentJobId);
+      
+      if (!job) {
+        toast.error('Job not found', 'Error');
+        return;
+      }
+      
+      // Check if job has a scheduled date and if it's in the future
+      if (job.scheduled_date) {
+        const scheduledDate = new Date(job.scheduled_date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Reset time to start of day
+        scheduledDate.setHours(0, 0, 0, 0); // Reset time to start of day
+        
+        if (scheduledDate > today) {
+          const formattedDate = scheduledDate.toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          });
+          
+          toast.warning(
+            `This job is scheduled for ${formattedDate}. You cannot start it until the scheduled date.`,
+            '🗓️ Not Yet Scheduled'
+          );
+          return;
+        }
+      }
+      
       const now = new Date().toISOString();
       
       const { error } = await supabase
