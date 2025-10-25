@@ -120,10 +120,10 @@ async function renderInventory() {
     
     tableBody.innerHTML = filtered.map(item => {
       const statusConfig = {
-        'out': { color: 'bg-red-100 text-red-700', icon: '🔴', text: 'Out of Stock' },
-        'low': { color: 'bg-orange-100 text-orange-700', icon: '🟠', text: 'Low Stock' },
-        'warning': { color: 'bg-yellow-100 text-yellow-700', icon: '🟡', text: 'Warning' },
-        'ok': { color: 'bg-green-100 text-green-700', icon: '🟢', text: 'In Stock' }
+        'out': { color: 'bg-red-100 text-red-700', icon: '', text: 'Out of Stock' },
+        'low': { color: 'bg-orange-100 text-orange-700', icon: '', text: 'Low Stock' },
+        'warning': { color: 'bg-yellow-100 text-yellow-700', icon: '', text: 'Warning' },
+        'ok': { color: 'bg-green-100 text-green-700', icon: '', text: 'In Stock' }
       };
       
       const status = statusConfig[item.stock_status] || statusConfig['ok'];
@@ -132,7 +132,7 @@ async function renderInventory() {
         <tr class="hover:bg-nfglight/30 transition">
           <td class="px-4 py-3">
             <div class="flex items-center gap-2">
-              <span class="text-xl">${item.category_icon || '📦'}</span>
+              <i data-lucide="${item.category_icon || 'package'}" class="w-5 h-5 text-nfgblue"></i>
               <div>
                 <div class="font-medium text-nfgblue">${item.item_name}</div>
                 <div class="text-xs text-gray-500 md:hidden">${item.category_name}</div>
@@ -222,11 +222,11 @@ window.viewHistory = async function(itemId, siteId, itemName, siteName) {
   } else {
     historyList.innerHTML = transactions.map(t => {
       const typeConfig = {
-        'restock': { icon: '➕', color: 'text-green-600', label: 'Restocked' },
-        'use': { icon: '➖', color: 'text-red-600', label: 'Used' },
-        'adjustment': { icon: '🔧', color: 'text-blue-600', label: 'Adjusted' },
-        'transfer': { icon: '🔄', color: 'text-purple-600', label: 'Transferred' },
-        'return': { icon: '↩️', color: 'text-orange-600', label: 'Returned' }
+        'restock': { icon: 'plus', color: 'text-green-600', label: 'Restocked' },
+        'use': { icon: 'minus', color: 'text-red-600', label: 'Used' },
+        'adjustment': { icon: 'settings', color: 'text-blue-600', label: 'Adjusted' },
+        'transfer': { icon: 'arrow-right-left', color: 'text-purple-600', label: 'Transferred' },
+        'return': { icon: 'corner-up-left', color: 'text-orange-600', label: 'Returned' }
       };
       
       const config = typeConfig[t.transaction_type] || typeConfig['adjustment'];
@@ -237,7 +237,7 @@ window.viewHistory = async function(itemId, siteId, itemName, siteName) {
         <div class="border border-nfgray rounded-xl p-4">
           <div class="flex items-start justify-between mb-2">
             <div class="flex items-center gap-2">
-              <span class="text-xl">${config.icon}</span>
+              <i data-lucide="${config.icon}" class="w-5 h-5"></i>
               <div>
                 <div class="font-medium ${config.color}">${config.label}</div>
                 <div class="text-xs text-gray-500">${date}</div>
@@ -248,8 +248,8 @@ window.viewHistory = async function(itemId, siteId, itemName, siteName) {
               <div class="text-xs text-gray-500">${t.quantity_before} → ${t.quantity_after}</div>
             </div>
           </div>
-          ${t.user_name ? `<div class="text-xs text-gray-600 mb-1">👤 ${t.user_name}</div>` : ''}
-          ${t.job_title ? `<div class="text-xs text-gray-600 mb-1">📋 Job: ${t.job_title}</div>` : ''}
+          ${t.user_name ? `<div class="text-xs text-gray-600 mb-1">User: ${t.user_name}</div>` : ''}
+          ${t.job_title ? `<div class="text-xs text-gray-600 mb-1">Job: ${t.job_title}</div>` : ''}
           ${t.notes ? `<div class="text-sm text-gray-700 mt-2 p-2 bg-gray-50 rounded-lg">${t.notes}</div>` : ''}
         </div>
       `;
@@ -454,7 +454,7 @@ document.getElementById('logout-btn')?.addEventListener('click', async () => {
 
 // Initialize
 async function init() {
-  console.log('[Inventory] 🚀 Initializing inventory page...');
+  console.log('[Inventory] Initializing inventory page...');
   
   await getCurrentUser();
   if (!currentUser) {
@@ -473,7 +473,7 @@ async function init() {
   await loadSiteFilter();
   await renderInventory();
   
-  console.log('[Inventory] ✅ Initialization complete');
+  console.log('[Inventory] Initialization complete');
 }
 
 init();

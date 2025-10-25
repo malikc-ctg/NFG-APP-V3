@@ -438,34 +438,34 @@ async function fetchInventorySummary() {
     
     // Map category icons
     const categoryIcons = {
-      'Cleaning Supplies': '🧹',
-      'Chemicals': '🧴',
-      'Tools': '🔧',
-      'Paper Products': '🧻',
-      'PPE': '🦺',
-      'Trash Bags': '🗑️',
-      'Other': '📦'
+      'Cleaning Supplies': 'broom',
+      'Chemicals': 'droplet',
+      'Tools': 'wrench',
+      'Paper Products': 'file-text',
+      'PPE': 'shield',
+      'Trash Bags': 'trash-2',
+      'Other': 'package'
     };
     
     inventoryList.innerHTML = summary.map(cat => {
-      const icon = categoryIcons[cat.category_name] || '📦';
+      const icon = categoryIcons[cat.category_name] || 'package';
       const totalItems = parseInt(cat.total_items) || 0;
       const lowCount = parseInt(cat.low_count) || 0;
       
       let statusHTML = '';
       if (lowCount === 0) {
-        statusHTML = '<span class="text-green-600 font-medium">✅ OK</span>';
+        statusHTML = '<span class="text-green-600 font-medium">OK</span>';
       } else if (lowCount >= 3) {
-        statusHTML = `<span class="text-red-600 font-medium">🔴 ${lowCount} low</span>`;
+        statusHTML = `<span class="text-red-600 font-medium">${lowCount} low</span>`;
       } else {
-        statusHTML = `<span class="text-orange-600 font-medium">🟡 ${lowCount} low</span>`;
+        statusHTML = `<span class="text-orange-600 font-medium">${lowCount} low</span>`;
       }
       
       return `
         <div class="py-2 flex justify-between items-center hover:bg-nfglight/50 transition rounded-lg px-2 cursor-pointer" 
              onclick="window.location.href='inventory.html'">
           <div class="flex items-center gap-3 flex-1 min-w-0">
-            <span class="text-xl">${icon}</span>
+            <i data-lucide="${icon}" class="w-5 h-5 text-nfgblue"></i>
             <div class="flex-1 min-w-0">
               <p class="font-medium text-sm text-nfgblue truncate">${cat.category_name}</p>
               <p class="text-xs text-gray-500">${totalItems} items</p>
