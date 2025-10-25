@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NFG — Reports</title>
+  <title>Reports & Analytics — NFG Dashboard</title>
 
   <!-- Inter font -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -36,9 +36,35 @@
   
   <!-- Mobile Menu Styles -->
   <link rel="stylesheet" href="./css/mobile-menu.css">
+  
+  <!-- Notifications -->
+  <link rel="stylesheet" href="./css/notifications.css">
+  
+  <!-- Page Loader -->
+  <link rel="stylesheet" href="./css/loader.css">
 </head>
 
 <body class="font-inter bg-nfbg min-h-screen flex text-nftext">
+  <!-- Full-Page Loader -->
+  <div id="page-loader">
+    <div class="loader-logo">
+      <img src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/Horizontal.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL0hvcml6b250YWwucG5nIiwiaWF0IjoxNzYwOTg5Njk2LCJleHAiOjQ4ODMwNTM2OTZ9.GLtv3yHq5zpXr4deUiNn4ilYTKaFJX8Y2tjIQpxyqVw" alt="NFG">
+    </div>
+    <div class="banter-loader">
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+    </div>
+    <div class="loader-text">Loading Reports...</div>
+    <div class="loader-text-subtitle">Please wait</div>
+  </div>
+
   <!-- ========== SIDEBAR ========== -->
   <aside id="sidebar" class="w-64 shrink-0 bg-white border-r border-nfgray hidden md:flex md:flex-col transition-all">
     <div class="p-5 flex items-center justify-center">
@@ -89,35 +115,181 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <button class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight">
-            <i data-lucide="download" class="w-5 h-5"></i>
-            <span class="hidden sm:inline">Export</span>
+          <button id="export-csv-btn" class="inline-flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight text-sm">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Export CSV</span>
+          </button>
+          <button id="print-btn" class="inline-flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight text-sm">
+            <i data-lucide="printer" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Print</span>
           </button>
         </div>
       </div>
     </header>
 
     <!-- CONTENT -->
-    <main class="p-4 md:p-6 space-y-6">
-      <div>
-        <h2 class="text-2xl font-semibold text-nfgblue">Reports & Analytics</h2>
-        <p class="text-sm text-gray-500 mt-1">View performance metrics and generate reports</p>
+    <main class="p-4 md:p-6 space-y-6 overflow-y-auto">
+      <!-- Header -->
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-semibold text-nfgblue">Reports & Analytics</h2>
+          <p class="text-sm text-gray-500 mt-1">View performance metrics and generate reports</p>
+        </div>
+        
+        <!-- Time Period Filter -->
+        <div class="flex items-center gap-2">
+          <select id="time-period" class="px-3 py-2 rounded-xl border border-nfgray focus:ring-2 focus:ring-nfgblue outline-none text-sm">
+            <option value="7">Last 7 Days</option>
+            <option value="30" selected>Last 30 Days</option>
+            <option value="90">Last 90 Days</option>
+            <option value="365">This Year</option>
+            <option value="all">All Time</option>
+          </select>
+          <button id="refresh-btn" class="p-2 rounded-xl border border-nfgray hover:bg-nfglight">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          </button>
+        </div>
       </div>
 
-      <!-- Coming Soon Placeholder -->
-      <div class="flex items-center justify-center py-20">
-        <div class="text-center max-w-md">
-          <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-nfglight flex items-center justify-center">
-            <i data-lucide="file-chart-column" class="w-10 h-10 text-nfgblue"></i>
+      <!-- Metric Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <!-- Total Jobs -->
+        <div class="bg-white border border-nfgray rounded-xl p-4 shadow-nfg">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-500">Total Jobs</p>
+              <p id="metric-total-jobs" class="text-2xl font-bold text-nfgblue mt-1">0</p>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+              <i data-lucide="clipboard-check" class="w-5 h-5 text-nfgblue"></i>
+            </div>
           </div>
-          <h3 class="text-xl font-semibold text-nfgblue mb-2">Reports & Analytics</h3>
-          <p class="text-gray-500 mb-6">
-            This page will provide detailed analytics, performance metrics, and exportable reports for your business.
-          </p>
-          <div class="inline-flex items-center gap-2 text-sm text-nfgblue bg-nfglight px-4 py-2 rounded-lg">
-            <i data-lucide="clock" class="w-4 h-4"></i>
-            Coming Soon
+        </div>
+
+        <!-- Completed Jobs -->
+        <div class="bg-white border border-nfgray rounded-xl p-4 shadow-nfg">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-500">Completed</p>
+              <p id="metric-completed-jobs" class="text-2xl font-bold text-green-600 mt-1">0</p>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+              <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
+            </div>
           </div>
+        </div>
+
+        <!-- Active Sites -->
+        <div class="bg-white border border-nfgray rounded-xl p-4 shadow-nfg">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-500">Active Sites</p>
+              <p id="metric-active-sites" class="text-2xl font-bold text-nfgblue mt-1">0</p>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+              <i data-lucide="building-2" class="w-5 h-5 text-nfgblue"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Emergency Requests -->
+        <div class="bg-white border border-nfgray rounded-xl p-4 shadow-nfg">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-500">Emergencies</p>
+              <p id="metric-emergency-jobs" class="text-2xl font-bold text-red-600 mt-1">0</p>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+              <i data-lucide="alert-circle" class="w-5 h-5 text-red-600"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Jobs Over Time Chart -->
+        <div class="bg-white border border-nfgray rounded-xl p-6 shadow-nfg">
+          <h3 class="text-lg font-semibold text-nfgblue mb-4">Jobs Over Time</h3>
+          <canvas id="jobs-over-time-chart" height="250"></canvas>
+        </div>
+
+        <!-- Jobs by Status Chart -->
+        <div class="bg-white border border-nfgray rounded-xl p-6 shadow-nfg">
+          <h3 class="text-lg font-semibold text-nfgblue mb-4">Jobs by Status</h3>
+          <canvas id="jobs-by-status-chart" height="250"></canvas>
+        </div>
+      </div>
+
+      <!-- Jobs by Site Chart -->
+      <div class="bg-white border border-nfgray rounded-xl p-6 shadow-nfg">
+        <h3 class="text-lg font-semibold text-nfgblue mb-4">Jobs by Site (Top 10)</h3>
+        <canvas id="jobs-by-site-chart" height="200"></canvas>
+      </div>
+
+      <!-- Data Tables -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Top Sites -->
+        <div class="bg-white border border-nfgray rounded-xl p-6 shadow-nfg">
+          <h3 class="text-lg font-semibold text-nfgblue mb-4">Top Performing Sites</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="border-b border-nfgray">
+                <tr class="text-left">
+                  <th class="pb-2 font-medium text-gray-500">Site</th>
+                  <th class="pb-2 font-medium text-gray-500 text-right">Jobs</th>
+                  <th class="pb-2 font-medium text-gray-500 text-right">Completed</th>
+                </tr>
+              </thead>
+              <tbody id="top-sites-table">
+                <tr>
+                  <td colspan="3" class="py-4 text-center text-gray-500">Loading...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Most Requested Services -->
+        <div class="bg-white border border-nfgray rounded-xl p-6 shadow-nfg">
+          <h3 class="text-lg font-semibold text-nfgblue mb-4">Most Requested Services</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="border-b border-nfgray">
+                <tr class="text-left">
+                  <th class="pb-2 font-medium text-gray-500">Service</th>
+                  <th class="pb-2 font-medium text-gray-500 text-right">Count</th>
+                </tr>
+              </thead>
+              <tbody id="top-services-table">
+                <tr>
+                  <td colspan="2" class="py-4 text-center text-gray-500">Loading...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Completed Jobs -->
+      <div class="bg-white border border-nfgray rounded-xl p-6 shadow-nfg">
+        <h3 class="text-lg font-semibold text-nfgblue mb-4">Recent Completed Jobs</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="border-b border-nfgray">
+              <tr class="text-left">
+                <th class="pb-2 font-medium text-gray-500">Job Title</th>
+                <th class="pb-2 font-medium text-gray-500 hidden md:table-cell">Site</th>
+                <th class="pb-2 font-medium text-gray-500 hidden md:table-cell">Date</th>
+                <th class="pb-2 font-medium text-gray-500">Status</th>
+              </tr>
+            </thead>
+            <tbody id="recent-jobs-table">
+              <tr>
+                <td colspan="4" class="py-4 text-center text-gray-500">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </main>
@@ -188,9 +360,21 @@
 
   <script type="module">
     import { supabase } from './js/supabase.js'
+    import { showNotification, showConfirm, showPrompt, toast, notify } from './js/notifications.js'
 
     let currentUser = null;
     let currentUserProfile = null;
+    let reportsData = {
+      jobs: [],
+      sites: [],
+      bookings: [],
+      services: []
+    };
+
+    // Chart instances
+    let jobsOverTimeChart = null;
+    let jobsByStatusChart = null;
+    let jobsBySiteChart = null;
 
     // Get current user and their profile
     async function getCurrentUser() {
@@ -219,8 +403,10 @@
         
         // Staff users cannot access reports - redirect to dashboard
         if (currentUserProfile && currentUserProfile.role === 'staff') {
-          alert('Staff cannot access the Reports page.');
-          window.location.href = './dashboard.html';
+          toast.error('Staff cannot access the Reports page.');
+          setTimeout(() => {
+            window.location.href = './dashboard.html';
+          }, 2000);
           return null;
         }
         
@@ -232,17 +418,414 @@
       }
     }
 
+    // Fetch data based on time period
+    async function fetchData(days = 30) {
+      console.log('[Reports] Fetching data for last', days, 'days');
+      
+      try {
+        let dateFilter = null;
+        if (days !== 'all') {
+          const date = new Date();
+          date.setDate(date.getDate() - parseInt(days));
+          dateFilter = date.toISOString();
+        }
+
+        // Fetch jobs
+        let jobsQuery = supabase
+          .from('jobs')
+          .select('*, sites(name)');
+        
+        if (dateFilter) {
+          jobsQuery = jobsQuery.gte('created_at', dateFilter);
+        }
+
+        const { data: jobs, error: jobsError } = await jobsQuery.order('created_at', { ascending: false });
+        if (jobsError) throw jobsError;
+        reportsData.jobs = jobs || [];
+        console.log('[Reports] Loaded', jobs?.length || 0, 'jobs');
+
+        // Fetch sites
+        const { data: sites, error: sitesError } = await supabase
+          .from('sites')
+          .select('*');
+        if (sitesError) throw sitesError;
+        reportsData.sites = sites || [];
+        console.log('[Reports] Loaded', sites?.length || 0, 'sites');
+
+        // Fetch bookings with services
+        let bookingsQuery = supabase
+          .from('bookings')
+          .select('*, booking_services(service_id, services(name))');
+        
+        if (dateFilter) {
+          bookingsQuery = bookingsQuery.gte('created_at', dateFilter);
+        }
+
+        const { data: bookings, error: bookingsError } = await bookingsQuery;
+        if (bookingsError) throw bookingsError;
+        reportsData.bookings = bookings || [];
+        console.log('[Reports] Loaded', bookings?.length || 0, 'bookings');
+
+        return true;
+      } catch (error) {
+        console.error('[Reports] Error fetching data:', error);
+        toast.error('Failed to load reports data');
+        return false;
+      }
+    }
+
+    // Update metrics
+    function updateMetrics() {
+      const totalJobs = reportsData.jobs.length;
+      const completedJobs = reportsData.jobs.filter(j => j.status === 'completed').length;
+      const activeSites = reportsData.sites.filter(s => s.status === 'Active').length;
+      const emergencyJobs = reportsData.jobs.filter(j => j.job_type === 'emergency').length;
+
+      document.getElementById('metric-total-jobs').textContent = totalJobs;
+      document.getElementById('metric-completed-jobs').textContent = completedJobs;
+      document.getElementById('metric-active-sites').textContent = activeSites;
+      document.getElementById('metric-emergency-jobs').textContent = emergencyJobs;
+    }
+
+    // Create Jobs Over Time Chart
+    function createJobsOverTimeChart() {
+      const ctx = document.getElementById('jobs-over-time-chart');
+      if (!ctx) return;
+
+      // Group jobs by date
+      const jobsByDate = {};
+      reportsData.jobs.forEach(job => {
+        const date = new Date(job.created_at).toLocaleDateString();
+        jobsByDate[date] = (jobsByDate[date] || 0) + 1;
+      });
+
+      // Sort by date and get last 30 days
+      const dates = Object.keys(jobsByDate).sort((a, b) => new Date(a) - new Date(b)).slice(-30);
+      const counts = dates.map(date => jobsByDate[date]);
+
+      if (jobsOverTimeChart) {
+        jobsOverTimeChart.destroy();
+      }
+
+      jobsOverTimeChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: dates,
+          datasets: [{
+            label: 'Jobs Created',
+            data: counts,
+            borderColor: '#0D47A1',
+            backgroundColor: 'rgba(13, 71, 161, 0.1)',
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                stepSize: 1
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Create Jobs by Status Chart
+    function createJobsByStatusChart() {
+      const ctx = document.getElementById('jobs-by-status-chart');
+      if (!ctx) return;
+
+      const statusCounts = {
+        pending: 0,
+        'in-progress': 0,
+        completed: 0,
+        cancelled: 0
+      };
+
+      reportsData.jobs.forEach(job => {
+        if (statusCounts.hasOwnProperty(job.status)) {
+          statusCounts[job.status]++;
+        }
+      });
+
+      if (jobsByStatusChart) {
+        jobsByStatusChart.destroy();
+      }
+
+      jobsByStatusChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Pending', 'In Progress', 'Completed', 'Cancelled'],
+          datasets: [{
+            data: [
+              statusCounts.pending,
+              statusCounts['in-progress'],
+              statusCounts.completed,
+              statusCounts.cancelled
+            ],
+            backgroundColor: [
+              '#FFC107',
+              '#0D47A1',
+              '#4CAF50',
+              '#F44336'
+            ]
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom'
+            }
+          }
+        }
+      });
+    }
+
+    // Create Jobs by Site Chart
+    function createJobsBySiteChart() {
+      const ctx = document.getElementById('jobs-by-site-chart');
+      if (!ctx) return;
+
+      // Count jobs per site
+      const jobsBySite = {};
+      reportsData.jobs.forEach(job => {
+        const siteName = job.sites?.name || 'Unknown';
+        jobsBySite[siteName] = (jobsBySite[siteName] || 0) + 1;
+      });
+
+      // Sort and get top 10
+      const sortedSites = Object.entries(jobsBySite)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10);
+
+      const siteNames = sortedSites.map(s => s[0]);
+      const jobCounts = sortedSites.map(s => s[1]);
+
+      if (jobsBySiteChart) {
+        jobsBySiteChart.destroy();
+      }
+
+      jobsBySiteChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: siteNames,
+          datasets: [{
+            label: 'Number of Jobs',
+            data: jobCounts,
+            backgroundColor: '#0D47A1'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                stepSize: 1
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Update Top Sites Table
+    function updateTopSitesTable() {
+      const tbody = document.getElementById('top-sites-table');
+      
+      // Count jobs per site
+      const siteStats = {};
+      reportsData.jobs.forEach(job => {
+        const siteName = job.sites?.name || 'Unknown';
+        if (!siteStats[siteName]) {
+          siteStats[siteName] = { total: 0, completed: 0 };
+        }
+        siteStats[siteName].total++;
+        if (job.status === 'completed') {
+          siteStats[siteName].completed++;
+        }
+      });
+
+      // Sort by total jobs and get top 5
+      const topSites = Object.entries(siteStats)
+        .sort((a, b) => b[1].total - a[1].total)
+        .slice(0, 5);
+
+      if (topSites.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="py-4 text-center text-gray-500">No data available</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = topSites.map(([siteName, stats]) => `
+        <tr class="border-b border-nfgray last:border-0">
+          <td class="py-3 font-medium text-nfgblue">${siteName}</td>
+          <td class="py-3 text-right">${stats.total}</td>
+          <td class="py-3 text-right text-green-600">${stats.completed}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Update Top Services Table
+    function updateTopServicesTable() {
+      const tbody = document.getElementById('top-services-table');
+      
+      // Count services from bookings
+      const serviceCounts = {};
+      reportsData.bookings.forEach(booking => {
+        if (booking.booking_services) {
+          booking.booking_services.forEach(bs => {
+            const serviceName = bs.services?.name || 'Unknown';
+            serviceCounts[serviceName] = (serviceCounts[serviceName] || 0) + 1;
+          });
+        }
+      });
+
+      // Sort and get top 5
+      const topServices = Object.entries(serviceCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+
+      if (topServices.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="2" class="py-4 text-center text-gray-500">No data available</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = topServices.map(([serviceName, count]) => `
+        <tr class="border-b border-nfgray last:border-0">
+          <td class="py-3 font-medium text-nfgblue">${serviceName}</td>
+          <td class="py-3 text-right">${count}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Update Recent Jobs Table
+    function updateRecentJobsTable() {
+      const tbody = document.getElementById('recent-jobs-table');
+      
+      const completedJobs = reportsData.jobs
+        .filter(j => j.status === 'completed')
+        .slice(0, 10);
+
+      if (completedJobs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-gray-500">No completed jobs yet</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = completedJobs.map(job => {
+        const date = new Date(job.created_at).toLocaleDateString();
+        return `
+          <tr class="border-b border-nfgray last:border-0">
+            <td class="py-3 font-medium text-nfgblue">${job.title}</td>
+            <td class="py-3 hidden md:table-cell">${job.sites?.name || 'Unknown'}</td>
+            <td class="py-3 hidden md:table-cell">${date}</td>
+            <td class="py-3">
+              <span class="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                Completed
+              </span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Refresh all reports
+    async function refreshReports() {
+      const days = document.getElementById('time-period').value;
+      const refreshBtn = document.getElementById('refresh-btn');
+      const icon = refreshBtn.querySelector('i');
+      
+      // Add spin animation
+      icon.classList.add('animate-spin');
+      
+      const success = await fetchData(days);
+      
+      if (success) {
+        updateMetrics();
+        createJobsOverTimeChart();
+        createJobsByStatusChart();
+        createJobsBySiteChart();
+        updateTopSitesTable();
+        updateTopServicesTable();
+        updateRecentJobsTable();
+        toast.success('Reports refreshed!');
+      }
+      
+      // Remove spin animation
+      setTimeout(() => {
+        icon.classList.remove('animate-spin');
+      }, 500);
+    }
+
+    // Export to CSV
+    function exportToCSV() {
+      try {
+        let csv = 'Job Reports\n\n';
+        csv += 'Job Title,Site,Status,Type,Created Date\n';
+        
+        reportsData.jobs.forEach(job => {
+          const date = new Date(job.created_at).toLocaleDateString();
+          csv += `"${job.title}","${job.sites?.name || 'Unknown'}","${job.status}","${job.job_type}","${date}"\n`;
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `nfg-jobs-report-${Date.now()}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        
+        toast.success('CSV exported successfully!');
+      } catch (error) {
+        console.error('Error exporting CSV:', error);
+        toast.error('Failed to export CSV');
+      }
+    }
+
+    // Print report
+    function printReport() {
+      window.print();
+    }
+
     // Initialize
     async function init() {
-      await getCurrentUser();
+      const user = await getCurrentUser();
+      if (!user) return;
       
-      // Hide Bookings and Reports navigation for non-staff (shouldn't reach here if staff, but just in case)
+      // Hide Bookings and Reports navigation for staff (shouldn't reach here, but just in case)
       if (currentUserProfile && currentUserProfile.role === 'staff') {
         const bookingsNav = document.getElementById('nav-bookings');
         const reportsNav = document.getElementById('nav-reports');
         if (bookingsNav) bookingsNav.style.display = 'none';
         if (reportsNav) reportsNav.style.display = 'none';
       }
+
+      // Load initial data
+      await refreshReports();
+
+      // Event listeners
+      document.getElementById('time-period')?.addEventListener('change', refreshReports);
+      document.getElementById('refresh-btn')?.addEventListener('click', refreshReports);
+      document.getElementById('export-csv-btn')?.addEventListener('click', exportToCSV);
+      document.getElementById('print-btn')?.addEventListener('click', printReport);
     }
 
     init();
@@ -253,6 +836,14 @@
       window.location.href = './index.html'
     });
   </script>
+  
+  <!-- Hide loader when page is ready -->
+  <script>
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        document.getElementById('page-loader')?.classList.add('hidden');
+      }, 300);
+    });
+  </script>
 </body>
 </html>
-
