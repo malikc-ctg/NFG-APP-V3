@@ -213,20 +213,26 @@
         <!-- Jobs Over Time Chart -->
         <div class="bg-white border border-nfgray rounded-xl p-6 shadow-nfg">
           <h3 class="text-lg font-semibold text-nfgblue mb-4">Jobs Over Time</h3>
-          <canvas id="jobs-over-time-chart" height="250"></canvas>
+          <div style="height: 200px; position: relative;">
+            <canvas id="jobs-over-time-chart"></canvas>
+          </div>
         </div>
 
         <!-- Jobs by Status Chart -->
         <div class="bg-white border border-nfgray rounded-xl p-6 shadow-nfg">
           <h3 class="text-lg font-semibold text-nfgblue mb-4">Jobs by Status</h3>
-          <canvas id="jobs-by-status-chart" height="250"></canvas>
+          <div style="height: 200px; position: relative;">
+            <canvas id="jobs-by-status-chart"></canvas>
+          </div>
         </div>
       </div>
 
       <!-- Jobs by Site Chart -->
       <div class="bg-white border border-nfgray rounded-xl p-6 shadow-nfg">
         <h3 class="text-lg font-semibold text-nfgblue mb-4">Jobs by Site (Top 10)</h3>
-        <canvas id="jobs-by-site-chart" height="200"></canvas>
+        <div style="height: 250px; position: relative;">
+          <canvas id="jobs-by-site-chart"></canvas>
+        </div>
       </div>
 
       <!-- Data Tables -->
@@ -690,10 +696,11 @@
             legend: {
               position: 'bottom',
               labels: {
-                padding: 15,
+                padding: 8,
                 font: {
-                  size: 12
-                }
+                  size: 11
+                },
+                boxWidth: 12
               }
             },
             tooltip: {
@@ -782,7 +789,10 @@
             x: {
               ticks: {
                 maxRotation: 45,
-                minRotation: 45
+                minRotation: 45,
+                font: {
+                  size: 11
+                }
               }
             }
           }
