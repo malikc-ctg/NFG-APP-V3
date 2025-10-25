@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -466,11 +467,15 @@
         reportsData.sites = sites || [];
         console.log('[Reports] ✅ Loaded', sites?.length || 0, 'sites');
 
-        // Fetch bookings with services
+        // Fetch bookings with services and emergency flag
         let bookingsQuery = supabase
           .from('bookings')
           .select(`
             *,
+            sites (
+              id,
+              name
+            ),
             booking_services (
               service_id,
               quantity,
@@ -494,7 +499,20 @@
         } else {
           reportsData.bookings = bookings || [];
           console.log('[Reports] ✅ Loaded', bookings?.length || 0, 'bookings');
+          
+          // Log emergency bookings for debugging
+          const emergencyCount = (bookings || []).filter(b => b.is_emergency === true).length;
+          console.log('[Reports] 🚨 Emergency bookings found:', emergencyCount);
         }
+
+        // Summary log
+        console.log('[Reports] 📊 Data Summary:', {
+          jobs: reportsData.jobs.length,
+          sites: reportsData.sites.length,
+          bookings: reportsData.bookings.length,
+          completedJobs: reportsData.jobs.filter(j => j.status === 'completed').length,
+          emergencyJobs: reportsData.jobs.filter(j => j.job_type === 'emergency').length
+        });
 
         return true;
       } catch (error) {
@@ -506,15 +524,37 @@
 
     // Update metrics
     function updateMetrics() {
+      // Total jobs (all jobs)
       const totalJobs = reportsData.jobs.length;
+      console.log('[Reports] 📊 Total Jobs:', totalJobs);
+      
+      // Completed jobs
       const completedJobs = reportsData.jobs.filter(j => j.status === 'completed').length;
-      const activeSites = reportsData.sites.filter(s => s.status === 'Active').length;
+      console.log('[Reports] ✅ Completed Jobs:', completedJobs);
+      
+      // Active sites (count sites that are NOT 'Inactive')
+      const activeSites = reportsData.sites.filter(s => s.status !== 'Inactive').length;
+      console.log('[Reports] 🏢 Active Sites:', activeSites, '(Total:', reportsData.sites.length + ')');
+      
+      // Emergency requests (count from bookings with is_emergency true OR jobs with job_type 'emergency')
+      const emergencyBookings = reportsData.bookings.filter(b => b.is_emergency === true).length;
       const emergencyJobs = reportsData.jobs.filter(j => j.job_type === 'emergency').length;
+      const totalEmergencies = Math.max(emergencyBookings, emergencyJobs); // Use whichever is higher
+      console.log('[Reports] 🚨 Emergency Requests:', totalEmergencies, '(Bookings:', emergencyBookings, 'Jobs:', emergencyJobs + ')');
 
+      // Update DOM
       document.getElementById('metric-total-jobs').textContent = totalJobs;
       document.getElementById('metric-completed-jobs').textContent = completedJobs;
       document.getElementById('metric-active-sites').textContent = activeSites;
-      document.getElementById('metric-emergency-jobs').textContent = emergencyJobs;
+      document.getElementById('metric-emergency-jobs').textContent = totalEmergencies;
+      
+      console.log('[Reports] ✅ Metrics updated successfully');
+      
+      // Show a helpful message if there's no data at all
+      if (totalJobs === 0 && reportsData.sites.length === 0) {
+        console.warn('[Reports] ⚠️ No data found in the system');
+        toast.warning('No data available yet. Create some sites and jobs to see reports!');
+      }
     }
 
     // Create Jobs Over Time Chart
