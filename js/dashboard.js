@@ -300,7 +300,7 @@ async function fetchRecentJobs() {
     if (!jobs || jobs.length === 0) {
       console.log('📋 No jobs found, showing empty state');
       jobsList.innerHTML = `
-        <div class="py-6 text-center text-gray-500">
+        <div class="py-6 text-center text-gray-500 dark:text-gray-400">
           <i data-lucide="clipboard" class="w-12 h-12 mx-auto mb-2 text-gray-300"></i>
           <p>No jobs yet</p>
         </div>
@@ -362,7 +362,7 @@ async function fetchRecentJobs() {
             </div>
             <div>
               <p class="font-medium text-sm ${isEmergency ? 'text-red-600' : 'text-nfgblue'}">${job.title}</p>
-              <p class="text-xs text-gray-500">${siteName}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">${siteName}</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -397,7 +397,7 @@ async function fetchInventorySummary() {
       const inventoryList = document.getElementById('inventory-summary');
       if (inventoryList) {
         inventoryList.innerHTML = `
-          <div class="py-6 text-center text-gray-500">
+          <div class="py-6 text-center text-gray-500 dark:text-gray-400">
             <i data-lucide="package" class="w-12 h-12 mx-auto mb-2 text-gray-300"></i>
             <p class="font-medium">Inventory System Not Set Up</p>
             <p class="text-sm mt-1">Run SETUP_INVENTORY_SYSTEM.sql in your database</p>
@@ -424,7 +424,7 @@ async function fetchInventorySummary() {
     if (!summary || summary.length === 0) {
       console.log('📦 No inventory categories found, showing empty state');
       inventoryList.innerHTML = `
-        <div class="py-6 text-center text-gray-500">
+        <div class="py-6 text-center text-gray-500 dark:text-gray-400">
           <i data-lucide="package" class="w-12 h-12 mx-auto mb-2 text-gray-300"></i>
           <p>No inventory items yet</p>
           <button onclick="window.location.href='inventory.html'" class="mt-3 px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark text-sm">
@@ -468,7 +468,7 @@ async function fetchInventorySummary() {
             <i data-lucide="${icon}" class="w-5 h-5 text-nfgblue"></i>
             <div class="flex-1 min-w-0">
               <p class="font-medium text-sm text-nfgblue truncate">${cat.category_name}</p>
-              <p class="text-xs text-gray-500">${totalItems} items</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">${totalItems} items</p>
             </div>
           </div>
           <div class="flex-shrink-0">
@@ -533,7 +533,7 @@ async function fetchRecurringJobs() {
     
     if (!jobs || jobs.length === 0) {
       recurringJobsList.innerHTML = `
-        <div class="py-6 text-center text-gray-500">
+        <div class="py-6 text-center text-gray-500 dark:text-gray-400">
           <i data-lucide="repeat" class="w-12 h-12 mx-auto mb-2 text-gray-300"></i>
           <p>No recurring jobs</p>
         </div>

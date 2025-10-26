@@ -108,7 +108,7 @@ async function renderInventory() {
     if (filtered.length === 0) {
       tableBody.innerHTML = `
         <tr>
-          <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+          <td colspan="5" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
             <i data-lucide="package-x" class="w-12 h-12 mx-auto text-gray-300 mb-2"></i>
             <p>No inventory items found</p>
           </td>
@@ -136,14 +136,14 @@ async function renderInventory() {
               <div>
                 <div class="font-medium text-nfgblue">${item.item_name}</div>
                 <div class="text-xs text-gray-500 md:hidden">${item.category_name}</div>
-                <div class="text-xs text-gray-500">${item.site_name}</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">${item.site_name}</div>
               </div>
             </div>
           </td>
           <td class="px-4 py-3 text-sm hidden md:table-cell">${item.category_name}</td>
           <td class="px-4 py-3 text-center">
             <div class="font-semibold text-nfgblue">${item.quantity}</div>
-            <div class="text-xs text-gray-500">${item.unit}</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">${item.unit}</div>
           </td>
           <td class="px-4 py-3 text-center">
             <span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${status.color}">
@@ -240,12 +240,12 @@ window.viewHistory = async function(itemId, siteId, itemName, siteName) {
               <i data-lucide="${config.icon}" class="w-5 h-5"></i>
               <div>
                 <div class="font-medium ${config.color}">${config.label}</div>
-                <div class="text-xs text-gray-500">${date}</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">${date}</div>
               </div>
             </div>
             <div class="text-right">
               <div class="font-semibold ${t.quantity_change > 0 ? 'text-green-600' : 'text-red-600'}">${changeText} ${t.unit}</div>
-              <div class="text-xs text-gray-500">${t.quantity_before} → ${t.quantity_after}</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">${t.quantity_before} → ${t.quantity_after}</div>
             </div>
           </div>
           ${t.user_name ? `<div class="text-xs text-gray-600 mb-1">User: ${t.user_name}</div>` : ''}

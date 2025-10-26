@@ -187,7 +187,7 @@
                     id="user-email" 
                     type="email" 
                     readonly 
-                    class="w-full border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 bg-gray-50 text-gray-600" 
+                    class="w-full border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 bg-gray-50 text-gray-600 dark:text-gray-400" 
                     value="Loading..." />
                 </div>
                 
@@ -253,7 +253,7 @@
           </div>
           
           <div id="users-list" class="space-y-3">
-            <div class="text-center py-8 text-gray-500">
+            <div class="text-center py-8 text-gray-500 dark:text-gray-400">
               <i data-lucide="loader" class="w-8 h-8 mx-auto animate-spin"></i>
               <p class="mt-2">Loading users...</p>
             </div>
@@ -508,7 +508,7 @@
             <h5 id="user-detail-name" class="text-xl font-semibold text-nfgblue dark:text-blue-400">User Name</h5>
             <p id="user-detail-email" class="text-gray-600 dark:text-gray-400">user@example.com</p>
             <div class="flex items-center gap-2 mt-2">
-              <span id="user-detail-role-badge" class="px-2 py-0.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-700">Staff</span>
+              <span id="user-detail-role-badge" class="px-2 py-0.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-700 dark:text-gray-300">Staff</span>
               <span id="user-detail-status-badge" class="px-2 py-0.5 rounded-lg text-xs font-medium bg-green-100 text-green-700">Active</span>
             </div>
           </div>
@@ -1363,7 +1363,7 @@
         
         const listEl = document.getElementById(`${type}-list`);
         if (!files || files.length === 0) {
-          listEl.innerHTML = '<p class="text-xs text-gray-500">No documents uploaded</p>';
+          listEl.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400">No documents uploaded</p>';
           return;
         }
         
@@ -1378,7 +1378,7 @@
                 <i data-lucide="${isPDF ? 'file-text' : 'image'}" class="w-3 h-3 text-nfgblue dark:text-blue-400 flex-shrink-0"></i>
                 <div class="flex-1 min-w-0">
                   <p class="font-medium text-nfgblue dark:text-blue-400 truncate">${file.name}</p>
-                  <p class="text-gray-500">${uploadDate}</p>
+                  <p class="text-gray-500 dark:text-gray-400">${uploadDate}</p>
                 </div>
               </div>
               <div class="flex items-center gap-1 flex-shrink-0">

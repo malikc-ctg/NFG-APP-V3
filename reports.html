@@ -168,7 +168,7 @@
         <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-500">Total Jobs</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Total Jobs</p>
               <p id="metric-total-jobs" class="text-2xl font-bold text-nfgblue dark:text-blue-400 mt-1">0</p>
             </div>
             <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
@@ -181,7 +181,7 @@
         <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-500">Completed</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Completed</p>
               <p id="metric-completed-jobs" class="text-2xl font-bold text-green-600 mt-1">0</p>
             </div>
             <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
@@ -194,7 +194,7 @@
         <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-500">Active Sites</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Active Sites</p>
               <p id="metric-active-sites" class="text-2xl font-bold text-nfgblue dark:text-blue-400 mt-1">0</p>
             </div>
             <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
@@ -207,7 +207,7 @@
         <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-500">Emergencies</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Emergencies</p>
               <p id="metric-emergency-jobs" class="text-2xl font-bold text-red-600 mt-1">0</p>
             </div>
             <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
@@ -261,7 +261,7 @@
             <table class="w-full text-sm">
               <thead class="border-b border-nfgray dark:border-gray-700">
                 <tr class="text-left">
-                  <th class="pb-2 font-medium text-gray-500">Worker</th>
+                  <th class="pb-2 font-medium text-gray-500 dark:text-gray-400">Worker</th>
                   <th class="pb-2 font-medium text-gray-500 text-center">Done ✅</th>
                   <th class="pb-2 font-medium text-gray-500 text-center">Active 🔵</th>
                   <th class="pb-2 font-medium text-gray-500 text-right">Rate 📊</th>
@@ -269,7 +269,7 @@
               </thead>
               <tbody id="worker-stats-table">
                 <tr>
-                  <td colspan="4" class="py-4 text-center text-gray-500">Loading...</td>
+                  <td colspan="4" class="py-4 text-center text-gray-500 dark:text-gray-400">Loading...</td>
                 </tr>
               </tbody>
             </table>
@@ -286,14 +286,14 @@
             <table class="w-full text-sm">
               <thead class="border-b border-nfgray dark:border-gray-700">
                 <tr class="text-left">
-                  <th class="pb-2 font-medium text-gray-500">Site</th>
+                  <th class="pb-2 font-medium text-gray-500 dark:text-gray-400">Site</th>
                   <th class="pb-2 font-medium text-gray-500 text-right">Jobs</th>
                   <th class="pb-2 font-medium text-gray-500 text-right">Completed</th>
                 </tr>
               </thead>
               <tbody id="top-sites-table">
                 <tr>
-                  <td colspan="3" class="py-4 text-center text-gray-500">Loading...</td>
+                  <td colspan="3" class="py-4 text-center text-gray-500 dark:text-gray-400">Loading...</td>
                 </tr>
               </tbody>
             </table>
@@ -307,13 +307,13 @@
             <table class="w-full text-sm">
               <thead class="border-b border-nfgray dark:border-gray-700">
                 <tr class="text-left">
-                  <th class="pb-2 font-medium text-gray-500">Service</th>
+                  <th class="pb-2 font-medium text-gray-500 dark:text-gray-400">Service</th>
                   <th class="pb-2 font-medium text-gray-500 text-right">Count</th>
                 </tr>
               </thead>
               <tbody id="top-services-table">
                 <tr>
-                  <td colspan="2" class="py-4 text-center text-gray-500">Loading...</td>
+                  <td colspan="2" class="py-4 text-center text-gray-500 dark:text-gray-400">Loading...</td>
                 </tr>
               </tbody>
             </table>
@@ -328,15 +328,15 @@
           <table class="w-full text-sm">
             <thead class="border-b border-nfgray dark:border-gray-700">
               <tr class="text-left">
-                <th class="pb-2 font-medium text-gray-500">Job Title</th>
+                <th class="pb-2 font-medium text-gray-500 dark:text-gray-400">Job Title</th>
                 <th class="pb-2 font-medium text-gray-500 hidden md:table-cell">Site</th>
                 <th class="pb-2 font-medium text-gray-500 hidden md:table-cell">Date</th>
-                <th class="pb-2 font-medium text-gray-500">Status</th>
+                <th class="pb-2 font-medium text-gray-500 dark:text-gray-400">Status</th>
               </tr>
             </thead>
             <tbody id="recent-jobs-table">
               <tr>
-                <td colspan="4" class="py-4 text-center text-gray-500">Loading...</td>
+                <td colspan="4" class="py-4 text-center text-gray-500 dark:text-gray-400">Loading...</td>
               </tr>
             </tbody>
           </table>
@@ -1071,7 +1071,7 @@
 
       if (topWorkers.length === 0) {
         console.warn('[Reports] ⚠️ No worker data to display');
-        tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-gray-500">No worker data available</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-gray-500 dark:text-gray-400">No worker data available</td></tr>';
         return;
       }
 
@@ -1118,7 +1118,7 @@
         .slice(0, 5);
 
       if (topSites.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" class="py-4 text-center text-gray-500">No data available</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" class="py-4 text-center text-gray-500 dark:text-gray-400">No data available</td></tr>';
         return;
       }
 
@@ -1152,7 +1152,7 @@
         .slice(0, 5);
 
       if (topServices.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="2" class="py-4 text-center text-gray-500">No data available</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="2" class="py-4 text-center text-gray-500 dark:text-gray-400">No data available</td></tr>';
         return;
       }
 
@@ -1173,7 +1173,7 @@
         .slice(0, 10);
 
       if (completedJobs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-gray-500">No completed jobs yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-gray-500 dark:text-gray-400">No completed jobs yet</td></tr>';
         return;
       }
 

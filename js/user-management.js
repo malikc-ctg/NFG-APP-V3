@@ -336,7 +336,7 @@ export async function renderUsersList() {
   if (!users || users.length === 0) {
     console.warn('No users found, showing setup message');
     list.innerHTML = `
-      <div class="text-center py-12 text-gray-500">
+      <div class="text-center py-12 text-gray-500 dark:text-gray-400">
         <i data-lucide="alert-circle" class="w-16 h-16 mx-auto mb-4 opacity-30"></i>
         <h3 class="text-xl font-semibold text-nfgblue mb-2">User Management Not Set Up</h3>
         <p class="text-sm mb-4">To enable user management, you need to:</p>
@@ -557,7 +557,7 @@ async function loadUserSiteAssignments(userId) {
           <i data-lucide="map-pin" class="w-4 h-4 text-nfgblue"></i>
           <div>
             <p class="font-medium text-nfgblue">${siteName}</p>
-            <p class="text-xs text-gray-500">${assignment.can_manage ? '🔧 Can manage' : '👁️ View only'}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">${assignment.can_manage ? '🔧 Can manage' : '👁️ View only'}</p>
           </div>
         </div>
         <button 

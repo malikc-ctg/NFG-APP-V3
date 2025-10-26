@@ -346,7 +346,7 @@
 
         <div>
           <label class="block text-sm font-medium text-gray-500 mb-1">Description</label>
-          <p id="view-booking-description" class="text-gray-700">-</p>
+          <p id="view-booking-description" class="text-gray-700 dark:text-gray-300">-</p>
         </div>
 
         <div>
@@ -613,7 +613,7 @@
       if (filteredBookings.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="5" class="p-8 text-center text-gray-500">
+            <td colspan="5" class="p-8 text-center text-gray-500 dark:text-gray-400">
               <div class="flex flex-col items-center gap-2">
                 <i data-lucide="calendar-x" class="w-12 h-12 text-gray-400"></i>
                 <p>No bookings found</p>
@@ -640,10 +640,10 @@
               <p class="font-medium text-nfgblue dark:text-blue-400">${booking.title}</p>
             </td>
             <td class="p-4">
-              <p class="text-gray-700">${booking.sites?.name || 'Unknown'}</p>
+              <p class="text-gray-700 dark:text-gray-300">${booking.sites?.name || 'Unknown'}</p>
             </td>
             <td class="p-4">
-              <p class="text-gray-700">${date}</p>
+              <p class="text-gray-700 dark:text-gray-300">${date}</p>
             </td>
             <td class="p-4">
               <span class="px-3 py-1 rounded-full text-xs font-medium ${statusColors[booking.status] || 'bg-gray-100 text-gray-800'}">
@@ -709,7 +709,7 @@
             />
             <div class="flex-1">
               <p class="font-medium text-sm text-nfgblue dark:text-blue-400">${service.name}</p>
-              <p class="text-xs text-gray-500">${service.service_categories?.name || 'Unknown'}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">${service.service_categories?.name || 'Unknown'}</p>
               ${duration ? `<p class="text-xs text-gray-400 mt-0.5">Est. ${duration}</p>` : ''}
             </div>
           </div>
@@ -721,7 +721,7 @@
       const container = document.getElementById('selected-services');
       
       if (selectedServices.size === 0) {
-        container.innerHTML = '<p class="text-sm text-gray-500">No services selected</p>';
+        container.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">No services selected</p>';
         return;
       }
 
@@ -796,7 +796,7 @@
             <div class="flex flex-col gap-1">
               <p class="font-medium text-nfgblue dark:text-blue-400">${data.sites?.name || 'Unknown'}</p>
               <div class="flex items-center gap-2">
-                <p class="text-sm text-gray-600">${data.sites.address}</p>
+                <p class="text-sm text-gray-600 dark:text-gray-400">${data.sites.address}</p>
                 <button 
                   onclick="copyAddress('${data.sites.address.replace(/'/g, "\\'")}', event)" 
                   class="text-gray-400 hover:text-nfgblue dark:text-blue-400 transition p-1 rounded hover:bg-nfglight flex-shrink-0"
@@ -833,14 +833,14 @@
 
         const servicesContainer = document.getElementById('view-booking-services');
         if (!bookingServices || bookingServices.length === 0) {
-          servicesContainer.innerHTML = '<p class="text-sm text-gray-500">No services selected</p>';
+          servicesContainer.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">No services selected</p>';
         } else {
           servicesContainer.innerHTML = bookingServices.map(bs => `
             <div class="flex items-start gap-2 p-2 bg-nfglight rounded-lg">
               <i data-lucide="check-circle" class="w-4 h-4 text-nfgblue dark:text-blue-400 mt-0.5"></i>
               <div>
                 <p class="text-sm font-medium text-nfgblue dark:text-blue-400">${bs.services.name}</p>
-                <p class="text-xs text-gray-500">${bs.services.service_categories?.name || 'Unknown'}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">${bs.services.service_categories?.name || 'Unknown'}</p>
               </div>
             </div>
           `).join('');
