@@ -68,12 +68,12 @@ function createEmptyState(hasAnySites = false) {
     // Show "no sites match filter" message
     return `
       <div class="col-span-full flex flex-col items-center justify-center py-16 px-4">
-        <div class="bg-white border-2 border-dashed border-nfgray rounded-xl p-12 max-w-md text-center">
-          <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="bg-white dark:bg-gray-800 border-2 border-dashed border-nfgray dark:border-gray-700 rounded-xl p-12 max-w-md text-center">
+          <svg class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
           </svg>
-          <h3 class="text-nfgblue font-semibold text-xl mb-2">No Sites Found</h3>
-          <p class="text-nftext text-sm mb-6">No sites match the "${currentFilter}" status. Try selecting a different filter.</p>
+          <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-xl mb-2">No Sites Found</h3>
+          <p class="text-nftext dark:text-gray-300 text-sm mb-6">No sites match the "${currentFilter}" status. Try selecting a different filter.</p>
           <button 
             data-action="filter-sites"
             data-value="all"
@@ -91,12 +91,12 @@ function createEmptyState(hasAnySites = false) {
   // Show "no sites at all" message
   return `
     <div class="col-span-full flex flex-col items-center justify-center py-16 px-4">
-      <div class="bg-white border-2 border-dashed border-nfgray rounded-xl p-12 max-w-md text-center">
-        <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="bg-white dark:bg-gray-800 border-2 border-dashed border-nfgray dark:border-gray-700 rounded-xl p-12 max-w-md text-center">
+        <svg class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
         </svg>
-        <h3 class="text-nfgblue font-semibold text-xl mb-2">No Sites Yet</h3>
-        <p class="text-nftext text-sm mb-6">Get started by adding your first site. Sites represent the buildings or properties you manage.</p>
+        <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-xl mb-2">No Sites Yet</h3>
+        <p class="text-nftext dark:text-gray-300 text-sm mb-6">Get started by adding your first site. Sites represent the buildings or properties you manage.</p>
         <button 
           data-action="add-site"
           class="bg-nfgblue hover:bg-nfgdark text-white rounded-xl px-6 py-3 font-medium transition inline-flex items-center gap-2">
@@ -113,24 +113,24 @@ function createEmptyState(hasAnySites = false) {
 // Create a site card HTML
 function createSiteCard(site) {
   const statusColors = {
-    'Active': 'bg-green-100 text-green-700',
-    'Paused': 'bg-yellow-100 text-yellow-700',
-    'In Setup': 'bg-blue-100 text-blue-700'
+    'Active': 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
+    'Paused': 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
+    'In Setup': 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
   }
   
-  const statusClass = statusColors[site.status] || 'bg-gray-100 text-gray-700'
+  const statusClass = statusColors[site.status] || 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
   
   return `
-    <div class="bg-white border border-nfgray rounded-xl p-4 shadow-nfg hover:shadow-lg transition-shadow">
+    <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg hover:shadow-lg transition-shadow">
       <!-- Header -->
       <div class="flex justify-between items-start mb-3">
         <div class="flex-1 min-w-0">
-          <h3 class="text-nfgblue font-semibold text-lg">${site.name}</h3>
+          <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">${site.name}</h3>
           <div class="flex items-center gap-2 mt-1">
-            <p class="text-gray-500 text-xs truncate">${site.address}</p>
+            <p class="text-gray-500 dark:text-gray-400 text-xs truncate">${site.address}</p>
             <button 
               onclick="copyAddress('${site.address.replace(/'/g, "\\'")}', event)" 
-              class="text-gray-400 hover:text-nfgblue transition p-1 rounded hover:bg-nfglight flex-shrink-0"
+              class="text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 transition p-1 rounded hover:bg-nfglight dark:hover:bg-gray-700 flex-shrink-0"
               title="Copy address">
               <i data-lucide="copy" class="w-3 h-3"></i>
             </button>
@@ -140,18 +140,18 @@ function createSiteCard(site) {
       </div>
       
       <!-- KPIs -->
-      <div class="grid grid-cols-3 gap-2 mb-4 py-3 border-t border-b border-nfgray">
+      <div class="grid grid-cols-3 gap-2 mb-4 py-3 border-t border-b border-nfgray dark:border-gray-700">
         <div class="text-center">
-          <p class="text-nfgblue text-xl font-semibold">${site.jobs_completed || 0}</p>
-          <p class="text-gray-500 text-xs">Jobs Done</p>
+          <p class="text-nfgblue dark:text-blue-400 text-xl font-semibold">${site.jobs_completed || 0}</p>
+          <p class="text-gray-500 dark:text-gray-400 text-xs">Jobs Done</p>
         </div>
         <div class="text-center">
-          <p class="text-nfgblue text-xl font-semibold">${site.upcoming_bookings || 0}</p>
-          <p class="text-gray-500 text-xs">Upcoming</p>
+          <p class="text-nfgblue dark:text-blue-400 text-xl font-semibold">${site.upcoming_bookings || 0}</p>
+          <p class="text-gray-500 dark:text-gray-400 text-xs">Upcoming</p>
         </div>
         <div class="text-center">
-          <p class="text-nfgblue text-xl font-semibold">${site.rating || '—'}</p>
-          <p class="text-gray-500 text-xs">Rating</p>
+          <p class="text-nfgblue dark:text-blue-400 text-xl font-semibold">${site.rating || '—'}</p>
+          <p class="text-gray-500 dark:text-gray-400 text-xs">Rating</p>
         </div>
       </div>
       

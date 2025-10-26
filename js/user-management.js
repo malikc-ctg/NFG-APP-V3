@@ -359,16 +359,16 @@ export async function renderUsersList() {
   console.log(`Rendering ${users.length} users`);
   
   const roleColors = {
-    admin: 'bg-purple-100 text-purple-700',
-    client: 'bg-blue-100 text-blue-700',
-    staff: 'bg-gray-100 text-gray-700'
+    admin: 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
+    client: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+    staff: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
   };
   
   const statusColors = {
-    active: 'bg-green-100 text-green-700',
-    pending: 'bg-yellow-100 text-yellow-700',
-    inactive: 'bg-gray-100 text-gray-700',
-    suspended: 'bg-red-100 text-red-700'
+    active: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
+    pending: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
+    inactive: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300',
+    suspended: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
   };
   
   list.innerHTML = users.map(user => {
@@ -389,12 +389,12 @@ export async function renderUsersList() {
     ` : '';
     
     return `
-      <div class="flex items-center gap-3 p-3 md:p-4 bg-white border border-nfgray rounded-xl hover:shadow-md transition-shadow">
+      <div class="flex items-center gap-3 p-3 md:p-4 bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl hover:shadow-md transition-shadow">
         <div class="flex items-center gap-3 flex-1 min-w-0">
           ${avatarHtml}
           <div class="flex-1 min-w-0">
-            <h5 class="font-semibold text-nfgblue text-sm md:text-base truncate">${displayName}</h5>
-            <p class="text-xs md:text-sm text-gray-500 truncate">${user.email}</p>
+            <h5 class="font-semibold text-nfgblue dark:text-blue-400 text-sm md:text-base truncate">${displayName}</h5>
+            <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate">${user.email}</p>
             <div class="flex items-center gap-1.5 md:gap-2 mt-1 flex-wrap">
               <span class="px-2 py-0.5 rounded-lg text-xs font-medium ${roleColors[user.role]}">${user.role.toUpperCase()}</span>
               <span class="px-2 py-0.5 rounded-lg text-xs font-medium ${statusColors[user.status]}">${user.status}</span>
@@ -489,19 +489,19 @@ window.openUserDetails = async function(userId) {
   // Update badges
   const roleBadge = document.getElementById('user-detail-role-badge');
   const roleColors = {
-    admin: 'bg-purple-100 text-purple-700',
-    client: 'bg-blue-100 text-blue-700',
-    staff: 'bg-gray-100 text-gray-700'
+    admin: 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
+    client: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+    staff: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
   };
   roleBadge.className = `px-2 py-0.5 rounded-lg text-xs font-medium ${roleColors[user.role]}`;
   roleBadge.textContent = user.role.toUpperCase();
   
   const statusBadge = document.getElementById('user-detail-status-badge');
   const statusColors = {
-    active: 'bg-green-100 text-green-700',
-    pending: 'bg-yellow-100 text-yellow-700',
-    inactive: 'bg-gray-100 text-gray-700',
-    suspended: 'bg-red-100 text-red-700'
+    active: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
+    pending: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
+    inactive: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300',
+    suspended: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
   };
   statusBadge.className = `px-2 py-0.5 rounded-lg text-xs font-medium ${statusColors[user.status]}`;
   statusBadge.textContent = user.status;
