@@ -53,7 +53,7 @@
   <script src="./js/dark-mode.js"></script>
 </head>
 
-<body class="font-inter bg-nfbg dark:bg-gray-900 dark:bg-gray-900 min-h-screen flex text-nftext">
+<body class="font-inter bg-nfbg dark:bg-gray-900 min-h-screen flex text-nftext">
   <!-- Full-Page Loader -->
   <div id="page-loader">
     <div class="loader-logo">
@@ -130,7 +130,7 @@
         <!-- Filter -->
         <div class="flex items-center gap-2">
           <div class="relative">
-            <button class="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-nfgray bg-white hover:bg-nfglight dark:bg-gray-700"
+            <button class="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-nfgray bg-white hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700"
                     data-action="toggle-dropdown" data-target="sites-filter">
               <i data-lucide="filter" class="w-4 h-4"></i>
               <span id="filter-label">All Sites</span>
@@ -139,8 +139,8 @@
             <!-- dropdown -->
             <div id="sites-filter" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-xl border border-nfgray shadow-nfg">
               <button class="w-full text-left px-3 py-2 hover:bg-nfglight rounded-t-xl" data-action="filter-sites" data-value="all">All Sites</button>
-              <button class="w-full text-left px-3 py-2 hover:bg-nfglight dark:bg-gray-700" data-action="filter-sites" data-value="Active">Active</button>
-              <button class="w-full text-left px-3 py-2 hover:bg-nfglight dark:bg-gray-700" data-action="filter-sites" data-value="Paused">Paused</button>
+              <button class="w-full text-left px-3 py-2 hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700" data-action="filter-sites" data-value="Active">Active</button>
+              <button class="w-full text-left px-3 py-2 hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700" data-action="filter-sites" data-value="Paused">Paused</button>
               <button class="w-full text-left px-3 py-2 hover:bg-nfglight rounded-b-xl" data-action="filter-sites" data-value="In Setup">In Setup</button>
             </div>
           </div>
@@ -236,7 +236,7 @@
         <div class="xl:col-span-2 bg-white border border-nfgray rounded-xl shadow-nfg p-4">
           <div class="flex items-center justify-between mb-2">
             <h3 class="text-nfgblue dark:text-blue-400 font-semibold">Recent Jobs</h3>
-            <button onclick="window.location.href='jobs.html'" class="text-xs md:text-sm px-2 md:px-3 py-1 md:py-1.5 rounded-lg md:rounded-xl border border-nfgray hover:bg-nfglight dark:bg-gray-700">View all</button>
+            <button onclick="window.location.href='jobs.html'" class="text-xs md:text-sm px-2 md:px-3 py-1 md:py-1.5 rounded-lg md:rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">View all</button>
           </div>
           <div id="jobs-list" class="divide-y divide-nfgray/70">
             <!-- Jobs will be rendered by JS -->
@@ -350,7 +350,7 @@
     <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
       <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white">
         <h4 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">Add New Site</h4>
-        <button data-action="close-modal" data-target="addSiteModal" class="p-1 rounded-lg hover:bg-nfglight dark:bg-gray-700">
+        <button data-action="close-modal" data-target="addSiteModal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -464,7 +464,7 @@
     <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
       <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white">
         <h4 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">Edit Site</h4>
-        <button data-action="close-modal" data-target="editSiteModal" class="p-1 rounded-lg hover:bg-nfglight dark:bg-gray-700">
+        <button data-action="close-modal" data-target="editSiteModal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -587,7 +587,7 @@
     <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-md">
       <div class="p-4 border-b border-nfgray flex items-center justify-between">
         <h4 class="text-nfgblue dark:text-blue-400 font-semibold">New Booking</h4>
-        <button data-action="close-modal" data-target="newBookingModal" class="p-1 rounded-lg hover:bg-nfglight dark:bg-gray-700">
+        <button data-action="close-modal" data-target="newBookingModal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -616,7 +616,7 @@
         </div>
         <div class="flex items-center justify-end gap-2 pt-2">
           <button type="button" data-action="close-modal" data-target="newBookingModal"
-                  class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:bg-gray-700">Cancel</button>
+                  class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">Cancel</button>
           <button type="submit" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">Create Booking</button>
         </div>
       </form>
