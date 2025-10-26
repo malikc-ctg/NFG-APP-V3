@@ -19,8 +19,13 @@
   <!-- Notifications -->
   <link rel="stylesheet" href="./css/notifications.css">
   
+  <!-- Dark Mode -->
+  <link rel="stylesheet" href="./css/dark-mode.css">
+  <script src="./js/dark-mode.js"></script>
+  
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
@@ -39,7 +44,7 @@
     }
   </script>
 </head>
-<body class="bg-nfbg font-inter">
+<body class="bg-nfbg dark:bg-gray-900 dark:bg-gray-900 font-inter">
   <!-- Full-Page Loader -->
   <div id="page-loader">
     <div class="loader-logo">
@@ -62,7 +67,7 @@
 
   <div class="flex min-h-screen">
     <!-- Sidebar -->
-    <aside id="sidebar" class="w-64 bg-white border-r border-nfgray hidden md:flex md:flex-col transition-all">
+    <aside id="sidebar" class="w-64 bg-white dark:bg-gray-800 border-r border-nfgray dark:border-gray-700 hidden md:flex md:flex-col transition-all">
       <div class="p-5 flex items-center justify-center">
         <!-- Northern Facilities Group Logo -->
         <img 
@@ -73,38 +78,38 @@
       </div>
 
       <nav class="flex-1 px-3 space-y-1">
-        <a href="./dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-nfglight text-nftext transition">
+        <a href="./dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-nfglight dark:hover:bg-gray-700 text-nftext dark:text-gray-200 transition">
           <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
           <span>Overview</span>
         </a>
-        <a href="./sites.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-nfglight text-nftext transition">
+        <a href="./sites.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-nfglight dark:hover:bg-gray-700 text-nftext dark:text-gray-200 transition">
           <i data-lucide="building-2" class="w-5 h-5"></i>
           <span>Sites</span>
         </a>
-        <a id="nav-bookings" href="./bookings.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-nfglight text-nftext transition">
+        <a id="nav-bookings" href="./bookings.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-nfglight dark:hover:bg-gray-700 text-nftext dark:text-gray-200 transition">
           <i data-lucide="calendar" class="w-5 h-5"></i>
           <span>Bookings</span>
         </a>
-        <a href="./jobs.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-nfglight text-nftext transition">
+        <a href="./jobs.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-nfglight dark:hover:bg-gray-700 text-nftext dark:text-gray-200 transition">
           <i data-lucide="briefcase" class="w-5 h-5"></i>
           <span>Jobs</span>
         </a>
-        <a href="./inventory.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-nfglight text-nftext transition">
+        <a href="./inventory.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-nfglight dark:hover:bg-gray-700 text-nftext dark:text-gray-200 transition">
           <i data-lucide="package" class="w-5 h-5"></i>
           <span>Inventory</span>
         </a>
-        <a id="nav-reports" href="./reports.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-nfglight text-nftext transition">
+        <a id="nav-reports" href="./reports.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-nfglight dark:hover:bg-gray-700 text-nftext dark:text-gray-200 transition">
           <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
           <span>Reports</span>
         </a>
-        <a href="./settings.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-nfglight text-nfgblue transition">
+        <a href="./settings.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-nfglight dark:bg-gray-700 text-nfgblue dark:text-blue-400 dark:text-blue-400 transition">
           <i data-lucide="settings" class="w-5 h-5"></i>
           <span>Settings</span>
         </a>
       </nav>
 
-      <div class="p-4 border-t border-nfgray">
-        <button id="logout-btn" class="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight text-nftext transition">
+      <div class="p-4 border-t border-nfgray dark:border-gray-700">
+        <button id="logout-btn" class="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight text-nftext dark:text-gray-200 transition">
           <i data-lucide="log-out" class="w-4 h-4"></i>
           <span>Logout</span>
         </button>
@@ -114,31 +119,31 @@
     <!-- Main Content -->
     <div class="flex-1 flex flex-col min-w-0">
       <!-- TOPBAR -->
-      <header class="sticky top-0 z-10 bg-white border-b border-nfgray">
+      <header class="sticky top-0 z-10 bg-white border-b border-nfgray dark:border-gray-700">
         <div class="h-14 px-4 md:px-6 flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <button class="md:hidden p-2 rounded-lg border border-nfgray text-nfgblue" data-action="toggle-sidebar" aria-label="Toggle sidebar">
+            <button class="md:hidden p-2 rounded-lg border border-nfgray text-nfgblue dark:text-blue-400" data-action="toggle-sidebar" aria-label="Toggle sidebar">
               <i data-lucide="menu" class="w-5 h-5"></i>
             </button>
-            <h1 class="text-nfgblue font-semibold">Settings</h1>
+            <h1 class="text-nfgblue dark:text-blue-400 dark:text-blue-400 font-semibold">Settings</h1>
           </div>
         </div>
       </header>
       
       <main class="flex-1 overflow-y-auto p-4 md:p-6">
-        <p class="text-sm text-gray-500 mb-6">Manage your account and application preferences</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400 mb-6">Manage your account and application preferences</p>
         
         <div class="space-y-6 max-w-4xl mx-auto">
         
         <!-- Account Settings -->
-        <section class="bg-white border border-nfgray rounded-xl shadow-nfg p-6">
+        <section class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl shadow-nfg p-6">
           <div class="flex items-center gap-3 mb-6">
             <div class="w-10 h-10 rounded-full bg-nfglight flex items-center justify-center">
-              <i data-lucide="user" class="w-5 h-5 text-nfgblue"></i>
+              <i data-lucide="user" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
             </div>
             <div>
-              <h3 class="text-lg font-semibold text-nfgblue">Account Settings</h3>
-              <p class="text-sm text-gray-500">Manage your profile information</p>
+              <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Account Settings</h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Manage your profile information</p>
             </div>
           </div>
           
@@ -152,7 +157,7 @@
                     id="profile-picture-preview" 
                     src="https://ui-avatars.com/api/?name=User&size=128&background=E3ECFA&color=0D47A1" 
                     alt="Profile Picture" 
-                    class="w-24 h-24 rounded-full object-cover border-2 border-nfgray" />
+                    class="w-24 h-24 rounded-full object-cover border-2 border-nfgray dark:border-gray-700" />
                   <div id="profile-upload-loading" class="hidden absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
                     <i data-lucide="loader" class="w-6 h-6 text-white animate-spin"></i>
                   </div>
@@ -165,7 +170,7 @@
                     class="hidden" />
                   <button 
                     id="upload-profile-picture-btn" 
-                    class="px-4 py-2 rounded-xl border border-nfgblue text-nfgblue hover:bg-nfglight transition">
+                    class="px-4 py-2 rounded-xl border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight transition">
                     <i data-lucide="upload" class="w-4 h-4 inline mr-2"></i>
                     Upload Photo
                   </button>
@@ -174,7 +179,7 @@
               </div>
             </div>
 
-            <div class="border-t border-nfgray pt-6">
+            <div class="border-t border-nfgray dark:border-gray-700 pt-6">
               <div class="space-y-4">
                 <div>
                   <label class="block text-sm font-medium mb-1.5">Email Address</label>
@@ -182,7 +187,7 @@
                     id="user-email" 
                     type="email" 
                     readonly 
-                    class="w-full border border-nfgray rounded-xl p-2.5 bg-gray-50 text-gray-600" 
+                    class="w-full border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 bg-gray-50 text-gray-600" 
                     value="Loading..." />
                 </div>
                 
@@ -192,7 +197,33 @@
                     id="user-display-name" 
                     type="text" 
                     placeholder="Your name" 
-                    class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+                    class="w-full border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+                </div>
+                
+                <!-- Dark Mode Toggle -->
+                <div>
+                  <label class="block text-sm font-medium mb-3">Theme</label>
+                  <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                    <div>
+                      <p class="font-medium text-gray-900 dark:text-gray-100">Dark Mode</p>
+                      <p class="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">Toggle between light and dark theme</p>
+                    </div>
+                    <label class="switch">
+                      <input checked="true" id="dark-mode-toggle" type="checkbox" />
+                      <span class="slider">
+                        <div class="star star_1"></div>
+                        <div class="star star_2"></div>
+                        <div class="star star_3"></div>
+                        <svg viewBox="0 0 16 16" class="cloud_1 cloud">
+                          <path
+                            transform="matrix(.77976 0 0 .78395-299.99-418.63)"
+                            fill="#fff"
+                            d="m391.84 540.91c-.421-.329-.949-.524-1.523-.524-1.351 0-2.451 1.084-2.485 2.435-1.395.526-2.388 1.88-2.388 3.466 0 1.874 1.385 3.423 3.182 3.667v.034h12.73v-.006c1.775-.104 3.182-1.584 3.182-3.395 0-1.747-1.309-3.186-2.994-3.379.007-.106.011-.214.011-.322 0-2.707-2.271-4.901-5.072-4.901-2.073 0-3.856 1.202-4.643 2.925"
+                          ></path>
+                        </svg>
+                      </span>
+                    </label>
+                  </div>
                 </div>
                 
                 <button id="save-profile-btn" class="px-5 py-2.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark transition">
@@ -204,14 +235,14 @@
         </section>
 
         <!-- User Management Section -->
-        <section id="user-management-section" class="bg-white border border-nfgray rounded-xl shadow-nfg p-4 md:p-6">
+        <section id="user-management-section" class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl shadow-nfg p-4 md:p-6">
           <div class="flex items-center justify-between gap-3 mb-4">
             <div class="flex items-center gap-2 md:gap-3 min-w-0">
               <div class="w-8 h-8 md:w-10 md:h-10 flex-shrink-0 rounded-full bg-nfglight flex items-center justify-center">
-                <i data-lucide="users" class="w-4 h-4 md:w-5 md:h-5 text-nfgblue"></i>
+                <i data-lucide="users" class="w-4 h-4 md:w-5 md:h-5 text-nfgblue dark:text-blue-400"></i>
               </div>
               <div class="min-w-0">
-                <h3 class="text-base md:text-lg font-semibold text-nfgblue">User Management</h3>
+                <h3 class="text-base md:text-lg font-semibold text-nfgblue dark:text-blue-400">User Management</h3>
                 <p class="text-xs md:text-sm text-gray-500 truncate">Invite and manage team members</p>
               </div>
             </div>
@@ -229,7 +260,7 @@
           </div>
 
           <div id="pending-invitations-container" class="mt-6 pt-4 border-t border-nfgray hidden">
-            <h4 class="text-sm md:text-base font-semibold text-nfgblue mb-3 flex items-center gap-2">
+            <h4 class="text-sm md:text-base font-semibold text-nfgblue dark:text-blue-400 mb-3 flex items-center gap-2">
               <i data-lucide="mail" class="w-4 h-4"></i>
               Pending Invitations
             </h4>
@@ -240,14 +271,14 @@
         </section>
 
         <!-- Notifications -->
-        <section class="bg-white border border-nfgray rounded-xl shadow-nfg p-6">
+        <section class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl shadow-nfg p-6">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-10 h-10 rounded-full bg-nfglight flex items-center justify-center">
-              <i data-lucide="bell" class="w-5 h-5 text-nfgblue"></i>
+              <i data-lucide="bell" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
             </div>
             <div>
-              <h3 class="text-lg font-semibold text-nfgblue">Notifications</h3>
-              <p class="text-sm text-gray-500">Configure your notification preferences</p>
+              <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Notifications</h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Configure your notification preferences</p>
             </div>
           </div>
           
@@ -255,7 +286,7 @@
             <label class="flex items-center justify-between cursor-pointer">
               <div>
                 <span class="font-medium">Email Notifications</span>
-                <p class="text-sm text-gray-500">Receive updates via email</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Receive updates via email</p>
               </div>
               <input type="checkbox" id="notif-email" class="toggle-checkbox">
             </label>
@@ -263,7 +294,7 @@
             <label class="flex items-center justify-between cursor-pointer">
               <div>
                 <span class="font-medium">Job Reminders</span>
-                <p class="text-sm text-gray-500">Get reminders for scheduled jobs</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Get reminders for scheduled jobs</p>
               </div>
               <input type="checkbox" id="notif-jobs" class="toggle-checkbox">
             </label>
@@ -271,7 +302,7 @@
             <label class="flex items-center justify-between cursor-pointer">
               <div>
                 <span class="font-medium">Emergency Alerts</span>
-                <p class="text-sm text-gray-500">Immediate notifications for urgent requests</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Immediate notifications for urgent requests</p>
               </div>
               <input type="checkbox" id="notif-emergency" class="toggle-checkbox" checked>
             </label>
@@ -279,14 +310,14 @@
         </section>
 
         <!-- Data Management -->
-        <section class="bg-white border border-nfgray rounded-xl shadow-nfg p-6">
+        <section class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl shadow-nfg p-6">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-10 h-10 rounded-full bg-nfglight flex items-center justify-center">
-              <i data-lucide="database" class="w-5 h-5 text-nfgblue"></i>
+              <i data-lucide="database" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
             </div>
             <div>
-              <h3 class="text-lg font-semibold text-nfgblue">Data Management</h3>
-              <p class="text-sm text-gray-500">Export or clear your data</p>
+              <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Data Management</h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Export or clear your data</p>
             </div>
           </div>
           
@@ -303,14 +334,14 @@
         </section>
 
         <!-- Compliance & Insurance -->
-        <section id="compliance-section" class="bg-white border border-nfgray rounded-xl shadow-nfg p-6">
+        <section id="compliance-section" class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl shadow-nfg p-6">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-10 h-10 rounded-full bg-nfglight flex items-center justify-center">
-              <i data-lucide="shield-check" class="w-5 h-5 text-nfgblue"></i>
+              <i data-lucide="shield-check" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
             </div>
             <div>
-              <h3 class="text-lg font-semibold text-nfgblue">Compliance & Insurance</h3>
-              <p class="text-sm text-gray-500">Upload and manage important documents</p>
+              <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Compliance & Insurance</h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Upload and manage important documents</p>
             </div>
           </div>
           
@@ -320,11 +351,11 @@
               <!-- WSIB -->
               <div class="border border-nfgray rounded-xl p-4">
                 <div class="flex items-center gap-2 mb-3">
-                  <i data-lucide="file-text" class="w-5 h-5 text-nfgblue"></i>
-                  <h4 class="font-semibold text-nfgblue">WSIB</h4>
+                  <i data-lucide="file-text" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
+                  <h4 class="font-semibold text-nfgblue dark:text-blue-400">WSIB</h4>
                 </div>
                 <input type="file" id="wsib-upload" accept=".pdf,.jpg,.jpeg,.png" class="hidden">
-                <button onclick="document.getElementById('wsib-upload').click()" class="w-full px-3 py-2 rounded-lg border border-nfgblue text-nfgblue hover:bg-nfglight text-sm transition">
+                <button onclick="document.getElementById('wsib-upload').click()" class="w-full px-3 py-2 rounded-lg border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight text-sm transition">
                   <i data-lucide="upload" class="w-4 h-4 inline mr-1"></i>
                   Upload WSIB
                 </button>
@@ -336,11 +367,11 @@
               <!-- Insurance -->
               <div class="border border-nfgray rounded-xl p-4">
                 <div class="flex items-center gap-2 mb-3">
-                  <i data-lucide="shield" class="w-5 h-5 text-nfgblue"></i>
-                  <h4 class="font-semibold text-nfgblue">Insurance</h4>
+                  <i data-lucide="shield" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
+                  <h4 class="font-semibold text-nfgblue dark:text-blue-400">Insurance</h4>
                 </div>
                 <input type="file" id="insurance-upload" accept=".pdf,.jpg,.jpeg,.png" class="hidden">
-                <button onclick="document.getElementById('insurance-upload').click()" class="w-full px-3 py-2 rounded-lg border border-nfgblue text-nfgblue hover:bg-nfglight text-sm transition">
+                <button onclick="document.getElementById('insurance-upload').click()" class="w-full px-3 py-2 rounded-lg border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight text-sm transition">
                   <i data-lucide="upload" class="w-4 h-4 inline mr-1"></i>
                   Upload Insurance
                 </button>
@@ -352,11 +383,11 @@
               <!-- Licenses -->
               <div class="border border-nfgray rounded-xl p-4">
                 <div class="flex items-center gap-2 mb-3">
-                  <i data-lucide="award" class="w-5 h-5 text-nfgblue"></i>
-                  <h4 class="font-semibold text-nfgblue">Licenses</h4>
+                  <i data-lucide="award" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
+                  <h4 class="font-semibold text-nfgblue dark:text-blue-400">Licenses</h4>
                 </div>
                 <input type="file" id="license-upload" accept=".pdf,.jpg,.jpeg,.png" class="hidden">
-                <button onclick="document.getElementById('license-upload').click()" class="w-full px-3 py-2 rounded-lg border border-nfgblue text-nfgblue hover:bg-nfglight text-sm transition">
+                <button onclick="document.getElementById('license-upload').click()" class="w-full px-3 py-2 rounded-lg border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight text-sm transition">
                   <i data-lucide="upload" class="w-4 h-4 inline mr-1"></i>
                   Upload License
                 </button>
@@ -376,14 +407,14 @@
         </section>
 
         <!-- About -->
-        <section class="bg-white border border-nfgray rounded-xl shadow-nfg p-6">
+        <section class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl shadow-nfg p-6">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-10 h-10 rounded-full bg-nfglight flex items-center justify-center">
-              <i data-lucide="info" class="w-5 h-5 text-nfgblue"></i>
+              <i data-lucide="info" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
             </div>
             <div>
-              <h3 class="text-lg font-semibold text-nfgblue">About</h3>
-              <p class="text-sm text-gray-500">Application information</p>
+              <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">About</h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Application information</p>
             </div>
           </div>
           
@@ -403,8 +434,8 @@
   <div id="inviteUserModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
     <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-md">
       <div class="p-4 border-b border-nfgray flex items-center justify-between">
-        <h4 class="text-nfgblue font-semibold text-lg">Invite New User</h4>
-        <button id="close-invite-modal" class="p-1 rounded-lg hover:bg-nfglight">
+        <h4 class="text-nfgblue dark:text-blue-400 dark:text-blue-400 font-semibold text-lg">Invite New User</h4>
+        <button id="close-invite-modal" class="p-1 rounded-lg hover:bg-nfglight dark:bg-gray-700">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -416,7 +447,7 @@
             name="email" 
             required 
             placeholder="user@example.com"
-            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+            class="w-full border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
         </div>
 
         <div>
@@ -439,7 +470,7 @@
 
         <div id="invite-form-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl p-3"></div>
 
-        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray">
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray dark:border-gray-700">
           <button 
             type="button" 
             id="cancel-invite-btn" 
@@ -461,8 +492,8 @@
   <div id="userDetailsModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
     <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
       <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white z-10">
-        <h4 class="text-nfgblue font-semibold text-lg">User Details</h4>
-        <button id="close-user-details-modal" class="p-1 rounded-lg hover:bg-nfglight">
+        <h4 class="text-nfgblue dark:text-blue-400 dark:text-blue-400 font-semibold text-lg">User Details</h4>
+        <button id="close-user-details-modal" class="p-1 rounded-lg hover:bg-nfglight dark:bg-gray-700">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -471,11 +502,11 @@
         <!-- User Info -->
         <div class="flex items-center gap-4">
           <div id="user-detail-avatar-container" class="w-16 h-16 rounded-full bg-nfglight flex items-center justify-center">
-            <i data-lucide="user" class="w-8 h-8 text-nfgblue"></i>
+            <i data-lucide="user" class="w-8 h-8 text-nfgblue dark:text-blue-400"></i>
           </div>
           <div class="flex-1">
-            <h5 id="user-detail-name" class="text-xl font-semibold text-nfgblue">User Name</h5>
-            <p id="user-detail-email" class="text-gray-600">user@example.com</p>
+            <h5 id="user-detail-name" class="text-xl font-semibold text-nfgblue dark:text-blue-400">User Name</h5>
+            <p id="user-detail-email" class="text-gray-600 dark:text-gray-400">user@example.com</p>
             <div class="flex items-center gap-2 mt-2">
               <span id="user-detail-role-badge" class="px-2 py-0.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-700">Staff</span>
               <span id="user-detail-status-badge" class="px-2 py-0.5 rounded-lg text-xs font-medium bg-green-100 text-green-700">Active</span>
@@ -485,7 +516,7 @@
 
         <!-- Role Management (Admin/Client only) -->
         <div id="role-management-section" class="hidden bg-nfglight/30 border border-nfgblue/20 rounded-xl p-4">
-          <h6 class="font-semibold text-nfgblue mb-3">Role & Status</h6>
+          <h6 class="font-semibold text-nfgblue dark:text-blue-400 mb-3">Role & Status</h6>
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-sm font-medium mb-1.5">Role</label>
@@ -512,7 +543,7 @@
         <!-- Site Assignments (Admin/Client only) -->
         <div id="site-assignments-section" class="hidden bg-white border border-nfgray rounded-xl p-4">
           <div class="flex items-center justify-between mb-3">
-            <h6 class="font-semibold text-nfgblue">Site Assignments</h6>
+            <h6 class="font-semibold text-nfgblue dark:text-blue-400">Site Assignments</h6>
             <button id="assign-site-btn" class="text-sm px-3 py-1.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
               <i data-lucide="plus" class="w-3 h-3 inline"></i>
               Assign Site
@@ -539,8 +570,8 @@
   <div id="assignSiteModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
     <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-md">
       <div class="p-4 border-b border-nfgray flex items-center justify-between">
-        <h4 class="text-nfgblue font-semibold text-lg">Assign Site</h4>
-        <button id="close-assign-site-modal" class="p-1 rounded-lg hover:bg-nfglight">
+        <h4 class="text-nfgblue dark:text-blue-400 dark:text-blue-400 font-semibold text-lg">Assign Site</h4>
+        <button id="close-assign-site-modal" class="p-1 rounded-lg hover:bg-nfglight dark:bg-gray-700">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -551,14 +582,14 @@
             name="site_id" 
             id="assign-site-select"
             required 
-            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none">
+            class="w-full border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none">
             <option value="">Select a site</option>
           </select>
         </div>
 
         <div id="assign-site-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl p-3"></div>
 
-        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray">
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray dark:border-gray-700">
           <button 
             type="button" 
             id="cancel-assign-site-btn" 
@@ -1242,7 +1273,7 @@
           return `
             <div class="flex items-center justify-between p-3 bg-nfglight/30 rounded-lg">
               <div class="flex items-center gap-2">
-                <i data-lucide="building-2" class="w-4 h-4 text-nfgblue"></i>
+                <i data-lucide="building-2" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
                 <span class="font-medium">${siteName}</span>
               </div>
               <button onclick="removeAssignment('${assignment.id}')" class="text-red-600 hover:bg-red-50 p-1 rounded">
@@ -1344,16 +1375,16 @@
           return `
             <div class="flex items-center justify-between p-2 bg-nfglight/50 rounded-lg text-xs">
               <div class="flex items-center gap-2 flex-1 min-w-0">
-                <i data-lucide="${isPDF ? 'file-text' : 'image'}" class="w-3 h-3 text-nfgblue flex-shrink-0"></i>
+                <i data-lucide="${isPDF ? 'file-text' : 'image'}" class="w-3 h-3 text-nfgblue dark:text-blue-400 flex-shrink-0"></i>
                 <div class="flex-1 min-w-0">
-                  <p class="font-medium text-nfgblue truncate">${file.name}</p>
+                  <p class="font-medium text-nfgblue dark:text-blue-400 truncate">${file.name}</p>
                   <p class="text-gray-500">${uploadDate}</p>
                 </div>
               </div>
               <div class="flex items-center gap-1 flex-shrink-0">
                 <button 
                   onclick="viewDocument('${fileUrl}')" 
-                  class="p-1 rounded hover:bg-nfgblue/10 text-nfgblue"
+                  class="p-1 rounded hover:bg-nfgblue/10 text-nfgblue dark:text-blue-400"
                   title="View">
                   <i data-lucide="eye" class="w-3 h-3"></i>
                 </button>

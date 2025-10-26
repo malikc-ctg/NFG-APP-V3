@@ -13,6 +13,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
@@ -45,9 +46,14 @@
   
   <!-- Page Loader -->
   <link rel="stylesheet" href="./css/loader.css">
+  
+  <!-- Dark Mode -->
+  <link rel="stylesheet" href="./css/dark-mode.css">
+  <script src="./js/dark-mode.js"></script>
+
 </head>
 
-<body class="font-inter bg-nfbg min-h-screen flex text-nftext">
+<body class="font-inter bg-nfbg dark:bg-gray-900 min-h-screen flex text-nftext">
   <!-- Full-Page Loader -->
   <div id="page-loader">
     <div class="loader-logo">
@@ -83,7 +89,7 @@
       <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="dashboard.html">
         <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview
       </a>
-      <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight text-nfgblue font-medium w-full text-left" href="sites.html">
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight text-nfgblue dark:text-blue-400 font-medium w-full text-left" href="sites.html">
         <i data-lucide="map-pin" class="w-4 h-4"></i> Sites
       </a>
       <a id="nav-bookings" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="bookings.html">
@@ -102,8 +108,8 @@
         <i data-lucide="settings" class="w-4 h-4"></i> Settings
       </a>
     </nav>
-    <div class="p-4 border-t border-nfgray">
-      <button id="logout-btn" class="w-full border border-nfgblue text-nfgblue hover:bg-nfglight rounded-xl py-2 font-medium">
+    <div class="p-4 border-t border-nfgray dark:border-gray-700">
+      <button id="logout-btn" class="w-full border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight rounded-xl py-2 font-medium">
         Logout
       </button>
     </div>
@@ -112,13 +118,13 @@
   <!-- ========== MAIN ========== -->
   <div class="flex-1 flex flex-col min-w-0">
     <!-- TOPBAR -->
-    <header class="sticky top-0 z-10 bg-white border-b border-nfgray">
+    <header class="sticky top-0 z-10 bg-white border-b border-nfgray dark:border-gray-700">
       <div class="h-14 px-4 md:px-6 flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <button class="md:hidden p-2 rounded-lg border border-nfgray text-nfgblue" data-action="toggle-sidebar" aria-label="Toggle sidebar">
+          <button class="md:hidden p-2 rounded-lg border border-nfgray text-nfgblue dark:text-blue-400" data-action="toggle-sidebar" aria-label="Toggle sidebar">
             <i data-lucide="menu" class="w-5 h-5"></i>
           </button>
-          <h1 class="text-nfgblue font-semibold">Sites</h1>
+          <h1 class="text-nfgblue dark:text-blue-400 font-semibold">Sites</h1>
         </div>
 
         <div class="flex items-center gap-2">
@@ -135,7 +141,7 @@
     <main class="p-4 md:p-6 space-y-6">
       <!-- Sites Header -->
       <div>
-        <h2 class="text-2xl font-semibold text-nfgblue">All Sites</h2>
+        <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">All Sites</h2>
         <p class="text-sm text-gray-500 mt-1">Manage your properties and locations</p>
       </div>
 
@@ -165,8 +171,8 @@
   <div id="addSiteModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
     <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
       <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white">
-        <h4 class="text-nfgblue font-semibold text-lg">Add New Site</h4>
-        <button data-action="close-modal" data-target="addSiteModal" class="p-1 rounded-lg hover:bg-nfglight">
+        <h4 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">Add New Site</h4>
+        <button data-action="close-modal" data-target="addSiteModal" class="p-1 rounded-lg hover:bg-nfglight dark:bg-gray-700">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -220,7 +226,7 @@
 
         <!-- Contact Information -->
         <div class="border-t border-nfgray pt-4">
-          <h5 class="text-sm font-semibold text-nfgblue mb-3">Contact Information</h5>
+          <h5 class="text-sm font-semibold text-nfgblue dark:text-blue-400 mb-3">Contact Information</h5>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium mb-1.5">Contact Phone</label>
@@ -256,7 +262,7 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray">
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray dark:border-gray-700">
           <button 
             type="button" 
             data-action="close-modal" 
@@ -712,9 +718,9 @@
       <!-- Header -->
       <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white z-10">
         <div class="flex items-center gap-3 flex-1 min-w-0">
-          <i data-lucide="building-2" class="w-6 h-6 text-nfgblue flex-shrink-0"></i>
+          <i data-lucide="building-2" class="w-6 h-6 text-nfgblue dark:text-blue-400 flex-shrink-0"></i>
           <div class="flex-1 min-w-0">
-            <h4 id="site-detail-name" class="text-nfgblue font-semibold text-lg">Site Name</h4>
+            <h4 id="site-detail-name" class="text-nfgblue dark:text-blue-400 font-semibold text-lg">Site Name</h4>
             <div id="site-detail-address" class="text-sm text-gray-500">Address</div>
           </div>
         </div>
@@ -729,34 +735,34 @@
           <!-- Status Card -->
           <div class="bg-nfglight/30 border border-nfgblue/20 rounded-xl p-4">
             <div class="flex items-center gap-2 mb-2">
-              <i data-lucide="activity" class="w-4 h-4 text-nfgblue"></i>
+              <i data-lucide="activity" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
               <span class="text-sm font-medium text-nftext">Status</span>
             </div>
-            <p id="site-detail-status" class="text-xl font-semibold text-nfgblue">Active</p>
+            <p id="site-detail-status" class="text-xl font-semibold text-nfgblue dark:text-blue-400">Active</p>
           </div>
 
           <!-- Square Footage Card -->
           <div class="bg-nfglight/30 border border-nfgblue/20 rounded-xl p-4">
             <div class="flex items-center gap-2 mb-2">
-              <i data-lucide="ruler" class="w-4 h-4 text-nfgblue"></i>
+              <i data-lucide="ruler" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
               <span class="text-sm font-medium text-nftext">Square Footage</span>
             </div>
-            <p id="site-detail-sqft" class="text-xl font-semibold text-nfgblue">—</p>
+            <p id="site-detail-sqft" class="text-xl font-semibold text-nfgblue dark:text-blue-400">—</p>
           </div>
 
           <!-- Rating Card -->
           <div class="bg-nfglight/30 border border-nfgblue/20 rounded-xl p-4">
             <div class="flex items-center gap-2 mb-2">
-              <i data-lucide="star" class="w-4 h-4 text-nfgblue"></i>
+              <i data-lucide="star" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
               <span class="text-sm font-medium text-nftext">Rating</span>
             </div>
-            <p id="site-detail-rating" class="text-xl font-semibold text-nfgblue">0</p>
+            <p id="site-detail-rating" class="text-xl font-semibold text-nfgblue dark:text-blue-400">0</p>
           </div>
         </div>
 
         <!-- Contact Information -->
         <div class="bg-white border border-nfgray rounded-xl p-4">
-          <h5 class="text-nfgblue font-semibold mb-3 flex items-center gap-2">
+          <h5 class="text-nfgblue dark:text-blue-400 font-semibold mb-3 flex items-center gap-2">
             <i data-lucide="contact" class="w-4 h-4"></i>
             Contact Information
           </h5>
@@ -775,24 +781,24 @@
         <!-- Stats -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="bg-white border border-nfgray rounded-xl p-4">
-            <h5 class="text-nfgblue font-semibold mb-3 flex items-center gap-2">
+            <h5 class="text-nfgblue dark:text-blue-400 font-semibold mb-3 flex items-center gap-2">
               <i data-lucide="clipboard-check" class="w-4 h-4"></i>
               Jobs Completed
             </h5>
-            <p id="site-detail-jobs" class="text-3xl font-bold text-nfgblue">0</p>
+            <p id="site-detail-jobs" class="text-3xl font-bold text-nfgblue dark:text-blue-400">0</p>
           </div>
           <div class="bg-white border border-nfgray rounded-xl p-4">
-            <h5 class="text-nfgblue font-semibold mb-3 flex items-center gap-2">
+            <h5 class="text-nfgblue dark:text-blue-400 font-semibold mb-3 flex items-center gap-2">
               <i data-lucide="calendar" class="w-4 h-4"></i>
               Upcoming Bookings
             </h5>
-            <p id="site-detail-bookings" class="text-3xl font-bold text-nfgblue">0</p>
+            <p id="site-detail-bookings" class="text-3xl font-bold text-nfgblue dark:text-blue-400">0</p>
           </div>
         </div>
 
         <!-- Notes -->
         <div class="bg-white border border-nfgray rounded-xl p-4">
-          <h5 class="text-nfgblue font-semibold mb-3 flex items-center gap-2">
+          <h5 class="text-nfgblue dark:text-blue-400 font-semibold mb-3 flex items-center gap-2">
             <i data-lucide="file-text" class="w-4 h-4"></i>
             Notes
           </h5>
@@ -801,7 +807,7 @@
 
         <!-- Recent Activity -->
         <div class="bg-white border border-nfgray rounded-xl p-4">
-          <h5 class="text-nfgblue font-semibold mb-3 flex items-center gap-2">
+          <h5 class="text-nfgblue dark:text-blue-400 font-semibold mb-3 flex items-center gap-2">
             <i data-lucide="history" class="w-4 h-4"></i>
             Recent Activity
           </h5>
@@ -844,7 +850,7 @@
         </div>
         
         <p class="text-nftext mb-6">
-          Are you sure you want to delete <strong id="delete-site-name" class="text-nfgblue">this site</strong>? 
+          Are you sure you want to delete <strong id="delete-site-name" class="text-nfgblue dark:text-blue-400">this site</strong>? 
           All associated data, bookings, and job history will be permanently removed.
         </p>
         
@@ -871,8 +877,8 @@
   <div id="editSiteModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
     <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
       <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white">
-        <h4 class="text-nfgblue font-semibold text-lg">Edit Site</h4>
-        <button data-action="close-modal" data-target="editSiteModal" class="p-1 rounded-lg hover:bg-nfglight">
+        <h4 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">Edit Site</h4>
+        <button data-action="close-modal" data-target="editSiteModal" class="p-1 rounded-lg hover:bg-nfglight dark:bg-gray-700">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -962,7 +968,7 @@
         <div id="edit-form-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl p-3">
         </div>
 
-        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray">
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray dark:border-gray-700">
           <button 
             type="button" 
             data-action="close-modal" 

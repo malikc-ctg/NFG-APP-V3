@@ -13,6 +13,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
@@ -45,9 +46,14 @@
   
   <!-- Page Loader -->
   <link rel="stylesheet" href="./css/loader.css">
+  
+  <!-- Dark Mode -->
+  <link rel="stylesheet" href="./css/dark-mode.css">
+  <script src="./js/dark-mode.js"></script>
+
 </head>
 
-<body class="font-inter bg-nfbg min-h-screen flex text-nftext">
+<body class="font-inter bg-nfbg dark:bg-gray-900 min-h-screen flex text-nftext">
   <!-- Full-Page Loader -->
   <div id="page-loader">
     <div class="loader-logo">
@@ -89,7 +95,7 @@
       <a id="nav-bookings" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="bookings.html">
         <i data-lucide="calendar" class="w-4 h-4"></i> Bookings
       </a>
-      <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight text-nfgblue font-medium w-full text-left" href="jobs.html">
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight text-nfgblue dark:text-blue-400 font-medium w-full text-left" href="jobs.html">
         <i data-lucide="clipboard-check" class="w-4 h-4"></i> Jobs
       </a>
       <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="inventory.html">
@@ -102,8 +108,8 @@
         <i data-lucide="settings" class="w-4 h-4"></i> Settings
       </a>
     </nav>
-    <div class="p-4 border-t border-nfgray">
-      <button id="logout-btn" class="w-full border border-nfgblue text-nfgblue hover:bg-nfglight rounded-xl py-2 font-medium">
+    <div class="p-4 border-t border-nfgray dark:border-gray-700">
+      <button id="logout-btn" class="w-full border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight rounded-xl py-2 font-medium">
         Logout
       </button>
     </div>
@@ -112,13 +118,13 @@
   <!-- ========== MAIN ========== -->
   <div class="flex-1 flex flex-col min-w-0">
     <!-- TOPBAR -->
-    <header class="sticky top-0 z-10 bg-white border-b border-nfgray">
+    <header class="sticky top-0 z-10 bg-white border-b border-nfgray dark:border-gray-700">
       <div class="h-14 px-4 md:px-6 flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <button class="md:hidden p-2 rounded-lg border border-nfgray text-nfgblue" data-action="toggle-sidebar" aria-label="Toggle sidebar">
+          <button class="md:hidden p-2 rounded-lg border border-nfgray text-nfgblue dark:text-blue-400" data-action="toggle-sidebar" aria-label="Toggle sidebar">
             <i data-lucide="menu" class="w-5 h-5"></i>
           </button>
-          <h1 class="text-nfgblue font-semibold">Jobs</h1>
+          <h1 class="text-nfgblue dark:text-blue-400 font-semibold">Jobs</h1>
         </div>
 
         <div class="flex items-center gap-2">
@@ -133,25 +139,25 @@
     <!-- CONTENT -->
     <main class="p-4 md:p-6 space-y-6">
       <div>
-        <h2 class="text-2xl font-semibold text-nfgblue">Jobs</h2>
+        <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Jobs</h2>
         <p class="text-sm text-gray-500 mt-1">Track active jobs and work orders</p>
       </div>
 
       <!-- Status Tabs -->
       <div class="flex gap-2 border-b border-nfgray overflow-x-auto">
-        <button class="job-filter-tab px-4 py-2 font-medium text-nfgblue border-b-2 border-nfgblue whitespace-nowrap" data-status="all">
+        <button class="job-filter-tab px-4 py-2 font-medium text-nfgblue dark:text-blue-400 border-b-2 border-nfgblue whitespace-nowrap" data-status="all">
           All Jobs
         </button>
-        <button class="job-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue border-b-2 border-transparent whitespace-nowrap" data-status="pending">
+        <button class="job-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-status="pending">
           Pending
         </button>
-        <button class="job-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue border-b-2 border-transparent whitespace-nowrap" data-status="in-progress">
+        <button class="job-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-status="in-progress">
           In Progress
         </button>
-        <button class="job-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue border-b-2 border-transparent whitespace-nowrap" data-status="completed">
+        <button class="job-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-status="completed">
           Completed
         </button>
-        <button class="job-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue border-b-2 border-transparent whitespace-nowrap" data-status="cancelled">
+        <button class="job-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-status="cancelled">
           Cancelled
         </button>
       </div>
@@ -173,9 +179,9 @@
     <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-4xl max-h-[90vh] overflow-y-auto">
       <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white z-10">
         <div class="flex items-center gap-3 flex-1 min-w-0">
-          <i data-lucide="clipboard-check" class="w-6 h-6 text-nfgblue flex-shrink-0"></i>
+          <i data-lucide="clipboard-check" class="w-6 h-6 text-nfgblue dark:text-blue-400 flex-shrink-0"></i>
           <div class="flex-1 min-w-0">
-            <h4 id="job-detail-title" class="text-nfgblue font-semibold text-lg">Job Title</h4>
+            <h4 id="job-detail-title" class="text-nfgblue dark:text-blue-400 font-semibold text-lg">Job Title</h4>
             <div id="job-detail-site" class="text-sm text-gray-500">Site Name</div>
           </div>
           <div id="job-timer-display" class="hidden px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg font-mono text-sm font-semibold flex-shrink-0">
@@ -193,31 +199,31 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="bg-nfglight/30 border border-nfgblue/20 rounded-xl p-4">
             <div class="flex items-center gap-2 mb-2">
-              <i data-lucide="tag" class="w-4 h-4 text-nfgblue"></i>
+              <i data-lucide="tag" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
               <span class="text-sm font-medium">Status</span>
             </div>
-            <p id="job-detail-status" class="text-xl font-semibold text-nfgblue capitalize">Pending</p>
+            <p id="job-detail-status" class="text-xl font-semibold text-nfgblue dark:text-blue-400 capitalize">Pending</p>
           </div>
           <div class="bg-nfglight/30 border border-nfgblue/20 rounded-xl p-4">
             <div class="flex items-center gap-2 mb-2">
-              <i data-lucide="repeat" class="w-4 h-4 text-nfgblue"></i>
+              <i data-lucide="repeat" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
               <span class="text-sm font-medium">Frequency</span>
             </div>
-            <p id="job-detail-frequency" class="text-xl font-semibold text-nfgblue capitalize">Single Visit</p>
+            <p id="job-detail-frequency" class="text-xl font-semibold text-nfgblue dark:text-blue-400 capitalize">Single Visit</p>
           </div>
           <div class="bg-nfglight/30 border border-nfgblue/20 rounded-xl p-4">
             <div class="flex items-center gap-2 mb-2">
-              <i data-lucide="calendar" class="w-4 h-4 text-nfgblue"></i>
+              <i data-lucide="calendar" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
               <span class="text-sm font-medium">Scheduled</span>
             </div>
-            <p id="job-detail-date" class="text-xl font-semibold text-nfgblue">—</p>
+            <p id="job-detail-date" class="text-xl font-semibold text-nfgblue dark:text-blue-400">—</p>
           </div>
         </div>
 
         <!-- Assigned Worker -->
         <div class="bg-white border border-nfgray rounded-xl p-4">
           <div class="flex items-center justify-between mb-3">
-            <h5 class="text-nfgblue font-semibold flex items-center gap-2">
+            <h5 class="text-nfgblue dark:text-blue-400 font-semibold flex items-center gap-2">
               <i data-lucide="user-check" class="w-4 h-4"></i>
               Assigned Worker
             </h5>
@@ -233,7 +239,7 @@
 
         <!-- Job Details -->
         <div class="bg-white border border-nfgray rounded-xl p-4">
-          <h5 class="text-nfgblue font-semibold mb-3 flex items-center gap-2">
+          <h5 class="text-nfgblue dark:text-blue-400 font-semibold mb-3 flex items-center gap-2">
             <i data-lucide="file-text" class="w-4 h-4"></i>
             Job Details
           </h5>
@@ -256,7 +262,7 @@
         <!-- Assigned Employees -->
         <div class="bg-white border border-nfgray rounded-xl p-4">
           <div class="flex items-center justify-between mb-3">
-            <h5 class="text-nfgblue font-semibold flex items-center gap-2">
+            <h5 class="text-nfgblue dark:text-blue-400 font-semibold flex items-center gap-2">
               <i data-lucide="users" class="w-4 h-4"></i>
               Assigned Employees
             </h5>
@@ -273,11 +279,11 @@
         <!-- Task Checklist -->
         <div class="bg-white border border-nfgray rounded-xl p-4">
           <div class="flex items-center justify-between mb-3">
-            <h5 class="text-nfgblue font-semibold flex items-center gap-2">
+            <h5 class="text-nfgblue dark:text-blue-400 font-semibold flex items-center gap-2">
               <i data-lucide="list-checks" class="w-4 h-4"></i>
               Task Checklist
             </h5>
-            <button id="add-task-btn" class="text-sm px-3 py-1.5 rounded-xl border border-nfgblue text-nfgblue hover:bg-nfglight">
+            <button id="add-task-btn" class="text-sm px-3 py-1.5 rounded-xl border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight dark:bg-gray-700">
               <i data-lucide="plus" class="w-4 h-4 inline"></i>
               Add Task
             </button>
@@ -324,8 +330,8 @@
   <div id="addTaskModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-[60]">
     <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-lg">
       <div class="p-4 border-b border-nfgray flex items-center justify-between">
-        <h4 class="text-nfgblue font-semibold">Add Task</h4>
-        <button data-action="close-modal" data-target="addTaskModal" class="p-1 rounded-lg hover:bg-nfglight">
+        <h4 class="text-nfgblue dark:text-blue-400 font-semibold">Add Task</h4>
+        <button data-action="close-modal" data-target="addTaskModal" class="p-1 rounded-lg hover:bg-nfglight dark:bg-gray-700">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -339,11 +345,11 @@
           <textarea name="task_description" rows="2" placeholder="Task details..." class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none resize-none"></textarea>
         </div>
         <div class="flex items-center gap-2">
-          <input type="checkbox" name="task_required" id="task-required" checked class="w-4 h-4 text-nfgblue rounded border-nfgray focus:ring-2 focus:ring-nfgblue">
+          <input type="checkbox" name="task_required" id="task-required" checked class="w-4 h-4 text-nfgblue dark:text-blue-400 rounded border-nfgray focus:ring-2 focus:ring-nfgblue">
           <label for="task-required" class="text-sm font-medium">Photo required to complete</label>
         </div>
-        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray">
-          <button type="button" data-action="close-modal" data-target="addTaskModal" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight">
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray dark:border-gray-700">
+          <button type="button" data-action="close-modal" data-target="addTaskModal" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:bg-gray-700">
             Cancel
           </button>
           <button type="submit" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
@@ -358,8 +364,8 @@
   <div id="uploadPhotoModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-[60]">
     <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-lg">
       <div class="p-4 border-b border-nfgray flex items-center justify-between">
-        <h4 class="text-nfgblue font-semibold">Upload Task Photo</h4>
-        <button data-action="close-modal" data-target="uploadPhotoModal" class="p-1 rounded-lg hover:bg-nfglight">
+        <h4 class="text-nfgblue dark:text-blue-400 font-semibold">Upload Task Photo</h4>
+        <button data-action="close-modal" data-target="uploadPhotoModal" class="p-1 rounded-lg hover:bg-nfglight dark:bg-gray-700">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -370,10 +376,10 @@
           <p class="text-xs text-gray-500 mt-1">Take a photo or upload from your device</p>
         </div>
         <div id="photo-preview" class="hidden">
-          <img id="preview-image" src="" alt="Preview" class="w-full h-48 object-cover rounded-xl border border-nfgray" />
+          <img id="preview-image" src="" alt="Preview" class="w-full h-48 object-cover rounded-xl border border-nfgray dark:border-gray-700" />
         </div>
-        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray">
-          <button type="button" data-action="close-modal" data-target="uploadPhotoModal" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight">
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray dark:border-gray-700">
+          <button type="button" data-action="close-modal" data-target="uploadPhotoModal" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:bg-gray-700">
             Cancel
           </button>
           <button id="upload-photo-btn" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
@@ -388,8 +394,8 @@
   <div id="assignWorkerModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-[60]">
     <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-lg">
       <div class="p-4 border-b border-nfgray flex items-center justify-between">
-        <h4 class="text-nfgblue font-semibold">Assign Worker</h4>
-        <button data-action="close-modal" data-target="assignWorkerModal" class="p-1 rounded-lg hover:bg-nfglight">
+        <h4 class="text-nfgblue dark:text-blue-400 font-semibold">Assign Worker</h4>
+        <button data-action="close-modal" data-target="assignWorkerModal" class="p-1 rounded-lg hover:bg-nfglight dark:bg-gray-700">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -402,8 +408,8 @@
           <p class="text-xs text-gray-500 mt-1">Only staff members will appear in this list</p>
         </div>
         <div id="assign-worker-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl p-3"></div>
-        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray">
-          <button type="button" data-action="close-modal" data-target="assignWorkerModal" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight">
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray dark:border-gray-700">
+          <button type="button" data-action="close-modal" data-target="assignWorkerModal" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:bg-gray-700">
             Cancel
           </button>
           <button type="submit" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
@@ -418,8 +424,8 @@
   <div id="createJobModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
     <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
       <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white">
-        <h4 class="text-nfgblue font-semibold text-lg">Create New Job</h4>
-        <button data-action="close-modal" data-target="createJobModal" class="p-1 rounded-lg hover:bg-nfglight">
+        <h4 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">Create New Job</h4>
+        <button data-action="close-modal" data-target="createJobModal" class="p-1 rounded-lg hover:bg-nfglight dark:bg-gray-700">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -487,7 +493,7 @@
 
         <div id="job-form-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl p-3"></div>
 
-        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray">
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray dark:border-gray-700">
           <button type="button" data-action="close-modal" data-target="createJobModal" class="px-5 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight font-medium transition">
             Cancel
           </button>
@@ -719,7 +725,7 @@
           <div class="col-span-full text-center py-12">
             <div class="bg-white border-2 border-dashed border-nfgray rounded-xl p-12 max-w-md mx-auto">
               <i data-lucide="clipboard-check" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
-              <h3 class="text-nfgblue font-semibold text-xl mb-2">No Jobs Found</h3>
+              <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-xl mb-2">No Jobs Found</h3>
               <p class="text-gray-500 mb-6">${isStaff ? 'No jobs have been assigned to you yet.' : 'Create your first job to get started.'}</p>
               ${!isStaff ? `
                 <button data-action="open-modal" data-target="createJobModal" class="inline-flex items-center gap-2 px-6 py-3 bg-nfgblue text-white rounded-xl hover:bg-nfgdark transition">
@@ -747,13 +753,13 @@
           <div class="bg-white border border-nfgray rounded-xl p-4 shadow-nfg hover:shadow-lg transition-shadow">
             <div class="flex justify-between items-start mb-3">
               <div class="flex-1">
-                <h3 class="text-nfgblue font-semibold text-lg">${job.title}</h3>
+                <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">${job.title}</h3>
                 <p class="text-gray-500 text-sm mt-1">${site ? site.name : 'Unknown Site'}</p>
               </div>
               <span class="px-2 py-1 rounded-lg text-xs font-medium ${statusColors[job.status]}">${job.status.replace('-', ' ')}</span>
             </div>
             
-            <div class="space-y-2 mb-4 py-3 border-t border-b border-nfgray">
+            <div class="space-y-2 mb-4 py-3 border-t border-b border-nfgray dark:border-gray-700">
               <div class="flex items-center justify-between text-sm">
                 <span class="text-gray-500">Type:</span>
                 <span class="font-medium capitalize">${job.job_type}</span>
@@ -816,7 +822,7 @@
               <span class="text-xs text-gray-600 truncate">${site.address}</span>
               <button 
                 onclick="copyAddress('${site.address.replace(/'/g, "\\'")}', event)" 
-                class="text-gray-400 hover:text-nfgblue transition p-0.5 rounded hover:bg-nfglight flex-shrink-0"
+                class="text-gray-400 hover:text-nfgblue dark:text-blue-400 transition p-0.5 rounded hover:bg-nfglight flex-shrink-0"
                 title="Copy address">
                 <i data-lucide="copy" class="w-3 h-3"></i>
               </button>
@@ -1017,7 +1023,7 @@
               ${initials}
             </div>
             <div>
-              <p class="font-medium text-nfgblue">${displayName}</p>
+              <p class="font-medium text-nfgblue dark:text-blue-400">${displayName}</p>
               <p class="text-xs text-gray-500">${worker.email}</p>
             </div>
           </div>
@@ -1046,7 +1052,7 @@
               ${emp.name.charAt(0).toUpperCase()}
             </div>
             <div>
-              <p class="font-medium text-nfgblue">${emp.name}</p>
+              <p class="font-medium text-nfgblue dark:text-blue-400">${emp.name}</p>
               <p class="text-xs text-gray-500">${emp.role || 'Employee'}</p>
             </div>
           </div>
@@ -1081,9 +1087,9 @@
               <div class="flex items-start gap-3 flex-1">
                 <input type="checkbox" ${isCompleted ? 'checked' : ''} 
                   onchange="toggleTask('${task.id}')" 
-                  class="w-5 h-5 mt-0.5 text-nfgblue rounded border-nfgray focus:ring-2 focus:ring-nfgblue" />
+                  class="w-5 h-5 mt-0.5 text-nfgblue dark:text-blue-400 rounded border-nfgray focus:ring-2 focus:ring-nfgblue" />
                 <div class="flex-1">
-                  <h6 class="font-medium text-nfgblue ${isCompleted ? 'line-through' : ''}">${task.title}</h6>
+                  <h6 class="font-medium text-nfgblue dark:text-blue-400 ${isCompleted ? 'line-through' : ''}">${task.title}</h6>
                   ${task.description ? `<p class="text-sm text-gray-600 mt-1">${task.description}</p>` : ''}
                   ${task.photo_required ? '<p class="text-xs text-orange-600 mt-1">📸 Photo required</p>' : ''}
                 </div>
@@ -1108,7 +1114,7 @@
                 ` : ''}
               </div>
             ` : (task.photo_required && !isCompleted ? `
-              <button onclick="uploadTaskPhoto('${task.id}')" class="mt-3 w-full text-sm px-3 py-2 rounded-lg border border-nfgblue text-nfgblue hover:bg-nfglight">
+              <button onclick="uploadTaskPhoto('${task.id}')" class="mt-3 w-full text-sm px-3 py-2 rounded-lg border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight dark:bg-gray-700">
                 <i data-lucide="camera" class="w-4 h-4 inline"></i>
                 Upload Photo
               </button>

@@ -13,6 +13,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
@@ -42,9 +43,14 @@
   
   <!-- Page Loader -->
   <link rel="stylesheet" href="./css/loader.css">
+  
+  <!-- Dark Mode -->
+  <link rel="stylesheet" href="./css/dark-mode.css">
+  <script src="./js/dark-mode.js"></script>
+
 </head>
 
-<body class="font-inter bg-nfbg min-h-screen flex text-nftext">
+<body class="font-inter bg-nfbg dark:bg-gray-900 min-h-screen flex text-nftext">
   <!-- Full-Page Loader -->
   <div id="page-loader">
     <div class="loader-logo">
@@ -82,7 +88,7 @@
       <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="sites.html">
         <i data-lucide="map-pin" class="w-4 h-4"></i> Sites
       </a>
-      <a id="nav-bookings" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight text-nfgblue font-medium w-full text-left" href="bookings.html">
+      <a id="nav-bookings" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight text-nfgblue dark:text-blue-400 font-medium w-full text-left" href="bookings.html">
         <i data-lucide="calendar" class="w-4 h-4"></i> Bookings
       </a>
       <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="jobs.html">
@@ -98,8 +104,8 @@
         <i data-lucide="settings" class="w-4 h-4"></i> Settings
       </a>
     </nav>
-    <div class="p-4 border-t border-nfgray">
-      <button id="logout-btn" class="w-full border border-nfgblue text-nfgblue hover:bg-nfglight rounded-xl py-2 font-medium">
+    <div class="p-4 border-t border-nfgray dark:border-gray-700">
+      <button id="logout-btn" class="w-full border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight rounded-xl py-2 font-medium">
         Logout
       </button>
     </div>
@@ -108,13 +114,13 @@
   <!-- ========== MAIN ========== -->
   <div class="flex-1 flex flex-col min-w-0">
     <!-- TOPBAR -->
-    <header class="sticky top-0 z-10 bg-white border-b border-nfgray">
+    <header class="sticky top-0 z-10 bg-white border-b border-nfgray dark:border-gray-700">
       <div class="h-14 px-4 md:px-6 flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <button class="md:hidden p-2 rounded-lg border border-nfgray text-nfgblue" data-action="toggle-sidebar" aria-label="Toggle sidebar">
+          <button class="md:hidden p-2 rounded-lg border border-nfgray text-nfgblue dark:text-blue-400" data-action="toggle-sidebar" aria-label="Toggle sidebar">
             <i data-lucide="menu" class="w-5 h-5"></i>
           </button>
-          <h1 class="text-nfgblue font-semibold">Bookings</h1>
+          <h1 class="text-nfgblue dark:text-blue-400 font-semibold">Bookings</h1>
         </div>
 
         <div class="flex items-center gap-2">
@@ -133,13 +139,13 @@
         <button class="filter-btn px-4 py-2 rounded-lg bg-nfgblue text-white font-medium" data-status="all">
           All
         </button>
-        <button class="filter-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight" data-status="pending">
+        <button class="filter-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:bg-gray-700" data-status="pending">
           Pending
         </button>
-        <button class="filter-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight" data-status="completed">
+        <button class="filter-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:bg-gray-700" data-status="completed">
           Completed
         </button>
-        <button class="filter-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight" data-status="cancelled">
+        <button class="filter-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:bg-gray-700" data-status="cancelled">
           Cancelled
         </button>
       </div>
@@ -147,13 +153,13 @@
       <!-- Bookings Table -->
       <div class="bg-white border border-nfgray rounded-xl shadow-nfg overflow-hidden">
         <table class="w-full">
-          <thead class="bg-nfglight border-b border-nfgray">
+          <thead class="bg-nfglight border-b border-nfgray dark:border-gray-700">
             <tr>
-              <th class="text-left p-4 text-sm font-semibold text-nfgblue">Title</th>
-              <th class="text-left p-4 text-sm font-semibold text-nfgblue">Site</th>
-              <th class="text-left p-4 text-sm font-semibold text-nfgblue">Date</th>
-              <th class="text-left p-4 text-sm font-semibold text-nfgblue">Status</th>
-              <th class="text-left p-4 text-sm font-semibold text-nfgblue">Actions</th>
+              <th class="text-left p-4 text-sm font-semibold text-nfgblue dark:text-blue-400">Title</th>
+              <th class="text-left p-4 text-sm font-semibold text-nfgblue dark:text-blue-400">Site</th>
+              <th class="text-left p-4 text-sm font-semibold text-nfgblue dark:text-blue-400">Date</th>
+              <th class="text-left p-4 text-sm font-semibold text-nfgblue dark:text-blue-400">Status</th>
+              <th class="text-left p-4 text-sm font-semibold text-nfgblue dark:text-blue-400">Actions</th>
             </tr>
           </thead>
           <tbody id="bookings-table-body">
@@ -168,8 +174,8 @@
   <div id="createBookingModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 overflow-y-auto">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-8">
       <div class="border-b border-nfgray p-6 flex items-center justify-between">
-        <h2 class="text-xl font-semibold text-nfgblue">Create New Booking</h2>
-        <button class="close-modal p-2 rounded-lg hover:bg-nfglight">
+        <h2 class="text-xl font-semibold text-nfgblue dark:text-blue-400">Create New Booking</h2>
+        <button class="close-modal p-2 rounded-lg hover:bg-nfglight dark:bg-gray-700">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -311,8 +317,8 @@
   <div id="viewBookingModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
       <div class="border-b border-nfgray p-6 flex items-center justify-between">
-        <h2 class="text-xl font-semibold text-nfgblue">Booking Details</h2>
-        <button class="close-modal p-2 rounded-lg hover:bg-nfglight">
+        <h2 class="text-xl font-semibold text-nfgblue dark:text-blue-400">Booking Details</h2>
+        <button class="close-modal p-2 rounded-lg hover:bg-nfglight dark:bg-gray-700">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -320,7 +326,7 @@
       <div class="p-6 space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-500 mb-1">Title</label>
-          <p id="view-booking-title" class="font-medium text-nfgblue">-</p>
+          <p id="view-booking-title" class="font-medium text-nfgblue dark:text-blue-400">-</p>
         </div>
 
         <div>
@@ -353,12 +359,12 @@
         <div id="linked-job-section" class="hidden">
           <label class="block text-sm font-medium text-gray-500 mb-1">Linked Job</label>
           <button id="view-linked-job-btn" class="w-full flex items-center justify-between p-3 bg-nfglight rounded-lg hover:bg-blue-50 border border-nfgblue">
-            <span class="text-nfgblue font-medium">View Job Details</span>
-            <i data-lucide="external-link" class="w-4 h-4 text-nfgblue"></i>
+            <span class="text-nfgblue dark:text-blue-400 font-medium">View Job Details</span>
+            <i data-lucide="external-link" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
           </button>
         </div>
 
-        <div class="flex gap-3 pt-4 border-t border-nfgray">
+        <div class="flex gap-3 pt-4 border-t border-nfgray dark:border-gray-700">
           <button id="cancel-booking-btn" class="flex-1 py-2.5 rounded-xl border border-red-500 text-red-500 hover:bg-red-50 font-medium">
             Cancel Booking
           </button>
@@ -631,7 +637,7 @@
         return `
           <tr class="border-b border-nfgray hover:bg-nfglight/50 transition">
             <td class="p-4">
-              <p class="font-medium text-nfgblue">${booking.title}</p>
+              <p class="font-medium text-nfgblue dark:text-blue-400">${booking.title}</p>
             </td>
             <td class="p-4">
               <p class="text-gray-700">${booking.sites?.name || 'Unknown'}</p>
@@ -645,7 +651,7 @@
               </span>
             </td>
             <td class="p-4">
-              <button onclick="viewBooking('${booking.id}')" class="px-3 py-1.5 rounded-lg border border-nfgblue text-nfgblue hover:bg-nfglight text-sm font-medium">
+              <button onclick="viewBooking('${booking.id}')" class="px-3 py-1.5 rounded-lg border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight text-sm font-medium">
                 View Details
               </button>
             </td>
@@ -702,7 +708,7 @@
               onclick="event.stopPropagation(); toggleService('${service.id}')"
             />
             <div class="flex-1">
-              <p class="font-medium text-sm text-nfgblue">${service.name}</p>
+              <p class="font-medium text-sm text-nfgblue dark:text-blue-400">${service.name}</p>
               <p class="text-xs text-gray-500">${service.service_categories?.name || 'Unknown'}</p>
               ${duration ? `<p class="text-xs text-gray-400 mt-0.5">Est. ${duration}</p>` : ''}
             </div>
@@ -788,12 +794,12 @@
         if (data.sites?.address) {
           siteContainer.innerHTML = `
             <div class="flex flex-col gap-1">
-              <p class="font-medium text-nfgblue">${data.sites?.name || 'Unknown'}</p>
+              <p class="font-medium text-nfgblue dark:text-blue-400">${data.sites?.name || 'Unknown'}</p>
               <div class="flex items-center gap-2">
                 <p class="text-sm text-gray-600">${data.sites.address}</p>
                 <button 
                   onclick="copyAddress('${data.sites.address.replace(/'/g, "\\'")}', event)" 
-                  class="text-gray-400 hover:text-nfgblue transition p-1 rounded hover:bg-nfglight flex-shrink-0"
+                  class="text-gray-400 hover:text-nfgblue dark:text-blue-400 transition p-1 rounded hover:bg-nfglight flex-shrink-0"
                   title="Copy address">
                   <i data-lucide="copy" class="w-3 h-3"></i>
                 </button>
@@ -831,9 +837,9 @@
         } else {
           servicesContainer.innerHTML = bookingServices.map(bs => `
             <div class="flex items-start gap-2 p-2 bg-nfglight rounded-lg">
-              <i data-lucide="check-circle" class="w-4 h-4 text-nfgblue mt-0.5"></i>
+              <i data-lucide="check-circle" class="w-4 h-4 text-nfgblue dark:text-blue-400 mt-0.5"></i>
               <div>
-                <p class="text-sm font-medium text-nfgblue">${bs.services.name}</p>
+                <p class="text-sm font-medium text-nfgblue dark:text-blue-400">${bs.services.name}</p>
                 <p class="text-xs text-gray-500">${bs.services.service_categories?.name || 'Unknown'}</p>
               </div>
             </div>

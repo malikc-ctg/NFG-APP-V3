@@ -14,6 +14,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
@@ -44,9 +45,14 @@
   
   <!-- Page Loader -->
   <link rel="stylesheet" href="./css/loader.css">
+  
+  <!-- Dark Mode -->
+  <link rel="stylesheet" href="./css/dark-mode.css">
+  <script src="./js/dark-mode.js"></script>
+
 </head>
 
-<body class="font-inter bg-nfbg min-h-screen flex text-nftext">
+<body class="font-inter bg-nfbg dark:bg-gray-900 min-h-screen flex text-nftext">
   <!-- Full-Page Loader -->
   <div id="page-loader">
     <div class="loader-logo">
@@ -93,15 +99,15 @@
       <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="inventory.html">
         <i data-lucide="package" class="w-4 h-4"></i> Inventory
       </a>
-      <a id="nav-reports" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight text-nfgblue font-medium w-full text-left" href="reports.html">
+      <a id="nav-reports" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight text-nfgblue dark:text-blue-400 font-medium w-full text-left" href="reports.html">
         <i data-lucide="file-chart-column" class="w-4 h-4"></i> Reports
       </a>
       <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="settings.html">
         <i data-lucide="settings" class="w-4 h-4"></i> Settings
       </a>
     </nav>
-    <div class="p-4 border-t border-nfgray">
-      <button id="logout-btn" class="w-full border border-nfgblue text-nfgblue hover:bg-nfglight rounded-xl py-2 font-medium">
+    <div class="p-4 border-t border-nfgray dark:border-gray-700">
+      <button id="logout-btn" class="w-full border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight rounded-xl py-2 font-medium">
         Logout
       </button>
     </div>
@@ -110,13 +116,13 @@
   <!-- ========== MAIN ========== -->
   <div class="flex-1 flex flex-col min-w-0">
     <!-- TOPBAR -->
-    <header class="sticky top-0 z-10 bg-white border-b border-nfgray">
+    <header class="sticky top-0 z-10 bg-white border-b border-nfgray dark:border-gray-700">
       <div class="h-14 px-4 md:px-6 flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <button class="md:hidden p-2 rounded-lg border border-nfgray text-nfgblue" data-action="toggle-sidebar" aria-label="Toggle sidebar">
+          <button class="md:hidden p-2 rounded-lg border border-nfgray text-nfgblue dark:text-blue-400" data-action="toggle-sidebar" aria-label="Toggle sidebar">
             <i data-lucide="menu" class="w-5 h-5"></i>
           </button>
-          <h1 class="text-nfgblue font-semibold">Reports</h1>
+          <h1 class="text-nfgblue dark:text-blue-400 font-semibold">Reports</h1>
         </div>
 
         <div class="flex items-center gap-2">
@@ -137,7 +143,7 @@
       <!-- Header -->
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 class="text-2xl font-semibold text-nfgblue">Reports & Analytics</h2>
+          <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Reports & Analytics</h2>
           <p class="text-sm text-gray-500 mt-1">View performance metrics and generate reports</p>
         </div>
         
@@ -150,7 +156,7 @@
             <option value="365">This Year</option>
             <option value="all">All Time</option>
           </select>
-          <button id="refresh-btn" class="p-2 rounded-xl border border-nfgray hover:bg-nfglight">
+          <button id="refresh-btn" class="p-2 rounded-xl border border-nfgray hover:bg-nfglight dark:bg-gray-700">
             <i data-lucide="refresh-cw" class="w-4 h-4"></i>
           </button>
         </div>
@@ -163,10 +169,10 @@
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm text-gray-500">Total Jobs</p>
-              <p id="metric-total-jobs" class="text-2xl font-bold text-nfgblue mt-1">0</p>
+              <p id="metric-total-jobs" class="text-2xl font-bold text-nfgblue dark:text-blue-400 mt-1">0</p>
             </div>
             <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-              <i data-lucide="clipboard-check" class="w-5 h-5 text-nfgblue"></i>
+              <i data-lucide="clipboard-check" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
             </div>
           </div>
         </div>
@@ -189,10 +195,10 @@
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm text-gray-500">Active Sites</p>
-              <p id="metric-active-sites" class="text-2xl font-bold text-nfgblue mt-1">0</p>
+              <p id="metric-active-sites" class="text-2xl font-bold text-nfgblue dark:text-blue-400 mt-1">0</p>
             </div>
             <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-              <i data-lucide="building-2" class="w-5 h-5 text-nfgblue"></i>
+              <i data-lucide="building-2" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
             </div>
           </div>
         </div>
@@ -215,7 +221,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Jobs Over Time Chart -->
         <div class="bg-white border border-nfgray rounded-xl p-6 shadow-nfg">
-          <h3 class="text-lg font-semibold text-nfgblue mb-4">Jobs Over Time</h3>
+          <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-4">Jobs Over Time</h3>
           <div style="height: 200px; position: relative;">
             <canvas id="jobs-over-time-chart"></canvas>
           </div>
@@ -224,8 +230,8 @@
         <!-- Staff Hours Worked Chart -->
         <div class="bg-white border border-nfgray rounded-xl p-6 shadow-nfg">
           <div class="flex items-center gap-2 mb-4">
-            <i data-lucide="clock" class="w-5 h-5 text-nfgblue"></i>
-            <h3 class="text-lg font-semibold text-nfgblue">Staff Hours Worked</h3>
+            <i data-lucide="clock" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
+            <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Staff Hours Worked</h3>
           </div>
           <div style="height: 200px; position: relative;">
             <canvas id="staff-hours-chart"></canvas>
@@ -236,8 +242,8 @@
       <!-- Worker Performance -->
       <div class="bg-white border border-nfgray rounded-xl p-6 shadow-nfg">
         <div class="flex items-center gap-2 mb-4">
-          <i data-lucide="users" class="w-5 h-5 text-nfgblue"></i>
-          <h3 class="text-lg font-semibold text-nfgblue">Worker Performance</h3>
+          <i data-lucide="users" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
+          <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Worker Performance</h3>
         </div>
         
         <!-- Bar Chart: Top Workers by Completed Jobs -->
@@ -253,7 +259,7 @@
           <p class="text-sm font-medium text-gray-600 mb-3">Detailed Breakdown</p>
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
-              <thead class="border-b border-nfgray">
+              <thead class="border-b border-nfgray dark:border-gray-700">
                 <tr class="text-left">
                   <th class="pb-2 font-medium text-gray-500">Worker</th>
                   <th class="pb-2 font-medium text-gray-500 text-center">Done ✅</th>
@@ -275,10 +281,10 @@
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Top Sites -->
         <div class="bg-white border border-nfgray rounded-xl p-6 shadow-nfg">
-          <h3 class="text-lg font-semibold text-nfgblue mb-4">Top Performing Sites</h3>
+          <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-4">Top Performing Sites</h3>
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
-              <thead class="border-b border-nfgray">
+              <thead class="border-b border-nfgray dark:border-gray-700">
                 <tr class="text-left">
                   <th class="pb-2 font-medium text-gray-500">Site</th>
                   <th class="pb-2 font-medium text-gray-500 text-right">Jobs</th>
@@ -296,10 +302,10 @@
 
         <!-- Most Requested Services -->
         <div class="bg-white border border-nfgray rounded-xl p-6 shadow-nfg">
-          <h3 class="text-lg font-semibold text-nfgblue mb-4">Most Requested Services</h3>
+          <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-4">Most Requested Services</h3>
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
-              <thead class="border-b border-nfgray">
+              <thead class="border-b border-nfgray dark:border-gray-700">
                 <tr class="text-left">
                   <th class="pb-2 font-medium text-gray-500">Service</th>
                   <th class="pb-2 font-medium text-gray-500 text-right">Count</th>
@@ -317,10 +323,10 @@
 
       <!-- Recent Completed Jobs -->
       <div class="bg-white border border-nfgray rounded-xl p-6 shadow-nfg">
-        <h3 class="text-lg font-semibold text-nfgblue mb-4">Recent Completed Jobs</h3>
+        <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-4">Recent Completed Jobs</h3>
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
-            <thead class="border-b border-nfgray">
+            <thead class="border-b border-nfgray dark:border-gray-700">
               <tr class="text-left">
                 <th class="pb-2 font-medium text-gray-500">Job Title</th>
                 <th class="pb-2 font-medium text-gray-500 hidden md:table-cell">Site</th>
@@ -604,6 +610,27 @@
       }
     }
 
+    // Dark Mode Support for Charts
+    function getChartColors() {
+      const isDark = document.documentElement.classList.contains('dark');
+      return {
+        text: isDark ? '#E5E7EB' : '#1F2937',
+        grid: isDark ? '#374151' : '#E5E7EB',
+        background: isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(13, 71, 161, 0.1)',
+        border: isDark ? '#3B82F6' : '#0D47A1',
+        tooltipBg: isDark ? '#1F2937' : '#FFFFFF',
+        tooltipBorder: isDark ? '#374151' : '#E5E7EB'
+      };
+    }
+
+    // Listen for theme changes and recreate charts
+    window.addEventListener('themeChange', () => {
+      console.log('[Reports] Theme changed, updating charts...');
+      createJobsOverTimeChart();
+      createStaffHoursChart();
+      createWorkerPerformanceChart();
+    });
+
     // Create Jobs Over Time Chart
     function createJobsOverTimeChart() {
       const ctx = document.getElementById('jobs-over-time-chart');
@@ -635,6 +662,7 @@
         jobsOverTimeChart.destroy();
       }
 
+      const colors = getChartColors();
       jobsOverTimeChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -642,8 +670,8 @@
           datasets: [{
             label: 'Jobs Created',
             data: counts,
-            borderColor: '#0D47A1',
-            backgroundColor: 'rgba(13, 71, 161, 0.1)',
+            borderColor: colors.border,
+            backgroundColor: colors.background,
             fill: true,
             tension: 0.4
           }]
@@ -653,9 +681,17 @@
           maintainAspectRatio: false,
           plugins: {
             legend: {
-              display: false
+              display: false,
+              labels: {
+                color: colors.text
+              }
             },
             tooltip: {
+              backgroundColor: colors.tooltipBg,
+              borderColor: colors.tooltipBorder,
+              borderWidth: 1,
+              titleColor: colors.text,
+              bodyColor: colors.text,
               callbacks: {
                 label: function(context) {
                   return 'Jobs: ' + context.parsed.y;
@@ -664,12 +700,18 @@
             }
           },
           scales: {
+            x: {
+              ticks: { color: colors.text },
+              grid: { color: colors.grid }
+            },
             y: {
               beginAtZero: true,
               ticks: {
+                color: colors.text,
                 stepSize: 1,
                 precision: 0
-              }
+              },
+              grid: { color: colors.grid }
             }
           }
         }
@@ -782,6 +824,7 @@
           '#795548'  // Brown
         ];
 
+        const themeColors = getChartColors();
         staffHoursChart = new Chart(ctx, {
           type: 'doughnut',
           data: {
@@ -790,7 +833,7 @@
               data: hours,
               backgroundColor: colors.slice(0, names.length),
               borderWidth: 2,
-              borderColor: '#fff'
+              borderColor: document.documentElement.classList.contains('dark') ? '#1F2937' : '#fff'
             }]
           },
           options: {
@@ -800,6 +843,7 @@
               legend: {
                 position: 'bottom',
                 labels: {
+                  color: themeColors.text,
                   padding: 8,
                   font: {
                     size: 11
@@ -808,6 +852,11 @@
                 }
               },
               tooltip: {
+                backgroundColor: themeColors.tooltipBg,
+                borderColor: themeColors.tooltipBorder,
+                borderWidth: 1,
+                titleColor: themeColors.text,
+                bodyColor: themeColors.text,
                 callbacks: {
                   label: function(context) {
                     const label = context.label || '';
@@ -861,6 +910,7 @@
         workerPerformanceChart.destroy();
       }
 
+      const colors = getChartColors();
       workerPerformanceChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -881,6 +931,11 @@
               display: false
             },
             tooltip: {
+              backgroundColor: colors.tooltipBg,
+              borderColor: colors.tooltipBorder,
+              borderWidth: 1,
+              titleColor: colors.text,
+              bodyColor: colors.text,
               callbacks: {
                 label: function(context) {
                   return 'Completed: ' + context.parsed.y + ' jobs';
@@ -892,15 +947,23 @@
             y: {
               beginAtZero: true,
               ticks: {
+                color: colors.text,
                 stepSize: 1,
                 precision: 0
+              },
+              grid: {
+                color: colors.grid
               }
             },
             x: {
               ticks: {
+                color: colors.text,
                 font: {
                   size: 11
                 }
+              },
+              grid: {
+                color: colors.grid
               }
             }
           }
@@ -1014,7 +1077,7 @@
 
       tbody.innerHTML = topWorkers.map(worker => `
         <tr class="border-b border-nfgray last:border-0">
-          <td class="py-3 font-medium text-nfgblue">${worker.name}</td>
+          <td class="py-3 font-medium text-nfgblue dark:text-blue-400">${worker.name}</td>
           <td class="py-3 text-center">
             <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-700 font-semibold text-sm">
               ${worker.completed}
@@ -1061,7 +1124,7 @@
 
       tbody.innerHTML = topSites.map(([siteName, stats]) => `
         <tr class="border-b border-nfgray last:border-0">
-          <td class="py-3 font-medium text-nfgblue">${siteName}</td>
+          <td class="py-3 font-medium text-nfgblue dark:text-blue-400">${siteName}</td>
           <td class="py-3 text-right">${stats.total}</td>
           <td class="py-3 text-right text-green-600">${stats.completed}</td>
         </tr>
@@ -1095,7 +1158,7 @@
 
       tbody.innerHTML = topServices.map(([serviceName, count]) => `
         <tr class="border-b border-nfgray last:border-0">
-          <td class="py-3 font-medium text-nfgblue">${serviceName}</td>
+          <td class="py-3 font-medium text-nfgblue dark:text-blue-400">${serviceName}</td>
           <td class="py-3 text-right">${count}</td>
         </tr>
       `).join('');
@@ -1118,7 +1181,7 @@
         const date = new Date(job.created_at).toLocaleDateString();
         return `
           <tr class="border-b border-nfgray last:border-0">
-            <td class="py-3 font-medium text-nfgblue">${job.title}</td>
+            <td class="py-3 font-medium text-nfgblue dark:text-blue-400">${job.title}</td>
             <td class="py-3 hidden md:table-cell">${job.sites?.name || 'Unknown'}</td>
             <td class="py-3 hidden md:table-cell">${date}</td>
             <td class="py-3">

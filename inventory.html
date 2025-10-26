@@ -13,6 +13,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
@@ -45,9 +46,14 @@
   
   <!-- Page Loader -->
   <link rel="stylesheet" href="./css/loader.css">
+  
+  <!-- Dark Mode -->
+  <link rel="stylesheet" href="./css/dark-mode.css">
+  <script src="./js/dark-mode.js"></script>
+
 </head>
 
-<body class="font-inter bg-nfbg min-h-screen flex text-nftext">
+<body class="font-inter bg-nfbg dark:bg-gray-900 min-h-screen flex text-nftext">
   <!-- Full-Page Loader -->
   <div id="page-loader">
     <div class="loader-logo">
@@ -92,7 +98,7 @@
       <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="jobs.html">
         <i data-lucide="clipboard-check" class="w-4 h-4"></i> Jobs
       </a>
-      <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight text-nfgblue font-medium w-full text-left" href="inventory.html">
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight text-nfgblue dark:text-blue-400 font-medium w-full text-left" href="inventory.html">
         <i data-lucide="package" class="w-4 h-4"></i> Inventory
       </a>
       <a id="nav-reports" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="reports.html">
@@ -102,8 +108,8 @@
         <i data-lucide="settings" class="w-4 h-4"></i> Settings
       </a>
     </nav>
-    <div class="p-4 border-t border-nfgray">
-      <button id="logout-btn" class="w-full border border-nfgblue text-nfgblue hover:bg-nfglight rounded-xl py-2 font-medium">
+    <div class="p-4 border-t border-nfgray dark:border-gray-700">
+      <button id="logout-btn" class="w-full border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight rounded-xl py-2 font-medium">
         Logout
       </button>
     </div>
@@ -112,13 +118,13 @@
   <!-- ========== MAIN ========== -->
   <div class="flex-1 flex flex-col min-w-0">
     <!-- TOPBAR -->
-    <header class="sticky top-0 z-10 bg-white border-b border-nfgray">
+    <header class="sticky top-0 z-10 bg-white border-b border-nfgray dark:border-gray-700">
       <div class="h-14 px-4 md:px-6 flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <button class="md:hidden p-2 rounded-lg border border-nfgray text-nfgblue" data-action="toggle-sidebar" aria-label="Toggle sidebar">
+          <button class="md:hidden p-2 rounded-lg border border-nfgray text-nfgblue dark:text-blue-400" data-action="toggle-sidebar" aria-label="Toggle sidebar">
             <i data-lucide="menu" class="w-5 h-5"></i>
           </button>
-          <h1 class="text-nfgblue font-semibold">Inventory</h1>
+          <h1 class="text-nfgblue dark:text-blue-400 font-semibold">Inventory</h1>
         </div>
 
         <div class="flex items-center gap-2">
@@ -139,28 +145,28 @@
     <!-- CONTENT -->
     <main class="p-4 md:p-6 space-y-6">
       <div>
-        <h2 class="text-2xl font-semibold text-nfgblue">Inventory Management</h2>
+        <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Inventory Management</h2>
         <p class="text-sm text-gray-500 mt-1">Track supplies and equipment across all sites</p>
       </div>
 
       <!-- Category Tabs -->
       <div class="flex gap-2 border-b border-nfgray overflow-x-auto">
-        <button class="inventory-filter-tab px-4 py-2 font-medium text-nfgblue border-b-2 border-nfgblue whitespace-nowrap" data-category="all">
+        <button class="inventory-filter-tab px-4 py-2 font-medium text-nfgblue dark:text-blue-400 border-b-2 border-nfgblue whitespace-nowrap" data-category="all">
           All Items
         </button>
-        <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue border-b-2 border-transparent whitespace-nowrap" data-category="Cleaning Supplies">
+        <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-category="Cleaning Supplies">
            Cleaning
         </button>
-        <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue border-b-2 border-transparent whitespace-nowrap" data-category="Chemicals">
+        <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-category="Chemicals">
            Chemicals
         </button>
-        <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue border-b-2 border-transparent whitespace-nowrap" data-category="Tools">
+        <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-category="Tools">
            Tools
         </button>
-        <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue border-b-2 border-transparent whitespace-nowrap" data-category="Paper Products">
+        <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-category="Paper Products">
            Paper
         </button>
-        <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue border-b-2 border-transparent whitespace-nowrap" data-category="PPE">
+        <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-category="PPE">
            PPE
         </button>
       </div>
@@ -169,13 +175,13 @@
       <div class="bg-white border border-nfgray rounded-xl shadow-nfg overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full">
-            <thead class="bg-nfglight/50 border-b border-nfgray">
+            <thead class="bg-nfglight/50 border-b border-nfgray dark:border-gray-700">
               <tr>
-                <th class="px-4 py-3 text-left text-sm font-medium text-nfgblue">Item</th>
-                <th class="px-4 py-3 text-left text-sm font-medium text-nfgblue hidden md:table-cell">Category</th>
-                <th class="px-4 py-3 text-center text-sm font-medium text-nfgblue">Quantity</th>
-                <th class="px-4 py-3 text-center text-sm font-medium text-nfgblue">Status</th>
-                <th class="px-4 py-3 text-center text-sm font-medium text-nfgblue">Actions</th>
+                <th class="px-4 py-3 text-left text-sm font-medium text-nfgblue dark:text-blue-400">Item</th>
+                <th class="px-4 py-3 text-left text-sm font-medium text-nfgblue dark:text-blue-400 hidden md:table-cell">Category</th>
+                <th class="px-4 py-3 text-center text-sm font-medium text-nfgblue dark:text-blue-400">Quantity</th>
+                <th class="px-4 py-3 text-center text-sm font-medium text-nfgblue dark:text-blue-400">Status</th>
+                <th class="px-4 py-3 text-center text-sm font-medium text-nfgblue dark:text-blue-400">Actions</th>
               </tr>
             </thead>
             <tbody id="inventory-table-body" class="divide-y divide-nfgray">
@@ -193,8 +199,8 @@
   <div id="itemModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
     <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
       <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white">
-        <h4 id="modal-title" class="text-nfgblue font-semibold text-lg">Add Item</h4>
-        <button data-action="close-modal" data-target="itemModal" class="p-1 rounded-lg hover:bg-nfglight">
+        <h4 id="modal-title" class="text-nfgblue dark:text-blue-400 font-semibold text-lg">Add Item</h4>
+        <button data-action="close-modal" data-target="itemModal" class="p-1 rounded-lg hover:bg-nfglight dark:bg-gray-700">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -249,7 +255,7 @@
 
         <div id="item-form-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl p-3"></div>
 
-        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray">
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray dark:border-gray-700">
           <button type="button" data-action="close-modal" data-target="itemModal" class="px-5 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight font-medium transition">
             Cancel
           </button>
@@ -265,8 +271,8 @@
   <div id="stockModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
     <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-lg">
       <div class="p-4 border-b border-nfgray flex items-center justify-between">
-        <h4 id="stock-modal-title" class="text-nfgblue font-semibold">Manage Stock</h4>
-        <button data-action="close-modal" data-target="stockModal" class="p-1 rounded-lg hover:bg-nfglight">
+        <h4 id="stock-modal-title" class="text-nfgblue dark:text-blue-400 font-semibold">Manage Stock</h4>
+        <button data-action="close-modal" data-target="stockModal" class="p-1 rounded-lg hover:bg-nfglight dark:bg-gray-700">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -277,11 +283,11 @@
         <div class="bg-nfglight/30 rounded-xl p-4 border border-nfgblue/20">
           <div class="flex items-center justify-between mb-2">
             <span class="text-sm text-gray-600">Item:</span>
-            <span id="stock-item-name" class="font-semibold text-nfgblue"></span>
+            <span id="stock-item-name" class="font-semibold text-nfgblue dark:text-blue-400"></span>
           </div>
           <div class="flex items-center justify-between">
             <span class="text-sm text-gray-600">Current Stock:</span>
-            <span id="stock-current-qty" class="text-2xl font-bold text-nfgblue"></span>
+            <span id="stock-current-qty" class="text-2xl font-bold text-nfgblue dark:text-blue-400"></span>
           </div>
         </div>
 
@@ -306,7 +312,7 @@
 
         <div id="stock-form-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl p-3"></div>
 
-        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray">
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray dark:border-gray-700">
           <button type="button" data-action="close-modal" data-target="stockModal" class="px-5 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight font-medium transition">
             Cancel
           </button>
@@ -322,15 +328,15 @@
   <div id="historyModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
     <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-3xl max-h-[90vh] overflow-y-auto">
       <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white">
-        <h4 class="text-nfgblue font-semibold text-lg">Transaction History</h4>
-        <button data-action="close-modal" data-target="historyModal" class="p-1 rounded-lg hover:bg-nfglight">
+        <h4 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">Transaction History</h4>
+        <button data-action="close-modal" data-target="historyModal" class="p-1 rounded-lg hover:bg-nfglight dark:bg-gray-700">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
       <div class="p-6">
         <div class="bg-nfglight/30 rounded-xl p-4 border border-nfgblue/20 mb-4">
           <div class="flex items-center justify-between">
-            <span id="history-item-name" class="font-semibold text-nfgblue text-lg"></span>
+            <span id="history-item-name" class="font-semibold text-nfgblue dark:text-blue-400 text-lg"></span>
             <span id="history-site-name" class="text-sm text-gray-600"></span>
           </div>
         </div>
