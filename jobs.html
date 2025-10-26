@@ -53,7 +53,7 @@
 
 </head>
 
-<body class="font-inter bg-nfbg dark:bg-gray-900 min-h-screen flex text-nftext">
+<body class="font-inter bg-nfbg dark:bg-gray-900 min-h-screen flex text-nftext dark:text-gray-200">
   <!-- Full-Page Loader -->
   <div id="page-loader">
     <div class="loader-logo">
@@ -76,7 +76,7 @@
 
   
   <!-- ========== SIDEBAR ========== -->
-  <aside id="sidebar" class="w-64 shrink-0 bg-white border-r border-nfgray hidden md:flex md:flex-col transition-all">
+  <aside id="sidebar" class="w-64 shrink-0 bg-white dark:bg-gray-800 border-r border-nfgray hidden md:flex md:flex-col transition-all">
     <div class="p-5 flex items-center justify-center">
       <!-- Northern Facilities Group Logo -->
       <img 
@@ -95,7 +95,7 @@
       <a id="nav-bookings" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="bookings.html">
         <i data-lucide="calendar" class="w-4 h-4"></i> Bookings
       </a>
-      <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight text-nfgblue dark:text-blue-400 font-medium w-full text-left" href="jobs.html">
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight dark:bg-gray-700 text-nfgblue dark:text-blue-400 font-medium w-full text-left" href="jobs.html">
         <i data-lucide="clipboard-check" class="w-4 h-4"></i> Jobs
       </a>
       <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="inventory.html">
@@ -118,7 +118,7 @@
   <!-- ========== MAIN ========== -->
   <div class="flex-1 flex flex-col min-w-0">
     <!-- TOPBAR -->
-    <header class="sticky top-0 z-10 bg-white border-b border-nfgray dark:border-gray-700">
+    <header class="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-nfgray dark:border-gray-700">
       <div class="h-14 px-4 md:px-6 flex items-center justify-between">
         <div class="flex items-center gap-2">
           <button class="md:hidden p-2 rounded-lg border border-nfgray text-nfgblue dark:text-blue-400" data-action="toggle-sidebar" aria-label="Toggle sidebar">
@@ -128,7 +128,7 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <button id="create-job-btn" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
+          <button id="create-job-btn" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark">
             <i data-lucide="plus" class="w-5 h-5"></i>
             <span class="hidden sm:inline">Create Job</span>
           </button>
@@ -165,7 +165,7 @@
       <!-- Jobs Grid -->
       <div id="jobs-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         <!-- Loading placeholder -->
-        <div class="bg-white border border-nfgray rounded-xl shadow-nfg p-4 animate-pulse">
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4 animate-pulse">
           <div class="h-5 bg-nfglight rounded mb-2"></div>
           <div class="h-4 bg-nfglight rounded w-1/2 mb-3"></div>
           <div class="h-8 bg-nfglight rounded w-28"></div>
@@ -176,8 +176,8 @@
 
   <!-- Job Details Modal -->
   <div id="jobDetailModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white z-10">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 z-10">
         <div class="flex items-center gap-3 flex-1 min-w-0">
           <i data-lucide="clipboard-check" class="w-6 h-6 text-nfgblue dark:text-blue-400 flex-shrink-0"></i>
           <div class="flex-1 min-w-0">
@@ -221,13 +221,13 @@
         </div>
 
         <!-- Assigned Worker -->
-        <div class="bg-white border border-nfgray rounded-xl p-4">
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4">
           <div class="flex items-center justify-between mb-3">
             <h5 class="text-nfgblue dark:text-blue-400 font-semibold flex items-center gap-2">
               <i data-lucide="user-check" class="w-4 h-4"></i>
               Assigned Worker
             </h5>
-            <button id="assign-worker-btn" class="text-sm px-3 py-1.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
+            <button id="assign-worker-btn" class="text-sm px-3 py-1.5 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark">
               <i data-lucide="user-plus" class="w-4 h-4 inline"></i>
               Assign
             </button>
@@ -238,7 +238,7 @@
         </div>
 
         <!-- Job Details -->
-        <div class="bg-white border border-nfgray rounded-xl p-4">
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4">
           <h5 class="text-nfgblue dark:text-blue-400 font-semibold mb-3 flex items-center gap-2">
             <i data-lucide="file-text" class="w-4 h-4"></i>
             Job Details
@@ -260,13 +260,13 @@
         </div>
 
         <!-- Assigned Employees -->
-        <div class="bg-white border border-nfgray rounded-xl p-4">
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4">
           <div class="flex items-center justify-between mb-3">
             <h5 class="text-nfgblue dark:text-blue-400 font-semibold flex items-center gap-2">
               <i data-lucide="users" class="w-4 h-4"></i>
               Assigned Employees
             </h5>
-            <button id="assign-employee-btn" class="text-sm px-3 py-1.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
+            <button id="assign-employee-btn" class="text-sm px-3 py-1.5 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark">
               <i data-lucide="user-plus" class="w-4 h-4 inline"></i>
               Assign
             </button>
@@ -277,7 +277,7 @@
         </div>
 
         <!-- Task Checklist -->
-        <div class="bg-white border border-nfgray rounded-xl p-4">
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4">
           <div class="flex items-center justify-between mb-3">
             <h5 class="text-nfgblue dark:text-blue-400 font-semibold flex items-center gap-2">
               <i data-lucide="list-checks" class="w-4 h-4"></i>
@@ -306,7 +306,7 @@
           </button>
           
           <!-- For Admin/Client: Update Status button -->
-          <button id="update-status-btn" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
+          <button id="update-status-btn" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark">
             <i data-lucide="refresh-cw" class="w-4 h-4"></i>
             Update Status
           </button>
@@ -328,7 +328,7 @@
 
   <!-- Add Task Modal -->
   <div id="addTaskModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-[60]">
-    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-lg">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-lg">
       <div class="p-4 border-b border-nfgray flex items-center justify-between">
         <h4 class="text-nfgblue dark:text-blue-400 font-semibold">Add Task</h4>
         <button data-action="close-modal" data-target="addTaskModal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
@@ -352,7 +352,7 @@
           <button type="button" data-action="close-modal" data-target="addTaskModal" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
             Cancel
           </button>
-          <button type="submit" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
+          <button type="submit" class="px-4 py-2 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark">
             Add Task
           </button>
         </div>
@@ -362,7 +362,7 @@
 
   <!-- Upload Photo Modal -->
   <div id="uploadPhotoModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-[60]">
-    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-lg">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-lg">
       <div class="p-4 border-b border-nfgray flex items-center justify-between">
         <h4 class="text-nfgblue dark:text-blue-400 font-semibold">Upload Task Photo</h4>
         <button data-action="close-modal" data-target="uploadPhotoModal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
@@ -382,7 +382,7 @@
           <button type="button" data-action="close-modal" data-target="uploadPhotoModal" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
             Cancel
           </button>
-          <button id="upload-photo-btn" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
+          <button id="upload-photo-btn" class="px-4 py-2 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark">
             Upload & Complete Task
           </button>
         </div>
@@ -392,7 +392,7 @@
 
   <!-- Assign Worker Modal -->
   <div id="assignWorkerModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-[60]">
-    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-lg">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-lg">
       <div class="p-4 border-b border-nfgray flex items-center justify-between">
         <h4 class="text-nfgblue dark:text-blue-400 font-semibold">Assign Worker</h4>
         <button data-action="close-modal" data-target="assignWorkerModal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
@@ -412,7 +412,7 @@
           <button type="button" data-action="close-modal" data-target="assignWorkerModal" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
             Cancel
           </button>
-          <button type="submit" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
+          <button type="submit" class="px-4 py-2 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark">
             Assign Worker
           </button>
         </div>
@@ -422,8 +422,8 @@
 
   <!-- Create Job Modal -->
   <div id="createJobModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800">
         <h4 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">Create New Job</h4>
         <button data-action="close-modal" data-target="createJobModal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
           <i data-lucide="x" class="w-5 h-5"></i>
@@ -497,7 +497,7 @@
           <button type="button" data-action="close-modal" data-target="createJobModal" class="px-5 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight font-medium transition">
             Cancel
           </button>
-          <button type="submit" id="submit-job-btn" class="px-5 py-2.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark font-medium transition">
+          <button type="submit" id="submit-job-btn" class="px-5 py-2.5 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark font-medium transition">
             Create Job
           </button>
         </div>
@@ -723,12 +723,12 @@
         const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
         grid.innerHTML = `
           <div class="col-span-full text-center py-12">
-            <div class="bg-white border-2 border-dashed border-nfgray rounded-xl p-12 max-w-md mx-auto">
+            <div class="bg-white dark:bg-gray-800 border-2 border-dashed border-nfgray rounded-xl p-12 max-w-md mx-auto">
               <i data-lucide="clipboard-check" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
               <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-xl mb-2">No Jobs Found</h3>
               <p class="text-gray-500 mb-6">${isStaff ? 'No jobs have been assigned to you yet.' : 'Create your first job to get started.'}</p>
               ${!isStaff ? `
-                <button data-action="open-modal" data-target="createJobModal" class="inline-flex items-center gap-2 px-6 py-3 bg-nfgblue text-white rounded-xl hover:bg-nfgdark transition">
+                <button data-action="open-modal" data-target="createJobModal" class="inline-flex items-center gap-2 px-6 py-3 bg-nfgblue dark:bg-blue-900 text-white rounded-xl hover:bg-nfgdark transition">
                   <i data-lucide="plus" class="w-5 h-5"></i>
                   Create Job
                 </button>
@@ -750,7 +750,7 @@
         };
 
         return `
-          <div class="bg-white border border-nfgray rounded-xl p-4 shadow-nfg hover:shadow-lg transition-shadow">
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg hover:shadow-lg transition-shadow">
             <div class="flex justify-between items-start mb-3">
               <div class="flex-1">
                 <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">${job.title}</h3>
@@ -1019,7 +1019,7 @@
       list.innerHTML = `
         <div class="flex items-center justify-between p-3 bg-nfglight/30 rounded-xl">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-nfgblue text-white flex items-center justify-center font-semibold">
+            <div class="w-10 h-10 rounded-full bg-nfgblue dark:bg-blue-900 text-white flex items-center justify-center font-semibold">
               ${initials}
             </div>
             <div>
@@ -1048,7 +1048,7 @@
       list.innerHTML = employees.map(emp => `
         <div class="flex items-center justify-between p-3 bg-nfglight/30 rounded-xl">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-nfgblue text-white flex items-center justify-center font-semibold">
+            <div class="w-10 h-10 rounded-full bg-nfgblue dark:bg-blue-900 text-white flex items-center justify-center font-semibold">
               ${emp.name.charAt(0).toUpperCase()}
             </div>
             <div>

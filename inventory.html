@@ -53,7 +53,7 @@
 
 </head>
 
-<body class="font-inter bg-nfbg dark:bg-gray-900 min-h-screen flex text-nftext">
+<body class="font-inter bg-nfbg dark:bg-gray-900 min-h-screen flex text-nftext dark:text-gray-200">
   <!-- Full-Page Loader -->
   <div id="page-loader">
     <div class="loader-logo">
@@ -76,7 +76,7 @@
 
   
   <!-- ========== SIDEBAR ========== -->
-  <aside id="sidebar" class="w-64 shrink-0 bg-white border-r border-nfgray hidden md:flex md:flex-col transition-all">
+  <aside id="sidebar" class="w-64 shrink-0 bg-white dark:bg-gray-800 border-r border-nfgray hidden md:flex md:flex-col transition-all">
     <div class="p-5 flex items-center justify-center">
       <!-- Northern Facilities Group Logo -->
       <img 
@@ -98,7 +98,7 @@
       <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="jobs.html">
         <i data-lucide="clipboard-check" class="w-4 h-4"></i> Jobs
       </a>
-      <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight text-nfgblue dark:text-blue-400 font-medium w-full text-left" href="inventory.html">
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight dark:bg-gray-700 text-nfgblue dark:text-blue-400 font-medium w-full text-left" href="inventory.html">
         <i data-lucide="package" class="w-4 h-4"></i> Inventory
       </a>
       <a id="nav-reports" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="reports.html">
@@ -118,7 +118,7 @@
   <!-- ========== MAIN ========== -->
   <div class="flex-1 flex flex-col min-w-0">
     <!-- TOPBAR -->
-    <header class="sticky top-0 z-10 bg-white border-b border-nfgray dark:border-gray-700">
+    <header class="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-nfgray dark:border-gray-700">
       <div class="h-14 px-4 md:px-6 flex items-center justify-between">
         <div class="flex items-center gap-2">
           <button class="md:hidden p-2 rounded-lg border border-nfgray text-nfgblue dark:text-blue-400" data-action="toggle-sidebar" aria-label="Toggle sidebar">
@@ -129,12 +129,12 @@
 
         <div class="flex items-center gap-2">
           <!-- Site Filter -->
-          <select id="site-filter" class="px-3 py-1.5 rounded-xl border border-nfgray bg-white text-sm">
+          <select id="site-filter" class="px-3 py-1.5 rounded-xl border border-nfgray bg-white dark:bg-gray-800 text-sm">
             <option value="all">All Sites</option>
           </select>
           
           <!-- Add Item Button -->
-          <button id="add-item-btn" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
+          <button id="add-item-btn" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark">
             <i data-lucide="plus" class="w-5 h-5"></i>
             <span class="hidden sm:inline">Add Item</span>
           </button>
@@ -172,7 +172,7 @@
       </div>
 
       <!-- Inventory Table -->
-      <div class="bg-white border border-nfgray rounded-xl shadow-nfg overflow-hidden">
+      <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead class="bg-nfglight/50 border-b border-nfgray dark:border-gray-700">
@@ -197,8 +197,8 @@
 
   <!-- Add/Edit Item Modal -->
   <div id="itemModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800">
         <h4 id="modal-title" class="text-nfgblue dark:text-blue-400 font-semibold text-lg">Add Item</h4>
         <button data-action="close-modal" data-target="itemModal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
           <i data-lucide="x" class="w-5 h-5"></i>
@@ -259,7 +259,7 @@
           <button type="button" data-action="close-modal" data-target="itemModal" class="px-5 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight font-medium transition">
             Cancel
           </button>
-          <button type="submit" id="submit-item-btn" class="px-5 py-2.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark font-medium transition">
+          <button type="submit" id="submit-item-btn" class="px-5 py-2.5 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark font-medium transition">
             Save Item
           </button>
         </div>
@@ -269,7 +269,7 @@
 
   <!-- Manage Stock Modal (Use/Restock) -->
   <div id="stockModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-lg">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-lg">
       <div class="p-4 border-b border-nfgray flex items-center justify-between">
         <h4 id="stock-modal-title" class="text-nfgblue dark:text-blue-400 font-semibold">Manage Stock</h4>
         <button data-action="close-modal" data-target="stockModal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
@@ -316,7 +316,7 @@
           <button type="button" data-action="close-modal" data-target="stockModal" class="px-5 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight font-medium transition">
             Cancel
           </button>
-          <button type="submit" id="submit-stock-btn" class="px-5 py-2.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark font-medium transition">
+          <button type="submit" id="submit-stock-btn" class="px-5 py-2.5 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark font-medium transition">
             Update Stock
           </button>
         </div>
@@ -326,8 +326,8 @@
 
   <!-- View History Modal -->
   <div id="historyModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800">
         <h4 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">Transaction History</h4>
         <button data-action="close-modal" data-target="historyModal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
           <i data-lucide="x" class="w-5 h-5"></i>

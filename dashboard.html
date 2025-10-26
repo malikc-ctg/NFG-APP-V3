@@ -53,7 +53,7 @@
   <script src="./js/dark-mode.js"></script>
 </head>
 
-<body class="font-inter bg-nfbg dark:bg-gray-900 min-h-screen flex text-nftext">
+<body class="font-inter bg-nfbg dark:bg-gray-900 min-h-screen flex text-nftext dark:text-gray-200">
   <!-- Full-Page Loader -->
   <div id="page-loader">
     <div class="loader-logo">
@@ -76,7 +76,7 @@
 
   
   <!-- ========== SIDEBAR ========== -->
-  <aside id="sidebar" class="w-64 shrink-0 bg-white border-r border-nfgray hidden md:flex md:flex-col transition-all">
+  <aside id="sidebar" class="w-64 shrink-0 bg-white dark:bg-gray-800 border-r border-nfgray hidden md:flex md:flex-col transition-all">
     <div class="p-5 flex items-center justify-center">
       <!-- Northern Facilities Group Logo -->
       <img 
@@ -86,7 +86,7 @@
       />
     </div>
     <nav class="px-3 pb-4 flex-1 space-y-1">
-      <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight text-nfgblue dark:text-blue-400 font-medium w-full text-left" href="dashboard.html">
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight dark:bg-gray-700 text-nfgblue dark:text-blue-400 font-medium w-full text-left" href="dashboard.html">
         <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview
       </a>
       <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="sites.html">
@@ -118,7 +118,7 @@
   <!-- ========== MAIN ========== -->
   <div class="flex-1 flex flex-col min-w-0">
     <!-- TOPBAR -->
-    <header class="sticky top-0 z-10 bg-white border-b border-nfgray dark:border-gray-700">
+    <header class="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-nfgray dark:border-gray-700">
       <div class="h-14 px-4 md:px-6 flex items-center justify-between">
         <div class="flex items-center gap-2">
           <button class="md:hidden p-2 rounded-lg border border-nfgray text-nfgblue dark:text-blue-400" data-action="toggle-sidebar" aria-label="Toggle sidebar">
@@ -130,14 +130,14 @@
         <!-- Filter -->
         <div class="flex items-center gap-2">
           <div class="relative">
-            <button class="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-nfgray bg-white hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700"
+            <button class="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-nfgray bg-white dark:bg-gray-800 hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700"
                     data-action="toggle-dropdown" data-target="sites-filter">
               <i data-lucide="filter" class="w-4 h-4"></i>
               <span id="filter-label">All Sites</span>
               <i data-lucide="chevron-down" class="w-4 h-4"></i>
             </button>
             <!-- dropdown -->
-            <div id="sites-filter" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-xl border border-nfgray shadow-nfg">
+            <div id="sites-filter" class="hidden absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 rounded-xl border border-nfgray shadow-nfg">
               <button class="w-full text-left px-3 py-2 hover:bg-nfglight rounded-t-xl" data-action="filter-sites" data-value="all">All Sites</button>
               <button class="w-full text-left px-3 py-2 hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700" data-action="filter-sites" data-value="Active">Active</button>
               <button class="w-full text-left px-3 py-2 hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700" data-action="filter-sites" data-value="Paused">Paused</button>
@@ -233,7 +233,7 @@
       <!-- LISTS + CHARTS -->
       <section class="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <!-- Recent Jobs -->
-        <div class="xl:col-span-2 bg-white border border-nfgray rounded-xl shadow-nfg p-4">
+        <div class="xl:col-span-2 bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4">
           <div class="flex items-center justify-between mb-2">
             <h3 class="text-nfgblue dark:text-blue-400 font-semibold">Recent Jobs</h3>
             <button onclick="window.location.href='jobs.html'" class="text-xs md:text-sm px-2 md:px-3 py-1 md:py-1.5 rounded-lg md:rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">View all</button>
@@ -347,8 +347,8 @@
 
   <!-- Add Site Modal -->
   <div id="addSiteModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800">
         <h4 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">Add New Site</h4>
         <button data-action="close-modal" data-target="addSiteModal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
           <i data-lucide="x" class="w-5 h-5"></i>
@@ -461,8 +461,8 @@
 
   <!-- Edit Site Modal -->
   <div id="editSiteModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800">
         <h4 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">Edit Site</h4>
         <button data-action="close-modal" data-target="editSiteModal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
           <i data-lucide="x" class="w-5 h-5"></i>
@@ -584,7 +584,7 @@
 
   <!-- New Booking Modal -->
   <div id="newBookingModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-md">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-md">
       <div class="p-4 border-b border-nfgray flex items-center justify-between">
         <h4 class="text-nfgblue dark:text-blue-400 font-semibold">New Booking</h4>
         <button data-action="close-modal" data-target="newBookingModal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
@@ -625,9 +625,9 @@
 
   <!-- Site Detail Modal -->
   <div id="siteDetailModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-xl shadow-nfg border border-nfgray w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-4xl max-h-[90vh] overflow-y-auto">
       <!-- Header -->
-      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white z-10">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 z-10">
         <div class="flex items-center gap-3 flex-1 min-w-0">
           <i data-lucide="building-2" class="w-6 h-6 text-nfgblue dark:text-blue-400 flex-shrink-0"></i>
           <div class="flex-1 min-w-0">
@@ -647,7 +647,7 @@
           <div class="bg-nfglight/30 border border-nfgblue/20 rounded-xl p-4">
             <div class="flex items-center gap-2 mb-2">
               <i data-lucide="activity" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
-              <span class="text-sm font-medium text-nftext">Status</span>
+              <span class="text-sm font-medium text-nftext dark:text-gray-200">Status</span>
             </div>
             <p id="site-detail-status" class="text-xl font-semibold text-nfgblue dark:text-blue-400">Active</p>
           </div>
@@ -656,7 +656,7 @@
           <div class="bg-nfglight/30 border border-nfgblue/20 rounded-xl p-4">
             <div class="flex items-center gap-2 mb-2">
               <i data-lucide="ruler" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
-              <span class="text-sm font-medium text-nftext">Square Footage</span>
+              <span class="text-sm font-medium text-nftext dark:text-gray-200">Square Footage</span>
             </div>
             <p id="site-detail-sqft" class="text-xl font-semibold text-nfgblue dark:text-blue-400">—</p>
           </div>
@@ -665,7 +665,7 @@
           <div class="bg-nfglight/30 border border-nfgblue/20 rounded-xl p-4">
             <div class="flex items-center gap-2 mb-2">
               <i data-lucide="star" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
-              <span class="text-sm font-medium text-nftext">Rating</span>
+              <span class="text-sm font-medium text-nftext dark:text-gray-200">Rating</span>
             </div>
             <p id="site-detail-rating" class="text-xl font-semibold text-nfgblue dark:text-blue-400">0</p>
           </div>
@@ -713,7 +713,7 @@
             <i data-lucide="file-text" class="w-4 h-4"></i>
             Notes
           </h5>
-          <p id="site-detail-notes" class="text-nftext">No notes available.</p>
+          <p id="site-detail-notes" class="text-nftext dark:text-gray-200">No notes available.</p>
         </div>
 
         <!-- Recent Activity -->
@@ -748,14 +748,14 @@
 
   <!-- Delete Confirmation Modal -->
   <div id="deleteSiteConfirmModal" class="hidden fixed inset-0 bg-black/50 items-center justify-center p-4 z-[60]">
-    <div class="bg-white rounded-xl shadow-nfg border border-red-200 w-full max-w-md">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-red-200 w-full max-w-md">
       <div class="p-6">
         <div class="flex items-center gap-3 mb-4">
           <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
             <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600"></i>
           </div>
           <div>
-            <h4 class="text-lg font-semibold text-nftext">Delete Site?</h4>
+            <h4 class="text-lg font-semibold text-nftext dark:text-gray-200">Delete Site?</h4>
             <p class="text-sm text-gray-500 dark:text-gray-400">This action cannot be undone</p>
           </div>
         </div>
@@ -958,7 +958,7 @@
       if (sites.length === 0) {
         grid.innerHTML = `
           <div class="col-span-full flex flex-col items-center justify-center py-16 px-4">
-            <div class="bg-white border-2 border-dashed border-nfgray rounded-xl p-12 max-w-md text-center">
+            <div class="bg-white dark:bg-gray-800 border-2 border-dashed border-nfgray rounded-xl p-12 max-w-md text-center">
               <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
               </svg>

@@ -52,7 +52,7 @@
 
 </head>
 
-<body class="font-inter bg-nfbg dark:bg-gray-900 min-h-screen flex text-nftext">
+<body class="font-inter bg-nfbg dark:bg-gray-900 min-h-screen flex text-nftext dark:text-gray-200">
   <!-- Full-Page Loader -->
   <div id="page-loader">
     <div class="loader-logo">
@@ -74,7 +74,7 @@
   </div>
 
   <!-- ========== SIDEBAR ========== -->
-  <aside id="sidebar" class="w-64 shrink-0 bg-white border-r border-nfgray hidden md:flex md:flex-col transition-all">
+  <aside id="sidebar" class="w-64 shrink-0 bg-white dark:bg-gray-800 border-r border-nfgray hidden md:flex md:flex-col transition-all">
     <div class="p-5 flex items-center justify-center">
       <!-- Northern Facilities Group Logo -->
       <img 
@@ -99,7 +99,7 @@
       <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="inventory.html">
         <i data-lucide="package" class="w-4 h-4"></i> Inventory
       </a>
-      <a id="nav-reports" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight text-nfgblue dark:text-blue-400 font-medium w-full text-left" href="reports.html">
+      <a id="nav-reports" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight dark:bg-gray-700 text-nfgblue dark:text-blue-400 font-medium w-full text-left" href="reports.html">
         <i data-lucide="file-chart-column" class="w-4 h-4"></i> Reports
       </a>
       <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="settings.html">
@@ -116,7 +116,7 @@
   <!-- ========== MAIN ========== -->
   <div class="flex-1 flex flex-col min-w-0">
     <!-- TOPBAR -->
-    <header class="sticky top-0 z-10 bg-white border-b border-nfgray dark:border-gray-700">
+    <header class="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-nfgray dark:border-gray-700">
       <div class="h-14 px-4 md:px-6 flex items-center justify-between">
         <div class="flex items-center gap-2">
           <button class="md:hidden p-2 rounded-lg border border-nfgray text-nfgblue dark:text-blue-400" data-action="toggle-sidebar" aria-label="Toggle sidebar">
@@ -165,7 +165,7 @@
       <!-- Metric Cards -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <!-- Total Jobs -->
-        <div class="bg-white border border-nfgray rounded-xl p-4 shadow-nfg">
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm text-gray-500">Total Jobs</p>
@@ -178,7 +178,7 @@
         </div>
 
         <!-- Completed Jobs -->
-        <div class="bg-white border border-nfgray rounded-xl p-4 shadow-nfg">
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm text-gray-500">Completed</p>
@@ -191,7 +191,7 @@
         </div>
 
         <!-- Active Sites -->
-        <div class="bg-white border border-nfgray rounded-xl p-4 shadow-nfg">
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm text-gray-500">Active Sites</p>
@@ -204,7 +204,7 @@
         </div>
 
         <!-- Emergency Requests -->
-        <div class="bg-white border border-nfgray rounded-xl p-4 shadow-nfg">
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm text-gray-500">Emergencies</p>
@@ -220,7 +220,7 @@
       <!-- Charts Row -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Jobs Over Time Chart -->
-        <div class="bg-white border border-nfgray rounded-xl p-6 shadow-nfg">
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-6 shadow-nfg">
           <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-4">Jobs Over Time</h3>
           <div style="height: 200px; position: relative;">
             <canvas id="jobs-over-time-chart"></canvas>
@@ -228,7 +228,7 @@
         </div>
 
         <!-- Staff Hours Worked Chart -->
-        <div class="bg-white border border-nfgray rounded-xl p-6 shadow-nfg">
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-6 shadow-nfg">
           <div class="flex items-center gap-2 mb-4">
             <i data-lucide="clock" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
             <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Staff Hours Worked</h3>
@@ -240,7 +240,7 @@
       </div>
 
       <!-- Worker Performance -->
-      <div class="bg-white border border-nfgray rounded-xl p-6 shadow-nfg">
+      <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-6 shadow-nfg">
         <div class="flex items-center gap-2 mb-4">
           <i data-lucide="users" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
           <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Worker Performance</h3>
@@ -280,7 +280,7 @@
       <!-- Data Tables -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Top Sites -->
-        <div class="bg-white border border-nfgray rounded-xl p-6 shadow-nfg">
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-6 shadow-nfg">
           <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-4">Top Performing Sites</h3>
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
@@ -301,7 +301,7 @@
         </div>
 
         <!-- Most Requested Services -->
-        <div class="bg-white border border-nfgray rounded-xl p-6 shadow-nfg">
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-6 shadow-nfg">
           <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-4">Most Requested Services</h3>
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
@@ -322,7 +322,7 @@
       </div>
 
       <!-- Recent Completed Jobs -->
-      <div class="bg-white border border-nfgray rounded-xl p-6 shadow-nfg">
+      <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-6 shadow-nfg">
         <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-4">Recent Completed Jobs</h3>
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
