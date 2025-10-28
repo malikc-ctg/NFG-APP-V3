@@ -492,16 +492,17 @@
           
           sites = fetchedSites || [];
         } else {
-          // Admin/Client - fetch all sites from Supabase
+          // Admin/Client - fetch ONLY their sites from Supabase
+          console.log('🔍 Fetching sites for user:', currentUser.id);
           const { data: fetchedSites, error } = await supabase
             .from('sites')
             .select('*')
+            .eq('created_by', currentUser.id)
             .order('name', { ascending: true });
           
           if (error) {
             console.error('Error fetching sites from Supabase:', error);
-            // Fallback to localStorage if Supabase fails
-            return JSON.parse(localStorage.getItem('nfg_sites') || '[]');
+            return [];
           }
           
           sites = fetchedSites || [];

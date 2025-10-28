@@ -511,9 +511,11 @@
     // ========== DATA LOADING ==========
     async function loadSites() {
       try {
+        console.log('🔍 Loading sites for user:', currentUser.id);
         const { data, error } = await supabase
           .from('sites')
           .select('*')
+          .eq('created_by', currentUser.id)
           .order('name', { ascending: true });
 
         if (error) throw error;
@@ -535,9 +537,11 @@
 
     async function loadBookings() {
       try {
+        console.log('🔍 Loading bookings for user:', currentUser.id);
         const { data, error } = await supabase
           .from('bookings')
           .select('*, sites(name, address)')
+          .eq('created_by', currentUser.id)
           .order('scheduled_date', { ascending: false });
 
         if (error) throw error;

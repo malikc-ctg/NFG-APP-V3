@@ -648,6 +648,7 @@
 
     // Fetch jobs from Supabase (filtered by role)
     async function getJobs() {
+      console.log('🔍 Fetching jobs for user:', currentUser.id, 'role:', currentUserProfile?.role);
       let query = supabase
         .from('jobs')
         .select('*');
@@ -655,6 +656,9 @@
       // If user is staff, only show jobs assigned to them
       if (currentUserProfile && currentUserProfile.role === 'staff') {
         query = query.eq('assigned_worker_id', currentUser.id);
+      } else {
+        // Admin/Client - only show jobs they created
+        query = query.eq('created_by', currentUser.id);
       }
       
       const { data, error } = await query.order('created_at', { ascending: false });
