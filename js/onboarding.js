@@ -179,16 +179,10 @@ async function handleSkipAll() {
 // ==========================================
 function validateStep1() {
   const companyName = document.getElementById('company-name').value.trim();
-  const industryType = document.getElementById('industry-type').value;
   const phoneNumber = document.getElementById('phone-number').value.trim();
 
   if (!companyName) {
     showToast('Please enter your company name', 'error');
-    return false;
-  }
-
-  if (!industryType) {
-    showToast('Please select your industry type', 'error');
     return false;
   }
 
@@ -229,7 +223,6 @@ function validateStep2() {
 function saveStep1Data() {
   formData.company = {
     name: document.getElementById('company-name').value.trim(),
-    industry: document.getElementById('industry-type').value,
     size: document.getElementById('company-size').value,
     phone: document.getElementById('phone-number').value.trim()
   };
@@ -272,7 +265,6 @@ function populateFormData() {
   // Populate Step 1
   if (formData.company.name) {
     document.getElementById('company-name').value = formData.company.name;
-    document.getElementById('industry-type').value = formData.company.industry;
     document.getElementById('company-size').value = formData.company.size || '';
     document.getElementById('phone-number').value = formData.company.phone;
   }
@@ -304,7 +296,7 @@ async function createCompanyAndSite() {
       .insert([{
         owner_id: session.user.id,
         company_name: formData.company.name,
-        industry_type: formData.company.industry,
+        industry_type: 'General', // Default value since field was removed
         company_size: formData.company.size || null,
         phone_number: formData.company.phone
       }])
