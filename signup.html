@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign Up — NFG</title>
+  <link rel="icon" type="image/png" href="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/Banner%20Logo%20-%20NFG.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL0Jhbm5lciBMb2dvIC0gTkZHLnBuZyIsImlhdCI6MTc2MTQwODAwNywiZXhwIjo0ODgzNDcyMDA3fQ.ioiCAXNeXFBkHluCdCLF25y527mxnjBDcLPtDMV1Jds">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Dark Mode -->
+  <link rel="stylesheet" href="./css/dark-mode.css">
+  <script src="./js/dark-mode.js"></script>
+  
+  <!-- Notifications -->
+  <link rel="stylesheet" href="./css/notifications.css">
+  
+  <!-- Page Loader -->
+  <link rel="stylesheet" href="./css/loader.css">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            nfgblue: '#0D47A1',
+            nfgdark: '#0A3A84',
+            nfglight: '#E3ECFA',
+            nfgray: '#E5E7EB',
+            nftext: '#1E293B',
+            nfbg: '#F8FAFC'
+          },
+          fontFamily: { inter: ['Inter', 'sans-serif'] },
+          borderRadius: { xl: '12px' },
+          boxShadow: { nfg: '0 4px 14px rgba(13,71,161,0.06)' }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-nfbg dark:bg-gray-900 font-inter min-h-screen flex items-center justify-center p-4">
+  <!-- Full-Page Loader -->
+  <div id="page-loader">
+    <div class="loader-logo">
+      <img src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/Horizontal.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL0hvcml6b250YWwucG5nIiwiaWF0IjoxNzYwOTg5Njk2LCJleHAiOjQ4ODMwNTM2OTZ9.GLtv3yHq5zpXr4deUiNn4ilYTKaFJX8Y2tjIQpxyqVw" alt="NFG">
+    </div>
+    <div class="banter-loader">
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+    </div>
+    <div class="loader-text">Creating your account...</div>
+    <div class="loader-text-subtitle">Please wait</div>
+  </div>
+
+  <!-- Sign Up Card -->
+  <div class="w-full max-w-md">
+    <!-- Logo -->
+    <div class="text-center mb-8">
+      <img 
+        src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/Horizontal.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL0hvcml6b250YWwucG5nIiwiaWF0IjoxNzYwOTg5Njk2LCJleHAiOjQ4ODMwNTM2OTZ9.GLtv3yHq5zpXr4deUiNn4ilYTKaFJX8Y2tjIQpxyqVw" 
+        alt="NFG" 
+        class="h-16 mx-auto mb-4"
+      />
+      <h1 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Create Your Account</h1>
+      <p class="text-gray-500 dark:text-gray-400 mt-2">Join NFG to manage your facilities</p>
+    </div>
+
+    <!-- Sign Up Form -->
+    <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl shadow-nfg p-6">
+      <form id="signup-form" class="space-y-4">
+        <!-- Full Name -->
+        <div>
+          <label for="fullname" class="block text-sm font-medium dark:text-gray-200 mb-1.5">Full Name</label>
+          <input 
+            type="text" 
+            id="fullname" 
+            name="fullname"
+            required
+            placeholder="John Doe"
+            class="w-full border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
+          />
+        </div>
+
+        <!-- Email -->
+        <div>
+          <label for="email" class="block text-sm font-medium dark:text-gray-200 mb-1.5">Email Address</label>
+          <input 
+            type="email" 
+            id="email" 
+            name="email"
+            required
+            placeholder="john@example.com"
+            class="w-full border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
+          />
+        </div>
+
+        <!-- Password -->
+        <div>
+          <label for="password" class="block text-sm font-medium dark:text-gray-200 mb-1.5">Password</label>
+          <div class="relative">
+            <input 
+              type="password" 
+              id="password" 
+              name="password"
+              required
+              placeholder="••••••••"
+              minlength="8"
+              class="w-full border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none pr-10"
+            />
+            <button 
+              type="button" 
+              id="toggle-password"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+              <i data-lucide="eye" class="w-5 h-5"></i>
+            </button>
+          </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Must be at least 8 characters</p>
+        </div>
+
+        <!-- Password Strength Indicator -->
+        <div id="password-strength" class="hidden">
+          <div class="flex items-center gap-2 mb-1">
+            <div class="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div id="strength-bar" class="h-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+            <span id="strength-text" class="text-xs font-medium"></span>
+          </div>
+        </div>
+
+        <!-- Error Message -->
+        <div id="error-message" class="hidden bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 text-sm text-red-600 dark:text-red-400">
+        </div>
+
+        <!-- Submit Button -->
+        <button 
+          type="submit" 
+          id="signup-btn"
+          class="w-full bg-nfgblue hover:bg-nfgdark text-white rounded-xl py-3 font-medium transition flex items-center justify-center gap-2">
+          <span>Create Account</span>
+        </button>
+      </form>
+
+      <!-- Divider -->
+      <div class="my-6 flex items-center gap-4">
+        <div class="flex-1 h-px bg-nfgray dark:bg-gray-700"></div>
+        <span class="text-sm text-gray-500 dark:text-gray-400">or</span>
+        <div class="flex-1 h-px bg-nfgray dark:bg-gray-700"></div>
+      </div>
+
+      <!-- Login Link -->
+      <div class="text-center">
+        <p class="text-sm text-gray-600 dark:text-gray-400">
+          Already have an account? 
+          <a href="./index.html" class="text-nfgblue dark:text-blue-400 hover:underline font-medium">
+            Log In
+          </a>
+        </p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="text-center mt-6">
+      <p class="text-xs text-gray-500 dark:text-gray-400">
+        By signing up, you agree to our 
+        <a href="#" class="text-nfgblue dark:text-blue-400 hover:underline">Terms</a> and 
+        <a href="#" class="text-nfgblue dark:text-blue-400 hover:underline">Privacy Policy</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module" src="./js/signup.js"></script>
+  <script type="module" src="./js/notifications.js"></script>
+  <script type="module" src="./js/loader.js"></script>
+  <script>
+    // Initialize Lucide icons
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+
+    // Password toggle
+    document.getElementById('toggle-password')?.addEventListener('click', () => {
+      const input = document.getElementById('password');
+      const icon = document.querySelector('#toggle-password i');
+      
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.setAttribute('data-lucide', 'eye-off');
+      } else {
+        input.type = 'password';
+        icon.setAttribute('data-lucide', 'eye');
+      }
+      
+      if (window.lucide) lucide.createIcons();
+    });
+
+    // Password strength indicator
+    document.getElementById('password')?.addEventListener('input', (e) => {
+      const password = e.target.value;
+      const strengthDiv = document.getElementById('password-strength');
+      const strengthBar = document.getElementById('strength-bar');
+      const strengthText = document.getElementById('strength-text');
+      
+      if (password.length === 0) {
+        strengthDiv.classList.add('hidden');
+        return;
+      }
+      
+      strengthDiv.classList.remove('hidden');
+      
+      let strength = 0;
+      if (password.length >= 8) strength++;
+      if (password.length >= 12) strength++;
+      if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+      if (/\d/.test(password)) strength++;
+      if (/[^a-zA-Z\d]/.test(password)) strength++;
+      
+      const percentage = (strength / 5) * 100;
+      strengthBar.style.width = percentage + '%';
+      
+      if (strength <= 2) {
+        strengthBar.className = 'h-full transition-all duration-300 bg-red-500';
+        strengthText.textContent = 'Weak';
+        strengthText.className = 'text-xs font-medium text-red-600 dark:text-red-400';
+      } else if (strength <= 3) {
+        strengthBar.className = 'h-full transition-all duration-300 bg-yellow-500';
+        strengthText.textContent = 'Medium';
+        strengthText.className = 'text-xs font-medium text-yellow-600 dark:text-yellow-400';
+      } else {
+        strengthBar.className = 'h-full transition-all duration-300 bg-green-500';
+        strengthText.textContent = 'Strong';
+        strengthText.className = 'text-xs font-medium text-green-600 dark:text-green-400';
+      }
+    });
+  </script>
+</body>
+</html>
+
