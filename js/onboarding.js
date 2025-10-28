@@ -315,7 +315,7 @@ async function createCompanyAndSite() {
 
     if (profileError) console.error('⚠️ Profile update error:', profileError);
 
-    // 3. Create first site
+    // 3. Create first site (matching existing sites creation - NO created_by or company_id)
     console.log('🔵 Creating first site...');
     const { data: site, error: siteError } = await supabase
       .from('sites')
@@ -323,12 +323,9 @@ async function createCompanyAndSite() {
         name: formData.site.name,
         address: formData.site.address,
         square_footage: formData.site.sqft,
-        site_type: formData.site.type || null,
-        contact_person: formData.site.contactPerson || null,
         contact_phone: formData.site.contactPhone || null,
         status: 'Active',
-        created_by: session.user.id,
-        company_id: company.id
+        notes: formData.site.contactPerson ? `Contact: ${formData.site.contactPerson}` : null
       }])
       .select()
       .single();
