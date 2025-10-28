@@ -56,9 +56,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners();
   updateUI();
   
-  // Initialize custom dropdowns
+  // Initialize custom dropdowns (after a small delay to ensure DOM is ready)
   setTimeout(() => {
     initCustomDropdowns();
+    console.log('🔵 Custom dropdowns initialized');
   }, 100);
 });
 

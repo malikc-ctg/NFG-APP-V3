@@ -218,16 +218,22 @@ class NFGDropdown {
 // Initialize all select elements with data-custom-dropdown attribute
 function initCustomDropdowns() {
   document.querySelectorAll('select[data-custom-dropdown="true"]').forEach(select => {
+    // Skip if already initialized
+    if (select.dataset.initialized === 'true') {
+      return;
+    }
+    select.dataset.initialized = 'true';
     new NFGDropdown(select);
   });
 }
 
-// Auto-initialize on DOM load
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initCustomDropdowns);
-} else {
-  initCustomDropdowns();
-}
+// Auto-initialize on DOM load (disabled for manual initialization in onboarding)
+// Pages should manually call initCustomDropdowns() when needed
+// if (document.readyState === 'loading') {
+//   document.addEventListener('DOMContentLoaded', initCustomDropdowns);
+// } else {
+//   initCustomDropdowns();
+// }
 
 // Export for module use
 export { NFGDropdown, initCustomDropdowns };
