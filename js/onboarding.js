@@ -1,6 +1,7 @@
 import { supabase } from './supabase.js';
 import { showToast } from './notifications.js';
 import { showLoader, hideLoader } from './loader.js';
+import { initCustomDropdowns } from './custom-dropdown.js';
 
 console.log('🔵 Onboarding.js loaded');
 
@@ -54,6 +55,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   hideLoader();
   setupEventListeners();
   updateUI();
+  
+  // Initialize custom dropdowns
+  setTimeout(() => {
+    initCustomDropdowns();
+  }, 100);
 });
 
 // ==========================================
@@ -520,7 +526,10 @@ function addTeamMemberRow() {
       placeholder="email@example.com"
       class="flex-1 border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
     />
-    <select class="border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none">
+    <select 
+      name="member-role"
+      data-custom-dropdown="true"
+      class="border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none">
       <option value="staff">Staff</option>
       <option value="admin">Admin</option>
     </select>
@@ -535,6 +544,9 @@ function addTeamMemberRow() {
   });
   
   container.appendChild(row);
+  
+  // Reinitialize custom dropdowns for new row
+  initCustomDropdowns();
   
   // Reinitialize Lucide icons
   if (window.lucide) {

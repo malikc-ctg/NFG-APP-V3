@@ -19,6 +19,9 @@
   <!-- Page Loader -->
   <link rel="stylesheet" href="./css/loader.css">
   
+  <!-- Custom Dropdown -->
+  <link rel="stylesheet" href="./css/custom-dropdown.css">
+  
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -112,7 +115,10 @@
             <label class="block text-sm font-medium dark:text-gray-200 mb-1.5">Industry Type <span class="text-red-500">*</span></label>
             <select 
               id="industry-type"
+              name="industry-type"
               required
+              data-custom-dropdown="true"
+              data-placeholder="Select industry..."
               class="w-full border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none">
               <option value="">Select industry...</option>
               <option value="Property Management">Property Management</option>
@@ -128,6 +134,9 @@
             <label class="block text-sm font-medium dark:text-gray-200 mb-1.5">Company Size</label>
             <select 
               id="company-size"
+              name="company-size"
+              data-custom-dropdown="true"
+              data-placeholder="Select size..."
               class="w-full border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none">
               <option value="">Select size...</option>
               <option value="Just me">Just me</option>
@@ -202,6 +211,9 @@
             <label class="block text-sm font-medium dark:text-gray-200 mb-1.5">Site Type</label>
             <select 
               id="site-type"
+              name="site-type"
+              data-custom-dropdown="true"
+              data-placeholder="Select type..."
               class="w-full border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none">
               <option value="">Select type...</option>
               <option value="Office Building">Office Building</option>
@@ -250,7 +262,10 @@
                 placeholder="email@example.com"
                 class="flex-1 border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
               />
-              <select class="border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none">
+              <select 
+                name="member-role"
+                data-custom-dropdown="true"
+                class="border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none">
                 <option value="staff">Staff</option>
                 <option value="admin">Admin</option>
               </select>
@@ -335,6 +350,7 @@
   </div>
 
   <!-- Scripts -->
+  <script type="module" src="./js/custom-dropdown.js"></script>
   <script type="module" src="./js/onboarding.js"></script>
   <script type="module" src="./js/notifications.js"></script>
   <script type="module" src="./js/loader.js"></script>
