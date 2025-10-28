@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NFG - Under Maintenance</title>
+  <link rel="icon" type="image/png" href="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/Banner%20Logo%20-%20NFG.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL0Jhbm5lciBMb2dvIC0gTkZHLnBuZyIsImlhdCI6MTc2MTQwODAwNywiZXhwIjo0ODgzNDcyMDA3fQ.ioiCAXNeXFBkHluCdCLF25y527mxnjBDcLPtDMV1Jds">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            nfgblue: '#0D47A1',
+            nfgdark: '#0A3A84',
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    @keyframes pulse-slow {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .pulse-slow {
+      animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-nfgblue to-nfgdark min-h-screen flex items-center justify-center p-4">
+  <div class="max-w-2xl w-full">
+    <!-- Logo -->
+    <div class="text-center mb-12">
+      <img 
+        src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/NFG%20Horizontal%20Logo.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL05GRyBIb3Jpem9udGFsIExvZ28ucG5nIiwiaWF0IjoxNzYxNDAzMjI3LCJleHAiOjQ4ODM0NjcyMjd9.eWUNQiXX6pTMVY8KQZ8r5A2h8n6Bnn6jVwGGqp6VvK8" 
+        alt="NFG Logo" 
+        class="h-16 mx-auto mb-4"
+      >
+    </div>
+
+    <!-- Main Card -->
+    <div class="bg-white rounded-2xl shadow-2xl p-8 md:p-12 text-center">
+      <!-- Icon -->
+      <div class="mb-6">
+        <svg class="w-20 h-20 mx-auto text-nfgblue pulse-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        </svg>
+      </div>
+
+      <!-- Title -->
+      <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+        System Maintenance
+      </h1>
+
+      <!-- Message -->
+      <p class="text-lg text-gray-600 mb-6">
+        We're currently performing important updates to improve your experience.
+      </p>
+
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <p class="text-sm text-blue-900">
+          <strong>Security Enhancement In Progress</strong><br>
+          We're implementing enhanced data security measures to better protect your information.
+        </p>
+      </div>
+
+      <!-- Status -->
+      <div class="flex items-center justify-center space-x-2 text-gray-500">
+        <div class="flex space-x-1">
+          <div class="w-2 h-2 bg-nfgblue rounded-full animate-bounce" style="animation-delay: 0ms"></div>
+          <div class="w-2 h-2 bg-nfgblue rounded-full animate-bounce" style="animation-delay: 150ms"></div>
+          <div class="w-2 h-2 bg-nfgblue rounded-full animate-bounce" style="animation-delay: 300ms"></div>
+        </div>
+        <span class="text-sm">Working on it...</span>
+      </div>
+
+      <!-- Footer -->
+      <div class="mt-8 pt-6 border-t border-gray-200">
+        <p class="text-sm text-gray-500">
+          Expected completion: <strong class="text-gray-700">5-10 minutes</strong>
+        </p>
+        <p class="text-xs text-gray-400 mt-2">
+          Please refresh this page shortly. Thank you for your patience!
+        </p>
+      </div>
+    </div>
+
+    <!-- Contact -->
+    <div class="text-center mt-6">
+      <p class="text-white text-sm">
+        Need immediate assistance? Contact us at 
+        <a href="mailto:support@northernfacilitiesgroup.ca" class="underline hover:text-blue-200">
+          support@northernfacilitiesgroup.ca
+        </a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Auto-refresh every 30 seconds -->
+  <script>
+    // Auto-refresh every 30 seconds to check if maintenance is over
+    setTimeout(() => {
+      window.location.reload();
+    }, 30000);
+  </script>
+</body>
+</html>
+
