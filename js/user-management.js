@@ -6,6 +6,7 @@
 import { supabase } from './supabase.js'
 import { NFGDropdown } from './custom-dropdown.js'
 import { showNotification, showConfirm, showPrompt, toast, notify } from './notifications.js'
+import './super-admin.js' // Initialize super admin features
 
 let currentUser = null;
 let currentUserProfile = null;
@@ -382,9 +383,20 @@ export async function renderUsersList() {
     
     // Only show View button for admin/client users
     const viewButton = canManageUsers() ? `
-      <button onclick="openUserDetails('${user.id}')" class="px-3 py-2 md:px-4 rounded-xl border border-nfgblue text-nfgblue hover:bg-nfglight transition flex items-center gap-2 flex-shrink-0 text-sm">
+      <button onclick="openUserDetails('${user.id}')" class="px-3 py-2 md:px-4 rounded-xl border border-nfgblue dark:border-blue-500 text-nfgblue dark:text-blue-400 hover:bg-nfglight dark:hover:bg-gray-700 transition flex items-center gap-2 flex-shrink-0 text-sm">
         <i data-lucide="eye" class="w-4 h-4"></i>
         <span class="hidden sm:inline">View</span>
+      </button>
+    ` : '';
+    
+    // Super admin: Add impersonate button (if not super admin user)
+    const impersonateButton = (currentUserProfile?.role === 'super_admin' && user.role !== 'super_admin' && user.user_id !== currentUserProfile.user_id) ? `
+      <button 
+        onclick="window.SuperAdmin?.startImpersonation('${user.user_id}')" 
+        class="px-3 py-2 rounded-xl bg-yellow-500 hover:bg-yellow-600 text-white transition flex items-center gap-2 flex-shrink-0 text-sm"
+        title="Impersonate this user">
+        <i data-lucide="user-check" class="w-4 h-4"></i>
+        <span class="hidden md:inline">Impersonate</span>
       </button>
     ` : '';
     
@@ -401,7 +413,10 @@ export async function renderUsersList() {
             </div>
           </div>
         </div>
-        ${viewButton}
+        <div class="flex items-center gap-2 flex-shrink-0">
+          ${viewButton}
+          ${impersonateButton}
+        </div>
       </div>
     `;
   }).join('');
