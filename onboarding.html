@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Getting Started — NFG</title>
+  <link rel="icon" type="image/png" href="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/Banner%20Logo%20-%20NFG.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL0Jhbm5lciBMb2dvIC0gTkZHLnBuZyIsImlhdCI6MTc2MTQwODAwNywiZXhwIjo0ODgzNDcyMDA3fQ.ioiCAXNeXFBkHluCdCLF25y527mxnjBDcLPtDMV1Jds">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Dark Mode -->
+  <link rel="stylesheet" href="./css/dark-mode.css">
+  <script src="./js/dark-mode.js"></script>
+  
+  <!-- Notifications -->
+  <link rel="stylesheet" href="./css/notifications.css">
+  
+  <!-- Page Loader -->
+  <link rel="stylesheet" href="./css/loader.css">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            nfgblue: '#0D47A1',
+            nfgdark: '#0A3A84',
+            nfglight: '#E3ECFA',
+            nfgray: '#E5E7EB',
+            nftext: '#1E293B',
+            nfbg: '#F8FAFC'
+          },
+          fontFamily: { inter: ['Inter', 'sans-serif'] },
+          borderRadius: { xl: '12px' },
+          boxShadow: { nfg: '0 4px 14px rgba(13,71,161,0.06)' }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-nfbg dark:bg-gray-900 font-inter min-h-screen flex items-center justify-center p-4">
+  <!-- Full-Page Loader -->
+  <div id="page-loader">
+    <div class="loader-logo">
+      <img src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/Horizontal.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL0hvcml6b250YWwucG5nIiwiaWF0IjoxNzYwOTg5Njk2LCJleHAiOjQ4ODMwNTM2OTZ9.GLtv3yHq5zpXr4deUiNn4ilYTKaFJX8Y2tjIQpxyqVw" alt="NFG">
+    </div>
+    <div class="banter-loader">
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+    </div>
+    <div class="loader-text">Setting things up...</div>
+    <div class="loader-text-subtitle">Please wait</div>
+  </div>
+
+  <!-- Onboarding Container -->
+  <div class="w-full max-w-2xl">
+    <!-- Logo -->
+    <div class="text-center mb-6">
+      <img 
+        src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/Horizontal.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL0hvcml6b250YWwucG5nIiwiaWF0IjoxNzYwOTg5Njk2LCJleHAiOjQ4ODMwNTM2OTZ9.GLtv3yHq5zpXr4deUiNn4ilYTKaFJX8Y2tjIQpxyqVw" 
+        alt="NFG" 
+        class="h-12 mx-auto mb-3"
+      />
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="mb-6">
+      <div class="flex items-center justify-center gap-2 mb-2">
+        <div id="progress-dot-1" class="w-3 h-3 rounded-full bg-nfgblue dark:bg-blue-400 transition-all"></div>
+        <div class="w-12 h-0.5 bg-gray-300 dark:bg-gray-700" id="progress-line-1"></div>
+        <div id="progress-dot-2" class="w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-700 transition-all"></div>
+        <div class="w-12 h-0.5 bg-gray-300 dark:bg-gray-700" id="progress-line-2"></div>
+        <div id="progress-dot-3" class="w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-700 transition-all"></div>
+        <div class="w-12 h-0.5 bg-gray-300 dark:bg-gray-700" id="progress-line-3"></div>
+        <div id="progress-dot-4" class="w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-700 transition-all"></div>
+      </div>
+      <p id="progress-text" class="text-center text-sm text-gray-500 dark:text-gray-400">Step 1 of 4</p>
+    </div>
+
+    <!-- Main Card -->
+    <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl shadow-nfg p-6 md:p-8">
+      
+      <!-- STEP 1: Company Basics -->
+      <div id="step-1" class="onboarding-step">
+        <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400 mb-2">Welcome to NFG!</h2>
+        <p class="text-gray-600 dark:text-gray-400 mb-6">Let's set up your company account</p>
+
+        <form id="step-1-form" class="space-y-4">
+          <!-- Company Name -->
+          <div>
+            <label class="block text-sm font-medium dark:text-gray-200 mb-1.5">Company Name <span class="text-red-500">*</span></label>
+            <input 
+              type="text" 
+              id="company-name"
+              required
+              placeholder="ABC Property Management"
+              class="w-full border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
+            />
+          </div>
+
+          <!-- Industry Type -->
+          <div>
+            <label class="block text-sm font-medium dark:text-gray-200 mb-1.5">Industry Type <span class="text-red-500">*</span></label>
+            <select 
+              id="industry-type"
+              required
+              class="w-full border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none">
+              <option value="">Select industry...</option>
+              <option value="Property Management">Property Management</option>
+              <option value="Facilities Management">Facilities Management</option>
+              <option value="Cleaning Services">Cleaning Services</option>
+              <option value="Maintenance Services">Maintenance Services</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <!-- Company Size -->
+          <div>
+            <label class="block text-sm font-medium dark:text-gray-200 mb-1.5">Company Size</label>
+            <select 
+              id="company-size"
+              class="w-full border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none">
+              <option value="">Select size...</option>
+              <option value="Just me">Just me</option>
+              <option value="2-10 employees">2-10 employees</option>
+              <option value="11-50 employees">11-50 employees</option>
+              <option value="50+ employees">50+ employees</option>
+            </select>
+          </div>
+
+          <!-- Phone Number -->
+          <div>
+            <label class="block text-sm font-medium dark:text-gray-200 mb-1.5">Phone Number <span class="text-red-500">*</span></label>
+            <input 
+              type="tel" 
+              id="phone-number"
+              required
+              placeholder="(555) 123-4567"
+              class="w-full border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
+            />
+          </div>
+        </form>
+      </div>
+
+      <!-- STEP 2: First Site -->
+      <div id="step-2" class="onboarding-step hidden">
+        <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400 mb-2">Add Your First Site</h2>
+        <p class="text-gray-600 dark:text-gray-400 mb-6">Add a property or location to manage</p>
+
+        <form id="step-2-form" class="space-y-4">
+          <!-- Site Name -->
+          <div>
+            <label class="block text-sm font-medium dark:text-gray-200 mb-1.5">Site Name <span class="text-red-500">*</span></label>
+            <input 
+              type="text" 
+              id="site-name"
+              required
+              placeholder="Downtown Office Building"
+              class="w-full border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
+            />
+          </div>
+
+          <!-- Site Address -->
+          <div>
+            <label class="block text-sm font-medium dark:text-gray-200 mb-1.5">Site Address <span class="text-red-500">*</span></label>
+            <input 
+              type="text" 
+              id="site-address"
+              required
+              placeholder="123 Main St, City, State, ZIP"
+              class="w-full border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
+            />
+          </div>
+
+          <!-- Square Footage -->
+          <div>
+            <label class="block text-sm font-medium dark:text-gray-200 mb-1.5">Square Footage <span class="text-red-500">*</span></label>
+            <div class="relative">
+              <input 
+                type="number" 
+                id="square-footage"
+                required
+                min="1"
+                placeholder="5000"
+                class="w-full border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none pr-16"
+              />
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 text-sm">sq ft</span>
+            </div>
+          </div>
+
+          <!-- Site Type -->
+          <div>
+            <label class="block text-sm font-medium dark:text-gray-200 mb-1.5">Site Type</label>
+            <select 
+              id="site-type"
+              class="w-full border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none">
+              <option value="">Select type...</option>
+              <option value="Office Building">Office Building</option>
+              <option value="Residential Property">Residential Property</option>
+              <option value="Retail/Commercial">Retail/Commercial</option>
+              <option value="Industrial Facility">Industrial Facility</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <!-- Contact Person -->
+          <div>
+            <label class="block text-sm font-medium dark:text-gray-200 mb-1.5">Contact Person</label>
+            <input 
+              type="text" 
+              id="contact-person"
+              placeholder="John Smith"
+              class="w-full border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
+            />
+          </div>
+
+          <!-- Contact Phone -->
+          <div>
+            <label class="block text-sm font-medium dark:text-gray-200 mb-1.5">Contact Phone</label>
+            <input 
+              type="tel" 
+              id="contact-phone"
+              placeholder="(555) 987-6543"
+              class="w-full border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
+            />
+          </div>
+        </form>
+      </div>
+
+      <!-- STEP 3: Team Setup -->
+      <div id="step-3" class="onboarding-step hidden">
+        <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400 mb-2">Invite Your Team</h2>
+        <p class="text-gray-600 dark:text-gray-400 mb-6">Add team members to your account (optional)</p>
+
+        <form id="step-3-form" class="space-y-4">
+          <div id="team-members-container">
+            <!-- Team member 1 -->
+            <div class="team-member-row flex gap-3 mb-3">
+              <input 
+                type="email" 
+                placeholder="email@example.com"
+                class="flex-1 border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
+              />
+              <select class="border border-nfgray dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none">
+                <option value="staff">Staff</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+          </div>
+
+          <button 
+            type="button" 
+            id="add-team-member"
+            class="text-nfgblue dark:text-blue-400 hover:underline text-sm flex items-center gap-1">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>Add another team member</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- STEP 4: All Set -->
+      <div id="step-4" class="onboarding-step hidden text-center">
+        <div class="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
+          <i data-lucide="check-circle" class="w-8 h-8 text-green-600 dark:text-green-400"></i>
+        </div>
+        
+        <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400 mb-2">You're All Set!</h2>
+        <p class="text-gray-600 dark:text-gray-400 mb-6">Welcome to NFG</p>
+
+        <div class="bg-nfglight dark:bg-gray-700 rounded-xl p-4 mb-6 text-left space-y-2">
+          <div class="flex items-start gap-2">
+            <i data-lucide="check" class="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5"></i>
+            <div>
+              <p class="text-sm font-medium dark:text-gray-200">Company</p>
+              <p id="summary-company" class="text-sm text-gray-600 dark:text-gray-400"></p>
+            </div>
+          </div>
+          <div class="flex items-start gap-2">
+            <i data-lucide="check" class="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5"></i>
+            <div>
+              <p class="text-sm font-medium dark:text-gray-200">First Site</p>
+              <p id="summary-site" class="text-sm text-gray-600 dark:text-gray-400"></p>
+            </div>
+          </div>
+          <div class="flex items-start gap-2">
+            <i data-lucide="check" class="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5"></i>
+            <div>
+              <p class="text-sm font-medium dark:text-gray-200">Team</p>
+              <p id="summary-team" class="text-sm text-gray-600 dark:text-gray-400"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Buttons -->
+      <div class="flex items-center justify-between mt-6 pt-6 border-t border-nfgray dark:border-gray-700">
+        <div>
+          <button 
+            id="back-btn"
+            class="hidden text-gray-600 dark:text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 font-medium flex items-center gap-1">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>Back</span>
+          </button>
+          <button 
+            id="skip-all-btn"
+            class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-sm">
+            Skip all setup
+          </button>
+        </div>
+
+        <div class="flex gap-3">
+          <button 
+            id="skip-btn"
+            class="hidden text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 font-medium">
+            Skip
+          </button>
+          <button 
+            id="next-btn"
+            class="bg-nfgblue hover:bg-nfgdark text-white rounded-xl px-6 py-2.5 font-medium transition flex items-center gap-2">
+            <span>Next</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module" src="./js/onboarding.js"></script>
+  <script type="module" src="./js/notifications.js"></script>
+  <script type="module" src="./js/loader.js"></script>
+  <script>
+    // Initialize Lucide icons
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+  </script>
+</body>
+</html>
+

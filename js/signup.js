@@ -87,12 +87,12 @@ document.getElementById('signup-form')?.addEventListener('submit', async (e) => 
 
     // 3. Show success message
     console.log('🔵 Showing success message...');
-    showToast('Account created successfully! Redirecting...', 'success');
+    showToast('Account created successfully! Let\'s get you set up...', 'success');
 
-    // 4. Redirect to dashboard after 1.5 seconds
-    console.log('🔵 Redirecting in 1.5s...');
+    // 4. Redirect to onboarding after 1.5 seconds
+    console.log('🔵 Redirecting to onboarding in 1.5s...');
     setTimeout(() => {
-      window.location.href = './dashboard.html';
+      window.location.href = './onboarding.html';
     }, 1500);
 
   } catch (error) {
