@@ -97,23 +97,8 @@ document.getElementById('signup-form')?.addEventListener('submit', async (e) => 
 
     console.log('✅ User created:', authData.user.id);
 
-    // 2. Create user profile (role is always 'client' for sign-ups)
-    console.log('🔵 Creating user profile...');
-    const { error: profileError } = await supabase
-      .from('user_profiles')
-      .insert([{
-        user_id: authData.user.id,
-        email: email,
-        full_name: fullname,
-        role: 'client'
-      }]);
-
-    if (profileError) {
-      console.error('❌ Profile creation error:', profileError);
-      // Don't throw - the auth user exists, we'll handle profile creation issues separately
-    } else {
-      console.log('✅ Profile created successfully');
-    }
+    // Note: user_profile is created automatically via database trigger
+    console.log('🔵 User profile created automatically via trigger');
 
     console.log('🔵 Hiding loader...');
     hideLoader();
