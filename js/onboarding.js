@@ -289,33 +289,12 @@ async function createCompanyAndSite() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('No active session');
 
-    console.log('🔵 Creating company profile...');
+    console.log('🔵 Skipping company profile (will be added later)...');
+    
+    // Skip company profile creation for now - just create the site
+    // Company data is saved in formData and can be added to settings later
 
-    // 1. Create company profile
-    const { data: company, error: companyError } = await supabase
-      .from('company_profiles')
-      .insert([{
-        owner_id: session.user.id,
-        company_name: formData.company.name,
-        industry_type: 'General', // Default value since field was removed
-        company_size: formData.company.size || null,
-        phone_number: formData.company.phone
-      }])
-      .select()
-      .single();
-
-    if (companyError) throw companyError;
-    console.log('✅ Company created:', company.id);
-
-    // 2. Update user profile with company_id
-    const { error: profileError } = await supabase
-      .from('user_profiles')
-      .update({ company_id: company.id })
-      .eq('user_id', session.user.id);
-
-    if (profileError) console.error('⚠️ Profile update error:', profileError);
-
-    // 3. Create first site (matching existing sites creation - NO created_by or company_id)
+    // Create first site (matching existing sites creation - NO created_by or company_id)
     console.log('🔵 Creating first site...');
     const { data: site, error: siteError } = await supabase
       .from('sites')
@@ -333,12 +312,12 @@ async function createCompanyAndSite() {
     if (siteError) throw siteError;
     console.log('✅ Site created:', site.id);
 
-    showToast('Company and site created successfully!', 'success');
+    showToast('Site created successfully!', 'success');
     return true;
 
   } catch (error) {
-    console.error('❌ Error creating company/site:', error);
-    showToast(error.message || 'Failed to create company. Please try again.', 'error');
+    console.error('❌ Error creating site:', error);
+    showToast(error.message || 'Failed to create site. Please try again.', 'error');
     return false;
   }
 }
