@@ -3,15 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NFG — Facilities Management</title>
+  <title>NFG — Login</title>
   <link rel="icon" type="image/png" href="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/Banner%20Logo%20-%20NFG.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL0Jhbm5lciBMb2dvIC0gTkZHLnBuZyIsImlhdCI6MTc2MTQwODAwNywiZXhwIjo0ODgzNDcyMDA3fQ.ioiCAXNeXFBkHluCdCLF25y527mxnjBDcLPtDMV1Jds">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="./css/dark-mode.css">
-  <script src="./js/dark-mode.js"></script>
   <script>
     tailwind.config = {
-      darkMode: 'class',
       theme: {
         extend: {
           colors: {
@@ -30,43 +27,31 @@
     }
   </script>
 </head>
-<body class="bg-nfbg dark:bg-gray-900 font-inter flex items-center justify-center min-h-screen">
-  <!-- Loading State -->
-  <div class="text-center">
-    <svg class="animate-spin h-12 w-12 mx-auto mb-4 text-nfgblue dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-    </svg>
-    <p class="text-nfgblue dark:text-blue-400 font-medium">Loading...</p>
+<body class="bg-nfbg font-inter flex items-center justify-center min-h-screen">
+  <div class="bg-white shadow-nfg rounded-xl border border-nfgray p-8 w-full max-w-md">
+    <h1 class="text-2xl font-semibold text-nfgblue text-center mb-2">NFG Dashboard</h1>
+    <p class="text-center text-sm text-nftext mb-6">Sign in to manage bookings, jobs, and reports.</p>
+
+    <form id="login-form" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-nftext mb-1">Email</label>
+        <input type="email" name="email" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" placeholder="you@company.com" required />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-nftext mb-1">Password</label>
+        <input type="password" name="password" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" placeholder="••••••••" required />
+      </div>
+      <button type="submit" class="w-full bg-nfgblue hover:bg-nfgdark text-white rounded-xl py-2.5 font-medium transition">Sign In</button>
+      <p id="auth-error" class="text-red-600 text-center text-sm hidden"></p>
+    </form>
+
+    <div class="mt-6 border-t border-nfgray pt-4 text-center">
+      <button id="signup-demo" class="text-nfgblue hover:text-nfgdark text-sm font-medium">Create Demo Account</button>
+    </div>
   </div>
 
-  <script type="module">
-    import { supabase } from './js/supabase.js'
-    
-    // Check authentication and redirect
-    async function checkAuth() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        
-        if (session) {
-          // User is logged in, redirect to dashboard
-          console.log('[Index] User logged in, redirecting to dashboard')
-          window.location.href = './dashboard.html'
-        } else {
-          // User is not logged in, redirect to login
-          console.log('[Index] No session, redirecting to login')
-          window.location.href = './login.html'
-        }
-      } catch (error) {
-        console.error('[Index] Error checking auth:', error)
-        // On error, redirect to login
-        window.location.href = './login.html'
-      }
-    }
-    
-    // Run on page load
-    checkAuth()
-  </script>
+  <script type="module" src="./js/supabase.js"></script>
+  <script type="module" src="./js/auth.js"></script>
 </body>
 </html>
 
