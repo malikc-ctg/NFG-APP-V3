@@ -253,9 +253,9 @@ async function handleSiteFormSubmit(e) {
 // Fetch and display recent jobs
 async function fetchRecentJobs() {
   try {
-    console.log('📋 Fetching recent jobs...');
+    console.log('📋 Fetching recent jobs for user:', currentUser.id);
     
-    // Fetch jobs with site info
+    // Fetch jobs created by this user
     const { data: jobs, error } = await supabase
       .from('jobs')
       .select(`
@@ -267,6 +267,7 @@ async function fetchRecentJobs() {
         site_id,
         created_at
       `)
+      .eq('created_by', currentUser.id)
       .order('created_at', { ascending: false })
       .limit(5);
     
@@ -490,9 +491,9 @@ async function fetchInventorySummary() {
 // Fetch and display recurring jobs
 async function fetchRecurringJobs() {
   try {
-    console.log('🔄 Fetching recurring jobs...');
+    console.log('🔄 Fetching recurring jobs for user:', currentUser.id);
     
-    // Fetch recurring jobs
+    // Fetch recurring jobs created by this user
     const { data: jobs, error } = await supabase
       .from('jobs')
       .select(`
@@ -504,6 +505,7 @@ async function fetchRecurringJobs() {
         site_id,
         frequency
       `)
+      .eq('created_by', currentUser.id)
       .eq('frequency', 'recurring')
       .order('scheduled_date', { ascending: true })
       .limit(5);
