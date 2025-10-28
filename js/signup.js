@@ -29,9 +29,42 @@ document.getElementById('signup-form')?.addEventListener('submit', async (e) => 
     return;
   }
 
+  // Enhanced password validation to match Supabase requirements
   if (password.length < 8) {
     console.log('❌ Validation failed: Password too short');
     errorDiv.textContent = 'Password must be at least 8 characters.';
+    errorDiv.classList.remove('hidden');
+    return;
+  }
+
+  // Check for lowercase
+  if (!/[a-z]/.test(password)) {
+    console.log('❌ Validation failed: No lowercase letter');
+    errorDiv.textContent = 'Password must contain at least one lowercase letter.';
+    errorDiv.classList.remove('hidden');
+    return;
+  }
+
+  // Check for uppercase
+  if (!/[A-Z]/.test(password)) {
+    console.log('❌ Validation failed: No uppercase letter');
+    errorDiv.textContent = 'Password must contain at least one uppercase letter.';
+    errorDiv.classList.remove('hidden');
+    return;
+  }
+
+  // Check for number
+  if (!/[0-9]/.test(password)) {
+    console.log('❌ Validation failed: No number');
+    errorDiv.textContent = 'Password must contain at least one number.';
+    errorDiv.classList.remove('hidden');
+    return;
+  }
+
+  // Check for special character
+  if (!/[!@#$%^&*()_+\-=\[\]{};"':|,.<>?/`~]/.test(password)) {
+    console.log('❌ Validation failed: No special character');
+    errorDiv.textContent = 'Password must contain at least one special character (!@#$%^&* etc).';
     errorDiv.classList.remove('hidden');
     return;
   }
@@ -100,10 +133,27 @@ document.getElementById('signup-form')?.addEventListener('submit', async (e) => 
     
     hideLoader();
     
-    errorDiv.textContent = error.message || 'Failed to create account. Please try again.';
+    // Better error messages
+    let errorMessage = 'Failed to create account. Please try again.';
+    
+    if (error.message) {
+      if (error.message.includes('weak password') || error.message.includes('Password should contain')) {
+        errorMessage = 'Password must include: uppercase, lowercase, number, and special character.';
+      } else if (error.message.includes('already registered') || error.message.includes('already exists')) {
+        errorMessage = 'This email is already registered. Try logging in instead.';
+      } else if (error.message.includes('invalid email')) {
+        errorMessage = 'Please enter a valid email address.';
+      } else if (error.message.includes('Database error')) {
+        errorMessage = 'Server error. Please try again in a moment.';
+      } else {
+        errorMessage = error.message;
+      }
+    }
+    
+    errorDiv.textContent = errorMessage;
     errorDiv.classList.remove('hidden');
     
-    showToast('Failed to create account', 'error');
+    showToast(errorMessage, 'error');
   }
 });
 
