@@ -188,7 +188,8 @@ async function createSite(siteData) {
         square_footage: siteData.square_footage,
         contact_phone: siteData.contact_phone,
         contact_email: siteData.contact_email,
-        notes: siteData.notes
+        notes: siteData.notes,
+        created_by: currentUser.id  // CRITICAL: Set the owner!
       })
       .select()
       .single();

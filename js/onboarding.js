@@ -294,7 +294,7 @@ async function createCompanyAndSite() {
     // Skip company profile creation for now - just create the site
     // Company data is saved in formData and can be added to settings later
 
-    // Create first site (matching existing sites creation - NO created_by or company_id)
+    // Create first site with created_by set
     console.log('🔵 Creating first site...');
     const { data: site, error: siteError } = await supabase
       .from('sites')
@@ -304,7 +304,8 @@ async function createCompanyAndSite() {
         square_footage: formData.site.sqft,
         contact_phone: formData.site.contactPhone || null,
         status: 'Active',
-        notes: formData.site.contactPerson ? `Contact: ${formData.site.contactPerson}` : null
+        notes: formData.site.contactPerson ? `Contact: ${formData.site.contactPerson}` : null,
+        created_by: session.user.id  // CRITICAL: Set the owner!
       }])
       .select()
       .single();
