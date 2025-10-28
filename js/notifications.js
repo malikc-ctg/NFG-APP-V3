@@ -283,9 +283,13 @@ export const notify = {
   info: (message) => showNotification(message, 'info')
 };
 
+// Alias for backward compatibility
+export const showToast = showNotification;
+
 // Make it available globally
 if (typeof window !== 'undefined') {
   window.showNotification = showNotification;
+  window.showToast = showNotification;
   window.showConfirm = showConfirm;
   window.showPrompt = showPrompt;
   window.toast = toast;
