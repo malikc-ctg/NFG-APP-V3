@@ -147,10 +147,12 @@ async function fetchSites() {
       }
       sites = fetchedSites || [];
     } else {
-      // Admin/Client - fetch all sites from Supabase
+      // Admin/Client - fetch ONLY their sites from Supabase
+      console.log('🔍 Dashboard - Fetching sites for user:', currentUser.id);
       const { data: fetchedSites, error } = await supabase
         .from('sites')
         .select('*')
+        .eq('created_by', currentUser.id)  // CRITICAL: Only fetch sites created by this user!
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -158,7 +160,7 @@ async function fetchSites() {
         return [];
       }
       
-      console.log('Dashboard - Sites fetched:', fetchedSites);
+      console.log('Dashboard - Sites fetched for user:', fetchedSites);
       sites = fetchedSites || [];
     }
     
