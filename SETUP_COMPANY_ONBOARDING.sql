@@ -95,7 +95,7 @@ CREATE POLICY "Users can view their company" ON company_profiles
 FOR SELECT USING (
   owner_id = auth.uid()
   OR
-  EXISTS (SELECT 1 FROM user_profiles WHERE user_id = auth.uid() AND company_id = company_profiles.id)
+  EXISTS (SELECT 1 FROM user_profiles WHERE user_profiles.user_id = auth.uid() AND user_profiles.company_id = company_profiles.id)
 );
 
 DROP POLICY IF EXISTS "Users can insert their company" ON company_profiles;
