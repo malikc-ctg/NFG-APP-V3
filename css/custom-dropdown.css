@@ -1,5 +1,10 @@
 /* Custom Dropdown Styles - NFG Theme */
 
+/* Hide original select elements immediately */
+select[data-custom-dropdown="true"] {
+  display: none !important;
+}
+
 .nfg-select {
   width: 100%;
   cursor: pointer;
