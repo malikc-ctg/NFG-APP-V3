@@ -916,7 +916,8 @@
           description: description || 'Job created from booking',
           scheduled_date: scheduledDate,
           status: 'pending',
-          frequency: frequency
+          frequency: frequency,
+          created_by: currentUser.id  // CRITICAL: Set the owner!
         };
 
         // Add recurrence fields if recurring
@@ -944,7 +945,8 @@
           description,
           scheduled_date: scheduledDate,
           status: 'pending',
-          frequency: frequency
+          frequency: frequency,
+          created_by: currentUser.id  // CRITICAL: Set the owner!
         };
 
         // Add recurrence fields if recurring

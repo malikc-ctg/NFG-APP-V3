@@ -69,7 +69,8 @@ export async function createNextRecurringInstance(completedJob) {
       recurrence_pattern: pattern,
       recurrence_series_id: seriesId,
       status: 'pending',
-      estimated_hours: completedJob.estimated_hours
+      estimated_hours: completedJob.estimated_hours,
+      created_by: completedJob.created_by  // CRITICAL: Preserve the owner!
     }
     
     console.log('📝 Creating new job instance:', newJob)

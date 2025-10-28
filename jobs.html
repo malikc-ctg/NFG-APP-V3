@@ -1747,7 +1747,8 @@
         scheduled_date: formData.get('scheduled_date') || null,
         estimated_hours: formData.get('estimated_hours') || null,
         description: formData.get('description') || null,
-        user_id: currentUser.id
+        user_id: currentUser.id,
+        created_by: currentUser.id  // CRITICAL: Set the owner!
       };
       
       // Add recurrence pattern if this is a recurring job

@@ -183,7 +183,8 @@ async function createJobForBooking(booking) {
       frequency: 'recurring',
       recurrence_pattern: booking.recurrence_pattern,
       recurrence_series_id: booking.recurrence_series_id,
-      status: 'pending'
+      status: 'pending',
+      created_by: booking.created_by  // CRITICAL: Preserve the owner!
     }
     
     const { data: newJob, error: jobError } = await supabase
