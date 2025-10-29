@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NFG - Offline</title>
+  <link rel="icon" type="image/png" href="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/Banner%20Logo%20-%20NFG.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL0Jhbm5lciBMb2dvIC0gTkZHLnBuZyIsImlhdCI6MTc2MTQwODAwNywiZXhwIjo0ODgzNDcyMDA3fQ.ioiCAXNeXFBkHluCdCLF25y527mxnjBDcLPtDMV1Jds">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            nfgblue: '#0D47A1',
+            nfgdark: '#0A3A84',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
+  <div class="max-w-md w-full text-center">
+    <!-- Logo -->
+    <img 
+      src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/NFG%20Horizontal%20Logo.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL05GRyBIb3Jpem9udGFsIExvZ28ucG5nIiwiaWF0IjoxNzYxNDAzMjI3LCJleHAiOjQ4ODM0NjcyMjd9.eWUNQiXX6pTMVY8KQZ8r5A2h8n6Bnn6jVwGGqp6VvK8" 
+      alt="NFG Logo" 
+      class="h-12 mx-auto mb-8"
+    >
+
+    <!-- Icon -->
+    <div class="mb-6">
+      <svg class="w-24 h-24 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414"></path>
+      </svg>
+    </div>
+
+    <!-- Title -->
+    <h1 class="text-3xl font-bold text-gray-900 mb-4">
+      You're Offline
+    </h1>
+
+    <!-- Message -->
+    <p class="text-gray-600 mb-8">
+      No internet connection detected. Some features may be limited until you're back online.
+    </p>
+
+    <!-- Actions -->
+    <div class="space-y-3">
+      <button 
+        onclick="window.location.reload()" 
+        class="w-full px-6 py-3 bg-nfgblue text-white rounded-lg hover:bg-nfgdark transition font-medium"
+      >
+        Try Again
+      </button>
+      
+      <button 
+        onclick="window.history.back()" 
+        class="w-full px-6 py-3 bg-white text-nfgblue border-2 border-nfgblue rounded-lg hover:bg-blue-50 transition font-medium"
+      >
+        Go Back
+      </button>
+    </div>
+
+    <!-- Status -->
+    <div class="mt-8 text-sm text-gray-500">
+      <p id="status">Checking connection...</p>
+    </div>
+  </div>
+
+  <script>
+    // Check connection status
+    function updateStatus() {
+      const status = document.getElementById('status');
+      if (navigator.onLine) {
+        status.textContent = '✅ Connection restored! Reloading...';
+        status.className = 'text-green-600 font-medium';
+        setTimeout(() => window.location.reload(), 1000);
+      } else {
+        status.textContent = '🔴 Still offline';
+        status.className = 'text-red-600';
+      }
+    }
+
+    // Check every 3 seconds
+    setInterval(updateStatus, 3000);
+    updateStatus();
+
+    // Listen for online event
+    window.addEventListener('online', () => {
+      window.location.reload();
+    });
+  </script>
+</body>
+</html>
+
