@@ -871,16 +871,19 @@
           }
           return sites || [];
         } else {
-          // Admin/Client - fetch all sites
+          // Admin/Client - fetch ONLY their sites from Supabase
+          console.log('🔍 Dashboard - Fetching sites for user:', currentUser.id);
           const { data: sites, error } = await supabase
             .from('sites')
             .select('*')
-            .order('name', { ascending: true });
+            .eq('created_by', currentUser.id)  // CRITICAL: Only fetch sites created by this user!
+            .order('created_at', { ascending: false });
           
           if (error) {
             console.error('Error fetching sites from Supabase:', error);
             return [];
           }
+          console.log('✅ Dashboard - Sites fetched for user:', sites);
           return sites || [];
         }
       } catch (error) {
