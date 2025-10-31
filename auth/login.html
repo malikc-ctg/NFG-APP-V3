@@ -96,20 +96,52 @@
   
   <!-- Scripts -->
   <script type="module">
-    import { supabase } from '/js/supabase.js'
-    import { requireNoAuth, showToast, validateEmail, handleAsync } from '/js/auth.js'
+    console.log('🔐 Initializing login page...')
+    console.log('📋 window.ENV:', window.ENV)
+    
+    // Initialize modules
+    let supabase, requireNoAuth, showToast, validateEmail
+    
+    try {
+      const supabaseModule = await import('/js/supabase.js')
+      supabase = supabaseModule.supabase
+      console.log('✅ Supabase module loaded:', supabase ? 'Yes' : 'No')
+      
+      const authModule = await import('/js/auth.js')
+      requireNoAuth = authModule.requireNoAuth
+      showToast = authModule.showToast
+      validateEmail = authModule.validateEmail
+      console.log('✅ Auth module loaded')
+    } catch (importError) {
+      console.error('❌ Failed to import modules:', importError)
+      document.body.innerHTML = `
+        <div class="fixed inset-0 flex items-center justify-center bg-red-50">
+          <div class="bg-white p-6 rounded-lg shadow-lg max-w-md">
+            <h2 class="text-xl font-bold text-red-600 mb-2">Loading Error</h2>
+            <p class="text-gray-700">Failed to load required modules: ${importError.message}</p>
+            <p class="text-sm text-gray-500 mt-2">Check the browser console for details.</p>
+          </div>
+        </div>
+      `
+      throw importError
+    }
     
     // Set current year
     document.getElementById('current-year').textContent = new Date().getFullYear()
     
     // Check if already authenticated
     document.addEventListener('DOMContentLoaded', async () => {
-      await requireNoAuth()
+      try {
+        await requireNoAuth()
+      } catch (error) {
+        console.error('Error checking auth status:', error)
+      }
     })
     
     // Handle form submission
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault()
+      console.log('📝 Form submitted')
       
       const emailInput = document.getElementById('email')
       const email = emailInput.value.trim()
@@ -117,8 +149,11 @@
       const submitText = document.getElementById('submit-text')
       const submitLoading = document.getElementById('submit-loading')
       
+      console.log('📧 Email entered:', email)
+      
       // Validate email
       if (!validateEmail(email)) {
+        console.warn('⚠️ Invalid email format')
         showToast('error', 'Please enter a valid email address')
         emailInput.focus()
         return
@@ -130,22 +165,39 @@
       submitLoading.classList.remove('hidden')
       
       try {
-        const { error } = await supabase.auth.signInWithOtp({
+        console.log('📤 Sending magic link to:', email)
+        console.log('📤 Redirect URL:', `${window.location.origin}/auth/confirm.html`)
+        console.log('📤 Supabase client:', supabase ? 'Initialized' : 'NOT INITIALIZED')
+        
+        if (!supabase) {
+          throw new Error('Supabase client not initialized. Check console for errors.')
+        }
+        
+        const { data, error } = await supabase.auth.signInWithOtp({
           email,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/confirm.html`
+            emailRedirectTo: `${window.location.origin}/auth/confirm.html`,
+            shouldCreateUser: true
           }
         })
         
+        console.log('📥 Response from Supabase:', { data, error })
+        
         if (error) {
+          console.error('❌ Supabase error:', error)
+          console.error('❌ Error code:', error.status)
+          console.error('❌ Error message:', error.message)
           throw error
         }
         
-        showToast('success', 'Check your email for a sign-in link')
+        console.log('✅ Magic link sent successfully')
+        showToast('success', 'Check your email for a sign-in link. It may take a few minutes to arrive.')
         emailInput.value = ''
       } catch (error) {
-        console.error('Sign-in error:', error)
-        showToast('error', error.message || 'Failed to send sign-in link. Please try again.')
+        console.error('❌ Sign-in error:', error)
+        console.error('❌ Full error object:', JSON.stringify(error, null, 2))
+        const errorMsg = error.message || error.toString() || 'Failed to send sign-in link. Please try again.'
+        showToast('error', errorMsg)
       } finally {
         submitBtn.disabled = false
         submitText.classList.remove('hidden')
