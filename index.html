@@ -66,6 +66,96 @@
   <script type="module" src="./js/supabase.js"></script>
   <script type="module" src="./js/auth.js"></script>
   
+  <!-- Login Form Handler -->
+  <script type="module">
+    import { supabase } from './js/supabase.js'
+    
+    const form = document.getElementById('login-form')
+    const errorEl = document.getElementById('auth-error')
+    const demoBtn = document.getElementById('signup-demo')
+    
+    console.log('🔐 Initializing login form...')
+    console.log('📋 Form element:', form ? 'Found' : 'Not found')
+    
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      console.log('📝 Form submitted')
+      
+      const formData = new FormData(form)
+      const email = formData.get('email')
+      const password = formData.get('password')
+      
+      console.log('📧 Email:', email)
+      console.log('🔑 Password:', password ? '***' : 'empty')
+      
+      // Hide previous errors
+      errorEl.classList.add('hidden')
+      errorEl.textContent = ''
+      
+      // Disable submit button
+      const submitBtn = form.querySelector('button[type="submit"]')
+      submitBtn.disabled = true
+      submitBtn.textContent = 'Signing in...'
+      
+      try {
+        console.log('📤 Attempting sign in...')
+        const { data, error } = await supabase.auth.signInWithPassword({ 
+          email, 
+          password 
+        })
+        
+        console.log('📥 Sign in response:', { data, error })
+        
+        if (error) {
+          console.error('❌ Sign in error:', error)
+          errorEl.textContent = error.message || 'Failed to sign in. Please check your credentials.'
+          errorEl.classList.remove('hidden')
+          throw error
+        }
+        
+        console.log('✅ Sign in successful, redirecting to dashboard...')
+        window.location.href = './dashboard.html'
+      } catch (error) {
+        console.error('❌ Login failed:', error)
+      } finally {
+        submitBtn.disabled = false
+        submitBtn.textContent = 'Sign In'
+      }
+    })
+    
+    // Demo account creation
+    demoBtn?.addEventListener('click', async () => {
+      console.log('🎮 Creating demo account...')
+      const email = `demo+${Date.now()}@nfg.test`
+      const password = 'Demo123!'
+      
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: 'Demo User',
+              role: 'client'
+            }
+          }
+        })
+        
+        if (error) throw error
+        
+        console.log('✅ Demo account created, signing in...')
+        await supabase.auth.signInWithPassword({ email, password })
+        window.location.href = './dashboard.html'
+      } catch (error) {
+        console.error('❌ Demo account creation failed:', error)
+        errorEl.textContent = error.message || 'Failed to create demo account'
+        errorEl.classList.remove('hidden')
+      }
+    })
+    
+    console.log('✅ Login form initialized')
+  </script>
+  
   <!-- PWA Installation -->
   <script src="./js/pwa.js"></script>
 </body>
