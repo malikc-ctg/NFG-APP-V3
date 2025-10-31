@@ -300,9 +300,9 @@ serve(async (req) => {
           <!-- Header -->
           <tr>
             <td class="header">
-              <img src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/Horizontal.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL0hvcml6b250YWwucG5nIiwiaWF0IjoxNzYwOTg5Njk2LCJleHAiOjQ4ODMwNTM2OTZ9.GLtv3yHq5zpXr4deUiNn4ilYTKaFJX8Y2tjIQpxyqVw" alt="Northern Facilities Group" class="logo" style="max-width: 250px; height: auto;">
-              <h1 class="header-title">You're Invited! 🎉</h1>
-              <p class="header-subtitle">Join the NFG Facilities Management Team</p>
+              <img src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/2.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzLzIucG5nIiwiaWF0IjoxNzYxODY2MTE0LCJleHAiOjQ4ODM5MzAxMTR9.E1JoQZxqPy0HOKna6YfjPCfin5Pc3QF0paEV7qzVfDw" alt="Northern Facilities Group" class="logo" style="max-width: 300px; height: auto; margin-bottom: 15px;">
+              <h1 class="header-title">Welcome to NFG! 🎉</h1>
+              <p class="header-subtitle">Join Northern Facilities Group Management Platform</p>
             </td>
           </tr>
           
@@ -312,7 +312,11 @@ serve(async (req) => {
               <p class="greeting">Hello!</p>
               
               <p class="intro-text">
-                <strong>${inviterEmail || 'Your administrator'}</strong> has invited you to join the <strong>Northern Facilities Group</strong> management system.
+                <strong>${inviterEmail || 'Your administrator'}</strong> has invited you to join the <strong style="color: #0D47A1;">Northern Facilities Group</strong> management platform.
+              </p>
+              
+              <p class="intro-text" style="margin-top: 15px; font-size: 15px; color: #666666;">
+                NFG provides professional facilities management solutions including job tracking, site management, team coordination, and real-time updates. Get started by accepting your invitation below.
               </p>
               
               <!-- Role Badge -->
@@ -348,13 +352,21 @@ serve(async (req) => {
                 <code class="link-code">${invitationLink}</code>
               </div>
               
+              <!-- NFG Branding Section -->
+              <div style="margin: 35px 0; padding: 20px; background: linear-gradient(135deg, #E3ECFA 0%, #f0f6ff 100%); border-radius: 8px; border-left: 4px solid #0D47A1;">
+                <p style="margin: 0 0 10px 0; font-size: 14px; font-weight: 700; color: #0A3A84; text-transform: uppercase; letter-spacing: 0.5px;">About Northern Facilities Group</p>
+                <p style="margin: 0; font-size: 13px; color: #555555; line-height: 1.6;">
+                  We deliver comprehensive facilities management services with cutting-edge technology to streamline operations, improve efficiency, and ensure exceptional service quality.
+                </p>
+              </div>
+              
               <p style="margin: 30px 0 10px 0; color: #555555;">
-                Need help? Contact your administrator for assistance.
+                Need help? Contact your administrator or visit our support portal for assistance.
               </p>
               
               <p style="margin: 10px 0; color: #555555;">
-                Best regards,<br>
-                <strong style="color: #0D47A1;">The NFG Team</strong>
+                Welcome aboard,<br>
+                <strong style="color: #0D47A1; font-size: 16px;">The Northern Facilities Group Team</strong>
               </p>
             </td>
           </tr>
@@ -362,10 +374,20 @@ serve(async (req) => {
           <!-- Footer -->
           <tr>
             <td class="footer">
-              <p class="footer-text footer-brand">Northern Facilities Group</p>
-              <p class="footer-text">Professional Facilities Management Solutions</p>
-              <p class="footer-text" style="margin-top: 15px;">© 2025 Northern Facilities Group. All rights reserved.</p>
-              <p class="footer-text" style="margin-top: 5px; font-size: 11px;">This is an automated message. Please do not reply to this email.</p>
+              <p教职工 class="footer-text footer-brand" style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">Northern Facilities Group</p>
+              <p class="footer-text" style="margin-bottom: 15px;">Professional Facilities Management Solutions</p>
+              
+              <div style="border-top: 1px solid #e9ecef; padding-top: 15px; margin-top: 15px;">
+                <p class="footer-text" style="margin: 5px 0; font-size: 12px;">
+                  <strong>Email:</strong> support@northernfacilitiesgroup.ca
+                </p>
+                <p class="footer-text" style="margin: 5px 0; font-size: 12px;">
+                  <strong>Website:</strong> www.northernfacilitiesgroup.ca
+                </p>
+              </div>
+              
+              <p class="footer-text" style="margin-top: 20px; font-size: 11px; color: #999999;">© 2025 Northern Facilities Group. All rights reserved.</p>
+              <p class="footer-text" style="margin-top: 5px; font-size: 10px; color: #999999;">This is an automated message. Please do not reply to this email.</p>
             </td>
           </tr>
           
@@ -399,7 +421,7 @@ serve(async (req) => {
     const emailPayload = {
       from: RESEND_FROM_EMAIL,
       to: [email],
-      subject: 'Invitation to join NFG Facilities Management',
+      subject: 'You\'re Invited to Join Northern Facilities Group',
       html: emailHTML
     }
 
