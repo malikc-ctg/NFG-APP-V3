@@ -377,61 +377,51 @@ serve(async (req) => {
 </html>
     `
 
-    // Send email using ZeptoMail (Zoho's transactional email service)
-    const ZEPTO_MAIL_KEY = Deno.env.get('ZEPTO_MAIL_KEY')
-    const ZEPTO_FROM_EMAIL = Deno.env.get('ZOHO_FROM_EMAIL') || 'noreply@northernfacilitiesgroup.ca'
-    const ZEPTO_FROM_NAME = Deno.env.get('ZEPTO_FROM_NAME') || 'NFG Facilities'
+    // Send email using Resend (modern, reliable transactional email service)
+    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
+    const RESEND_FROM_EMAIL = Deno.env.get('RESEND_FROM_EMAIL') || 'NFG <onboarding@resend.dev>'
     
-    if (!ZEPTO_MAIL_KEY) {
-      console.warn('ZeptoMail API key not set')
+    if (!RESEND_API_KEY) {
+      console.warn('Resend API key not set')
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Email service not configured. Please set ZEPTO_MAIL_KEY in Edge Function secrets.' 
+          error: 'Email service not configured. Please set RESEND_API_KEY in Edge Function secrets.' 
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log('Sending email via ZeptoMail...')
-    console.log('From:', ZEPTO_FROM_EMAIL, 'To:', email)
+    console.log('Sending email via Resend...')
+    console.log家裡 From:', RESEND_FROM_EMAIL, 'To:', email)
 
-    // ZeptoMail API payload
+    // Resend API payload
     const emailPayload = {
-      from: {
-        address: ZEPTO_FROM_EMAIL,
-        name: ZEPTO_FROM_NAME
-      },
-      to: [
-        {
-          email_address: {
-            address: email
-          }
-        }
-      ],
+      from: RESEND_FROM_EMAIL,
+      to: [email],
       subject: 'Invitation to join NFG Facilities Management',
-      htmlbody: emailHTML
+      html: emailHTML
     }
 
-    const emailResponse = await fetch('https://api.zeptomail.ca/v1.1/email', {
+    const emailResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
-        'Authorization': ZEPTO_MAIL_KEY,
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(emailPayload)
     })
 
-    console.log('ZeptoMail response status:', emailResponse.status)
+    console.log('Resend response status:', emailResponse.status)
 
     const emailData = await emailResponse.json()
 
     if (!emailResponse.ok) {
-      console.error('ZeptoMail API error:', emailData)
-      throw new Error(`Failed to send email: ${emailData.message || emailData.error || 'Unknown error'}`)
+      console.error('Resend API error:', emailData)
+      throw new Error(`Failed to send email: ${emailData.message || emailData.error?.message || 'Unknown error'}`)
     }
 
-    console.log('✅ Email sent successfully via ZeptoMail!', emailData)
+    console.log('✅ Email sent successfully via Resend!', emailData)
 
     return new Response(
       JSON.stringify({ success: true, messageId: emailData.id }),
