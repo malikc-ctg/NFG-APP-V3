@@ -374,7 +374,7 @@ serve(async (req) => {
           <!-- Footer -->
           <tr>
             <td class="footer">
-              <p教职工 class="footer-text footer-brand" style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">Northern Facilities Group</p>
+              <p class="footer-text footer-brand" style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">Northern Facilities Group</p>
               <p class="footer-text" style="margin-bottom: 15px;">Professional Facilities Management Solutions</p>
               
               <div style="border-top: 1px solid #e9ecef; padding-top: 15px; margin-top: 15px;">
