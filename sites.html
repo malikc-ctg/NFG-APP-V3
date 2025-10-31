@@ -903,34 +903,34 @@
         
         <!-- Site Name -->
         <div>
-          <label class="block text-sm font-medium mb-1.5">Site Name <span class="text-red-500">*</span></label>
+          <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Site Name <span class="text-red-500">*</span></label>
           <input 
             type="text"
             id="edit-site-name"
             name="name" 
             required 
             placeholder="e.g., Downtown Office Tower"
-            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+            class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-400 focus:ring-2 focus:ring-nfgblue dark:focus:ring-blue-500 outline-none" />
         </div>
 
         <!-- Address -->
         <div>
-          <label class="block text-sm font-medium mb-1.5">Address</label>
+          <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Address</label>
           <input 
             type="text"
             id="edit-site-address"
             name="address" 
             placeholder="e.g., 123 Main St, Toronto, ON"
-            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+            class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-400 focus:ring-2 focus:ring-nfgblue dark:focus:ring-blue-500 outline-none" />
         </div>
 
         <!-- Status -->
         <div>
-          <label class="block text-sm font-medium mb-1.5">Status</label>
+          <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Status</label>
           <select 
             id="edit-site-status" 
             name="status"
-            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none">
+            class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-nfgblue dark:focus:ring-blue-500 outline-none">
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
             <option value="Under Maintenance">Under Maintenance</option>
@@ -939,49 +939,49 @@
 
         <!-- Square Footage -->
         <div>
-          <label class="block text-sm font-medium mb-1.5">Square Footage</label>
+          <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Square Footage</label>
           <input 
             type="number"
             id="edit-site-sqft"
             name="square_footage" 
             placeholder="e.g., 5000"
-            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+            class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-400 focus:ring-2 focus:ring-nfgblue dark:focus:ring-blue-500 outline-none" />
         </div>
 
         <!-- Contact Phone -->
         <div>
-          <label class="block text-sm font-medium mb-1.5">Contact Phone</label>
+          <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Contact Phone</label>
           <input 
             type="tel"
             id="edit-site-phone"
             name="contact_phone" 
             placeholder="e.g., 416-555-0100"
-            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+            class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-400 focus:ring-2 focus:ring-nfgblue dark:focus:ring-blue-500 outline-none" />
         </div>
 
         <!-- Contact Email -->
         <div>
-          <label class="block text-sm font-medium mb-1.5">Contact Email</label>
+          <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Contact Email</label>
           <input 
             type="email"
             id="edit-site-email"
             name="contact_email" 
             placeholder="e.g., contact@site.com"
-            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+            class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-400 focus:ring-2 focus:ring-nfgblue dark:focus:ring-blue-500 outline-none" />
         </div>
 
         <!-- Notes -->
         <div>
-          <label class="block text-sm font-medium mb-1.5">Notes</label>
+          <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Notes</label>
           <textarea 
             id="edit-site-notes"
             name="notes" 
             rows="3"
             placeholder="Additional notes about the site..."
-            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none resize-none"></textarea>
+            class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-400 focus:ring-2 focus:ring-nfgblue dark:focus:ring-blue-500 outline-none resize-none"></textarea>
         </div>
 
-        <div id="edit-form-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl p-3">
+        <div id="edit-form-error" class="hidden text-red-600 dark:text-red-400 text-sm bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3">
         </div>
 
         <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray dark:border-gray-700">
@@ -989,7 +989,7 @@
             type="button" 
             data-action="close-modal" 
             data-target="editSiteModal"
-            class="px-5 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight font-medium transition">
+            class="px-5 py-2.5 rounded-xl border border-nfgray dark:border-gray-700 dark:text-gray-200 hover:bg-nfglight dark:hover:bg-gray-700 font-medium transition">
             Cancel
           </button>
           <button 
