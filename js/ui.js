@@ -473,7 +473,7 @@ async function fetchAndDisplayRecentSiteActivity(siteId) {
 
     if (error) {
       console.error('[UI] ❌ Error fetching recent site activity:', error);
-      recentActivityContainer.innerHTML = '<p class="text-gray-500 text-sm">Error loading recent jobs.</p>';
+      recentActivityContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Error loading recent jobs.</p>';
       return;
     }
 
@@ -484,20 +484,20 @@ async function fetchAndDisplayRecentSiteActivity(siteId) {
       let activityHTML = '<div class="space-y-2">';
       jobs.forEach(job => {
         const statusIcon = job.status === 'pending' ? 'clock' : 'loader';
-        const statusColor = job.status === 'pending' ? 'text-yellow-600' : 'text-blue-600';
+        const statusColor = job.status === 'pending' ? 'text-yellow-600 dark:text-yellow-400' : 'text-blue-600 dark:text-blue-400';
         const isEmergency = job.job_type === 'emergency';
         
         activityHTML += `
-          <div class="flex items-center gap-2 p-2 rounded-lg hover:bg-nfglight transition cursor-pointer border border-nfgray" 
+          <div class="flex items-center gap-2 p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 transition cursor-pointer border border-nfgray dark:border-gray-700" 
                onclick="window.location.href='jobs.html?job=${job.id}'">
             <i data-lucide="${statusIcon}" class="w-4 h-4 ${statusColor} flex-shrink-0"></i>
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-nftext truncate">
+              <p class="text-sm font-medium text-nftext dark:text-gray-200 truncate">
                 ${isEmergency ? '🚨 ' : ''}${job.title}
               </p>
-              <p class="text-xs text-gray-500 capitalize">${job.status.replace('-', ' ')}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 capitalize">${job.status.replace('-', ' ')}</p>
             </div>
-            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 flex-shrink-0"></i>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0"></i>
           </div>
         `;
       });
@@ -511,7 +511,7 @@ async function fetchAndDisplayRecentSiteActivity(siteId) {
       }
     } else {
       console.log('[UI] No active jobs found for Recent Activity');
-      recentActivityContainer.innerHTML = '<p class="text-gray-500 text-sm">No pending or in-progress jobs.</p>';
+      recentActivityContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">No pending or in-progress jobs.</p>';
     }
 
   } catch (error) {
@@ -637,7 +637,7 @@ export async function openSiteDetailModal(siteId) {
           <span class="truncate">${site.address}</span>
           <button 
             onclick="copyAddress('${site.address.replace(/'/g, "\\'")}', event)" 
-            class="text-gray-400 hover:text-nfgblue transition p-0.5 rounded hover:bg-nfglight flex-shrink-0"
+            class="text-gray-400 dark:text-gray-500 hover:text-nfgblue dark:hover:text-blue-400 transition p-0.5 rounded hover:bg-nfglight dark:hover:bg-gray-700 flex-shrink-0"
             title="Copy address">
             <i data-lucide="copy" class="w-3 h-3"></i>
           </button>

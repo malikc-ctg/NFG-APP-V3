@@ -644,7 +644,7 @@
             <div id="site-detail-address" class="text-sm text-gray-500 dark:text-gray-400">Address</div>
           </div>
         </div>
-        <button data-action="close-modal" data-target="siteDetailModal" class="p-1 rounded-lg hover:bg-nfglight flex-shrink-0">
+        <button data-action="close-modal" data-target="siteDetailModal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 flex-shrink-0 text-gray-700 dark:text-gray-300">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -653,7 +653,7 @@
         <!-- Site Info Cards -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <!-- Status Card -->
-          <div class="bg-nfglight/30 border border-nfgblue/20 rounded-xl p-4">
+          <div class="bg-nfglight/30 dark:bg-gray-700/30 border border-nfgblue/20 dark:border-blue-500/20 rounded-xl p-4">
             <div class="flex items-center gap-2 mb-2">
               <i data-lucide="activity" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
               <span class="text-sm font-medium text-nftext dark:text-gray-200">Status</span>
@@ -662,7 +662,7 @@
           </div>
 
           <!-- Square Footage Card -->
-          <div class="bg-nfglight/30 border border-nfgblue/20 rounded-xl p-4">
+          <div class="bg-nfglight/30 dark:bg-gray-700/30 border border-nfgblue/20 dark:border-blue-500/20 rounded-xl p-4">
             <div class="flex items-center gap-2 mb-2">
               <i data-lucide="ruler" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
               <span class="text-sm font-medium text-nftext dark:text-gray-200">Square Footage</span>
@@ -671,7 +671,7 @@
           </div>
 
           <!-- Rating Card -->
-          <div class="bg-nfglight/30 border border-nfgblue/20 rounded-xl p-4">
+          <div class="bg-nfglight/30 dark:bg-gray-700/30 border border-nfgblue/20 dark:border-blue-500/20 rounded-xl p-4">
             <div class="flex items-center gap-2 mb-2">
               <i data-lucide="star" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
               <span class="text-sm font-medium text-nftext dark:text-gray-200">Rating</span>
@@ -689,11 +689,11 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Phone</p>
-              <p id="site-detail-phone" class="text-nftext font-medium">—</p>
+              <p id="site-detail-phone" class="text-nftext dark:text-gray-200 font-medium">—</p>
             </div>
             <div>
               <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Email</p>
-              <p id="site-detail-email" class="text-nftext font-medium">—</p>
+              <p id="site-detail-email" class="text-nftext dark:text-gray-200 font-medium">—</p>
             </div>
           </div>
         </div>
@@ -732,21 +732,21 @@
             Recent Activity
           </h5>
           <div id="site-detail-activity" class="space-y-2">
-            <p class="text-gray-500 text-sm">No recent activity.</p>
+            <p class="text-gray-500 dark:text-gray-400 text-sm">No recent activity.</p>
           </div>
         </div>
 
         <!-- Action Buttons -->
-        <div class="flex flex-wrap gap-3 border-t border-nfgray pt-4">
+        <div class="flex flex-wrap gap-3 border-t border-nfgray dark:border-gray-700 pt-4">
           <button class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark transition">
             <i data-lucide="calendar-plus" class="w-4 h-4"></i>
             Schedule Booking
           </button>
-          <button id="edit-site-btn" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight transition">
+          <button id="edit-site-btn" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-nfgray dark:border-gray-700 dark:text-gray-200 hover:bg-nfglight dark:hover:bg-gray-700 transition">
             <i data-lucide="edit" class="w-4 h-4"></i>
             Edit Site
           </button>
-          <button id="delete-site-btn" data-action="delete-site" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition ml-auto">
+          <button id="delete-site-btn" data-action="delete-site" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition ml-auto">
             <i data-lucide="trash-2" class="w-4 h-4"></i>
             Delete Site
           </button>
