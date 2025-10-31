@@ -683,13 +683,21 @@
 
           // Refresh sites display
           const sites = await fetchSites();
-          // Use imported renderSites function
-          if (typeof renderSites === 'function') {
-            renderSites(sites);
+          
+          // Ensure renderSites is available (re-import if needed)
+          let renderFn = renderSites;
+          if (typeof renderFn !== 'function') {
+            const uiModule = await import('./js/ui.js');
+            renderFn = uiModule.renderSites;
+          }
+          
+          if (renderFn && typeof renderFn === 'function') {
+            renderFn(sites);
           } else {
-            console.error('renderSites is not defined!');
-            // Fallback: reload page
+            // Fallback: reload page if function still not available
+            console.warn('renderSites not available, reloading page');
             window.location.reload();
+            return;
           }
 
           toast.success('Site has been updated successfully!', 'Site Updated');
