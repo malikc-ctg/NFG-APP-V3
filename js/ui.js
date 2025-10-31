@@ -718,7 +718,7 @@ export async function deleteSite() {
   }
   
   try {
-    //沉浸 Import supabase
+    // Import supabase
     const { supabase } = await import('./supabase.js')
     
     console.log('🗑️ Deleting site from Supabase:', currentSiteId)
