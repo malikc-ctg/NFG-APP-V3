@@ -630,6 +630,12 @@
       document.getElementById('edit-site-btn')?.addEventListener('click', () => {
         console.log('[Edit] Edit button clicked! Current site:', window.currentEditSite);
         
+        // Check if user is staff - prevent editing
+        if (currentUserProfile && currentUserProfile.role === 'staff') {
+          toast.error('Staff members cannot edit sites.', 'Access Denied');
+          return;
+        }
+        
         if (!window.currentEditSite) {
           console.error('[Edit] ❌ No site selected for editing');
           toast.error('No site selected. Please close and reopen the site details.', 'Edit Error');

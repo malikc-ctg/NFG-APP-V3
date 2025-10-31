@@ -205,6 +205,20 @@ export function initializeUI() {
     const deleteBtn = e.target.closest('[data-action="delete-site"]')
     if (deleteBtn) {
       e.preventDefault()
+      // Check if user is staff - prevent deletion
+      const { supabase } = await import('./supabase.js')
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+        if (profile && profile.role === 'staff') {
+          toast.error('Staff members cannot delete sites.', 'Access Denied')
+          return
+        }
+      }
       console.log('[UI] Delete Site clicked')
       openDeleteConfirmModal()
       return
@@ -214,6 +228,20 @@ export function initializeUI() {
     const confirmDeleteBtn = e.target.closest('[data-action="confirm-delete-site"]')
     if (confirmDeleteBtn) {
       e.preventDefault()
+      // Check if user is staff - prevent deletion
+      const { supabase } = await import('./supabase.js')
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+        if (profile && profile.role === 'staff') {
+          toast.error('Staff members cannot delete sites.', 'Access Denied')
+          return
+        }
+      }
       console.log('[UI] Confirm Delete Site clicked')
       deleteSite()
       return
@@ -661,6 +689,29 @@ export async function openSiteDetailModal(siteId) {
     // Fetch and display recent activity (pending/in-progress jobs)
     console.log('[UI] 📋 Fetching recent activity...')
     await fetchAndDisplayRecentSiteActivity(siteId)
+    
+    // Hide Edit/Delete buttons for staff users
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+      
+      if (profile && profile.role === 'staff') {
+        const editBtn = document.getElementById('edit-site-btn')
+        const deleteBtn = document.getElementById('delete-site-btn')
+        if (editBtn) editBtn.style.display = 'none'
+        if (deleteBtn) deleteBtn.style.display = 'none'
+        console.log('[UI] 🔒 Hidden Edit/Delete buttons for staff user')
+      } else {
+        const editBtn = document.getElementById('edit-site-btn')
+        const deleteBtn = document.getElementById('delete-site-btn')
+        if (editBtn) editBtn.style.display = ''
+        if (deleteBtn) deleteBtn.style.display = ''
+      }
+    }
     
     // Show modal
     const modal = document.getElementById('siteDetailModal')

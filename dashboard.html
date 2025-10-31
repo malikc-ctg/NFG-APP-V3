@@ -1152,8 +1152,14 @@
     window.currentEditSite = null;
 
     // Edit Site button handler
-    document.getElementById('edit-site-btn')?.addEventListener('click', () => {
+    document.getElementById('edit-site-btn')?.addEventListener('click', async () => {
       console.log('[Edit] Edit button clicked! Current site:', window.currentEditSite);
+      
+      // Check if user is staff - prevent editing
+      if (currentUserProfile && currentUserProfile.role === 'staff') {
+        toast.error('Staff members cannot edit sites.', 'Access Denied');
+        return;
+      }
       
       if (!window.currentEditSite) {
         console.error('[Edit] ❌ No site selected for editing');
