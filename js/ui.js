@@ -710,43 +710,63 @@ export function openDeleteConfirmModal() {
   }
 }
 
-// Delete site from localStorage
-export function deleteSite() {
+// Delete site from Supabase (with CASCADE DELETE for related data)
+export async function deleteSite() {
   if (!currentSiteId) {
     console.error('No site selected for deletion')
     return
   }
   
   try {
-    // Get current sites
-    const sites = JSON.parse(localStorage.getItem('nfg_sites') || '[]')
+    //沉浸 Import supabase
+    const { supabase } = await import('./supabase.js')
     
-    // Filter out the site to delete
-    const updatedSites = sites.filter(s => s.id != currentSiteId)
+    console.log('🗑️ Deleting site from Supabase:', currentSiteId)
+    console.log('⚠️ This will automatically delete all related: jobs, bookings, assignments, inventory')
     
-    // Save back to localStorage
-    localStorage.setItem('nfg_sites', JSON.stringify(updatedSites))
+    // Delete site from Supabase - CASCADE DELETE will automatically handle:
+    // - All jobs for this site
+    // - All bookings for this site
+    // - All worker assignments
+    // - All inventory
+    // - All inventory transactions
+    const { error } = await supabase
+      .from('sites')
+      .delete()
+      .eq('id', currentSiteId)
     
-    console.log(`Site ${currentSiteId} deleted successfully`)
+    if (error) {
+      console.error('❌ Error deleting site:', error)
+      throw error
+    }
+    
+    console.log('✅ Site deleted successfully! All related data was automatically removed via CASCADE DELETE.')
     
     // Close both modals
     closeSiteDetailModal()
     closeDeleteConfirmModal()
     
-    // Refresh the sites grid
-    renderSites(updatedSites)
-    
-    // Also refresh full sites page if it exists
-    if (typeof renderSitesFullPage === 'function') {
-      renderSitesFullPage(updatedSites)
+    // Refresh the page to show updated sites
+    // If there's a refresh function, call it; otherwise reload
+    if (typeof window.fetchSites === 'function') {
+      const sites = await window.fetchSites()
+      renderSites(sites)
+    } else if (typeof renderSitesFullPage === 'function') {
+      const sites = await window.fetchSites?.() || []
+      renderSitesFullPage(sites)
+    } else {
+      // Fallback: reload page
+      window.location.reload()
     }
+    
+    toast.success('Site and all related data (jobs, bookings, inventory) deleted successfully!', 'Site Deleted')
     
     // Reset current site ID
     currentSiteId = null
     
   } catch (error) {
-    console.error('Error deleting site:', error)
-    toast.error('Failed to delete site. Please try again.', 'Delete Error')
+    console.error('❌ Error deleting site:', error)
+    toast.error(`Failed to delete site: ${error.message}`, 'Delete Error')
   }
 }
 
