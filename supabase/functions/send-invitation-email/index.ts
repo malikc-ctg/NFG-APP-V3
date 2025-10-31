@@ -393,7 +393,7 @@ serve(async (req) => {
     }
 
     console.log('Sending email via Resend...')
-    console.log家裡 From:', RESEND_FROM_EMAIL, 'To:', email)
+    console.log('From:', RESEND_FROM_EMAIL, 'To:', email)
 
     // Resend API payload
     const emailPayload = {
