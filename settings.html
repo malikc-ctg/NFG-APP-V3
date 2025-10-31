@@ -670,7 +670,7 @@
   <script type="module" src="./js/custom-dropdown.js"></script>
   <script type="module">
     import { supabase } from './js/supabase.js'
-    import { NFGDropdown } from './js/custom-dropdown.js'
+    import { NFGDropdown, initCustomDropdowns } from './js/custom-dropdown.js'
     import { showNotification, showConfirm, showPrompt, toast, notify } from './js/notifications.js'
     import {
       getCurrentUser,
@@ -906,6 +906,11 @@
       modal.classList.remove('hidden')
       modal.classList.add('flex')
       lucide.createIcons()
+      
+      // Initialize custom dropdowns in the modal
+      setTimeout(() => {
+        initCustomDropdowns esquema
+      }, 100)
     }
 
     function closeInviteModal() {
