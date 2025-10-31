@@ -47,6 +47,9 @@
   <!-- Dark Mode -->
   <link rel="stylesheet" href="./css/dark-mode.css">
   <script src="./js/dark-mode.js"></script>
+  
+  <!-- Notification Center -->
+  <link rel="stylesheet" href="./css/notification-center.css">
 
 </head>
 
@@ -966,6 +969,22 @@
 
         console.log('✅ Booking created:', booking.id);
 
+        // Create notification for booking creator (optional - they created it)
+        // Also notify assigned worker if job was auto-assigned
+        try {
+          const { notifyBookingCreated, notifyJobAssigned } = await import('./js/notification-triggers.js');
+          
+          // Notify assigned worker about new job (if job was auto-assigned)
+          if (job.assigned_worker_id && site) {
+            await notifyJobAssigned(job.id, job.assigned_worker_id, job.title, site.name);
+            console.log('✅ Job assignment notification sent to worker');
+          }
+          
+          console.log('✅ Booking creation notification processed');
+        } catch (notifError) {
+          console.warn('⚠️ Failed to create booking notifications:', notifError);
+        }
+
         // Step 3: Save selected services to booking_services
         if (selectedServices.size > 0) {
           const serviceRecords = Array.from(selectedServices).map(serviceId => ({
@@ -1025,6 +1044,8 @@
       const confirmed = await showConfirm('Are you sure you want to cancel this booking?', 'Cancel Booking', 'warning');
       if (!confirmed) return;
 
+      const bookingTitle = currentBooking.title || 'Untitled Booking';
+
       try {
         const { error } = await supabase
           .from('bookings')
@@ -1035,6 +1056,18 @@
           .eq('id', currentBooking.id);
 
         if (error) throw error;
+
+        // Create notification about booking cancellation
+        try {
+          const { notifyBookingCancelled } = await import('./js/notification-triggers.js');
+          // Notify the creator of the booking
+          if (currentBooking.created_by) {
+            await notifyBookingCancelled(currentBooking.id, currentBooking.created_by, bookingTitle);
+            console.log('✅ Booking cancellation notification sent');
+          }
+        } catch (notifError) {
+          console.warn('⚠️ Failed to create booking cancellation notification:', notifError);
+        }
 
         toast.success('Booking has been cancelled.', 'Booking Cancelled');
         closeModals();
@@ -1120,6 +1153,9 @@
 
     init();
   </script>
+  
+  <!-- Notification Center -->
+  <script type="module" src="./js/notification-center.js"></script>
   
   <!-- Hide loader when page is ready -->
   <script>

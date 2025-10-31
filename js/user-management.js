@@ -250,6 +250,15 @@ export async function assignUserToSite(userId, siteId, canManage = false) {
     throw new Error('Worker is already assigned to this site');
   }
   
+  // Get site name for notification
+  const { data: site } = await supabase
+    .from('sites')
+    .select('name')
+    .eq('id', siteId)
+    .single();
+  
+  const siteName = site?.name || `Site #${siteId}`;
+  
   const { error } = await supabase
     .from('worker_site_assignments')
     .insert({
@@ -263,10 +272,31 @@ export async function assignUserToSite(userId, siteId, canManage = false) {
     console.error('Error assigning user to site:', error);
     throw error;
   }
+  
+  // Create notification for the assigned worker
+  try {
+    const { notifySiteAssigned } = await import('./notification-triggers.js');
+    await notifySiteAssigned(userId, siteId, siteName);
+    console.log('✅ Site assignment notification created');
+  } catch (notifError) {
+    console.warn('⚠️ Failed to create site assignment notification:', notifError);
+    // Don't fail the assignment if notification fails
+  }
 }
 
 // Remove user from site
 export async function removeUserFromSite(assignmentId) {
+  // Get assignment details for notification
+  const { data: assignment } = await supabase
+    .from('worker_site_assignments')
+    .select('worker_id, site_id, sites(name)')
+    .eq('id', assignmentId)
+    .single();
+  
+  const workerId = assignment?.worker_id;
+  const siteId = assignment?.site_id;
+  const siteName = assignment?.sites?.name || `Site #${siteId}`;
+  
   const { error } = await supabase
     .from('worker_site_assignments')
     .delete()
@@ -275,6 +305,18 @@ export async function removeUserFromSite(assignmentId) {
   if (error) {
     console.error('Error removing site assignment:', error);
     throw error;
+  }
+  
+  // Create notification for the unassigned worker
+  if (workerId && siteId) {
+    try {
+      const { notifySiteUnassigned } = await import('./notification-triggers.js');
+      await notifySiteUnassigned(workerId, siteId, siteName);
+      console.log('✅ Site unassignment notification created');
+    } catch (notifError) {
+      console.warn('⚠️ Failed to create site unassignment notification:', notifError);
+      // Don't fail the removal if notification fails
+    }
   }
 }
 

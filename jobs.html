@@ -50,6 +50,9 @@
   <!-- Dark Mode -->
   <link rel="stylesheet" href="./css/dark-mode.css">
   <script src="./js/dark-mode.js"></script>
+  
+  <!-- Notification Center -->
+  <link rel="stylesheet" href="./css/notification-center.css">
 
 </head>
 
@@ -1186,6 +1189,18 @@
               if (!jobError) {
                 stopTimer();
                 
+                // Notify admins about job completion
+                try {
+                  const { notifyJobCompleted, getAdminUserIds } = await import('./js/notification-triggers.js');
+                  const adminIds = await getAdminUserIds();
+                  const siteName = job?.sites?.name || 'Unknown Site';
+                  const jobTitle = job?.title || 'Untitled Job';
+                  await notifyJobCompleted(currentJobId, adminIds, jobTitle, siteName);
+                  console.log('✅ Job completion notifications sent to admins');
+                } catch (notifError) {
+                  console.warn('⚠️ Failed to create job completion notifications:', notifError);
+                }
+                
                 // Handle recurring job creation if applicable
                 const completedJob = { ...job, status: 'completed' };
                 const recurrenceResult = await handleJobCompletion(completedJob);
@@ -1858,6 +1873,12 @@
         return;
       }
 
+      // Get job details for notification
+      const jobs = await getJobs();
+      const job = jobs.find(j => j.id === currentJobId);
+      const jobTitle = job?.title || 'Untitled Job';
+      const siteName = job?.sites?.name || 'Unknown Site';
+
       const { error } = await supabase
         .from('jobs')
         .update({ assigned_worker_id: workerId })
@@ -1868,6 +1889,15 @@
         document.getElementById('assign-worker-error').textContent = 'Failed to assign worker. Please try again.';
         document.getElementById('assign-worker-error').classList.remove('hidden');
       } else {
+        // Create notification for the assigned worker
+        try {
+          const { notifyJobAssigned } = await import('./js/notification-triggers.js');
+          await notifyJobAssigned(currentJobId, workerId, jobTitle, siteName);
+          console.log('✅ Job assignment notification created');
+        } catch (notifError) {
+          console.warn('⚠️ Failed to create job assignment notification:', notifError);
+        }
+
         document.getElementById('assignWorkerModal').classList.add('hidden');
         document.getElementById('assignWorkerModal').classList.remove('flex');
         e.target.reset();
@@ -1992,6 +2022,9 @@
 
     init();
   </script>
+  
+  <!-- Notification Center -->
+  <script type="module" src="./js/notification-center.js"></script>
   
   <!-- Hide loader when page is ready -->
   <script>
