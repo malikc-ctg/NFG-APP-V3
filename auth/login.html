@@ -151,6 +151,16 @@
       
       console.log('✅ Login form found, attaching event listener')
       
+      // Also add click handler on button as backup
+      const submitBtn = document.getElementById('submit-btn')
+      if (submitBtn) {
+        submitBtn.addEventListener('click', (e) => {
+          console.log('🔘 Submit button clicked')
+          // Trigger form submit
+          loginForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+        })
+      }
+      
       // Handle form submission
       loginForm.addEventListener('submit', async (e) => {
         e.preventDefault()
