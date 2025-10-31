@@ -524,6 +524,11 @@
       try {
         console.log('Creating site in Supabase:', siteData);
         
+        // Ensure we have current user
+        if (!currentUser) {
+          await getCurrentUser();
+        }
+        
         // Create site in Supabase
         const { data: newSite, error } = await supabase
           .from('sites')
@@ -534,7 +539,8 @@
             square_footage: siteData.square_footage,
             contact_phone: siteData.contact_phone,
             contact_email: siteData.contact_email,
-            notes: siteData.notes
+            notes: siteData.notes,
+            created_by: currentUser.id  // CRITICAL: Set the owner!
           })
           .select()
           .single();
