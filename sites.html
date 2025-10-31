@@ -683,7 +683,14 @@
 
           // Refresh sites display
           const sites = await fetchSites();
-          renderSites(sites);
+          // Use imported renderSites function
+          if (typeof renderSites === 'function') {
+            renderSites(sites);
+          } else {
+            console.error('renderSites is not defined!');
+            // Fallback: reload page
+            window.location.reload();
+          }
 
           toast.success('Site has been updated successfully!', 'Site Updated');
         } catch (error) {
