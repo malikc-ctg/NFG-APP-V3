@@ -180,7 +180,7 @@ export function initializeUI() {
   uiInitialized = true
   
   // Handle all clicks with event delegation
-  document.addEventListener('click', (e) => {
+  document.addEventListener('click', async (e) => {
     // View Site button
     const viewBtn = e.target.closest('[data-action="view-site"]')
     if (viewBtn) {
@@ -206,18 +206,22 @@ export function initializeUI() {
     if (deleteBtn) {
       e.preventDefault()
       // Check if user is staff - prevent deletion
-      const { supabase } = await import('./supabase.js')
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single()
-        if (profile && profile.role === 'staff') {
-          toast.error('Staff members cannot delete sites.', 'Access Denied')
-          return
+      try {
+        const { supabase } = await import('./supabase.js')
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+          if (profile && profile.role === 'staff') {
+            toast.error('Staff members cannot delete sites.', 'Access Denied')
+            return
+          }
         }
+      } catch (error) {
+        console.error('[UI] Error checking user role:', error)
       }
       console.log('[UI] Delete Site clicked')
       openDeleteConfirmModal()
@@ -229,18 +233,22 @@ export function initializeUI() {
     if (confirmDeleteBtn) {
       e.preventDefault()
       // Check if user is staff - prevent deletion
-      const { supabase } = await import('./supabase.js')
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single()
-        if (profile && profile.role === 'staff') {
-          toast.error('Staff members cannot delete sites.', 'Access Denied')
-          return
+      try {
+        const { supabase } = await import('./supabase.js')
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+          if (profile && profile.role === 'staff') {
+            toast.error('Staff members cannot delete sites.', 'Access Denied')
+            return
+          }
         }
+      } catch (error) {
+        console.error('[UI] Error checking user role:', error)
       }
       console.log('[UI] Confirm Delete Site clicked')
       deleteSite()
