@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — NFG One</title>
+  
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Custom Auth CSS -->
+  <link rel="stylesheet" href="/css/auth.css">
+  
+  <!-- Environment Variables -->
+  <script>
+    window.ENV = {
+      SUPABASE_URL: 'https://zqcbldgheimqrnqmbbed.supabase.co',
+      SUPABASE_ANON_KEY: 'eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzLzIucG5nIiwiaWF0IjoxNzYxODY2MTE0LCJleHAiOjQ4ODM5MzAxMTR9.E1JoQZxqPy0HOKna6YfjPCfin5Pc3QF0paEV7qzVfDw'
+    };
+  </script>
+  
+  <style>
+    body {
+      background: linear-gradient(135deg, #E3ECFA 0%, #FFFFFF 100%);
+      min-height: 100vh;
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-screen px-4 py-8">
+  
+  <div class="w-full max-w-md">
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <div class="flex items-center justify-center gap-2 mb-2">
+        <img src="/assets/logo.png" alt="NFG One Logo" class="nfg-logo" onerror="this.style.display='none'">
+        <div>
+          <span class="text-3xl font-bold" style="color: #0D47A1;">NFG</span>
+          <span class="text-3xl font-bold" style="color: #0A3A84;"> One</span>
+        </div>
+      </div>
+      <p class="text-gray-600 text-sm">Where operations meet innovation.</p>
+    </div>
+    
+    <!-- Login Card -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-lg p-8">
+      <h1 class="text-2xl font-bold text-gray-900 mb-2">Sign In</h1>
+      <p class="text-gray-600 text-sm mb-6">Enter your email to receive a sign-in link</p>
+      
+      <!-- Form -->
+      <form id="login-form" class="space-y-4">
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+            Email Address
+          </label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            required
+            autocomplete="email"
+            placeholder="you@example.com"
+            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+          >
+        </div>
+        
+        <button
+          type="submit"
+          id="submit-btn"
+          class="w-full py-3 rounded-xl text-white font-medium transition hover:opacity-90 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          style="background-color: #0D47A1;"
+          onmouseover="this.style.backgroundColor='#0A3A84'"
+          onmouseout="this.style.backgroundColor='#0D47A1'"
+        >
+          <span id="submit-text">Send Sign-In Link</span>
+          <span id="submit-loading" class="hidden">Sending...</span>
+        </button>
+      </form>
+      
+      <!-- Help Links -->
+      <div class="mt-6 text-center space-y-2">
+        <a
+          href="/auth/reset.html"
+          class="text-sm"
+          style="color: #0D47A1;"
+          class="hover:underline"
+        >
+          Reset your password
+        </a>
+      </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="text-center mt-8 text-gray-500 text-sm">
+      © <span id="current-year"></span> NFG One — Northern Facilities Group
+    </div>
+  </div>
+  
+  <!-- Scripts -->
+  <script type="module">
+    import { supabase } from '/js/supabase.js'
+    import { requireNoAuth, showToast, validateEmail, handleAsync } from '/js/auth.js'
+    
+    // Set current year
+    document.getElementById('current-year').textContent = new Date().getFullYear()
+    
+    // Check if already authenticated
+    document.addEventListener('DOMContentLoaded', async () => {
+      await requireNoAuth()
+    })
+    
+    // Handle form submission
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault()
+      
+      const emailInput = document.getElementById('email')
+      const email = emailInput.value.trim()
+      const submitBtn = document.getElementById('submit-btn')
+      const submitText = document.getElementById('submit-text')
+      const submitLoading = document.getElementById('submit-loading')
+      
+      // Validate email
+      if (!validateEmail(email)) {
+        showToast('error', 'Please enter a valid email address')
+        emailInput.focus()
+        return
+      }
+      
+      // Disable button
+      submitBtn.disabled = true
+      submitText.classList.add('hidden')
+      submitLoading.classList.remove('hidden')
+      
+      try {
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/confirm.html`
+          }
+        })
+        
+        if (error) {
+          throw error
+        }
+        
+        showToast('success', 'Check your email for a sign-in link')
+        emailInput.value = ''
+      } catch (error) {
+        console.error('Sign-in error:', error)
+        showToast('error', error.message || 'Failed to send sign-in link. Please try again.')
+      } finally {
+        submitBtn.disabled = false
+        submitText.classList.remove('hidden')
+        submitLoading.classList.add('hidden')
+      }
+    })
+  </script>
+</body>
+</html>
+

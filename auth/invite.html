@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome — NFG One</title>
+  
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Custom Auth CSS -->
+  <link rel="stylesheet" href="/css/auth.css">
+  
+  <!-- Environment Variables -->
+  <script>
+    window.ENV = {
+      SUPABASE_URL: 'https://zqcbldgheimqrnqmbbed.supabase.co',
+      SUPABASE_ANON_KEY: 'eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzLzIucG5nIiwiaWF0IjoxNzYxODY2MTE0LCJleHAiOjQ4ODM5MzAxMTR9.E1JoQZxqPy0HOKna6YfjPCfin5Pc3QF0paEV7qzVfDw'
+    };
+  </script>
+  
+  <style>
+    body {
+      background: linear-gradient(135deg, #E3ECFA 0%, #FFFFFF 100%);
+      min-height: 100vh;
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-screen px-4 py-8">
+  
+  <div class="w-full max-w-md">
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <div class="flex items-center justify-center gap-2 mb-2">
+        <img src="/assets/logo.png" alt="NFG One Logo" class="nfg-logo" onerror="this.style.display='none'">
+        <div>
+          <span class="text-3xl font-bold" style="color: #0D47A1;">NFG</span>
+          <span class="text-3xl font-bold" style="color: #0A3A84;"> One</span>
+        </div>
+      </div>
+      <p class="text-gray-600 text-sm">Where operations meet innovation.</p>
+    </div>
+    
+    <!-- Welcome Card -->
+    <div id="status-card" class="bg-white rounded-2xl border border-gray-200 shadow-lg p-8 text-center">
+      <!-- Loading State -->
+      <div id="loading-state">
+        <div class="auth-spinner mx-auto mb-4"></div>
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">Setting up your account...</h1>
+        <p class="text-gray-600 text-sm">Please wait while we confirm your invitation.</p>
+      </div>
+      
+      <!-- Success State -->
+      <div id="success-state" class="hidden">
+        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8" style="color: #0D47A1;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">Welcome to NFG One!</h1>
+        <p class="text-gray-600 text-sm mb-6">Your account has been activated. You'll be redirected to the dashboard in a moment.</p>
+        <a
+          href="/dashboard.html"
+          id="dashboard-btn"
+          class="inline-block px-6 py-3 rounded-xl text-white font-medium transition hover:opacity-90"
+          style="background-color: #0D47A1;"
+          onmouseover="this.style.backgroundColor='#0A3A84'"
+          onmouseout="this.style.backgroundColor='#0D47A1'"
+        >
+          Continue to Dashboard
+        </a>
+      </div>
+      
+      <!-- Error State -->
+      <div id="error-state" class="hidden">
+        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">Unable to Accept Invitation</h1>
+        <p id="error-message" class="text-gray-600 text-sm mb-6">The invitation link may have expired or is invalid.</p>
+        <a
+          href="/auth/login.html"
+          class="inline-block px-6 py-3 rounded-xl text-white font-medium transition hover:opacity-90"
+          style="background-color: #0D47A1;"
+          onmouseover="this.style.backgroundColor='#0A3A84'"
+          onmouseout="this.style.backgroundColor='#0D47A1'"
+        >
+          Try Login
+        </a>
+      </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="text-center mt-8 text-gray-500 text-sm">
+      © <span id="current-year"></span> NFG One — Northern Facilities Group
+    </div>
+  </div>
+  
+  <!-- Scripts -->
+  <script type="module">
+    import { setSessionFromUrl, formatError } from '/js/auth.js'
+    
+    // Set current year
+    document.getElementById('current-year').textContent = new Date().getFullYear()
+    
+    // Handle invitation on page load
+    document.addEventListener('DOMContentLoaded', async () => {
+      const loadingState = document.getElementById('loading-state')
+      const successState = document.getElementById('success-state')
+      const errorState = document.getElementById('error-state')
+      const errorMessage = document.getElementById('error-message')
+      
+      try {
+        // Try to set session from URL
+        const result = await setSessionFromUrl()
+        
+        if (result.ok) {
+          // Success - show welcome state
+          loadingState.classList.add('hidden')
+          successState.classList.remove('hidden')
+          
+          // Auto-redirect after 3 seconds
+          setTimeout(() => {
+            window.location.href = '/dashboard.html'
+          }, 3000)
+        } else {
+          // Error - show error state
+          loadingState.classList.add('hidden')
+          errorState.classList.remove('hidden')
+          errorMessage.textContent = formatError(result.error)
+        }
+      } catch (error) {
+        console.error('Invitation error:', error)
+        loadingState.classList.add('hidden')
+        errorState.classList.remove('hidden')
+        errorMessage.textContent = formatError(error)
+      }
+    })
+  </script>
+</body>
+</html>
+

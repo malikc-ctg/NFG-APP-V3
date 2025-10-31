@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset Password — NFG One</title>
+  
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Custom Auth CSS -->
+  <link rel="stylesheet" href="/css/auth.css">
+  
+  <!-- Environment Variables -->
+  <script>
+    window.ENV = {
+      SUPABASE_URL: 'https://zqcbldgheimqrnqmbbed.supabase.co',
+      SUPABASE_ANON_KEY: 'eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzLzIucG5nIiwiaWF0IjoxNzYxODY2MTE0LCJleHAiOjQ4ODM5MzAxMTR9.E1JoQZxqPy0HOKna6YfjPCfin5Pc3QF0paEV7qzVfDw'
+    };
+  </script>
+  
+  <style>
+    body {
+      background: linear-gradient(135deg, #E3ECFA 0%, #FFFFFF 100%);
+      min-height: 100vh;
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-screen px-4 py-8">
+  
+  <div class="w-full max-w-md">
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <div class="flex items-center justify-center gap-2 mb-2">
+        <img src="/assets/logo.png" alt="NFG One Logo" class="nfg-logo" onerror="this.style.display='none'">
+        <div>
+          <span class="text-3xl font-bold" style="color: #0D47A1;">NFG</span>
+          <span class="text-3xl font-bold" style="color: #0A3A84;"> One</span>
+        </div>
+      </div>
+      <p class="text-gray-600 text-sm">Where operations meet innovation.</p>
+    </div>
+    
+    <!-- Request Reset Card (default) -->
+    <div id="request-card" class="bg-white rounded-2xl border border-gray-200 shadow-lg p-8">
+      <h1 class="text-2xl font-bold text-gray-900 mb-2">Reset Password</h1>
+      <p class="text-gray-600 text-sm mb-6">Enter your email to receive a password reset link</p>
+      
+      <form id="request-form" class="space-y-4">
+        <div>
+          <label for="request-email" class="block text-sm font-medium text-gray-700 mb-2">
+            Email Address
+          </label>
+          <input
+            type="email"
+            id="request-email"
+            name="email"
+            required
+            autocomplete="email"
+            placeholder="you@example.com"
+            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+          >
+        </div>
+        
+        <button
+          type="submit"
+          id="request-submit-btn"
+          class="w-full py-3 rounded-xl text-white font-medium transition hover:opacity-90 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          style="background-color: #0D47A1;"
+          onmouseover="this.style.backgroundColor='#0A3A84'"
+          onmouseout="this.style.backgroundColor='#0D47A1'"
+        >
+          <span id="request-submit-text">Send Reset Link</span>
+          <span id="request-submit-loading" class="hidden">Sending...</span>
+        </button>
+      </form>
+      
+      <div class="mt-6 text-center">
+        <a
+          href="/auth/login.html"
+          class="text-sm"
+          style="color: #0D47A1;"
+          class="hover:underline"
+        >
+          Back to Sign In
+        </a>
+      </div>
+    </div>
+    
+    <!-- Set New Password Card (hidden initially) -->
+    <div id="set-password-card" class="bg-white rounded-2xl border border-gray-200 shadow-lg p-8 hidden">
+      <h1 class="text-2xl font-bold text-gray-900 mb-2">Set New Password</h1>
+      <p class="text-gray-600 text-sm mb-6">Enter your new password below</p>
+      
+      <form id="set-password-form" class="space-y-4">
+        <div>
+          <label for="new-password" class="block text-sm font-medium text-gray-700 mb-2">
+            New Password
+          </label>
+          <input
+            type="password"
+            id="new-password"
+            name="password"
+            required
+            autocomplete="new-password"
+            placeholder="Enter new password"
+            minlength="8"
+            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+          >
+        </div>
+        
+        <div>
+          <label for="confirm-password" class="block text-sm font-medium text-gray-700 mb-2">
+            Confirm Password
+          </label>
+          <input
+            type="password"
+            id="confirm-password"
+            name="confirmPassword"
+            required
+            autocomplete="new-password"
+            placeholder="Confirm new password"
+            minlength="8"
+            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+          >
+        </div>
+        
+        <button
+          type="submit"
+          id="set-password-submit-btn"
+          class="w-full py-3 rounded-xl text-white font-medium transition hover:opacity-90 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          style="background-color: #0D47A1;"
+          onmouseover="this.style.backgroundColor='#0A3A84'"
+          onmouseout="this.style.backgroundColor='#0D47A1'"
+        >
+          <span id="set-password-submit-text">Update Password</span>
+          <span id="set-password-submit-loading" class="hidden">Updating...</span>
+        </button>
+      </form>
+    </div>
+    
+    <!-- Footer -->
+    <div class="text-center mt-8 text-gray-500 text-sm">
+      © <span id="current-year"></span> NFG One — Northern Facilities Group
+    </div>
+  </div>
+  
+  <!-- Scripts -->
+  <script type="module">
+    import { supabase } from '/js/supabase.js'
+    import { setSessionFromUrl, showToast, validateEmail, formatError, getTokenParams } from '/js/auth.js'
+    
+    // Set current year
+    document.getElementById('current-year').textContent = new Date().getFullYear()
+    
+    const requestCard = document.getElementById('request-card')
+    const setPasswordCard = document.getElementById('set-password-card')
+    
+    // Check if we have tokens (user clicked reset link)
+    document.addEventListener('DOMContentLoaded', async () => {
+      const { hasTokens } = getTokenParams()
+      
+      if (hasTokens) {
+        // Set session first, then show password form
+        const result = await setSessionFromUrl()
+        if (result.ok) {
+          requestCard.classList.add('hidden')
+          setPasswordCard.classList.remove('hidden')
+        } else {
+          showToast('error', formatError(result.error))
+        }
+      }
+    })
+    
+    // Request reset form
+    document.getElementById('request-form').addEventListener('submit', async (e) => {
+      e.preventDefault()
+      
+      const emailInput = document.getElementById('request-email')
+      const email = emailInput.value.trim()
+      const submitBtn = document.getElementById('request-submit-btn')
+      const submitText = document.getElementById('request-submit-text')
+      const submitLoading = document.getElementById('request-submit-loading')
+      
+      if (!validateEmail(email)) {
+        showToast('error', 'Please enter a valid email address')
+        emailInput.focus()
+        return
+      }
+      
+      submitBtn.disabled = true
+      submitText.classList.add('hidden')
+      submitLoading.classList.remove('hidden')
+      
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth/reset.html`
+        })
+        
+        if (error) throw error
+        
+        showToast('success', 'Check your email for a password reset link')
+        emailInput.value = ''
+      } catch (error) {
+        console.error('Reset password error:', error)
+        showToast('error', formatError(error))
+      } finally {
+        submitBtn.disabled = false
+        submitText.classList.remove('hidden')
+        submitLoading.classList.add('hidden')
+      }
+    })
+    
+    // Set new password form
+    document.getElementById('set-password-form').addEventListener('submit', async (e) => {
+      e.preventDefault()
+      
+      const passwordInput = document.getElementById('new-password')
+      const confirmInput = document.getElementById('confirm-password')
+      const password = passwordInput.value
+      const confirmPassword = confirmInput.value
+      const submitBtn = document.getElementById('set-password-submit-btn')
+      const submitText = document.getElementById('set-password-submit-text')
+      const submitLoading = document.getElementById('set-password-submit-loading')
+      
+      if (password.length < 8) {
+        showToast('error', 'Password must be at least 8 characters')
+        passwordInput.focus()
+        return
+      }
+      
+      if (password !== confirmPassword) {
+        showToast('error', 'Passwords do not match')
+        confirmInput.focus()
+        return
+      }
+      
+      submitBtn.disabled = true
+      submitText.classList.add('hidden')
+      submitLoading.classList.remove('hidden')
+      
+      try {
+        const { error } = await supabase.auth.updateUser({
+          password: password
+        })
+        
+        if (error) throw error
+        
+        showToast('success', 'Password updated successfully')
+        
+        // Redirect to login after short delay
+        setTimeout(() => {
+          window.location.href = '/auth/login.html'
+        }, 1500)
+      } catch (error) {
+        console.error('Update password error:', error)
+        showToast('error', formatError(error))
+      } finally {
+        submitBtn.disabled = false
+        submitText.classList.remove('hidden')
+        submitLoading.classList.add('hidden')
+      }
+    })
+  </script>
+</body>
+</html>
+

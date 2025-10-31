@@ -1,8 +1,17 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js'
+// NFG One — Supabase Client Initialization
+// Reads env vars from window.ENV (injected by each page)
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.ENV || {}
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error('❌ Missing SUPABASE_URL or SUPABASE_ANON_KEY in window.ENV')
+}
 
 export const supabase = createClient(
-  'https://zqcbldgheimqrnqmbbed.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxY2JsZGdoZWltcXJucW1iYmVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA3MDM5NjIsImV4cCI6MjA3NjI3OTk2Mn0.UYlnTQeCjNLed6g9oNRLQIXD69OgzRrXupl3LXUvh4I'
+  SUPABASE_URL || 'https://zqcbldgheimqrnqmbbed.supabase.co',
+  SUPABASE_ANON_KEY || ''
 )
 
-
+console.log('✅ Supabase client initialized')
