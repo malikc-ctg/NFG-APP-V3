@@ -1,12 +1,5 @@
 import { supabase } from './supabase.js';
 
-const SUPABASE_FUNCTION_URL =
-  window.ENV?.SUPABASE_FUNCTION_URL ||
-  'https://zqcbldgheimqrnqmbbed.functions.supabase.co';
-
-const GET_VAPID_KEY_ENDPOINT = `${SUPABASE_FUNCTION_URL}/get-vapid-key`;
-const SAVE_SUBSCRIPTION_ENDPOINT = `${SUPABASE_FUNCTION_URL}/save-subscription`;
-
 // Fallback public key (exposed value from user-provided VAPID pair)
 const FALLBACK_VAPID_PUBLIC_KEY = 'BNRzgf5fJSbUfBsaFvCPUWPqvnd1qqKPu8C3tUQp_RoILsvczmd1oZNA-bpHq5q0VnLLjWzcm2U1vYxEbZ_kH4I';
 
@@ -266,19 +259,6 @@ async function getVapidPublicKey() {
     return cachedVapidKey;
   }
 
-  try {
-    const response = await fetch(GET_VAPID_KEY_ENDPOINT, { method: 'GET' });
-    if (response.ok) {
-      const data = await response.json();
-      if (data?.publicKey) {
-        cachedVapidKey = data.publicKey;
-        return cachedVapidKey;
-      }
-    }
-  } catch (error) {
-    console.warn('[Push] Failed to fetch VAPID key from edge function, falling back to embedded key.', error);
-  }
-
   cachedVapidKey = window.ENV?.VAPID_PUBLIC_KEY || FALLBACK_VAPID_PUBLIC_KEY;
   return cachedVapidKey;
 }
@@ -292,43 +272,33 @@ async function syncSubscriptionWithServer(subscription, { requireAuth } = { requ
     return;
   }
 
-  await saveSubscriptionToServer(subscription, token);
+  await saveSubscriptionToServer(subscription);
 }
 
-async function saveSubscriptionToServer(subscription, accessToken) {
+async function saveSubscriptionToServer(subscription) {
   const payload = subscription.toJSON();
-
-  const response = await fetch(SAVE_SUBSCRIPTION_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${accessToken}`
-    },
-    body: JSON.stringify(payload)
+  const { error } = await supabase.functions.invoke('save-subscription', {
+    body: {
+      action: 'save',
+      subscription: payload
+    }
   });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to save subscription: ${errorText}`);
+  if (error) {
+    throw new Error(error.message || 'Failed to save subscription');
   }
 }
 
 async function deleteSubscriptionFromServer(endpoint) {
-  const token = await getAccessToken();
-  if (!token) return;
-
-  const response = await fetch(SAVE_SUBSCRIPTION_ENDPOINT, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify({ endpoint })
+  const { error } = await supabase.functions.invoke('save-subscription', {
+    body: {
+      action: 'delete',
+      endpoint
+    }
   });
 
-  if (!response.ok && response.status !== 404) {
-    const errorText = await response.text();
-    throw new Error(`Failed to delete subscription: ${errorText}`);
+  if (error && error.status !== 404) {
+    throw new Error(error.message || 'Failed to delete subscription');
   }
 }
 

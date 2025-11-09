@@ -3,7 +3,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST,DELETE,OPTIONS'
 }
 
 serve(async (req) => {
@@ -31,21 +32,25 @@ serve(async (req) => {
       return new Response('Invalid user', { status: 401, headers: corsHeaders })
     }
 
-    if (req.method === 'DELETE') {
-      const { endpoint } = await req.json()
+    const payload = await req.json()
+    const action = payload?.action ?? 'save'
+
+    if (action === 'delete') {
+      const endpoint = payload?.endpoint
       if (!endpoint) {
         return new Response('Missing endpoint', { status: 400, headers: corsHeaders })
       }
 
-      await supabaseAdmin.from('push_subscriptions').delete().eq('user_id', user.id).eq('endpoint', endpoint)
+      await supabaseAdmin
+        .from('push_subscriptions')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('endpoint', endpoint)
+
       return new Response('deleted', { status: 200, headers: corsHeaders })
     }
 
-    if (req.method !== 'POST') {
-      return new Response('Method not allowed', { status: 405, headers: corsHeaders })
-    }
-
-    const subscription = await req.json()
+    const subscription = payload?.subscription
     if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
       return new Response('Invalid subscription payload', { status: 400, headers: corsHeaders })
     }
