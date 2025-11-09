@@ -1,7 +1,11 @@
 import { supabase } from './supabase.js';
 
-const GET_VAPID_KEY_ENDPOINT = '/functions/v1/get-vapid-key';
-const SAVE_SUBSCRIPTION_ENDPOINT = '/functions/v1/save-subscription';
+const SUPABASE_FUNCTION_URL =
+  window.ENV?.SUPABASE_FUNCTION_URL ||
+  'https://zqcbldgheimqrnqmbbed.functions.supabase.co';
+
+const GET_VAPID_KEY_ENDPOINT = `${SUPABASE_FUNCTION_URL}/get-vapid-key`;
+const SAVE_SUBSCRIPTION_ENDPOINT = `${SUPABASE_FUNCTION_URL}/save-subscription`;
 
 // Fallback public key (exposed value from user-provided VAPID pair)
 const FALLBACK_VAPID_PUBLIC_KEY = 'BNRzgf5fJSbUfBsaFvCPUWPqvnd1qqKPu8C3tUQp_RoILsvczmd1oZNA-bpHq5q0VnLLjWzcm2U1vYxEbZ_kH4I';
