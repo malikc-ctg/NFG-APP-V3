@@ -1,5 +1,5 @@
 // Service Worker for NFG App
-const CACHE_NAME = 'nfg-app-v1';
+const CACHE_NAME = 'nfg-app-v2';
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache immediately
@@ -15,6 +15,7 @@ const PRECACHE_URLS = [
   '/inventory.html',
   '/offline.html',
   '/manifest.json',
+  '/js/pwa.js',
   '/js/supabase.js',
   '/js/auth.js',
   '/js/ui.js',
@@ -24,7 +25,10 @@ const PRECACHE_URLS = [
   '/css/notifications.css',
   '/css/loader.css',
   '/css/custom-dropdown.css',
-  '/css/mobile-menu.css'
+  '/css/mobile-menu.css',
+  '/assets/icons/icon-192.png',
+  '/assets/icons/icon-512.png',
+  '/assets/icons/icon-maskable-512.png'
 ];
 
 // Install event - cache essential files
@@ -109,17 +113,50 @@ self.addEventListener('sync', (event) => {
   }
 });
 
-// Push notifications (future feature)
-self.addEventListener('push', (event) => {
-  const options = {
-    body: event.data ? event.data.text() : 'New notification',
-    icon: 'https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/Banner%20Logo%20-%20NFG.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL0Jhbm5lciBMb2dvIC0gTkZHLnBuZyIsImlhdCI6MTc2MTQwODAwNywiZXhwIjo0ODgzNDcyMDA3fQ.ioiCAXNeXFBkHluCdCLF25y527mxnjBDcLPtDMV1Jds',
-    badge: 'https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/Banner%20Logo%20-%20NFG.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL0Jhbm5lciBMb2dvIC0gTkZHLnBuZyIsImlhdCI6MTc2MTQwODAwNywiZXhwIjo0ODgzNDcyMDA3fQ.ioiCAXNeXFBkHluCdCLF25y527mxnjBDcLPtDMV1Jds',
-    vibrate: [200, 100, 200]
-  };
-  
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const destination = event.notification.data?.url || '/dashboard.html';
   event.waitUntil(
-    self.registration.showNotification('NFG App', options)
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+      for (const client of windowClients) {
+        if (client.url === destination && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(destination);
+      }
+    })
   );
+});
+
+// Push notifications
+self.addEventListener('push', (event) => {
+  if (!event.data) {
+    return;
+  }
+
+  let payload = {};
+  try {
+    payload = event.data.json();
+  } catch (error) {
+    payload = {
+      title: 'NFG App',
+      body: event.data.text() || 'New notification',
+      url: '/dashboard.html'
+    };
+  }
+
+  const options = {
+    body: payload.body || 'New notification',
+    icon: '/assets/icons/icon-512.png',
+    badge: '/assets/icons/icon-192.png',
+    vibrate: [200, 100, 200],
+    data: {
+      url: payload.url || '/dashboard.html'
+    }
+  };
+
+  event.waitUntil(self.registration.showNotification(payload.title || 'NFG App', options));
 });
 

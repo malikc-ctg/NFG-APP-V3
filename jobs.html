@@ -4,7 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NFG — Jobs</title>
-  <link rel="icon" type="image/png" href="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/2.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzLzIucG5nIiwiaWF0IjoxNzYxODY2MTE0LCJleHAiOjQ4ODM5MzAxMTR9.E1JoQZxqPy0HOKna6YfjPCfin5Pc3QF0paEV7qzVfDw">
+  <link rel="icon" type="image/png" href="/assets/icons/icon-192.png">
+
+  <!-- PWA Support -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0D47A1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="NFG">
+  <link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
 
   <!-- Inter font -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -308,7 +317,11 @@
             End Work
           </button>
           
-          <!-- For Admin/Client: Update Status button -->
+          <!-- For Admin/Client: Edit and Update Status buttons -->
+          <button id="edit-job-btn" class="hidden inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight dark:hover:bg-gray-700">
+            <i data-lucide="edit" class="w-4 h-4"></i>
+            Edit Job
+          </button>
           <button id="update-status-btn" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark">
             <i data-lucide="refresh-cw" class="w-4 h-4"></i>
             Update Status
@@ -508,6 +521,94 @@
     </div>
   </div>
 
+  <!-- Edit Job Modal -->
+  <div id="editJobModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800">
+        <h4 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">Edit Job</h4>
+        <button data-action="close-modal" data-target="editJobModal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="edit-job-form" class="p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Job Title <span class="text-red-500">*</span></label>
+          <input type="text" name="title" id="edit-job-title" required placeholder="e.g., Office Deep Clean" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Site <span class="text-red-500">*</span></label>
+          <select name="site_id" id="edit-job-site-select" required data-custom-dropdown="true" data-placeholder="Select a site">
+            <option value="">Select a site</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Job Type <span class="text-red-500">*</span></label>
+            <select name="job_type" id="edit-job-type" required data-custom-dropdown="true" data-placeholder="Select job type">
+              <option value="cleaning">Cleaning</option>
+              <option value="maintenance">Maintenance</option>
+              <option value="repair">Repair</option>
+              <option value="inspection">Inspection</option>
+              <option value="emergency">Emergency</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Frequency</label>
+            <select name="frequency" id="edit-job-frequency-select" data-custom-dropdown="true" data-placeholder="Select frequency">
+              <option value="single visit">Single Visit</option>
+              <option value="recurring">Recurring</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- Recurrence Pattern (only shown for recurring jobs) -->
+        <div id="edit-recurrence-pattern-section" class="hidden">
+          <label class="block text-sm font-medium mb-1.5">Recurrence Pattern <span class="text-red-500">*</span></label>
+          <select name="recurrence_pattern" id="edit-job-recurrence-pattern" data-custom-dropdown="true" data-placeholder="How often should this job repeat?">
+            <option value="weekly">Weekly</option>
+            <option value="biweekly">Every 2 Weeks</option>
+            <option value="monthly">Monthly</option>
+          </select>
+          <p class="text-xs text-gray-500 mt-1.5">
+            📅 The next instance will automatically be created when this job is completed.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Scheduled Date</label>
+            <input type="date" name="scheduled_date" id="edit-job-scheduled-date" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Estimated Hours</label>
+            <input type="number" name="estimated_hours" id="edit-job-estimated-hours" min="0" step="0.5" placeholder="4" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Description</label>
+          <textarea name="description" id="edit-job-description" rows="3" placeholder="Add job details..." class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none resize-none"></textarea>
+        </div>
+
+        <div id="edit-job-form-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl p-3"></div>
+
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray dark:border-gray-700">
+          <button type="button" data-action="close-modal" data-target="editJobModal" class="px-5 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight font-medium transition">
+            Cancel
+          </button>
+          <button type="submit" id="submit-edit-job-btn" class="px-5 py-2.5 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark font-medium transition">
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- PWA Installation -->
+  <script type="module" src="./js/pwa.js"></script>
+
   <!-- ========== SCRIPTS ========== -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -659,10 +760,8 @@
       // If user is staff, only show jobs assigned to them
       if (currentUserProfile && currentUserProfile.role === 'staff') {
         query = query.eq('assigned_worker_id', currentUser.id);
-      } else {
-        // Admin/Client - only show jobs they created
-        query = query.eq('created_by', currentUser.id);
       }
+      // Admin/Client can see all jobs (no filter needed, RLS will handle permissions)
       
       const { data, error } = await query.order('created_at', { ascending: false });
       
@@ -858,6 +957,19 @@
         assignWorkerBtn.style.display = 'none';
       } else if (assignWorkerBtn) {
         assignWorkerBtn.style.display = '';
+      }
+
+      // Show/hide Edit Job button (only for admins and clients)
+      const editJobBtn = document.getElementById('edit-job-btn');
+      if (editJobBtn) {
+        const isAdminOrClient = currentUserProfile && ['admin', 'client'].includes(currentUserProfile.role);
+        if (isAdminOrClient) {
+          editJobBtn.classList.remove('hidden');
+          editJobBtn.classList.add('inline-flex');
+        } else {
+          editJobBtn.classList.add('hidden');
+          editJobBtn.classList.remove('inline-flex');
+        }
       }
 
       // Hide archive job button for staff
@@ -1747,6 +1859,16 @@
         recurrenceSection?.classList.add('hidden');
       }
     });
+
+    // Show/hide recurrence pattern in edit form
+    document.getElementById('edit-job-frequency-select')?.addEventListener('change', (e) => {
+      const recurrenceSection = document.getElementById('edit-recurrence-pattern-section');
+      if (e.target.value === 'recurring') {
+        recurrenceSection?.classList.remove('hidden');
+      } else {
+        recurrenceSection?.classList.add('hidden');
+      }
+    });
     
     // Create job
     document.getElementById('create-job-form')?.addEventListener('submit', async (e) => {
@@ -1926,6 +2048,127 @@
         toast.success('Worker has been unassigned successfully!', 'Worker Unassigned');
       }
     };
+
+    // Edit Job button handler
+    document.getElementById('edit-job-btn')?.addEventListener('click', async () => {
+      if (!currentJobId) {
+        toast.error('No job selected', 'Error');
+        return;
+      }
+
+      const jobs = await getJobs();
+      const job = jobs.find(j => j.id === currentJobId);
+      
+      if (!job) {
+        toast.error('Job not found', 'Error');
+        return;
+      }
+
+      // Populate edit form with current job data
+      document.getElementById('edit-job-title').value = job.title || '';
+      document.getElementById('edit-job-type').value = job.job_type || 'cleaning';
+      document.getElementById('edit-job-frequency-select').value = job.frequency || 'single visit';
+      document.getElementById('edit-job-scheduled-date').value = job.scheduled_date ? new Date(job.scheduled_date).toISOString().split('T')[0] : '';
+      document.getElementById('edit-job-estimated-hours').value = job.estimated_hours || '';
+      document.getElementById('edit-job-description').value = job.description || '';
+
+      // Handle recurrence pattern
+      const editRecurrenceSection = document.getElementById('edit-recurrence-pattern-section');
+      if (job.frequency === 'recurring') {
+        editRecurrenceSection?.classList.remove('hidden');
+        document.getElementById('edit-job-recurrence-pattern').value = job.recurrence_pattern || 'weekly';
+      } else {
+        editRecurrenceSection?.classList.add('hidden');
+      }
+
+      // Load sites dropdown for edit form
+      const sites = await getSites();
+      const editSiteSelect = document.getElementById('edit-job-site-select');
+      if (editSiteSelect) {
+        editSiteSelect.innerHTML = '<option value="">Select a site</option>' + 
+          sites.map(site => `<option value="${site.id}" ${site.id == job.site_id ? 'selected' : ''}>${site.name}</option>`).join('');
+        
+        // Reinitialize custom dropdown
+        const wrapper = editSiteSelect.previousElementSibling;
+        if (wrapper && wrapper.classList.contains('nfg-select-wrapper')) {
+          wrapper.remove();
+        }
+        editSiteSelect.style.display = '';
+        new NFGDropdown(editSiteSelect);
+      }
+
+      // Reinitialize other dropdowns
+      new NFGDropdown(document.getElementById('edit-job-type'));
+      new NFGDropdown(document.getElementById('edit-job-frequency-select'));
+      if (job.frequency === 'recurring') {
+        new NFGDropdown(document.getElementById('edit-job-recurrence-pattern'));
+      }
+
+      // Open edit modal
+      const modal = document.getElementById('editJobModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      if (window.lucide) lucide.createIcons();
+    });
+
+    // Edit Job form submission
+    document.getElementById('edit-job-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!currentJobId) {
+        toast.error('No job selected', 'Error');
+        return;
+      }
+
+      const formData = new FormData(e.target);
+      
+      const jobData = {
+        title: formData.get('title'),
+        site_id: formData.get('site_id'),
+        job_type: formData.get('job_type'),
+        frequency: formData.get('frequency'),
+        scheduled_date: formData.get('scheduled_date') || null,
+        estimated_hours: formData.get('estimated_hours') || null,
+        description: formData.get('description') || null,
+        updated_at: new Date().toISOString()
+      };
+
+      // Add recurrence pattern if this is a recurring job
+      if (jobData.frequency === 'recurring') {
+        jobData.recurrence_pattern = formData.get('recurrence_pattern') || 'weekly';
+      } else {
+        jobData.recurrence_pattern = null;
+        jobData.recurrence_series_id = null;
+      }
+
+      const submitBtn = document.getElementById('submit-edit-job-btn');
+      const originalText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving...';
+
+      const { error } = await supabase
+        .from('jobs')
+        .update(jobData)
+        .eq('id', currentJobId);
+
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+
+      if (error) {
+        console.error('Error updating job:', error);
+        document.getElementById('edit-job-form-error').textContent = 'Failed to update job. Please try again.';
+        document.getElementById('edit-job-form-error').classList.remove('hidden');
+        toast.error('Failed to update job: ' + error.message, 'Update Error');
+      } else {
+        document.getElementById('editJobModal').classList.add('hidden');
+        document.getElementById('editJobModal').classList.remove('flex');
+        e.target.reset();
+        
+        // Refresh job details and jobs list
+        await viewJob(currentJobId);
+        await renderJobs();
+        toast.success('Job updated successfully!', 'Job Updated');
+      }
+    });
 
     // Update "Create Job" button
     const createJobBtn = document.querySelector('[data-action="open-modal"][data-target="createJobModal"]');

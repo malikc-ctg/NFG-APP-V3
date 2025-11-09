@@ -1,23 +1,16 @@
-// PWA Installation and Service Worker Registration
-// Add this to all main pages
+import { supabase } from './supabase.js';
 
-// Register service worker
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then((registration) => {
-        console.log('✅ Service Worker registered:', registration.scope);
-        
-        // Check for updates every hour
-        setInterval(() => {
-          registration.update();
-        }, 60 * 60 * 1000);
-      })
-      .catch((error) => {
-        console.error('❌ Service Worker registration failed:', error);
-      });
-  });
-}
+const GET_VAPID_KEY_ENDPOINT = '/functions/v1/get-vapid-key';
+const SAVE_SUBSCRIPTION_ENDPOINT = '/functions/v1/save-subscription';
+
+// Fallback public key (exposed value from user-provided VAPID pair)
+const FALLBACK_VAPID_PUBLIC_KEY = 'BNRzgf5fJSbUfBsaFvCPUWPqvnd1qqKPu8C3tUQp_RoILsvczmd1oZNA-bpHq5q0VnLLjWzcm2U1vYxEbZ_kH4I';
+
+const pushSupported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+
+let serviceWorkerRegistration = null;
+let currentSubscription = null;
+let cachedVapidKey = null;
 
 // Install prompt
 let deferredPrompt;
@@ -38,7 +31,7 @@ function showInstallBanner() {
   installBanner.innerHTML = `
     <div class="flex items-start gap-3">
       <img 
-        src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/2.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzLzIucG5nIiwiaWF0IjoxNzYxODY2MTE0LCJleHAiOjQ4ODM5MzAxMTR9.E1JoQZxqPy0HOKna6YfjPCfin5Pc3QF0paEV7qzVfDw" 
+        src="/assets/icons/icon-192.png" 
         alt="NFG" 
         class="w-12 h-12 rounded-lg"
       >
@@ -114,7 +107,7 @@ window.addEventListener('appinstalled', () => {
 });
 
 // Check if running as PWA
-function isPWA() {
+export function isPWA() {
   return window.matchMedia('(display-mode: standalone)').matches || 
          window.navigator.standalone === true;
 }
@@ -140,8 +133,227 @@ window.addEventListener('offline', () => {
   }
 });
 
-// Export for use in other modules
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { isPWA };
+// --- Service worker registration & push setup ---
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(async (registration) => {
+        console.log('✅ Service Worker registered:', registration.scope);
+        serviceWorkerRegistration = registration;
+
+        // Check for updates every hour
+        setInterval(() => {
+          registration.update();
+        }, 60 * 60 * 1000);
+
+        await refreshSubscriptionState();
+      })
+      .catch((error) => {
+        console.error('❌ Service Worker registration failed:', error);
+      });
+  });
+
+  navigator.serviceWorker.ready.then(async (registration) => {
+    if (!serviceWorkerRegistration) {
+      serviceWorkerRegistration = registration;
+      await refreshSubscriptionState();
+    }
+  });
 }
 
+export function getPushStatus() {
+  return {
+    supported: pushSupported,
+    permission: pushSupported ? Notification.permission : 'denied',
+    subscribed: !!currentSubscription
+  };
+}
+
+export async function enablePushNotifications() {
+  if (!pushSupported) {
+    throw new Error('Push notifications are not supported in this browser.');
+  }
+
+  const registration = await ensureServiceWorkerRegistration();
+
+  const permission = await Notification.requestPermission();
+  if (permission !== 'granted') {
+    dispatchPushStatus();
+    throw new Error('Notification permission was not granted.');
+  }
+
+  const existing = await registration.pushManager.getSubscription();
+  if (existing) {
+    currentSubscription = existing;
+    await syncSubscriptionWithServer(existing, { requireAuth: true });
+    dispatchPushStatus();
+    return existing;
+  }
+
+  const vapidKey = await getVapidPublicKey();
+  const subscription = await registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(vapidKey)
+  });
+
+  currentSubscription = subscription;
+  await syncSubscriptionWithServer(subscription, { requireAuth: true });
+  dispatchPushStatus();
+  return subscription;
+}
+
+export async function disablePushNotifications() {
+  if (!pushSupported) {
+    return;
+  }
+
+  const registration = await ensureServiceWorkerRegistration();
+  const subscription = await registration.pushManager.getSubscription();
+
+  if (!subscription) {
+    currentSubscription = null;
+    dispatchPushStatus();
+    return;
+  }
+
+  try {
+    await deleteSubscriptionFromServer(subscription.endpoint);
+  } catch (error) {
+    console.warn('[Push] Failed to remove subscription from server:', error);
+  }
+
+  await subscription.unsubscribe();
+  currentSubscription = null;
+  dispatchPushStatus();
+}
+
+async function refreshSubscriptionState() {
+  if (!pushSupported) {
+    dispatchPushStatus();
+    return;
+  }
+
+  try {
+    const registration = await ensureServiceWorkerRegistration();
+    currentSubscription = await registration.pushManager.getSubscription();
+
+    if (currentSubscription) {
+      await syncSubscriptionWithServer(currentSubscription, { requireAuth: false });
+    }
+  } catch (error) {
+    console.warn('[Push] Unable to refresh subscription state:', error);
+  }
+
+  dispatchPushStatus();
+}
+
+async function ensureServiceWorkerRegistration() {
+  if (serviceWorkerRegistration) {
+    return serviceWorkerRegistration;
+  }
+
+  serviceWorkerRegistration = await navigator.serviceWorker.ready;
+  return serviceWorkerRegistration;
+}
+
+async function getVapidPublicKey() {
+  if (cachedVapidKey) {
+    return cachedVapidKey;
+  }
+
+  try {
+    const response = await fetch(GET_VAPID_KEY_ENDPOINT, { method: 'GET' });
+    if (response.ok) {
+      const data = await response.json();
+      if (data?.publicKey) {
+        cachedVapidKey = data.publicKey;
+        return cachedVapidKey;
+      }
+    }
+  } catch (error) {
+    console.warn('[Push] Failed to fetch VAPID key from edge function, falling back to embedded key.', error);
+  }
+
+  cachedVapidKey = window.ENV?.VAPID_PUBLIC_KEY || FALLBACK_VAPID_PUBLIC_KEY;
+  return cachedVapidKey;
+}
+
+async function syncSubscriptionWithServer(subscription, { requireAuth } = { requireAuth: true }) {
+  const token = await getAccessToken();
+  if (!token) {
+    if (requireAuth) {
+      throw new Error('You must be logged in to manage push notifications.');
+    }
+    return;
+  }
+
+  await saveSubscriptionToServer(subscription, token);
+}
+
+async function saveSubscriptionToServer(subscription, accessToken) {
+  const payload = subscription.toJSON();
+
+  const response = await fetch(SAVE_SUBSCRIPTION_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to save subscription: ${errorText}`);
+  }
+}
+
+async function deleteSubscriptionFromServer(endpoint) {
+  const token = await getAccessToken();
+  if (!token) return;
+
+  const response = await fetch(SAVE_SUBSCRIPTION_ENDPOINT, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ endpoint })
+  });
+
+  if (!response.ok && response.status !== 404) {
+    const errorText = await response.text();
+    throw new Error(`Failed to delete subscription: ${errorText}`);
+  }
+}
+
+async function getAccessToken() {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token ?? null;
+  } catch (error) {
+    console.warn('[Push] Unable to retrieve Supabase session:', error);
+    return null;
+  }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+function dispatchPushStatus() {
+  const detail = getPushStatus();
+  window.dispatchEvent(new CustomEvent('nfg:push-status-changed', { detail }));
+}
+
+dispatchPushStatus();

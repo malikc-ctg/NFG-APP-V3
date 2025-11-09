@@ -4,7 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Settings — NFG Dashboard</title>
-  <link rel="icon" type="image/png" href="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/2.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzLzIucG5nIiwiaWF0IjoxNzYxODY2MTE0LCJleHAiOjQ4ODM5MzAxMTR9.E1JoQZxqPy0HOKna6YfjPCfin5Pc3QF0paEV7qzVfDw">
+  <link rel="icon" type="image/png" href="/assets/icons/icon-192.png">
+
+  <!-- PWA Support -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0D47A1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="NFG">
+  <link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -43,6 +52,8 @@
       }
     }
   </script>
+  
+  <script type="module" src="./js/pwa.js"></script>
   
   <!-- Notification Center -->
   <link rel="stylesheet" href="./css/notification-center.css">
@@ -275,40 +286,156 @@
 
         <!-- Notifications -->
         <section class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl shadow-nfg p-6">
-          <div class="flex items-center gap-3 mb-4">
+          <div class="flex items-center gap-3 mb-6">
             <div class="w-10 h-10 rounded-full bg-nfglight dark:bg-gray-700 flex items-center justify-center">
               <i data-lucide="bell" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
             </div>
             <div>
-              <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Notifications</h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400">Configure your notification preferences</p>
+              <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Notification Preferences</h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Control how you receive notifications</p>
             </div>
           </div>
           
-          <div class="space-y-4">
-            <label class="flex items-center justify-between cursor-pointer">
-              <div>
-                <span class="font-medium">Email Notifications</span>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Receive updates via email</p>
+          <!-- General Preferences -->
+          <div class="mb-6 pb-4 border-b border-nfgray dark:border-gray-700">
+            <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">General Settings</h4>
+            <div class="space-y-4">
+              <label class="flex items-center justify-between cursor-pointer">
+                <div>
+                  <span class="font-medium">Email Notifications</span>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Receive notifications via email</p>
+                </div>
+                <input type="checkbox" id="notif-email-enabled" class="toggle-checkbox" data-pref="email_enabled">
+              </label>
+              
+              <label class="flex items-center justify-between cursor-pointer">
+                <div>
+                  <span class="font-medium">In-App Notifications</span>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Show notifications in the app</p>
+                </div>
+                <input type="checkbox" id="notif-in-app-enabled" class="toggle-checkbox" data-pref="in_app_enabled">
+              </label>
+              
+              <div class="p-4 bg-nfglight/40 dark:bg-gray-700/40 rounded-xl border border-nfgblue/20 dark:border-blue-900/30">
+                <div class="flex items-start gap-3">
+                  <div class="w-9 h-9 rounded-full bg-nfgblue/10 text-nfgblue dark:text-blue-400 dark:bg-blue-900/30 flex items-center justify-center">
+                    <i data-lucide="bell" class="w-4 h-4"></i>
+                  </div>
+                  <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="font-medium">Push Notifications</span>
+                      <span id="push-permission-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300"></span>
+                    </div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                      Receive instant alerts even when the app is closed. Browser permission required.
+                    </p>
+                    <div class="flex items-center gap-3 flex-wrap">
+                      <button id="settings-toggle-push-btn" class="px-4 py-2 text-sm font-medium rounded-lg border border-nfgblue text-nfgblue hover:bg-nfglight dark:text-blue-400 dark:border-blue-400 dark:hover:bg-gray-600 transition">
+                        Loading...
+                      </button>
+                      <span id="settings-push-status" class="text-xs text-gray-500 dark:text-gray-400"></span>
+                    </div>
+                    <input type="hidden" id="notif-push-enabled" value="true">
+                  </div>
+                </div>
               </div>
-              <input type="checkbox" id="notif-email" class="toggle-checkbox">
-            </label>
-            
-            <label class="flex items-center justify-between cursor-pointer">
-              <div>
-                <span class="font-medium">Job Reminders</span>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Get reminders for scheduled jobs</p>
-              </div>
-              <input type="checkbox" id="notif-jobs" class="toggle-checkbox">
-            </label>
-            
-            <label class="flex items-center justify-between cursor-pointer">
-              <div>
-                <span class="font-medium">Emergency Alerts</span>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Immediate notifications for urgent requests</p>
-              </div>
-              <input type="checkbox" id="notif-emergency" class="toggle-checkbox" checked>
-            </label>
+            </div>
+          </div>
+          
+          <!-- Job Notifications -->
+          <div class="mb-6 pb-4 border-b border-nfgray dark:border-gray-700">
+            <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Job Notifications</h4>
+            <div class="space-y-4">
+              <label class="flex items-center justify-between cursor-pointer">
+                <div>
+                  <span class="font-medium">Job Assigned</span>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">When you're assigned to a job</p>
+                </div>
+                <input type="checkbox" id="notif-job-assigned" class="toggle-checkbox" data-pref="job_assigned">
+              </label>
+              
+              <label class="flex items-center justify-between cursor-pointer">
+                <div>
+                  <span class="font-medium">Job Completed</span>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">When a job you're watching is completed</p>
+                </div>
+                <input type="checkbox" id="notif-job-completed" class="toggle-checkbox" data-pref="job_completed">
+              </label>
+              
+              <label class="flex items-center justify-between cursor-pointer">
+                <div>
+                  <span class="font-medium">Job Updated</span>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">When a job is modified</p>
+                </div>
+                <input type="checkbox" id="notif-job-updated" class="toggle-checkbox" data-pref="job_updated">
+              </label>
+            </div>
+          </div>
+          
+          <!-- Site & Booking Notifications -->
+          <div class="mb-6 pb-4 border-b border-nfgray dark:border-gray-700">
+            <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Site & Booking Notifications</h4>
+            <div class="space-y-4">
+              <label class="flex items-center justify-between cursor-pointer">
+                <div>
+                  <span class="font-medium">Site Assigned</span>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">When you're assigned to a site</p>
+                </div>
+                <input type="checkbox" id="notif-site-assigned" class="toggle-checkbox" data-pref="site_assigned">
+              </label>
+              
+              <label class="flex items-center justify-between cursor-pointer">
+                <div>
+                  <span class="font-medium">Booking Created</span>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">When a new booking is created</p>
+                </div>
+                <input type="checkbox" id="notif-booking-created" class="toggle-checkbox" data-pref="booking_created">
+              </label>
+              
+              <label class="flex items-center justify-between cursor-pointer">
+                <div>
+                  <span class="font-medium">Booking Updated</span>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">When a booking is modified</p>
+                </div>
+                <input type="checkbox" id="notif-booking-updated" class="toggle-checkbox" data-pref="booking_updated">
+              </label>
+              
+              <label class="flex items-center justify-between cursor-pointer">
+                <div>
+                  <span class="font-medium">Booking Cancelled</span>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">When a booking is cancelled</p>
+                </div>
+                <input type="checkbox" id="notif-booking-cancelled" class="toggle-checkbox" data-pref="booking_cancelled">
+              </label>
+            </div>
+          </div>
+          
+          <!-- Other Notifications -->
+          <div>
+            <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Other Notifications</h4>
+            <div class="space-y-4">
+              <label class="flex items-center justify-between cursor-pointer">
+                <div>
+                  <span class="font-medium">Mentions</span>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">When you're mentioned in comments</p>
+                </div>
+                <input type="checkbox" id="notif-mention" class="toggle-checkbox" data-pref="mention">
+              </label>
+              
+              <label class="flex items-center justify-between cursor-pointer">
+                <div>
+                  <span class="font-medium">System Notifications</span>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Important system updates and alerts</p>
+                </div>
+                <input type="checkbox" id="notif-system" class="toggle-checkbox" data-pref="system">
+              </label>
+            </div>
+          </div>
+          
+          <div class="mt-6 pt-4 border-t border-nfgray dark:border-gray-700">
+            <button id="save-notification-preferences-btn" class="w-full px-4 py-2.5 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark font-medium">
+              Save Preferences
+            </button>
           </div>
         </section>
 
@@ -675,6 +802,7 @@
     import { supabase } from './js/supabase.js'
     import { NFGDropdown, initCustomDropdowns } from './js/custom-dropdown.js'
     import { showNotification, showConfirm, showPrompt, toast, notify } from './js/notifications.js'
+    import { enablePushNotifications, disablePushNotifications, getPushStatus } from './js/pwa.js'
     import {
       getCurrentUser,
       canManageUsers,
@@ -740,11 +868,8 @@
           document.getElementById('user-display-name').value = displayName
         }
         
-        // Load notification preferences
-        const prefs = JSON.parse(localStorage.getItem('nfg_notif_prefs') || '{}')
-        document.getElementById('notif-email').checked = prefs.email ?? false
-        document.getElementById('notif-jobs').checked = prefs.jobs ?? false
-        document.getElementById('notif-emergency').checked = prefs.emergency ?? true
+        // Load notification preferences from database
+        await loadNotificationPreferences()
       }
     }
 
@@ -752,6 +877,121 @@
     document.getElementById('upload-profile-picture-btn')?.addEventListener('click', () => {
       document.getElementById('profile-picture-input').click()
     })
+
+    // Push notification controls
+    const pushToggleButton = document.getElementById('settings-toggle-push-btn')
+    if (pushToggleButton) {
+      pushToggleButton.addEventListener('click', async () => {
+        const status = getPushStatus()
+        const hiddenInput = document.getElementById('notif-push-enabled')
+
+        if (!status.supported) {
+          toast.warning('Push notifications are not supported in this browser.')
+          return
+        }
+
+        if (status.permission === 'denied') {
+          toast.error('Notifications are blocked. Enable them in your browser settings first.')
+          return
+        }
+
+        pushToggleButton.disabled = true
+        const originalText = pushToggleButton.textContent
+        pushToggleButton.textContent = 'Working...'
+
+        try {
+          if (status.subscribed) {
+            await disablePushNotifications()
+            if (hiddenInput) hiddenInput.value = 'false'
+            toast.info('Push notifications disabled on this device.')
+            document.getElementById('save-notification-preferences-btn')?.classList.add('opacity-90')
+          } else {
+            await enablePushNotifications()
+            if (hiddenInput) hiddenInput.value = 'true'
+            toast.success('Push notifications enabled on this device.')
+            document.getElementById('save-notification-preferences-btn')?.classList.add('opacity-90')
+          }
+        } catch (error) {
+          console.error('Failed to toggle push notifications:', error)
+          toast.error(error?.message || 'Could not update push notifications.')
+        } finally {
+          pushToggleButton.disabled = false
+          pushToggleButton.textContent = originalText
+          const updatedStatus = getPushStatus()
+          const prefEnabled = (document.getElementById('notif-push-enabled')?.value ?? 'true') !== 'false'
+          updatePushSettingsUI(updatedStatus, prefEnabled)
+        }
+      })
+
+      window.addEventListener('nfg:push-status-changed', (event) => {
+        const status = event?.detail || getPushStatus()
+        const prefEnabled = (document.getElementById('notif-push-enabled')?.value ?? 'true') !== 'false'
+        updatePushSettingsUI(status, prefEnabled)
+      })
+
+      // Initialize on load
+      const initialPref = (document.getElementById('notif-push-enabled')?.value ?? 'true') !== 'false'
+      updatePushSettingsUI(getPushStatus(), initialPref)
+    }
+
+    function updatePushSettingsUI(status, preferenceEnabled = true) {
+      const badge = document.getElementById('push-permission-badge')
+      const button = document.getElementById('settings-toggle-push-btn')
+      const statusText = document.getElementById('settings-push-status')
+      const hiddenInput = document.getElementById('notif-push-enabled')
+
+      if (!badge || !button || !statusText || !hiddenInput) return
+
+      const isSupported = status?.supported ?? false
+      const permission = status?.permission ?? 'default'
+      const subscribed = status?.subscribed ?? false
+
+      if (!isSupported) {
+        badge.textContent = 'Not supported'
+        badge.className = 'text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+        button.textContent = 'Not supported'
+        button.disabled = true
+        statusText.textContent = 'Push notifications are not supported in this browser.'
+        hiddenInput.value = 'false'
+        return
+      }
+
+      if (permission === 'denied') {
+        badge.textContent = 'Blocked'
+        badge.className = 'text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-300'
+        button.textContent = 'Notifications blocked'
+        button.disabled = true
+        statusText.textContent = 'Enable notifications in your browser settings to receive push alerts.'
+        hiddenInput.value = 'false'
+        return
+      }
+
+      if (permission === 'granted') {
+        badge.textContent = 'Allowed'
+        badge.className = 'text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-600 dark:bg-green-900/40 dark:text-green-300'
+      } else {
+        badge.textContent = 'Needs permission'
+        badge.className = 'text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-600 dark:bg-yellow-900/40 dark:text-yellow-300'
+      }
+
+      button.disabled = false
+
+      if (!preferenceEnabled) {
+        button.textContent = 'Enable Push'
+        statusText.textContent = 'Push notifications are disabled in your preferences.'
+        hiddenInput.value = 'false'
+      } else if (subscribed) {
+        button.textContent = 'Disable Push'
+        statusText.textContent = 'Push notifications are enabled on this device.'
+        hiddenInput.value = 'true'
+      } else {
+        button.textContent = 'Enable Push'
+        statusText.textContent = permission === 'granted'
+          ? 'Push notifications are off. Click to enable.'
+          : 'Click enable to request notification permission.'
+        hiddenInput.value = 'false'
+      }
+    }
 
     // Handle profile picture file selection
     document.getElementById('profile-picture-input')?.addEventListener('change', async (e) => {
@@ -851,15 +1091,169 @@
       }
     })
 
-    // Save notification preferences
-    document.querySelectorAll('.toggle-checkbox').forEach(toggle => {
-      toggle.addEventListener('change', () => {
-        const prefs = {
-          email: document.getElementById('notif-email').checked,
-          jobs: document.getElementById('notif-jobs').checked,
-          emergency: document.getElementById('notif-emergency').checked
+    // Load notification preferences from database
+    async function loadNotificationPreferences() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        // Fetch preferences from database
+        const { data: preferences, error } = await supabase
+          .from('notification_preferences')
+          .select('*')
+          .eq('user_id', user.id)
+          .single()
+
+        if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+          console.error('Error loading preferences:', error)
+          toast.error('Failed to load notification preferences')
+          return
         }
-        localStorage.setItem('nfg_notif_prefs', JSON.stringify(prefs))
+
+        // If no preferences exist, create defaults
+        if (!preferences) {
+          await createDefaultPreferences(user.id)
+          // Reload after creating defaults
+          const { data: newPrefs } = await supabase
+            .from('notification_preferences')
+            .select('*')
+            .eq('user_id', user.id)
+            .single()
+          
+          if (newPrefs) {
+            setPreferenceValues(newPrefs)
+          }
+        } else {
+          setPreferenceValues(preferences)
+        }
+      } catch (error) {
+        console.error('Error in loadNotificationPreferences:', error)
+        toast.error('Failed to load notification preferences')
+      }
+    }
+
+    // Create default preferences for a user
+    async function createDefaultPreferences(userId) {
+      try {
+        const { error } = await supabase
+          .from('notification_preferences')
+          .insert({
+            user_id: userId,
+            email_enabled: true,
+            push_enabled: true,
+            in_app_enabled: true,
+            job_assigned: true,
+            job_completed: true,
+            job_updated: true,
+            site_assigned: true,
+            booking_created: true,
+            booking_updated: true,
+            booking_cancelled: true,
+            mention: true,
+            system: true
+          })
+
+        if (error) throw error
+        console.log('✅ Created default notification preferences')
+      } catch (error) {
+        console.error('Error creating default preferences:', error)
+        throw error
+      }
+    }
+
+    // Set preference values in UI
+    function setPreferenceValues(preferences) {
+      const prefMap = {
+        'email_enabled': 'notif-email-enabled',
+        'push_enabled': 'notif-push-enabled',
+        'in_app_enabled': 'notif-in-app-enabled',
+        'job_assigned': 'notif-job-assigned',
+        'job_completed': 'notif-job-completed',
+        'job_updated': 'notif-job-updated',
+        'site_assigned': 'notif-site-assigned',
+        'booking_created': 'notif-booking-created',
+        'booking_updated': 'notif-booking-updated',
+        'booking_cancelled': 'notif-booking-cancelled',
+        'mention': 'notif-mention',
+        'system': 'notif-system'
+      }
+
+      Object.entries(prefMap).forEach(([dbKey, uiId]) => {
+        const element = document.getElementById(uiId)
+        if (!element) return
+
+        if (dbKey === 'push_enabled') {
+          element.value = preferences[dbKey] !== false ? 'true' : 'false'
+        } else if (element.type === 'checkbox') {
+          element.checked = preferences[dbKey] !== false // Default to true if null
+        }
+      })
+
+      updatePushSettingsUI(getPushStatus(), preferences.push_enabled !== false)
+    }
+
+    // Save notification preferences to database
+    document.getElementById('save-notification-preferences-btn')?.addEventListener('click', async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) throw new Error('Not authenticated')
+
+        // Collect all preference values
+        const preferences = {
+          email_enabled: document.getElementById('notif-email-enabled')?.checked ?? true,
+          push_enabled: (document.getElementById('notif-push-enabled')?.value ?? 'true') !== 'false',
+          in_app_enabled: document.getElementById('notif-in-app-enabled')?.checked ?? true,
+          job_assigned: document.getElementById('notif-job-assigned')?.checked ?? true,
+          job_completed: document.getElementById('notif-job-completed')?.checked ?? true,
+          job_updated: document.getElementById('notif-job-updated')?.checked ?? true,
+          site_assigned: document.getElementById('notif-site-assigned')?.checked ?? true,
+          booking_created: document.getElementById('notif-booking-created')?.checked ?? true,
+          booking_updated: document.getElementById('notif-booking-updated')?.checked ?? true,
+          booking_cancelled: document.getElementById('notif-booking-cancelled')?.checked ?? true,
+          mention: document.getElementById('notif-mention')?.checked ?? true,
+          system: document.getElementById('notif-system')?.checked ?? true
+        }
+
+        // Check if preferences exist
+        const { data: existing } = await supabase
+          .from('notification_preferences')
+          .select('id')
+          .eq('user_id', user.id)
+          .single()
+
+        let error
+        if (existing) {
+          // Update existing
+          const { error: updateError } = await supabase
+            .from('notification_preferences')
+            .update(preferences)
+            .eq('user_id', user.id)
+          error = updateError
+        } else {
+          // Create new
+          const { error: insertError } = await supabase
+            .from('notification_preferences')
+            .insert({
+              user_id: user.id,
+              ...preferences
+            })
+          error = insertError
+        }
+
+        if (error) throw error
+
+        toast.success('Notification preferences saved successfully!')
+      } catch (error) {
+        console.error('Error saving notification preferences:', error)
+        toast.error('Failed to save preferences. Please try again.')
+      }
+    })
+
+    // Auto-save on toggle change (optional, or remove if you prefer manual save only)
+    document.querySelectorAll('.toggle-checkbox[data-pref]').forEach(toggle => {
+      toggle.addEventListener('change', () => {
+        // Mark as changed (could show indicator)
+        document.getElementById('save-notification-preferences-btn').classList.add('opacity-90')
       })
     })
 

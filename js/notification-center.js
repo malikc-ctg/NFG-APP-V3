@@ -5,6 +5,7 @@
 
 import { supabase } from './supabase.js';
 import { toast } from './notifications.js';
+import { enablePushNotifications, disablePushNotifications, getPushStatus } from './pwa.js';
 
 // Notification types and their icons
 const NOTIFICATION_TYPE_ICONS = {
@@ -23,6 +24,7 @@ let notificationCache = [];
 let unreadCount = 0;
 let realtimeSubscription = null;
 let pollingInterval = null;
+const pushStatusEventName = 'nfg:push-status-changed';
 
 /**
  * Initialize notification center
@@ -81,6 +83,7 @@ function createNotificationBell() {
       <div class="notification-header">
         <h3>Notifications</h3>
         <div class="notification-actions">
+          <button id="toggle-push-btn" class="notification-action-btn"></button>
           <button id="mark-all-read-btn" class="notification-action-btn">Mark all read</button>
         </div>
       </div>
@@ -116,6 +119,7 @@ function setupNotificationListeners() {
   const center = document.getElementById('notification-center');
   const markAllReadBtn = document.getElementById('mark-all-read-btn');
   const viewAllBtn = document.getElementById('view-all-notifications');
+  const togglePushBtn = document.getElementById('toggle-push-btn');
   
   if (!bell || !center) return;
   
@@ -153,6 +157,81 @@ function setupNotificationListeners() {
       // TODO: Navigate to full notifications page
       toast.info('Notifications page coming soon!');
     });
+  }
+
+  if (togglePushBtn) {
+    const handleStatus = (status) => updatePushToggleButton(togglePushBtn, status);
+
+    // Initial state
+    handleStatus(getPushStatus());
+
+    window.addEventListener(pushStatusEventName, (event) => {
+      handleStatus(event.detail ?? getPushStatus());
+    });
+
+    togglePushBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+
+      const status = getPushStatus();
+      if (!status.supported) {
+        toast.warning('Push notifications are not supported on this device.');
+        return;
+      }
+
+      if (status.permission === 'denied') {
+        toast.error('Push notifications are blocked. Please allow notifications in your browser settings.');
+        return;
+      }
+
+      togglePushBtn.disabled = true;
+      const originalText = togglePushBtn.textContent;
+      togglePushBtn.textContent = 'Working...';
+
+      try {
+        if (status.subscribed) {
+          await disablePushNotifications();
+          toast.info('Push notifications disabled.');
+        } else {
+          await enablePushNotifications();
+          toast.success('Push notifications enabled.');
+        }
+      } catch (error) {
+        console.error('❌ Failed to toggle push notifications:', error);
+        toast.error(error.message || 'Unable to update push notifications.');
+      } finally {
+        togglePushBtn.disabled = false;
+        togglePushBtn.textContent = originalText;
+        handleStatus(getPushStatus());
+      }
+    });
+  }
+}
+
+function updatePushToggleButton(button, status) {
+  if (!button) return;
+
+  if (!status.supported) {
+    button.textContent = 'Push not supported';
+    button.disabled = true;
+    button.title = 'Push notifications are not supported in this browser.';
+    return;
+  }
+
+  if (status.permission === 'denied') {
+    button.textContent = 'Push blocked';
+    button.disabled = true;
+    button.title = 'Notifications are blocked in browser settings.';
+    return;
+  }
+
+  if (status.subscribed) {
+    button.textContent = 'Disable Push';
+    button.disabled = false;
+    button.title = 'Stop receiving push notifications on this device.';
+  } else {
+    button.textContent = 'Enable Push';
+    button.disabled = false;
+    button.title = 'Receive push notifications on this device.';
   }
 }
 

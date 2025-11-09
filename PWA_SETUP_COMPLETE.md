@@ -101,6 +101,25 @@ git push origin main
 - ✅ **Auto-updates** - Service worker updates hourly
 - ✅ **Offline indicator** - Toast when connection lost/restored
 - ✅ **Custom install banner** - Branded prompt with NFG logo
+- ✅ **Browser push notifications (optional)** – Uses VAPID keys and Supabase Edge Functions
+
+---
+
+## 🔔 Push Notifications Setup
+
+1. Generate VAPID keys (already done) and add them to Vercel/Supabase env vars:
+   - `VAPID_PUBLIC_KEY`
+   - `VAPID_PRIVATE_KEY`
+2. Run `ENABLE_PUSH_NOTIFICATIONS.sql` in Supabase to create the `push_subscriptions` table.
+3. Deploy the new edge functions:
+   - `get-vapid-key`
+   - `save-subscription`
+   - `send-push-notification`
+4. Redeploy the app so the updated `sw.js`, `js/pwa.js`, and `js/notification-center.js` reach users.
+5. Test end-to-end:
+   - Enable push via the bell menu.
+   - Confirm a row is created in `push_subscriptions`.
+   - Trigger a notification (e.g. assign a job) and verify the push arrives even with the app closed.
 
 ---
 
@@ -150,22 +169,17 @@ Edit `manifest.json` → `shortcuts` array
 
 ## 🚀 Next Steps (Future Enhancements):
 
-1. **Push Notifications**
-   - Notify when jobs assigned
-   - Remind about pending tasks
-   - Alert when payments received
-
-2. **Background Sync**
+1. **Background Sync**
    - Save actions offline
    - Auto-sync when back online
    - Queue job updates
 
-3. **Better Offline Experience**
+2. **Better Offline Experience**
    - Store more data locally
    - Offline job creation
    - Offline photo capture
 
-4. **Update Notifications**
+3. **Update Notifications**
    - Alert when new version available
    - "Update Now" button
    - Changelog display
@@ -184,8 +198,8 @@ Track PWA usage:
 
 ## ✅ Checklist:
 
-- [ ] Add PWA meta tags to all HTML pages
-- [ ] Add `<script src="/js/pwa.js"></script>` to all pages
+- [x] Add PWA meta tags to all HTML pages
+- [x] Add `<script type="module" src="/js/pwa.js"></script>` to all pages
 - [ ] Deploy to Vercel
 - [ ] Test install on mobile
 - [ ] Test offline mode
