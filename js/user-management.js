@@ -238,50 +238,77 @@ export async function getUserSiteAssignments(userId) {
 
 // Assign user to site
 export async function assignUserToSite(userId, siteId, canManage = false) {
-  // Check if assignment already exists
-  const { data: existing } = await supabase
+  // Check if assignment already exists (don't use .single() as it throws on no result)
+  const { data: existing, error: checkError } = await supabase
     .from('worker_site_assignments')
-    .select('*')
+    .select('id')
     .eq('worker_id', userId)
     .eq('site_id', siteId)
-    .single();
+    .maybeSingle(); // Use maybeSingle() instead of single() to avoid error when no result
+  
+  if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "not found" which is OK
+    console.error('Error checking existing assignment:', checkError);
+    throw checkError;
+  }
   
   if (existing) {
     throw new Error('Worker is already assigned to this site');
   }
   
   // Get site name for notification
-  const { data: site } = await supabase
+  const { data: site, error: siteError } = await supabase
     .from('sites')
     .select('name')
     .eq('id', siteId)
-    .single();
+    .maybeSingle(); // Use maybeSingle() to handle case where site might not exist
+  
+  if (siteError && siteError.code !== 'PGRST116') {
+    console.warn('Error fetching site name:', siteError);
+  }
   
   const siteName = site?.name || `Site #${siteId}`;
   
-  const { error } = await supabase
+  // Get current user
+  const { data: { user: currentUser } } = await supabase.auth.getUser();
+  if (!currentUser) {
+    throw new Error('User not authenticated');
+  }
+  
+  const { data: assignment, error } = await supabase
     .from('worker_site_assignments')
     .insert({
       worker_id: userId,
       site_id: siteId,
       can_manage: canManage,
       assigned_by: currentUser.id
-    });
+    })
+    .select()
+    .single();
   
   if (error) {
     console.error('Error assigning user to site:', error);
     throw error;
   }
   
-  // Create notification for the assigned worker
-  try {
-    const { notifySiteAssigned } = await import('./notification-triggers.js');
-    await notifySiteAssigned(userId, siteId, siteName);
-    console.log('✅ Site assignment notification created');
-  } catch (notifError) {
-    console.warn('⚠️ Failed to create site assignment notification:', notifError);
-    // Don't fail the assignment if notification fails
-  }
+  console.log('✅ Site assignment created:', assignment);
+  
+  // Create notification for the assigned worker (non-blocking)
+  // Import and call notification function asynchronously to avoid blocking
+  import('./notification-triggers.js')
+    .then(module => {
+      if (module && module.notifySiteAssigned) {
+        return module.notifySiteAssigned(userId, siteId, siteName);
+      }
+    })
+    .then(() => {
+      console.log('✅ Site assignment notification created');
+    })
+    .catch(notifError => {
+      console.warn('⚠️ Failed to create site assignment notification:', notifError);
+      // Don't fail the assignment if notification fails
+    });
+  
+  return assignment;
 }
 
 // Remove user from site
