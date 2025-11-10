@@ -41,7 +41,7 @@ export async function initNotificationCenter() {
     await updateUnreadCount();
     
     // Setup real-time updates
-    setupRealtimeUpdates();
+    await setupRealtimeUpdates();
     
     // Setup polling as fallback (every 30 seconds)
     setupPolling(30000);
@@ -467,7 +467,7 @@ async function markAllAsRead() {
 /**
  * Setup real-time updates using Supabase Realtime
  */
-function setupRealtimeUpdates() {
+async function setupRealtimeUpdates() {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
