@@ -1,11 +1,11 @@
 # 📧 Deploy Email Function to Supabase
 
-This guide will help you deploy the beautiful email template to Supabase Edge Functions with ZeptoMail.
+This guide will help you deploy the beautiful email template to Supabase Edge Functions with Resend.
 
 ## Prerequisites
 
 - ✅ Supabase project set up
-- ✅ ZeptoMail account connected
+- ✅ Resend account connected
 - ✅ Supabase CLI installed
 
 ## Step 1: Install Supabase CLI (if not installed)
@@ -42,21 +42,26 @@ Enter your database password when prompted.
 You need to set these secrets in Supabase:
 
 ```bash
-# Set your ZeptoMail API key
-supabase secrets set ZEPTO_MAIL_KEY=your_zepto_mail_api_key_here
+# Set your Resend API key
+supabase secrets set RESEND_API_KEY=re_your_api_key_here
 
-# Set your "from" email address
-supabase secrets set ZOHO_FROM_EMAIL=noreply@northernfacilitiesgroup.ca
-
-# Optional: Set custom "from" name
-supabase secrets set ZEPTO_FROM_NAME="NFG Facilities"
+# Set your "from" email address (must be verified in Resend)
+supabase secrets set RESEND_FROM_EMAIL=NFG <noreply@northernfacilitiesgroup.ca>
 ```
 
-**To get your ZeptoMail API key:**
-1. Go to https://www.zoho.com/zeptomail/
+**To get your Resend API key:**
+1. Go to https://resend.com
 2. Login to your account
-3. Go to Settings → API Keys
-4. Copy your API key
+3. Go to **API Keys** in the dashboard
+4. Create a new API key (or copy an existing one)
+5. Copy the key (starts with `re_`)
+
+**To verify your domain in Resend:**
+1. Go to **Domains** in Resend dashboard
+2. Add your domain (e.g., `northernfacilitiesgroup.ca`)
+3. Add the DNS records Resend provides to your domain
+4. Wait for verification (usually a few minutes)
+5. Once verified, you can use emails from that domain
 
 ## Step 5: Deploy the Function
 
@@ -112,14 +117,16 @@ You can test the email by sending an invitation from your app:
 - Verify with `supabase secrets list`
 
 ### "Email not sending"
-- Check your ZeptoMail dashboard for errors
-- Verify your API key is correct
-- Make sure your "from" email is verified in ZeptoMail
+- Check your Resend dashboard for errors
+- Verify your API key is correct (starts with `re_`)
+- Make sure your "from" email domain is verified in Resend
+- Check Resend dashboard → Logs for delivery status
 
 ### "Email goes to spam"
-- Configure SPF and DKIM records in ZeptoMail
-- Add your domain to ZeptoMail's verified domains
-- Use a custom domain (not @gmail.com)
+- Verify your domain in Resend (add DNS records)
+- Resend automatically configures SPF and DKIM for verified domains
+- Use a custom domain (not @gmail.com or @resend.dev)
+- Make sure your domain is fully verified in Resend
 
 ## Alternative: Deploy via Supabase Dashboard
 
@@ -136,5 +143,18 @@ If the CLI doesn't work, you can deploy via the dashboard:
 
 ---
 
-**Need Help?** Check the Supabase docs: https://supabase.com/docs/guides/functions
+**Need Help?** 
+- Supabase docs: https://supabase.com/docs/guides/functions
+- Resend docs: https://resend.com/docs
+- Resend dashboard: https://resend.com/emails (to check email logs)
+
+---
+
+## Resend Features
+
+✅ **Free Tier**: 100 emails/day, 3,000 emails/month
+✅ **Automatic SPF/DKIM**: Configured automatically for verified domains
+✅ **Email Logs**: Track every email sent in the Resend dashboard
+✅ **High Deliverability**: Professional email infrastructure
+✅ **Easy Setup**: Just add API key and verify domain
 

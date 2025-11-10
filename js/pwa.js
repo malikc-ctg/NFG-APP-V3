@@ -139,10 +139,34 @@ if ('serviceWorker' in navigator) {
         console.log('✅ Service Worker registered:', registration.scope);
         serviceWorkerRegistration = registration;
 
+        // Listen for service worker updates
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('🔄 New service worker available, reloading page...');
+                // Auto-reload to activate new service worker
+                window.location.reload();
+              }
+            });
+          }
+        });
+
         // Check for updates every hour
         setInterval(() => {
           registration.update();
         }, 60 * 60 * 1000);
+
+        // Listen for messages from service worker
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data && event.data.type === 'SW_READY') {
+            console.log('✅ Service Worker ready, version:', event.data.version);
+          }
+          if (event.data && event.data.type === 'PUSH_NOTIFICATION_RECEIVED') {
+            console.log('📨 Push notification received:', event.data.payload);
+          }
+        });
 
         await refreshSubscriptionState();
       })

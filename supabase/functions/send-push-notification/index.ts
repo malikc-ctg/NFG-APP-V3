@@ -39,17 +39,40 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    
+    if (!supabaseUrl) {
+      console.error('❌ SUPABASE_URL environment variable is not set')
+      return new Response(
+        JSON.stringify({ error: 'SUPABASE_URL not configured. Check Edge Function secrets.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    if (!serviceRoleKey) {
+      console.error('❌ SUPABASE_SERVICE_ROLE_KEY environment variable is not set')
+      return new Response(
+        JSON.stringify({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured. Check Edge Function secrets.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
 
+    console.log('🔍 Querying subscriptions for user_id:', user_id)
     const { data: subscriptions, error } = await supabaseAdmin
       .from('push_subscriptions')
       .select('*')
       .eq('user_id', user_id)
 
     if (error) {
-      console.error('Failed to load subscriptions:', error)
-      return new Response('Failed to load subscriptions', { status: 500, headers: corsHeaders })
+      console.error('❌ Failed to load subscriptions:', JSON.stringify(error, null, 2))
+      return new Response(
+        JSON.stringify({ error: 'Failed to load subscriptions', details: error.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
+    
+    console.log(`✅ Found ${subscriptions?.length || 0} subscriptions for user`)
 
     if (!subscriptions || subscriptions.length === 0) {
       return new Response('No subscriptions found', { status: 200, headers: corsHeaders })
@@ -74,20 +97,50 @@ serve(async (req) => {
 
       try {
         await webpush.sendNotification(pushSubscription, notificationPayload)
-      } catch (err) {
-        console.error('Push delivery failed:', err)
-        const statusCode = err.statusCode || err.status
+        console.log(`✅ Push sent successfully to endpoint: ${subscription.endpoint.substring(0, 50)}...`)
+      } catch (err: any) {
+        console.error('❌ Push delivery failed:', err.message || err)
+        const statusCode = err.statusCode || err?.status || (err?.response?.statusCode)
+        
+        // 404 = Not Found, 410 = Gone (expired/unsubscribed)
         if (statusCode === 404 || statusCode === 410) {
+          console.log(`🗑️ Marking subscription ${subscription.id} for deletion (status: ${statusCode})`)
           toRemove.push(subscription.id)
+        } else {
+          console.error(`⚠️ Unexpected error code ${statusCode} for subscription ${subscription.id}`)
         }
       }
     }
 
     if (toRemove.length > 0) {
-      await supabaseAdmin.from('push_subscriptions').delete().in('id', toRemove)
+      console.log(`🗑️ Deleting ${toRemove.length} expired/invalid subscription(s)`)
+      const { error: deleteError } = await supabaseAdmin
+        .from('push_subscriptions')
+        .delete()
+        .in('id', toRemove)
+      
+      if (deleteError) {
+        console.error('❌ Failed to delete expired subscriptions:', deleteError)
+      } else {
+        console.log(`✅ Successfully deleted ${toRemove.length} expired subscription(s)`)
+      }
     }
 
-    return new Response('ok', { status: 200, headers: corsHeaders })
+    const successCount = subscriptions.length - toRemove.length
+    if (successCount > 0) {
+      console.log(`✅ Successfully sent ${successCount} push notification(s)`)
+    } else if (toRemove.length > 0) {
+      console.log(`⚠️ All subscriptions were expired/invalid and have been removed`)
+    }
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      sent: successCount,
+      removed: toRemove.length 
+    }), { 
+      status: 200, 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    })
   } catch (error) {
     console.error('Failed to send push notification:', error)
     return new Response('Internal Server Error', { status: 500, headers: corsHeaders })
