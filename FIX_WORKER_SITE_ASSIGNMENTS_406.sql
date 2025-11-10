@@ -95,7 +95,7 @@ CREATE POLICY "Admins and clients can delete assignments"
 
 -- Grant permissions
 GRANT SELECT, INSERT, UPDATE, DELETE ON worker_site_assignments TO authenticated;
-GRANT USAGE ON SEQUENCE worker_site_assignments_id_seq TO authenticated;
+-- Note: No sequence needed - table uses UUID (gen_random_uuid()) for primary key
 
 -- Verify policies were created
 SELECT 
