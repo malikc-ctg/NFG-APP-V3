@@ -921,7 +921,8 @@
       }
 
       currentJobId = jobId;
-      const site = sites.find(s => s.id == job.site_id);
+      // Use site from joined data if available, otherwise fall back to sites array
+      const site = job.sites || sites.find(s => s.id == job.site_id);
 
       // Populate job details
       document.getElementById('job-detail-title').textContent = job.title;
