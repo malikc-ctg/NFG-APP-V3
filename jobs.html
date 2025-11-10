@@ -755,7 +755,14 @@
       console.log('🔍 Fetching jobs for user:', currentUser.id, 'role:', currentUserProfile?.role);
       let query = supabase
         .from('jobs')
-        .select('*');
+        .select(`
+          *,
+          sites (
+            id,
+            name,
+            address
+          )
+        `);
       
       // If user is staff, only show jobs assigned to them
       if (currentUserProfile && currentUserProfile.role === 'staff') {
@@ -847,7 +854,8 @@
       }
 
       grid.innerHTML = filtered.map(job => {
-        const site = sites.find(s => s.id == job.site_id);
+        // Use site from joined data if available, otherwise fall back to sites array
+        const site = job.sites || sites.find(s => s.id == job.site_id);
         const statusColors = {
           'pending': 'bg-yellow-100 text-yellow-700',
           'in-progress': 'bg-blue-100 text-blue-700',
@@ -1305,7 +1313,18 @@
                 try {
                   const { notifyJobCompleted, getAdminUserIds } = await import('./js/notification-triggers.js');
                   const adminIds = await getAdminUserIds();
-                  const siteName = job?.sites?.name || 'Unknown Site';
+                  // Get site name from job data or fetch it
+                  let siteName = job?.sites?.name;
+                  if (!siteName && job?.site_id) {
+                    const { data: site } = await supabase
+                      .from('sites')
+                      .select('name')
+                      .eq('id', job.site_id)
+                      .maybeSingle();
+                    siteName = site?.name || `Site #${job.site_id}`;
+                  } else if (!siteName) {
+                    siteName = 'Unknown Site';
+                  }
                   const jobTitle = job?.title || 'Untitled Job';
                   await notifyJobCompleted(currentJobId, adminIds, jobTitle, siteName);
                   console.log('✅ Job completion notifications sent to admins');
@@ -1999,7 +2018,19 @@
       const jobs = await getJobs();
       const job = jobs.find(j => j.id === currentJobId);
       const jobTitle = job?.title || 'Untitled Job';
-      const siteName = job?.sites?.name || 'Unknown Site';
+      // Get site name from joined sites data, or fetch it if not available
+      let siteName = job?.sites?.name;
+      if (!siteName && job?.site_id) {
+        // Fallback: fetch site name if not in job data
+        const { data: site } = await supabase
+          .from('sites')
+          .select('name')
+          .eq('id', job.site_id)
+          .maybeSingle();
+        siteName = site?.name || `Site #${job.site_id}`;
+      } else if (!siteName) {
+        siteName = 'Unknown Site';
+      }
 
       const { error } = await supabase
         .from('jobs')
