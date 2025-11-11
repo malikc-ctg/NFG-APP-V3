@@ -166,6 +166,77 @@
         <p class="text-sm text-gray-500 mt-1">Track supplies and equipment across all sites</p>
       </div>
 
+      <!-- Low Stock Alerts Banner -->
+      <div id="low-stock-alerts" class="hidden bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-4">
+        <div class="flex items-start justify-between">
+          <div class="flex items-start gap-3 flex-1">
+            <div class="flex-shrink-0 mt-0.5">
+              <i data-lucide="alert-triangle" class="w-5 h-5 text-orange-600 dark:text-orange-400"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-semibold text-orange-900 dark:text-orange-200 mb-1">Low Stock Alert</h3>
+              <p class="text-sm text-orange-700 dark:text-orange-300 mb-2">
+                <span id="low-stock-count">0</span> item(s) are running low on stock and need to be restocked.
+              </p>
+              <div id="low-stock-items-list" class="flex flex-wrap gap-2">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+          </div>
+          <button id="dismiss-low-stock-alert" class="flex-shrink-0 p-1 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-800/50 text-orange-600 dark:text-orange-400">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Inventory Summary Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Total Items</p>
+              <p id="total-items-count" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">0</p>
+            </div>
+            <div class="p-3 bg-nfglight dark:bg-gray-700 rounded-lg">
+              <i data-lucide="package" class="w-6 h-6 text-nfgblue dark:text-blue-400"></i>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Low Stock</p>
+              <p id="low-stock-summary-count" class="text-2xl font-semibold text-orange-600 dark:text-orange-400">0</p>
+            </div>
+            <div class="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+              <i data-lucide="alert-triangle" class="w-6 h-6 text-orange-600 dark:text-orange-400"></i>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Out of Stock</p>
+              <p id="out-of-stock-count" class="text-2xl font-semibold text-red-600 dark:text-red-400">0</p>
+            </div>
+            <div class="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+              <i data-lucide="package-x" class="w-6 h-6 text-red-600 dark:text-red-400"></i>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Active Sites</p>
+              <p id="active-sites-count" class="text-2xl font-semibold text-green-600 dark:text-green-400">0</p>
+            </div>
+            <div class="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <i data-lucide="map-pin" class="w-6 h-6 text-green-600 dark:text-green-400"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Category Tabs -->
       <div class="flex gap-2 border-b border-nfgray overflow-x-auto">
         <button class="inventory-filter-tab px-4 py-2 font-medium text-nfgblue dark:text-blue-400 border-b-2 border-nfgblue whitespace-nowrap" data-category="all">
@@ -343,18 +414,53 @@
 
   <!-- View History Modal -->
   <div id="historyModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 z-10">
         <h4 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">Transaction History</h4>
-        <button data-action="close-modal" data-target="historyModal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+        <div class="flex items-center gap-2">
+          <button id="export-history-btn" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600 text-nfgblue dark:text-blue-400" title="Export to CSV">
+            <i data-lucide="download" class="w-5 h-5"></i>
+          </button>
+          <button data-action="close-modal" data-target="historyModal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
       </div>
       <div class="p-6">
         <div class="bg-nfglight/30 rounded-xl p-4 border border-nfgblue/20 mb-4">
-          <div class="flex items-center justify-between">
-            <span id="history-item-name" class="font-semibold text-nfgblue dark:text-blue-400 text-lg"></span>
-            <span id="history-site-name" class="text-sm text-gray-600 dark:text-gray-400"></span>
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <span id="history-item-name" class="font-semibold text-nfgblue dark:text-blue-400 text-lg"></span>
+              <span id="history-site-name" class="text-sm text-gray-600 dark:text-gray-400 ml-2"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- History Filters -->
+        <div class="mb-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div>
+            <label class="block text-xs font-medium mb-1 text-gray-600 dark:text-gray-400">Transaction Type</label>
+            <select id="history-filter-type" class="w-full border border-nfgray rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none">
+              <option value="all">All Types</option>
+              <option value="restock">Restock</option>
+              <option value="use">Use</option>
+              <option value="adjustment">Adjustment</option>
+              <option value="transfer">Transfer</option>
+              <option value="return">Return</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium mb-1 text-gray-600 dark:text-gray-400">Date From</label>
+            <input type="date" id="history-filter-date-from" class="w-full border border-nfgray rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-medium mb-1 text-gray-600 dark:text-gray-400">Date To</label>
+            <input type="date" id="history-filter-date-to" class="w-full border border-nfgray rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none">
+          </div>
+          <div class="flex items-end">
+            <button id="apply-history-filters" class="w-full bg-nfgblue hover:bg-nfgdark text-white rounded-lg px-4 py-2 text-sm font-medium transition">
+              Apply Filters
+            </button>
           </div>
         </div>
         
