@@ -445,7 +445,8 @@ export async function renderUsersList() {
   const roleColors = {
     admin: 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
     client: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
-    staff: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+    staff: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300',
+    super_admin: 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' // Same as admin (hidden)
   };
   
   const statusColors = {
