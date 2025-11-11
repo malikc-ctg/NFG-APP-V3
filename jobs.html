@@ -85,8 +85,37 @@
       margin: 0;
       padding: 0;
       height: 100vh;
+      max-height: 100vh;
       overflow: hidden;
       display: flex;
+      flex-direction: row;
+    }
+    /* Ensure sidebar doesn't cause overflow */
+    body > aside {
+      height: 100vh;
+      max-height: 100vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    /* Ensure main container fits exactly */
+    body > div.flex-1 {
+      height: 100vh;
+      max-height: 100vh;
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Header should not grow */
+    body > div.flex-1 > header {
+      flex-shrink: 0;
+    }
+    /* Main content should fill remaining space and scroll */
+    body > div.flex-1 > main {
+      flex: 1 1 0;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
     }
   </style>
 
