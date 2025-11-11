@@ -484,6 +484,23 @@
   <!-- ========== SCRIPTS ========== -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      // Force remove scrollbars
+      document.documentElement.style.overflow = 'hidden';
+      document.documentElement.style.height = '100%';
+      document.documentElement.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+      document.body.style.height = '100vh';
+      document.body.style.width = '100vw';
+      document.body.style.maxHeight = '100vh';
+      document.body.style.maxWidth = '100vw';
+      
+      // Prevent any scrolling on html/body
+      document.addEventListener('wheel', (e) => {
+        if (e.target === document.body || e.target === document.documentElement) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+      
       if (window.lucide) lucide.createIcons();
       
       // Initialize mobile sidebar
