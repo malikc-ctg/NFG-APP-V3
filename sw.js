@@ -370,13 +370,35 @@ self.addEventListener('sync', (event) => {
   
   if (event.tag === 'sync-data') {
     event.waitUntil(
-      // TODO: Sync offline changes to Supabase
-      Promise.resolve().then(() => {
-        console.log('[SW v3] Background sync completed');
-      })
+      requestSyncFromClient()
+        .then(() => {
+          console.log('[SW v3] Background sync request sent to client');
+        })
+        .catch((error) => {
+          console.error('[SW v3] Background sync request failed:', error);
+        })
     );
   }
 });
+
+// ============================================
+// REQUEST SYNC FROM CLIENT
+// ============================================
+async function requestSyncFromClient() {
+  try {
+    // Request sync from all clients
+    const clients = await self.clients.matchAll();
+    clients.forEach(client => {
+      client.postMessage({
+        type: 'REQUEST_SYNC',
+        timestamp: new Date().toISOString()
+      });
+    });
+  } catch (error) {
+    console.error('[SW v3] Error requesting sync from client:', error);
+    throw error;
+  }
+}
 
 // ============================================
 // ERROR HANDLING
