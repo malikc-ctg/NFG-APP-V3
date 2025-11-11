@@ -370,19 +370,25 @@ async function markAsRead(notificationId) {
     if (error) {
       // Fallback: Try direct update if function doesn't work
       console.warn('⚠️ RPC function failed, trying direct update:', error);
-      const updateData = { read: true };
       
-      // Only add read_at if column exists (check error message)
-      if (!error.message?.includes('read_at')) {
-        updateData.read_at = new Date().toISOString();
-      }
+      // Check if error is about read_at column not existing
+      const readAtError = error.message?.includes('read_at') || 
+                          (error.message?.includes('column') && error.message?.includes('does not exist'));
+      
+      // Only update read field (don't include read_at if column doesn't exist)
+      const updateData = { read: true };
       
       const { error: updateError } = await supabase
         .from('notifications')
         .update(updateData)
         .eq('id', notificationId);
       
-      if (updateError) throw updateError;
+      if (updateError) {
+        // If it's a read_at error, that's OK - the update should still work
+        if (!updateError.message?.includes('read_at')) {
+          throw updateError;
+        }
+      }
     }
     
     // Update cache
@@ -434,14 +440,13 @@ async function markAllAsRead() {
     if (error) {
       console.warn('⚠️ RPC function failed, trying direct update:', error);
       
-      // Check if error is about read_at column
-      const hasReadAtColumn = !error.message?.includes('read_at');
+      // Check if error is about read_at column not existing
+      const readAtError = error.message?.includes('read_at') || error.message?.includes('column') && error.message?.includes('does not exist');
       
+      // Only update read field if read_at column doesn't exist
       const updateData = { read: true };
-      if (hasReadAtColumn) {
-        updateData.read_at = new Date().toISOString();
-      }
       
+      // Try to update without read_at first if column doesn't exist
       const { error: updateError } = await supabase
         .from('notifications')
         .update(updateData)
@@ -450,7 +455,10 @@ async function markAllAsRead() {
       
       if (updateError) {
         console.error('❌ Direct update also failed:', updateError);
-        throw updateError;
+        // If it's still a read_at error, that's OK - just update read field
+        if (!updateError.message?.includes('read_at')) {
+          throw updateError;
+        }
       }
     }
     

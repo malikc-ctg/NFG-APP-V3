@@ -297,22 +297,32 @@ FOR UPDATE USING (
 CREATE OR REPLACE FUNCTION prevent_super_admin_role_change()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- If trying to change role of a super_admin, prevent it (unless it's the system doing it)
-  IF OLD.role = 'super_admin' AND NEW.role != 'super_admin' THEN
-    -- Only allow if it's being changed by the system (via trigger) or service_role
-    IF current_setting('role') != 'service_role' THEN
-      RAISE EXCEPTION 'Cannot change super_admin role via UI. Use SQL to reassign.';
+  -- Only check if the role is actually being changed (not just updated)
+  IF (NEW.role IS DISTINCT FROM OLD.role) THEN
+    -- Prevent changing TO super_admin via UI
+    IF NEW.role = 'super_admin' AND OLD.role != 'super_admin' THEN
+      RAISE EXCEPTION 'Cannot assign super_admin role via UI. Use SQL to reassign.';
+    END IF;
+    
+    -- Prevent changing FROM super_admin via UI (unless it's service_role)
+    IF OLD.role = 'super_admin' AND NEW.role != 'super_admin' THEN
+      -- Allow service_role to change it (for SQL commands)
+      IF current_setting('request.jwt.claim.role', true) != 'service_role' THEN
+        RAISE EXCEPTION 'Cannot change super_admin role via UI. Use SQL to reassign.';
+      END IF;
     END IF;
   END IF;
   
+  -- Allow all other updates (status, name, email, etc.) even for super_admin
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 DROP TRIGGER IF EXISTS trigger_prevent_super_admin_role_change ON user_profiles;
 CREATE TRIGGER trigger_prevent_super_admin_role_change
-  BEFORE UPDATE OF role ON user_profiles
+  BEFORE UPDATE OF role ON user_profiles  -- Only fires when role column is updated
   FOR EACH ROW
+  WHEN (NEW.role IS DISTINCT FROM OLD.role)  -- Only fire if role actually changed
   EXECUTE FUNCTION prevent_super_admin_role_change();
 
 -- WORKER_SITE_ASSIGNMENTS TABLE

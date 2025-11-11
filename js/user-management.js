@@ -212,27 +212,65 @@ export async function cancelInvitation(invitationId) {
 
 // Update user role and status
 export async function updateUserRole(userId, role, status) {
-  // Prevent changing super_admin role via UI
-  const { data: currentUser } = await supabase
-    .from('user_profiles')
-    .select('role')
-    .eq('id', userId)
-    .single();
-  
-  if (currentUser?.role === 'super_admin') {
-    throw new Error('Cannot change super_admin role via UI. Use SQL to reassign.');
-  }
-  const { error } = await supabase
-    .from('user_profiles')
-    .update({ 
-      role, 
+  try {
+    // Get current user data first
+    const { data: currentUser, error: fetchError } = await supabase
+      .from('user_profiles')
+      .select('role, status')
+      .eq('id', userId)
+      .single();
+    
+    if (fetchError) {
+      console.error('Error fetching current user:', fetchError);
+      throw fetchError;
+    }
+    
+    // If user is super_admin, only allow status updates (not role changes)
+    if (currentUser?.role === 'super_admin') {
+      if (role && role !== 'super_admin') {
+        throw new Error('Cannot change super_admin role via UI. Use SQL to reassign.');
+      }
+      // Only update status for super_admin
+      const updateData = { 
+        status, 
+        updated_at: new Date().toISOString() 
+      };
+      
+      const { error } = await supabase
+        .from('user_profiles')
+        .update(updateData)
+        .eq('id', userId);
+      
+      if (error) {
+        console.error('Error updating super_admin status:', error);
+        throw error;
+      }
+      return;
+    }
+    
+    // For non-super_admin users, update both role and status
+    // Only update role if it's actually changing
+    const updateData = { 
       status, 
       updated_at: new Date().toISOString() 
-    })
-    .eq('id', userId);
-  
-  if (error) {
-    console.error('Error updating user:', error);
+    };
+    
+    // Only include role in update if it's different from current role
+    if (role && role !== currentUser?.role) {
+      updateData.role = role;
+    }
+    
+    const { error } = await supabase
+      .from('user_profiles')
+      .update(updateData)
+      .eq('id', userId);
+    
+    if (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error in updateUserRole:', error);
     throw error;
   }
 }
