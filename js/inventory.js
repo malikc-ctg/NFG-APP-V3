@@ -91,8 +91,19 @@ async function fetchSites() {
 async function renderInventory() {
   const tableBody = document.getElementById('inventory-table-body');
   
+  // Show skeleton loading first
+  if (!tableBody.dataset.loaded) {
+    try {
+      const { createSkeletonTableRows, showSkeleton } = await import('./skeleton.js');
+      showSkeleton(tableBody, createSkeletonTableRows(5, 5));
+    } catch (error) {
+      console.error('Error loading skeleton:', error);
+    }
+  }
+  
   try {
     const siteInventory = await fetchSiteInventory();
+    tableBody.dataset.loaded = 'true';
     
     // Update summary cards
     updateSummaryCards(siteInventory);
@@ -156,6 +167,13 @@ async function renderInventory() {
       const isLowStock = item.stock_status === 'low' || item.stock_status === 'out';
       const rowClass = isLowStock ? `hover:bg-nfglight/30 transition border-l-4 ${status.borderColor}` : 'hover:bg-nfglight/30 transition';
       
+      const statusTooltips = {
+        'out': 'Item is out of stock and needs to be restocked',
+        'low': 'Item is running low and should be restocked soon',
+        'warning': 'Item quantity is approaching low stock threshold',
+        'ok': 'Item is in stock and quantity is sufficient'
+      };
+      
       return `
         <tr class="${rowClass}">
           <td class="px-4 py-3">
@@ -175,7 +193,7 @@ async function renderInventory() {
             <div class="text-xs text-gray-500 dark:text-gray-400">${item.unit}</div>
           </td>
           <td class="px-4 py-3 text-center">
-            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${status.color}">
+            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${status.color} tooltip-wrapper" data-tooltip="${statusTooltips[item.stock_status] || statusTooltips['ok']}" data-tooltip-position="left">
               <i data-lucide="${status.icon}" class="w-3 h-3"></i>
               <span class="hidden sm:inline">${status.text}</span>
             </span>
@@ -183,11 +201,11 @@ async function renderInventory() {
           <td class="px-4 py-3 text-center">
             <div class="flex items-center justify-center gap-1">
               <button onclick="manageStock(${item.site_id}, ${item.item_id}, '${item.item_name.replace(/'/g, "\\'")}', ${item.quantity})" 
-                      class="p-1.5 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 text-nfgblue dark:text-blue-400 transition" title="Manage Stock">
+                      class="p-1.5 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 text-nfgblue dark:text-blue-400 transition" data-tooltip="Manage stock levels for this item" data-tooltip-position="top">
                 <i data-lucide="package" class="w-4 h-4"></i>
               </button>
               <button onclick="viewHistory(${item.item_id}, ${item.site_id}, '${item.item_name.replace(/'/g, "\\'")}', '${item.site_name.replace(/'/g, "\\'")})" 
-                      class="p-1.5 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 text-nfgblue dark:text-blue-400 transition" title="View History">
+                      class="p-1.5 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 text-nfgblue dark:text-blue-400 transition" data-tooltip="View transaction history for this item" data-tooltip-position="top">
                 <i data-lucide="history" class="w-4 h-4"></i>
               </button>
             </div>
@@ -197,6 +215,14 @@ async function renderInventory() {
     }).join('');
     
     if (window.lucide) lucide.createIcons();
+    
+    // Initialize tooltips
+    try {
+      const { initTooltips } = await import('./tooltips.js');
+      initTooltips();
+    } catch (error) {
+      console.error('Error initializing tooltips:', error);
+    }
   } catch (error) {
     console.error('Error rendering inventory:', error);
     tableBody.innerHTML = `
