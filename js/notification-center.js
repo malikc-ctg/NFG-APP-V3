@@ -5,18 +5,20 @@
 
 import { supabase } from './supabase.js';
 import { toast } from './notifications.js';
-import { enablePushNotifications, disablePushNotifications, getPushStatus } from './pwa.js';
+// Push notifications are managed in Settings page, removed from dropdown
 
-// Notification types and their icons
+// Notification types and their Lucide icon names
 const NOTIFICATION_TYPE_ICONS = {
-  job_assigned: '📋',
-  job_completed: '✅',
-  job_updated: '📝',
-  booking_created: '📅',
-  booking_updated: '🔄',
-  booking_cancelled: '❌',
-  mention: '💬',
-  system: '🔔'
+  job_assigned: 'clipboard-list',
+  job_completed: 'check-circle',
+  job_updated: 'edit',
+  booking_created: 'calendar',
+  booking_updated: 'refresh-cw',
+  booking_cancelled: 'x-circle',
+  site_assigned: 'building',
+  site_unassigned: 'building-x',
+  mention: 'message-circle',
+  system: 'bell'
 };
 
 // Cache
@@ -82,10 +84,11 @@ function createNotificationBell() {
     <div id="notification-center" class="notification-center">
       <div class="notification-header">
         <h3>Notifications</h3>
-        <div class="notification-actions">
-          <button id="toggle-push-btn" class="notification-action-btn"></button>
-          <button id="mark-all-read-btn" class="notification-action-btn">Mark all read</button>
-        </div>
+        <button id="mark-all-read-btn" class="notification-action-btn notification-action-btn-primary">
+          <i data-lucide="check-double" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+          <span class="hidden sm:inline">Mark all read</span>
+          <span class="sm:hidden">Read</span>
+        </button>
       </div>
       <div id="notification-list" class="notification-list">
         <div class="notification-loading">
@@ -94,18 +97,13 @@ function createNotificationBell() {
         </div>
       </div>
       <div class="notification-footer">
-        <a href="#" id="view-all-notifications" class="notification-footer-link">View All Notifications</a>
+        <a href="./notifications.html" id="view-all-notifications" class="notification-footer-link">View All Notifications</a>
       </div>
     </div>
   `;
   
   // Insert before first child or append
   header.insertBefore(container, header.firstChild);
-  
-  // Initialize Lucide icons
-  if (window.lucide) {
-    window.lucide.createIcons();
-  }
   
   // Setup event listeners
   setupNotificationListeners();
@@ -119,7 +117,6 @@ function setupNotificationListeners() {
   const center = document.getElementById('notification-center');
   const markAllReadBtn = document.getElementById('mark-all-read-btn');
   const viewAllBtn = document.getElementById('view-all-notifications');
-  const togglePushBtn = document.getElementById('toggle-push-btn');
   
   if (!bell || !center) return;
   
@@ -150,90 +147,21 @@ function setupNotificationListeners() {
     });
   }
   
-  // View all notifications (could navigate to dedicated page)
+  // View all notifications - navigate to notifications page
   if (viewAllBtn) {
     viewAllBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      // TODO: Navigate to full notifications page
-      toast.info('Notifications page coming soon!');
-    });
-  }
-
-  if (togglePushBtn) {
-    const handleStatus = (status) => updatePushToggleButton(togglePushBtn, status);
-
-    // Initial state
-    handleStatus(getPushStatus());
-
-    window.addEventListener(pushStatusEventName, (event) => {
-      handleStatus(event.detail ?? getPushStatus());
-    });
-
-    togglePushBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
-
-      const status = getPushStatus();
-      if (!status.supported) {
-        toast.warning('Push notifications are not supported on this device.');
-        return;
-      }
-
-      if (status.permission === 'denied') {
-        toast.error('Push notifications are blocked. Please allow notifications in your browser settings.');
-        return;
-      }
-
-      togglePushBtn.disabled = true;
-      const originalText = togglePushBtn.textContent;
-      togglePushBtn.textContent = 'Working...';
-
-      try {
-        if (status.subscribed) {
-          await disablePushNotifications();
-          toast.info('Push notifications disabled.');
-        } else {
-          await enablePushNotifications();
-          toast.success('Push notifications enabled.');
-        }
-      } catch (error) {
-        console.error('❌ Failed to toggle push notifications:', error);
-        toast.error(error.message || 'Unable to update push notifications.');
-      } finally {
-        togglePushBtn.disabled = false;
-        togglePushBtn.textContent = originalText;
-        handleStatus(getPushStatus());
-      }
+      window.location.href = './notifications.html';
     });
   }
-}
-
-function updatePushToggleButton(button, status) {
-  if (!button) return;
-
-  if (!status.supported) {
-    button.textContent = 'Push not supported';
-    button.disabled = true;
-    button.title = 'Push notifications are not supported in this browser.';
-    return;
-  }
-
-  if (status.permission === 'denied') {
-    button.textContent = 'Push blocked';
-    button.disabled = true;
-    button.title = 'Notifications are blocked in browser settings.';
-    return;
-  }
-
-  if (status.subscribed) {
-    button.textContent = 'Disable Push';
-    button.disabled = false;
-    button.title = 'Stop receiving push notifications on this device.';
-  } else {
-    button.textContent = 'Enable Push';
-    button.disabled = false;
-    button.title = 'Receive push notifications on this device.';
+  
+  // Initialize icons after setup
+  if (window.lucide) {
+    window.lucide.createIcons();
   }
 }
+
 
 /**
  * Open notification center
@@ -307,7 +235,7 @@ function renderNotifications(notifications) {
     list.innerHTML = `
       <div class="notification-empty">
         <div class="notification-empty-icon">
-          <i data-lucide="bell-off" class="w-full h-full"></i>
+          <i data-lucide="bell-off" class="w-12 h-12"></i>
         </div>
         <p class="notification-empty-text">No notifications yet</p>
       </div>
@@ -316,13 +244,15 @@ function renderNotifications(notifications) {
     return;
   }
   
-  list.innerHTML = notifications.map(notification => `
+  list.innerHTML = notifications.map(notification => {
+    const iconName = NOTIFICATION_TYPE_ICONS[notification.type] || 'bell';
+    return `
     <div class="notification-item ${notification.read ? '' : 'unread'}" 
          data-notification-id="${notification.id}"
          data-link="${notification.link || '#'}">
       <div class="notification-item-content">
         <div class="notification-icon ${notification.type}">
-          ${NOTIFICATION_TYPE_ICONS[notification.type] || '🔔'}
+          <i data-lucide="${iconName}" class="w-5 h-5"></i>
         </div>
         <div class="notification-details">
           <h4 class="notification-title">${escapeHtml(notification.title)}</h4>
@@ -332,7 +262,8 @@ function renderNotifications(notifications) {
         ${!notification.read ? '<div class="notification-dot"></div>' : ''}
       </div>
     </div>
-  `).join('');
+    `;
+  }).join('');
   
   // Add click handlers
   list.querySelectorAll('.notification-item').forEach(item => {
@@ -346,13 +277,16 @@ function renderNotifications(notifications) {
       // Navigate if link exists
       if (link && link !== '#') {
         window.location.href = link;
+      } else {
+        closeNotificationCenter();
       }
-      
-      closeNotificationCenter();
     });
   });
   
-  if (window.lucide) window.lucide.createIcons();
+  // Initialize Lucide icons for notification items
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
 }
 
 /**
@@ -438,7 +372,15 @@ async function markAsRead(notificationId) {
  */
 async function markAllAsRead() {
   try {
-    const { error } = await supabase.rpc('mark_all_notifications_read');
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+    
+    // Mark all unread notifications as read
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true, read_at: new Date().toISOString() })
+      .eq('user_id', user.id)
+      .eq('read', false);
     
     if (error) throw error;
     

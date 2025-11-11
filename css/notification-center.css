@@ -92,6 +92,18 @@
   overflow: hidden;
 }
 
+/* Mobile: Full width and better positioning */
+@media (max-width: 640px) {
+  .notification-center {
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
+    right: 8px;
+    left: 8px;
+    max-height: calc(100vh - 80px);
+    border-radius: 16px;
+  }
+}
+
 .dark .notification-center {
   background: #1f2937;
   border-color: #374151;
@@ -104,12 +116,28 @@
 
 /* Header */
 .notification-header {
-  padding: 16px 20px;
+  padding: 12px 16px;
   border-bottom: 1px solid #e5e7eb;
   display: flex;
   align-items: center;
   justify-content: space-between;
   background: #f9fafb;
+  gap: 12px;
+}
+
+/* Mobile: Compact header */
+@media (max-width: 640px) {
+  .notification-header {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  
+  .notification-header h3 {
+    font-size: 14px;
+    margin: 0;
+    flex: 1;
+    font-weight: 600;
+  }
 }
 
 .dark .notification-header {
@@ -128,21 +156,45 @@
   color: #f9fafb;
 }
 
-.notification-actions {
-  display: flex;
-  gap: 8px;
-}
-
 .notification-action-btn {
-  padding: 4px 12px;
+  padding: 6px 12px;
   font-size: 12px;
   font-weight: 500;
-  border-radius: 6px;
+  border-radius: 8px;
   border: 1px solid #e5e7eb;
   background: white;
   color: #6b7280;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.notification-action-btn-primary {
+  background: #0D47A1;
+  color: white;
+  border-color: #0D47A1;
+}
+
+.notification-action-btn-primary:hover {
+  background: #0A3A84;
+  border-color: #0A3A84;
+}
+
+/* Mobile: Smaller buttons */
+@media (max-width: 640px) {
+  .notification-action-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+    gap: 3px;
+  }
+  
+  .notification-action-btn i {
+    width: 14px;
+    height: 14px;
+  }
 }
 
 .dark .notification-action-btn {
@@ -168,6 +220,13 @@
   flex: 1;
   overflow-y: auto;
   max-height: 500px;
+}
+
+/* Mobile: Smaller max height */
+@media (max-width: 640px) {
+  .notification-list {
+    max-height: calc(100vh - 200px);
+  }
 }
 
 .notification-list::-webkit-scrollbar {
@@ -227,6 +286,13 @@
   position: relative;
 }
 
+/* Mobile: Compact notification items */
+@media (max-width: 640px) {
+  .notification-item {
+    padding: 12px 14px;
+  }
+}
+
 .dark .notification-item {
   border-color: #374151;
 }
@@ -254,6 +320,13 @@
   gap: 12px;
 }
 
+/* Mobile: Smaller gaps */
+@media (max-width: 640px) {
+  .notification-item-content {
+    gap: 10px;
+  }
+}
+
 .notification-icon {
   width: 40px;
   height: 40px;
@@ -262,7 +335,11 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 20px;
+  color: #6b7280;
+}
+
+.dark .notification-icon {
+  color: #9ca3af;
 }
 
 .notification-icon.job_assigned {
@@ -281,6 +358,12 @@
 }
 
 .notification-icon.booking_created {
+  background: #e0e7ff;
+  color: #6366f1;
+}
+
+.notification-icon.site_assigned,
+.notification-icon.site_unassigned {
   background: #e0e7ff;
   color: #6366f1;
 }
@@ -315,6 +398,12 @@
   color: #a5b4fc;
 }
 
+.dark .notification-icon.site_assigned,
+.dark .notification-icon.site_unassigned {
+  background: #312e81;
+  color: #a5b4fc;
+}
+
 .dark .notification-icon.mention {
   background: #831843;
   color: #f9a8d4;
@@ -338,6 +427,14 @@
   line-height: 1.4;
 }
 
+/* Mobile: Smaller text */
+@media (max-width: 640px) {
+  .notification-title {
+    font-size: 13px;
+    margin-bottom: 3px;
+  }
+}
+
 .dark .notification-title {
   color: #f9fafb;
 }
@@ -353,6 +450,15 @@
   overflow: hidden;
 }
 
+/* Mobile: Smaller message, single line clamp */
+@media (max-width: 640px) {
+  .notification-message {
+    font-size: 12px;
+    margin-bottom: 6px;
+    -webkit-line-clamp: 1;
+  }
+}
+
 .dark .notification-message {
   color: #9ca3af;
 }
@@ -361,6 +467,13 @@
   font-size: 12px;
   color: #9ca3af;
   margin: 0;
+}
+
+/* Mobile: Hide time on very small screens or make it smaller */
+@media (max-width: 640px) {
+  .notification-time {
+    font-size: 11px;
+  }
 }
 
 .dark .notification-time {
@@ -383,6 +496,13 @@
   border-top: 1px solid #e5e7eb;
   text-align: center;
   background: #f9fafb;
+}
+
+/* Mobile: Compact footer */
+@media (max-width: 640px) {
+  .notification-footer {
+    padding: 10px 12px;
+  }
 }
 
 .dark .notification-footer {
@@ -447,21 +567,30 @@
   }
 }
 
-/* Mobile Responsive */
+/* Mobile: Hide notification dot on mobile (too cluttered) */
 @media (max-width: 640px) {
-  .notification-center {
-    width: calc(100vw - 32px);
-    max-height: calc(100vh - 100px);
+  .notification-dot {
+    display: none;
   }
-
+  
+  /* Use border or background instead for unread indicator - already handled by .unread class */
   .notification-item {
-    padding: 12px 16px;
+    padding-left: 12px;
   }
-
+  
+  .notification-item.unread {
+    padding-left: 9px;
+  }
+  
+  /* Smaller icons on mobile */
   .notification-icon {
     width: 32px;
     height: 32px;
-    font-size: 16px;
+  }
+  
+  .notification-icon i {
+    width: 16px;
+    height: 16px;
   }
 }
 
