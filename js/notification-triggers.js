@@ -166,7 +166,7 @@ async function getAdminUserIds() {
     const { data, error } = await supabase
       .from('user_profiles')
       .select('id')
-      .in('role', ['admin', 'client']);
+      .in('role', ['admin', 'client', 'super_admin']);
     
     if (error) throw error;
     
