@@ -52,9 +52,14 @@ export async function getCurrentUser() {
   return { user, profile: currentUserProfile };
 }
 
-// Check if current user is admin or client
+// Normalize role for display (super_admin shows as admin in UI)
+export function getDisplayRole(role) {
+  return role === 'super_admin' ? 'admin' : role;
+}
+
+// Check if current user is admin, client, or super_admin
 export function canManageUsers() {
-  return currentUserProfile && ['admin', 'client'].includes(currentUserProfile.role);
+  return currentUserProfile && ['admin', 'client', 'super_admin'].includes(currentUserProfile.role);
 }
 
 // Fetch all users
@@ -207,6 +212,16 @@ export async function cancelInvitation(invitationId) {
 
 // Update user role and status
 export async function updateUserRole(userId, role, status) {
+  // Prevent changing super_admin role via UI
+  const { data: currentUser } = await supabase
+    .from('user_profiles')
+    .select('role')
+    .eq('id', userId)
+    .single();
+  
+  if (currentUser?.role === 'super_admin') {
+    throw new Error('Cannot change super_admin role via UI. Use SQL to reassign.');
+  }
   const { error } = await supabase
     .from('user_profiles')
     .update({ 
@@ -465,7 +480,7 @@ export async function renderUsersList() {
             <h5 class="font-semibold text-nfgblue dark:text-blue-400 text-sm md:text-base truncate">${displayName}</h5>
             <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate">${user.email}</p>
             <div class="flex items-center gap-1.5 md:gap-2 mt-1 flex-wrap">
-              <span class="px-2 py-0.5 rounded-lg text-xs font-medium ${roleColors[user.role]}">${user.role.toUpperCase()}</span>
+              <span class="px-2 py-0.5 rounded-lg text-xs font-medium ${roleColors[user.role] || roleColors.admin}">${getDisplayRole(user.role).toUpperCase()}</span>
               <span class="px-2 py-0.5 rounded-lg text-xs font-medium ${statusColors[user.status]}">${user.status}</span>
             </div>
           </div>
@@ -555,15 +570,17 @@ window.openUserDetails = async function(userId) {
   document.getElementById('user-detail-name').textContent = displayName;
   document.getElementById('user-detail-email').textContent = user.email;
   
-  // Update badges
+  // Update badges (hide super_admin, show as admin)
   const roleBadge = document.getElementById('user-detail-role-badge');
   const roleColors = {
     admin: 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
     client: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
-    staff: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+    staff: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300',
+    super_admin: 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' // Same as admin
   };
-  roleBadge.className = `px-2 py-0.5 rounded-lg text-xs font-medium ${roleColors[user.role]}`;
-  roleBadge.textContent = user.role.toUpperCase();
+  const displayRole = getDisplayRole(user.role);
+  roleBadge.className = `px-2 py-0.5 rounded-lg text-xs font-medium ${roleColors[user.role] || roleColors.admin}`;
+  roleBadge.textContent = displayRole.toUpperCase();
   
   const statusBadge = document.getElementById('user-detail-status-badge');
   const statusColors = {
@@ -578,11 +595,25 @@ window.openUserDetails = async function(userId) {
   // Set role and status selects
   const roleSelect = document.querySelector('#user-detail-role-select');
   const statusSelect = document.querySelector('#user-detail-status-select');
-  if (roleSelect) roleSelect.value = user.role;
+  
+  // Hide role dropdown if user is super_admin (cannot be changed via UI)
+  if (user.role === 'super_admin') {
+    if (roleSelect) {
+      const roleField = roleSelect.closest('.space-y-2');
+      if (roleField) roleField.style.display = 'none';
+    }
+  } else {
+    if (roleSelect) {
+      const roleField = roleSelect.closest('.space-y-2');
+      if (roleField) roleField.style.display = '';
+      roleSelect.value = user.role;
+    }
+  }
+  
   if (statusSelect) statusSelect.value = user.status;
   
-  // Reinitialize dropdowns
-  initializeUserDetailsDropdowns(user.role, user.status);
+  // Reinitialize dropdowns (use display role for UI)
+  initializeUserDetailsDropdowns(displayRole, user.status);
   
   // Load site assignments
   await loadUserSiteAssignments(userId);
