@@ -10,6 +10,9 @@ import { handleError } from './notifications.js';
 // Selected items storage
 const selectedItems = new Set();
 
+// Flag to prevent event loops during programmatic updates
+let isUpdatingProgrammatically = false;
+
 /**
  * Initialize bulk operations for a page
  */
@@ -41,16 +44,15 @@ export function initBulkOperations(tableId, options = {}) {
  * Toggle item selection
  */
 export function toggleItemSelection(itemId) {
+  // Skip if we're updating programmatically (to prevent event loops)
+  if (isUpdatingProgrammatically) {
+    return;
+  }
+  
   if (selectedItems.has(itemId)) {
     selectedItems.delete(itemId);
   } else {
     selectedItems.add(itemId);
-  }
-  
-  // Update the checkbox state
-  const checkbox = document.querySelector(`.bulk-select-checkbox[data-item-id="${itemId}"]`);
-  if (checkbox) {
-    checkbox.checked = selectedItems.has(itemId);
   }
   
   updateBulkOperationsUI();
@@ -72,20 +74,16 @@ export function selectAllItems(itemIds) {
       const itemId = checkbox.dataset.itemId;
       if (itemId) {
         selectedItems.add(itemId);
-        checkbox.checked = true;
       }
     });
   } else {
     // Select specific items
     itemIds.forEach(id => {
       selectedItems.add(id);
-      const checkbox = document.querySelector(`.bulk-select-checkbox[data-item-id="${id}"]`);
-      if (checkbox) {
-        checkbox.checked = true;
-      }
     });
   }
   
+  // Update UI (this will check all selected checkboxes)
   updateBulkOperationsUI();
   
   if (window.bulkOperationsConfig?.onSelectionChange) {
@@ -97,16 +95,10 @@ export function selectAllItems(itemIds) {
  * Deselect all items
  */
 export function deselectAllItems() {
-  // Uncheck all checkboxes in the DOM
-  const checkboxes = document.querySelectorAll('.bulk-select-checkbox');
-  checkboxes.forEach(checkbox => {
-    checkbox.checked = false;
-  });
-  
-  // Clear the selected items set
+  // Clear the selected items set first
   selectedItems.clear();
   
-  // Update UI
+  // Update UI (this will uncheck all checkboxes)
   updateBulkOperationsUI();
   
   // Call callback if provided
@@ -144,14 +136,26 @@ function updateBulkOperationsUI() {
   const toolbar = document.getElementById('bulk-operations-toolbar');
   const selectAllCheckbox = document.getElementById('bulk-select-all');
   
+  // Set flag to prevent event loops
+  isUpdatingProgrammatically = true;
+  
   // Update all checkboxes to match selection state
   const checkboxes = document.querySelectorAll('.bulk-select-checkbox');
   checkboxes.forEach(checkbox => {
     const itemId = checkbox.dataset.itemId;
     if (itemId) {
-      checkbox.checked = selectedItems.has(itemId);
+      // Only update if the state is different to avoid unnecessary events
+      const shouldBeChecked = selectedItems.has(itemId);
+      if (checkbox.checked !== shouldBeChecked) {
+        checkbox.checked = shouldBeChecked;
+      }
     }
   });
+  
+  // Reset flag after a short delay to allow events to settle
+  setTimeout(() => {
+    isUpdatingProgrammatically = false;
+  }, 0);
   
   if (toolbar) {
     if (count > 0) {
