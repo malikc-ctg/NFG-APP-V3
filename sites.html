@@ -154,7 +154,7 @@
           
           <button id="add-site-btn" class="inline-flex items-center justify-center sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-nfgblue text-white hover:bg-nfgdark transition flex-shrink-0"
                   data-action="open-modal" data-target="addSiteModal"
-                  title="Add Site">
+                  data-tooltip="Create a new site or property location" data-tooltip-position="bottom">
             <i data-lucide="plus" class="w-4 h-4"></i>
             <span class="hidden sm:inline text-xs sm:text-sm">Add Site</span>
           </button>
@@ -170,25 +170,11 @@
         <p class="text-sm text-gray-500 mt-1">Manage your properties and locations</p>
       </div>
 
+      <!-- Bulk Operations Toolbar -->
+      <div id="bulk-operations-toolbar-container"></div>
+
       <!-- Sites Grid -->
-      <div id="sites-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        <!-- Placeholder skeletons (removed when data loads) -->
-        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4 animate-pulse">
-          <div class="h-5 bg-nfglight rounded mb-2"></div>
-          <div class="h-4 bg-nfglight rounded w-1/2 mb-3"></div>
-          <div class="h-8 bg-nfglight rounded w-28"></div>
-        </div>
-        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4 animate-pulse">
-          <div class="h-5 bg-nfglight rounded mb-2"></div>
-          <div class="h-4 bg-nfglight rounded w-1/2 mb-3"></div>
-          <div class="h-8 bg-nfglight rounded w-28"></div>
-        </div>
-        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4 animate-pulse">
-          <div class="h-5 bg-nfglight rounded mb-2"></div>
-          <div class="h-4 bg-nfglight rounded w-1/2 mb-3"></div>
-          <div class="h-8 bg-nfglight rounded w-28"></div>
-        </div>
-      </div>
+      <div id="sites-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
     </main>
   </div>
 
@@ -610,7 +596,7 @@
         await createSite(siteData)
         
         const sites = await fetchSites()
-        renderSites(sites)
+        await renderSites(sites, { currentUserProfile, showSkeleton: false })
         
         closeAddSiteModal()
         
@@ -646,11 +632,115 @@
         if (reportsNav) reportsNav.style.display = 'none';
       }
       
+      // Show skeleton loading first
+      const grid = document.getElementById('sites-grid');
+      if (grid) {
+        const { createSkeletonGrid, createSkeletonSiteCard, showSkeleton } = await import('./js/skeleton.js');
+        showSkeleton(grid, createSkeletonGrid(6, createSkeletonSiteCard));
+      }
+      
       const sites = await fetchSites()
-      renderSites(sites)
+      await renderSites(sites, { currentUserProfile, showSkeleton: false })
       
       // Initialize UI event handlers (for View Site buttons and modals)
       initializeUI()
+      
+      // Initialize bulk operations if user can perform them
+      const canBulkOperate = currentUserProfile && (currentUserProfile.role === 'admin' || currentUserProfile.role === 'client' || currentUserProfile.role === 'super_admin');
+      if (canBulkOperate) {
+        const { initBulkOperations, createBulkOperationsToolbar } = await import('./js/bulk-operations.js');
+        const toolbarContainer = document.getElementById('bulk-operations-toolbar-container');
+        if (toolbarContainer) {
+          toolbarContainer.innerHTML = createBulkOperationsToolbar([
+            { id: 'update_status', label: 'Update Status', icon: 'check-circle' },
+            { id: 'delete', label: 'Delete', icon: 'trash-2' }
+          ]);
+        }
+        
+        initBulkOperations('sites-grid', {
+          onSelectionChange: (selectedIds) => {
+            console.log('Selected sites:', selectedIds);
+          },
+          onBulkAction: async (action, itemIds) => {
+            return await handleBulkSiteAction(action, itemIds);
+          }
+        });
+        
+        // Add event listeners for bulk action buttons
+        document.addEventListener('click', async (e) => {
+          const bulkActionBtn = e.target.closest('[data-bulk-action]');
+          if (bulkActionBtn) {
+            e.preventDefault();
+            const action = bulkActionBtn.dataset.bulkAction;
+            const { getSelectedItems, executeBulkAction } = await import('./js/bulk-operations.js');
+            const selectedIds = getSelectedItems();
+            if (selectedIds.length === 0) {
+              const { toast } = await import('./js/notifications.js');
+              toast.warning('Please select at least one site');
+              return;
+            }
+            await executeBulkAction(action, selectedIds);
+          }
+        });
+        
+        if (window.lucide) lucide.createIcons();
+      }
+      
+      // Initialize tooltips
+      const { initTooltips } = await import('./js/tooltips.js');
+      initTooltips();
+      
+      // Handle bulk site actions
+      async function handleBulkSiteAction(action, siteIds) {
+        const { handleError, showConfirm } = await import('./js/notifications.js');
+        const { toast } = await import('./js/notifications.js');
+        const { supabase } = await import('./js/supabase.js');
+        
+        try {
+          switch (action) {
+            case 'delete':
+              const deleteConfirmed = await showConfirm(
+                `Are you sure you want to delete ${siteIds.length} site(s)? This cannot be undone.`,
+                'Delete Sites',
+                'error'
+              );
+              if (!deleteConfirmed) return { success: false, cancelled: true };
+              
+              const { error: deleteError } = await supabase
+                .from('sites')
+                .delete()
+                .in('id', siteIds);
+              
+              if (deleteError) throw deleteError;
+              toast.success(`Deleted ${siteIds.length} site(s)`);
+              const updatedSites = await fetchSites();
+              await renderSites(updatedSites, { currentUserProfile, showSkeleton: false });
+              return { success: true };
+              
+            case 'update_status':
+              const newStatus = prompt('Enter new status (Active, Paused, In Setup):');
+              if (!newStatus) return { success: false, cancelled: true };
+              
+              const { error: statusError } = await supabase
+                .from('sites')
+                .update({ status: newStatus })
+                .in('id', siteIds);
+              
+              if (statusError) throw statusError;
+              toast.success(`Updated status for ${siteIds.length} site(s)`);
+              const updatedSites2 = await fetchSites();
+              await renderSites(updatedSites2, { currentUserProfile, showSkeleton: false });
+              return { success: true };
+              
+            default:
+              toast.error('Unknown action');
+              return { success: false, error: 'Unknown action' };
+          }
+        } catch (error) {
+          handleError(error, 'Bulk site action');
+          return { success: false, error };
+        }
+      }
       
       // Initialize global variables
       window.currentEditSite = null;
@@ -751,6 +841,14 @@
       document.getElementById('edit-site-form')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         
+        // Show progress indicator
+        const updateBtn = document.getElementById('update-site-btn');
+        const originalText = updateBtn?.querySelector('span')?.textContent || 'Update Site';
+        if (updateBtn) {
+          updateBtn.disabled = true;
+          updateBtn.innerHTML = `<span class="inline-flex items-center gap-2"><div class="spinner w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>Updating...</span>`;
+        }
+        
         const formData = new FormData(e.target);
         const siteId = formData.get('id');
         
@@ -778,30 +876,26 @@
 
           // Refresh sites display
           const sites = await fetchSites();
-          
-          // Ensure renderSites is available (re-import if needed)
-          let renderFn = renderSites;
-          if (typeof renderFn !== 'function') {
-            const uiModule = await import('./js/ui.js');
-            renderFn = uiModule.renderSites;
-          }
-          
-          if (renderFn && typeof renderFn === 'function') {
-            renderFn(sites);
-          } else {
-            // Fallback: reload page if function still not available
-            console.warn('renderSites not available, reloading page');
-            window.location.reload();
-            return;
-          }
+          await renderSites(sites, { currentUserProfile, showSkeleton: false });
 
           toast.success('Site has been updated successfully!', 'Site Updated');
+          
+          // Reset button
+          if (updateBtn) {
+            updateBtn.disabled = false;
+            updateBtn.innerHTML = `<span>${originalText}</span>`;
+          }
         } catch (error) {
           console.error('Error updating site:', error);
           const errorEl = document.getElementById('edit-form-error');
           if (errorEl) {
             errorEl.textContent = 'Failed to update site: ' + error.message;
             errorEl.classList.remove('hidden');
+          }
+          // Reset button
+          if (updateBtn) {
+            updateBtn.disabled = false;
+            updateBtn.innerHTML = `<span>${originalText}</span>`;
           }
         }
       });
@@ -1371,7 +1465,8 @@
           <button 
             type="submit" 
             id="update-site-btn"
-            class="px-5 py-2.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark font-medium transition inline-flex items-center gap-2">
+            class="px-5 py-2.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark font-medium transition inline-flex items-center gap-2"
+            data-tooltip="Save changes to this site" data-tooltip-position="top">
             <span>Update Site</span>
           </button>
         </div>
