@@ -587,7 +587,7 @@
         await createSite(siteData)
         
         const sites = await fetchSites()
-        await renderSites(sites, { currentUserProfile, showSkeleton: false })
+        await renderSites(sites, { currentUserProfile })
         
         closeAddSiteModal()
         
