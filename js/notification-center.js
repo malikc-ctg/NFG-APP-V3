@@ -96,9 +96,6 @@ function createNotificationBell() {
           <p>Loading notifications...</p>
         </div>
       </div>
-      <div class="notification-footer">
-        <a href="./notifications.html" id="view-all-notifications" class="notification-footer-link">View All Notifications</a>
-      </div>
     </div>
   `;
   
@@ -116,7 +113,6 @@ function setupNotificationListeners() {
   const bell = document.getElementById('notification-bell');
   const center = document.getElementById('notification-center');
   const markAllReadBtn = document.getElementById('mark-all-read-btn');
-  const viewAllBtn = document.getElementById('view-all-notifications');
   
   if (!bell || !center) return;
   
@@ -144,15 +140,6 @@ function setupNotificationListeners() {
     markAllReadBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       await markAllAsRead();
-    });
-  }
-  
-  // View all notifications - navigate to notifications page
-  if (viewAllBtn) {
-    viewAllBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      window.location.href = './notifications.html';
     });
   }
   
@@ -199,7 +186,7 @@ function closeNotificationCenter() {
 /**
  * Load notifications from database
  */
-export async function loadNotifications(limit = 50) {
+export async function loadNotifications(limit = 100) {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
