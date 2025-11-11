@@ -47,6 +47,12 @@ export function toggleItemSelection(itemId) {
     selectedItems.add(itemId);
   }
   
+  // Update the checkbox state
+  const checkbox = document.querySelector(`.bulk-select-checkbox[data-item-id="${itemId}"]`);
+  if (checkbox) {
+    checkbox.checked = selectedItems.has(itemId);
+  }
+  
   updateBulkOperationsUI();
   
   // Call callback if provided
@@ -59,7 +65,27 @@ export function toggleItemSelection(itemId) {
  * Select all items
  */
 export function selectAllItems(itemIds) {
-  itemIds.forEach(id => selectedItems.add(id));
+  if (!itemIds || itemIds.length === 0) {
+    // If no itemIds provided, select all visible checkboxes
+    const checkboxes = document.querySelectorAll('.bulk-select-checkbox');
+    checkboxes.forEach(checkbox => {
+      const itemId = checkbox.dataset.itemId;
+      if (itemId) {
+        selectedItems.add(itemId);
+        checkbox.checked = true;
+      }
+    });
+  } else {
+    // Select specific items
+    itemIds.forEach(id => {
+      selectedItems.add(id);
+      const checkbox = document.querySelector(`.bulk-select-checkbox[data-item-id="${id}"]`);
+      if (checkbox) {
+        checkbox.checked = true;
+      }
+    });
+  }
+  
   updateBulkOperationsUI();
   
   if (window.bulkOperationsConfig?.onSelectionChange) {
@@ -71,9 +97,19 @@ export function selectAllItems(itemIds) {
  * Deselect all items
  */
 export function deselectAllItems() {
+  // Uncheck all checkboxes in the DOM
+  const checkboxes = document.querySelectorAll('.bulk-select-checkbox');
+  checkboxes.forEach(checkbox => {
+    checkbox.checked = false;
+  });
+  
+  // Clear the selected items set
   selectedItems.clear();
+  
+  // Update UI
   updateBulkOperationsUI();
   
+  // Call callback if provided
   if (window.bulkOperationsConfig?.onSelectionChange) {
     window.bulkOperationsConfig.onSelectionChange([]);
   }
@@ -108,6 +144,15 @@ function updateBulkOperationsUI() {
   const toolbar = document.getElementById('bulk-operations-toolbar');
   const selectAllCheckbox = document.getElementById('bulk-select-all');
   
+  // Update all checkboxes to match selection state
+  const checkboxes = document.querySelectorAll('.bulk-select-checkbox');
+  checkboxes.forEach(checkbox => {
+    const itemId = checkbox.dataset.itemId;
+    if (itemId) {
+      checkbox.checked = selectedItems.has(itemId);
+    }
+  });
+  
   if (toolbar) {
     if (count > 0) {
       toolbar.classList.remove('hidden');
@@ -121,10 +166,18 @@ function updateBulkOperationsUI() {
   }
   
   if (selectAllCheckbox) {
-    // Check if all items are selected (would need to know total count)
-    // For now, just update based on current selection
-    selectAllCheckbox.checked = count > 0;
-    selectAllCheckbox.indeterminate = false;
+    // Update select-all checkbox based on current selection
+    const totalCheckboxes = checkboxes.length;
+    if (count === 0) {
+      selectAllCheckbox.checked = false;
+      selectAllCheckbox.indeterminate = false;
+    } else if (count === totalCheckboxes && totalCheckboxes > 0) {
+      selectAllCheckbox.checked = true;
+      selectAllCheckbox.indeterminate = false;
+    } else {
+      selectAllCheckbox.checked = false;
+      selectAllCheckbox.indeterminate = true;
+    }
   }
 }
 
