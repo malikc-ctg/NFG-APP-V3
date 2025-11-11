@@ -72,62 +72,42 @@
 
   <!-- Prevent page scrollbar -->
   <style>
-    * {
-      box-sizing: border-box;
-    }
-    html {
-      height: 100%;
+    html, body {
       margin: 0;
       padding: 0;
+      height: 100%;
       overflow: hidden;
     }
     body {
-      margin: 0;
-      padding: 0;
-      height: 100vh;
-      overflow: hidden;
       display: flex;
-      position: relative;
-    }
-    /* Prevent scroll on window/document level */
-    html, body {
-      overscroll-behavior: none;
-    }
-    /* Ensure sidebar doesn't cause overflow */
-    body > aside {
+      flex-direction: row;
+      height: 100vh;
       max-height: 100vh;
+    }
+    body > aside {
       overflow-y: auto;
       overflow-x: hidden;
     }
-    /* Ensure main container fits exactly - don't set height, let flex handle it */
     body > div.flex-1 {
-      max-height: 100vh;
+      display: flex;
+      flex-direction: column;
       min-height: 0;
       min-width: 0;
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
     }
-    /* Header should not grow */
     body > div.flex-1 > header {
       flex-shrink: 0;
     }
-    /* Main content should fill remaining space and scroll */
     body > div.flex-1 > main {
-      flex: 1 1 0;
+      flex: 1;
       min-height: 0;
-      max-height: 100%;
       overflow-y: auto;
       overflow-x: hidden;
-      /* Completely hide scrollbar - Firefox */
       scrollbar-width: none;
       -ms-overflow-style: none;
     }
-    /* Completely hide scrollbar - Chrome, Safari, Edge */
     body > div.flex-1 > main::-webkit-scrollbar {
       display: none;
-      width: 0;
-      height: 0;
     }
   </style>
 

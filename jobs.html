@@ -75,65 +75,42 @@
 
   <!-- Prevent page scrollbar -->
   <style>
-    * {
-      box-sizing: border-box;
-    }
-    html {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-    }
-    body {
-      margin: 0;
-      padding: 0;
-      height: 100vh;
-      overflow: hidden;
-      display: flex;
-    }
-    /* Ensure body never scrolls */
-    body {
-      position: relative;
-    }
-    /* Prevent scroll on window/document level */
     html, body {
-      overscroll-behavior: none;
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
     }
-    /* Ensure sidebar doesn't cause overflow */
-    body > aside {
+    body {
+      display: flex;
+      flex-direction: row;
+      height: 100vh;
       max-height: 100vh;
+    }
+    body > aside {
       overflow-y: auto;
       overflow-x: hidden;
     }
-    /* Ensure main container fits exactly - don't set height, let flex handle it */
     body > div.flex-1 {
-      max-height: 100vh;
+      display: flex;
+      flex-direction: column;
       min-height: 0;
       min-width: 0;
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
     }
-    /* Header should not grow */
     body > div.flex-1 > header {
       flex-shrink: 0;
     }
-    /* Main content should fill remaining space and scroll */
     body > div.flex-1 > main {
-      flex: 1 1 0;
+      flex: 1;
       min-height: 0;
-      max-height: 100%;
       overflow-y: auto;
       overflow-x: hidden;
-      /* Completely hide scrollbar - Firefox */
       scrollbar-width: none;
       -ms-overflow-style: none;
     }
-    /* Completely hide scrollbar - Chrome, Safari, Edge */
     body > div.flex-1 > main::-webkit-scrollbar {
       display: none;
-      width: 0;
-      height: 0;
     }
   </style>
 
@@ -685,55 +662,6 @@
   <!-- ========== SCRIPTS ========== -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // Prevent page-level scrolling - ensure html/body never scroll
-      document.documentElement.style.overflow = 'hidden';
-      document.documentElement.style.height = '100%';
-      document.body.style.overflow = 'hidden';
-      document.body.style.height = '100vh';
-      document.body.style.margin = '0';
-      document.body.style.padding = '0';
-      
-      // Prevent scroll on wheel events at document level (only allow in scrollable containers)
-      let lastScrollTime = 0;
-      document.addEventListener('wheel', (e) => {
-        const target = e.target;
-        const scrollableContainer = target.closest('main, aside, [role="dialog"], [data-scroll-container]');
-        
-        // If the event is not in a scrollable container, prevent it
-        if (!scrollableContainer) {
-          e.preventDefault();
-          e.stopPropagation();
-          return false;
-        }
-        
-        // Check if the scrollable container can actually scroll
-        const container = scrollableContainer;
-        const canScrollDown = container.scrollHeight > container.clientHeight && 
-                              container.scrollTop < (container.scrollHeight - container.clientHeight);
-        const canScrollUp = container.scrollTop > 0;
-        
-        // If scrolling down but can't scroll down, or scrolling up but can't scroll up, prevent
-        if ((e.deltaY > 0 && !canScrollDown) || (e.deltaY < 0 && !canScrollUp)) {
-          // Check if we're at the boundaries
-          const atTop = container.scrollTop <= 0;
-          const atBottom = container.scrollTop >= (container.scrollHeight - container.clientHeight);
-          
-          if ((e.deltaY > 0 && atBottom) || (e.deltaY < 0 && atTop)) {
-            e.preventDefault();
-            e.stopPropagation();
-            return false;
-          }
-        }
-      }, { passive: false });
-      
-      // Also prevent touch scrolling on document
-      document.addEventListener('touchmove', (e) => {
-        const target = e.target;
-        const scrollableContainer = target.closest('main, aside, [role="dialog"], [data-scroll-container]');
-        if (!scrollableContainer) {
-          e.preventDefault();
-        }
-      }, { passive: false });
       if (window.lucide) lucide.createIcons();
       
       // Initialize mobile sidebar
