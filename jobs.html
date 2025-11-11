@@ -92,16 +92,15 @@
     }
     /* Ensure sidebar doesn't cause overflow */
     body > aside {
-      height: 100vh;
       max-height: 100vh;
       overflow-y: auto;
       overflow-x: hidden;
     }
-    /* Ensure main container fits exactly */
+    /* Ensure main container fits exactly - don't set height, let flex handle it */
     body > div.flex-1 {
-      height: 100vh;
       max-height: 100vh;
       min-height: 0;
+      min-width: 0;
       overflow: hidden;
       display: flex;
       flex-direction: column;
