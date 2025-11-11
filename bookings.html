@@ -72,17 +72,16 @@
 
   <!-- Prevent page scrollbar -->
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
+    html {
       height: 100%;
       overflow: hidden;
     }
     body {
-      display: flex;
-      flex-direction: row;
+      margin: 0;
+      padding: 0;
       height: 100vh;
-      max-height: 100vh;
+      overflow: hidden;
+      display: flex;
     }
     body > aside {
       overflow-y: auto;
@@ -92,22 +91,23 @@
       display: flex;
       flex-direction: column;
       min-height: 0;
-      min-width: 0;
       overflow: hidden;
+      flex: 1;
     }
     body > div.flex-1 > header {
       flex-shrink: 0;
     }
     body > div.flex-1 > main {
-      flex: 1;
+      flex: 1 1 0%;
       min-height: 0;
-      overflow-y: auto;
+      overflow-y: scroll;
       overflow-x: hidden;
       scrollbar-width: none;
       -ms-overflow-style: none;
     }
     body > div.flex-1 > main::-webkit-scrollbar {
-      display: none;
+      width: 0px;
+      background: transparent;
     }
   </style>
 
@@ -199,7 +199,7 @@
     </header>
 
     <!-- CONTENT -->
-    <main class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+    <main class="flex-1 p-4 md:p-6 space-y-6">
       <!-- Filter Tabs -->
       <div class="flex gap-2 overflow-x-auto">
         <button class="filter-btn px-4 py-2 rounded-lg bg-nfgblue dark:bg-blue-900 text-white font-medium" data-status="all" data-tooltip="Show all bookings" data-tooltip-position="bottom">
