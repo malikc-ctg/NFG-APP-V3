@@ -60,12 +60,6 @@
   <!-- Notification Center -->
   <link rel="stylesheet" href="./css/notification-center.css">
   
-  <!-- Tooltips -->
-  <link rel="stylesheet" href="./css/tooltips.css">
-  
-  <!-- Skeleton Loading -->
-  <link rel="stylesheet" href="./css/skeleton.css">
-  
   <!-- Offline Sync -->
   <script type="module" src="./js/offline-sync.js"></script>
   <script type="module" src="./js/offline-indicator.js"></script>
@@ -253,22 +247,19 @@
       <div class="flex-shrink-0 p-4 md:p-6 pb-0">
         <!-- Filter Tabs -->
         <div class="flex gap-2 overflow-x-hidden">
-          <button class="filter-btn px-4 py-2 rounded-lg bg-nfgblue dark:bg-blue-900 text-white font-medium" data-status="all" data-tooltip="Show all bookings" data-tooltip-position="bottom">
-            All
-          </button>
-        <button class="filter-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700" data-status="pending" data-tooltip="Show pending bookings" data-tooltip-position="bottom">
+        <button class="filter-btn px-4 py-2 rounded-lg bg-nfgblue dark:bg-blue-900 text-white font-medium" data-status="all">
+          All
+        </button>
+        <button class="filter-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700" data-status="pending">
           Pending
         </button>
-        <button class="filter-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700" data-status="completed" data-tooltip="Show completed bookings" data-tooltip-position="bottom">
+        <button class="filter-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700" data-status="completed">
           Completed
         </button>
-        <button class="filter-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700" data-status="cancelled" data-tooltip="Show cancelled bookings" data-tooltip-position="bottom">
+        <button class="filter-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700" data-status="cancelled">
           Cancelled
         </button>
       </div>
-
-      <!-- Bulk Operations Toolbar -->
-      <div id="bulk-operations-toolbar-container"></div>
       </div>
 
       <!-- Scrollable content area -->
@@ -278,9 +269,6 @@
           <table class="w-full">
           <thead class="bg-nfglight border-b border-nfgray dark:border-gray-700">
             <tr>
-              <th class="text-left p-4 text-sm font-semibold text-nfgblue dark:text-blue-400 w-12">
-                <input type="checkbox" id="bulk-select-all" class="w-4 h-4 text-nfgblue border-nfgray rounded focus:ring-nfgblue">
-              </th>
               <th class="text-left p-4 text-sm font-semibold text-nfgblue dark:text-blue-400">Title</th>
               <th class="text-left p-4 text-sm font-semibold text-nfgblue dark:text-blue-400">Site</th>
               <th class="text-left p-4 text-sm font-semibold text-nfgblue dark:text-blue-400">Date</th>
@@ -731,103 +719,9 @@
         if (error) throw error;
         bookings = data || [];
         await renderBookings();
-        
-        // Initialize bulk operations if user can perform them
-        const canBulkOperate = currentUserProfile && (currentUserProfile.role === 'admin' || currentUserProfile.role === 'client' || currentUserProfile.role === 'super_admin');
-        if (canBulkOperate) {
-          const { initBulkOperations, createBulkOperationsToolbar } = await import('./js/bulk-operations.js');
-          const toolbarContainer = document.getElementById('bulk-operations-toolbar-container');
-          if (toolbarContainer) {
-            toolbarContainer.innerHTML = createBulkOperationsToolbar([
-              { id: 'cancel', label: 'Cancel', icon: 'x-circle' },
-              { id: 'delete', label: 'Delete', icon: 'trash-2' }
-            ]);
-          }
-          
-          initBulkOperations('bookings-table-body', {
-            onSelectionChange: (selectedIds) => {
-              console.log('Selected bookings:', selectedIds);
-            },
-            onBulkAction: async (action, itemIds) => {
-              return await handleBulkBookingAction(action, itemIds);
-            }
-          });
-          
-          // Add event listeners for bulk action buttons
-          document.addEventListener('click', async (e) => {
-            const bulkActionBtn = e.target.closest('[data-bulk-action]');
-            if (bulkActionBtn) {
-              e.preventDefault();
-              const action = bulkActionBtn.dataset.bulkAction;
-              const { getSelectedItems, executeBulkAction } = await import('./js/bulk-operations.js');
-              const selectedIds = getSelectedItems();
-              if (selectedIds.length === 0) {
-                const { toast } = await import('./js/notifications.js');
-                toast.warning('Please select at least one booking');
-                return;
-              }
-              await executeBulkAction(action, selectedIds);
-            }
-          });
-          
-          if (window.lucide) lucide.createIcons();
-        }
       } catch (error) {
         console.error('Error loading bookings:', error);
         alert('Failed to load bookings. Please refresh the page.');
-      }
-    }
-    
-    // Handle bulk booking actions
-    async function handleBulkBookingAction(action, bookingIds) {
-      const { handleError, showConfirm } = await import('./js/notifications.js');
-      const { toast } = await import('./js/notifications.js');
-      
-      try {
-        switch (action) {
-          case 'cancel':
-            const cancelConfirmed = await showConfirm(
-              `Are you sure you want to cancel ${bookingIds.length} booking(s)?`,
-              'Cancel Bookings',
-              'warning'
-            );
-            if (!cancelConfirmed) return { success: false, cancelled: true };
-            
-            const { error: cancelError } = await supabase
-              .from('bookings')
-              .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
-              .in('id', bookingIds);
-            
-            if (cancelError) throw cancelError;
-            toast.success(`Cancelled ${bookingIds.length} booking(s)`);
-            await loadBookings();
-            return { success: true };
-            
-          case 'delete':
-            const deleteConfirmed = await showConfirm(
-              `Are you sure you want to delete ${bookingIds.length} booking(s)? This cannot be undone.`,
-              'Delete Bookings',
-              'error'
-            );
-            if (!deleteConfirmed) return { success: false, cancelled: true };
-            
-            const { error: deleteError } = await supabase
-              .from('bookings')
-              .delete()
-              .in('id', bookingIds);
-            
-            if (deleteError) throw deleteError;
-            toast.success(`Deleted ${bookingIds.length} booking(s)`);
-            await loadBookings();
-            return { success: true };
-            
-          default:
-            toast.error('Unknown action');
-            return { success: false, error: 'Unknown action' };
-        }
-      } catch (error) {
-        handleError(error, 'Bulk booking action');
-        return { success: false, error };
       }
     }
 
@@ -887,30 +781,15 @@
     async function renderBookings() {
       const tbody = document.getElementById('bookings-table-body');
       
-      // Show skeleton loading first
-      if (bookings.length === 0) {
-        try {
-          const { createSkeletonTableRows, showSkeleton } = await import('./js/skeleton.js');
-          showSkeleton(tbody, createSkeletonTableRows(5, 6));
-          // Bookings will be loaded and re-rendered
-          return;
-        } catch (error) {
-          console.error('Error loading skeleton:', error);
-        }
-      }
-      
       let filteredBookings = bookings;
       if (currentFilter !== 'all') {
         filteredBookings = bookings.filter(b => b.status === currentFilter);
       }
 
-      // Check if user can perform bulk operations
-      const canBulkOperate = currentUserProfile && (currentUserProfile.role === 'admin' || currentUserProfile.role === 'client' || currentUserProfile.role === 'super_admin');
-
       if (filteredBookings.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="${canBulkOperate ? '6' : '5'}" class="p-8 text-center text-gray-500 dark:text-gray-400">
+            <td colspan="5" class="p-8 text-center text-gray-500 dark:text-gray-400">
               <div class="flex flex-col items-center gap-2">
                 <i data-lucide="calendar-x" class="w-12 h-12 text-gray-400"></i>
                 <p>No bookings found</p>
@@ -921,12 +800,6 @@
         if (window.lucide) lucide.createIcons();
         return;
       }
-
-      const statusTooltips = {
-        'pending': 'Booking is pending and hasn\'t been completed',
-        'completed': 'Booking has been completed',
-        'cancelled': 'Booking has been cancelled'
-      };
 
       tbody.innerHTML = filteredBookings.map(booking => {
         const statusColors = {
@@ -939,11 +812,6 @@
 
         return `
           <tr class="border-b border-nfgray hover:bg-nfglight/50 transition">
-            ${canBulkOperate ? `
-              <td class="p-4">
-                <input type="checkbox" class="bulk-select-checkbox w-4 h-4 text-nfgblue border-nfgray rounded focus:ring-nfgblue" data-item-id="${booking.id}">
-              </td>
-            ` : ''}
             <td class="p-4">
               <p class="font-medium text-nfgblue dark:text-blue-400">${booking.title}</p>
             </td>
@@ -954,12 +822,12 @@
               <p class="text-gray-700 dark:text-gray-300">${date}</p>
             </td>
             <td class="p-4">
-              <span class="px-3 py-1 rounded-full text-xs font-medium ${statusColors[booking.status] || 'bg-gray-100 text-gray-800'} tooltip-wrapper" data-tooltip="${statusTooltips[booking.status] || booking.status}" data-tooltip-position="left">
+              <span class="px-3 py-1 rounded-full text-xs font-medium ${statusColors[booking.status] || 'bg-gray-100 text-gray-800'}">
                 ${booking.status}
               </span>
             </td>
             <td class="p-4">
-              <button onclick="viewBooking('${booking.id}')" class="px-3 py-1.5 rounded-lg border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight text-sm font-medium" data-tooltip="View booking details" data-tooltip-position="top">
+              <button onclick="viewBooking('${booking.id}')" class="px-3 py-1.5 rounded-lg border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight text-sm font-medium">
                 View Details
               </button>
             </td>
@@ -968,14 +836,6 @@
       }).join('');
 
       if (window.lucide) lucide.createIcons();
-      
-      // Initialize tooltips
-      try {
-        const { initTooltips } = await import('./js/tooltips.js');
-        initTooltips();
-      } catch (error) {
-        console.error('Error initializing tooltips:', error);
-      }
     }
 
     function renderServices() {
@@ -1465,15 +1325,6 @@
   
   <!-- Notification Center -->
   <script type="module" src="./js/notification-center.js"></script>
-  
-  <!-- Tooltips -->
-  <script type="module" src="./js/tooltips.js"></script>
-  
-  <!-- Skeleton Loading -->
-  <script type="module" src="./js/skeleton.js"></script>
-  
-  <!-- Bulk Operations -->
-  <script type="module" src="./js/bulk-operations.js"></script>
   
   <!-- Hide loader when page is ready -->
   <script>

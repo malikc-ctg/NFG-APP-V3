@@ -63,12 +63,6 @@
   <!-- Notification Center -->
   <link rel="stylesheet" href="./css/notification-center.css">
   
-  <!-- Tooltips -->
-  <link rel="stylesheet" href="./css/tooltips.css">
-  
-  <!-- Skeleton Loading -->
-  <link rel="stylesheet" href="./css/skeleton.css">
-  
   <!-- Offline Sync -->
   <script type="module" src="./js/offline-sync.js"></script>
   <script type="module" src="./js/offline-indicator.js"></script>
@@ -262,25 +256,22 @@
 
         <!-- Status Tabs -->
         <div class="flex gap-1 sm:gap-2 border-b border-nfgray overflow-x-hidden mt-6">
-          <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-nfgblue dark:text-blue-400 border-b-2 border-nfgblue whitespace-nowrap flex-shrink-0" data-status="all" data-tooltip="Show all jobs" data-tooltip-position="bottom">
+          <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-nfgblue dark:text-blue-400 border-b-2 border-nfgblue whitespace-nowrap flex-shrink-0" data-status="all">
             All Jobs
           </button>
-          <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-status="pending" data-tooltip="Show pending jobs that haven't been started" data-tooltip-position="bottom">
+          <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-status="pending">
             Pending
           </button>
-          <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-status="in-progress" data-tooltip="Show jobs currently in progress" data-tooltip-position="bottom">
+          <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-status="in-progress">
             In Progress
           </button>
-          <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-status="completed" data-tooltip="Show completed jobs" data-tooltip-position="bottom">
+          <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-status="completed">
             Completed
           </button>
-          <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-status="cancelled" data-tooltip="Show cancelled jobs" data-tooltip-position="bottom">
+          <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-status="cancelled">
             Cancelled
           </button>
         </div>
-
-        <!-- Bulk Operations Toolbar -->
-        <div id="bulk-operations-toolbar-container"></div>
       </div>
 
       <!-- Scrollable content area -->
@@ -986,11 +977,6 @@
     // Render jobs
     async function renderJobs() {
       const grid = document.getElementById('jobs-grid');
-      
-      // Show skeleton loading
-      const { createSkeletonGrid, createSkeletonJobCard, showSkeleton } = await import('./js/skeleton.js');
-      showSkeleton(grid, createSkeletonGrid(6, createSkeletonJobCard));
-      
       const jobs = await getJobs();
       const sites = await getSites();
       
@@ -1017,9 +1003,6 @@
         return;
       }
 
-      // Check if user can perform bulk operations (admin or client)
-      const canBulkOperate = currentUserProfile && (currentUserProfile.role === 'admin' || currentUserProfile.role === 'client' || currentUserProfile.role === 'super_admin');
-      
       grid.innerHTML = filtered.map(job => {
         // Use site from joined data if available, otherwise fall back to sites array
         const site = job.sites || sites.find(s => s.id == job.site_id);
@@ -1029,32 +1012,15 @@
           'completed': 'bg-green-100 text-green-700',
           'cancelled': 'bg-red-100 text-red-700'
         };
-        
-        const statusTooltips = {
-          'pending': 'Job is pending and hasn\'t been started yet',
-          'in-progress': 'Job is currently in progress',
-          'completed': 'Job has been completed',
-          'cancelled': 'Job has been cancelled'
-        };
 
         return `
           <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg hover:shadow-lg transition-shadow">
             <div class="flex justify-between items-start mb-3">
-              ${canBulkOperate ? `
-                <div class="flex items-start gap-2 flex-1">
-                  <input type="checkbox" class="bulk-select-checkbox w-4 h-4 text-nfgblue border-nfgray rounded focus:ring-nfgblue mt-1" data-item-id="${job.id}">
-                  <div class="flex-1 min-w-0">
-                    <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">${job.title}</h3>
-                    <p class="text-gray-500 text-sm mt-1">${site ? site.name : 'Unknown Site'}</p>
-                  </div>
-                </div>
-              ` : `
-                <div class="flex-1">
-                  <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">${job.title}</h3>
-                  <p class="text-gray-500 text-sm mt-1">${site ? site.name : 'Unknown Site'}</p>
-                </div>
-              `}
-              <span class="px-2 py-1 rounded-lg text-xs font-medium ${statusColors[job.status]} tooltip-wrapper" data-tooltip="${statusTooltips[job.status] || job.status}" data-tooltip-position="left">${job.status.replace('-', ' ')}</span>
+              <div class="flex-1">
+                <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">${job.title}</h3>
+                <p class="text-gray-500 text-sm mt-1">${site ? site.name : 'Unknown Site'}</p>
+              </div>
+              <span class="px-2 py-1 rounded-lg text-xs font-medium ${statusColors[job.status]}">${job.status.replace('-', ' ')}</span>
             </div>
             
             <div class="space-y-2 mb-4 py-3 border-t border-b border-nfgray dark:border-gray-700">
@@ -1076,8 +1042,7 @@
             
             <button 
               onclick="viewJob('${job.id}')" 
-              class="w-full bg-nfgblue hover:bg-nfgdark text-white rounded-xl py-2 text-sm font-medium transition cursor-pointer"
-              data-tooltip="View full job details, tasks, and photos" data-tooltip-position="top">
+              class="w-full bg-nfgblue hover:bg-nfgdark text-white rounded-xl py-2 text-sm font-medium transition cursor-pointer">
               View Details
             </button>
           </div>
@@ -1085,135 +1050,6 @@
       }).join('');
 
       if (window.lucide) lucide.createIcons();
-      
-      // Initialize tooltips
-      const { initTooltips } = await import('./js/tooltips.js');
-      initTooltips();
-      
-      // Initialize bulk operations if user can perform them
-      if (canBulkOperate) {
-        const { initBulkOperations, createBulkOperationsToolbar } = await import('./js/bulk-operations.js');
-        const toolbarContainer = document.getElementById('bulk-operations-toolbar-container');
-        if (toolbarContainer) {
-          toolbarContainer.innerHTML = createBulkOperationsToolbar([
-            { id: 'archive', label: 'Archive', icon: 'archive' },
-            { id: 'update_status', label: 'Update Status', icon: 'check-circle' },
-            { id: 'assign_worker', label: 'Assign Worker', icon: 'user' },
-            { id: 'delete', label: 'Delete', icon: 'trash-2' }
-          ]);
-        }
-        
-        initBulkOperations('jobs-grid', {
-          onSelectionChange: (selectedIds) => {
-            console.log('Selected jobs:', selectedIds);
-          },
-          onBulkAction: async (action, itemIds) => {
-            return await handleBulkJobAction(action, itemIds);
-          }
-        });
-        
-        // Add event listeners for bulk action buttons
-        document.addEventListener('click', async (e) => {
-          const bulkActionBtn = e.target.closest('[data-bulk-action]');
-          if (bulkActionBtn) {
-            e.preventDefault();
-            const action = bulkActionBtn.dataset.bulkAction;
-            const { getSelectedItems, executeBulkAction } = await import('./js/bulk-operations.js');
-            const selectedIds = getSelectedItems();
-            if (selectedIds.length === 0) {
-              const { toast } = await import('./js/notifications.js');
-              toast.warning('Please select at least one job');
-              return;
-            }
-            await executeBulkAction(action, selectedIds);
-          }
-        });
-        
-        if (window.lucide) lucide.createIcons();
-      }
-    }
-    
-    // Handle bulk job actions
-    async function handleBulkJobAction(action, jobIds) {
-      const { handleError, showConfirm } = await import('./js/notifications.js');
-      const { toast } = await import('./js/notifications.js');
-      
-      try {
-        switch (action) {
-          case 'archive':
-            const archiveConfirmed = await showConfirm(
-              `Are you sure you want to archive ${jobIds.length} job(s)?`,
-              'Archive Jobs',
-              'warning'
-            );
-            if (!archiveConfirmed) return { success: false, cancelled: true };
-            
-            const { error: archiveError } = await supabase
-              .from('jobs')
-              .update({ archived: true })
-              .in('id', jobIds);
-            
-            if (archiveError) throw archiveError;
-            toast.success(`Archived ${jobIds.length} job(s)`);
-            await renderJobs();
-            return { success: true };
-            
-          case 'delete':
-            const deleteConfirmed = await showConfirm(
-              `Are you sure you want to delete ${jobIds.length} job(s)? This cannot be undone.`,
-              'Delete Jobs',
-              'error'
-            );
-            if (!deleteConfirmed) return { success: false, cancelled: true };
-            
-            const { error: deleteError } = await supabase
-              .from('jobs')
-              .delete()
-              .in('id', jobIds);
-            
-            if (deleteError) throw deleteError;
-            toast.success(`Deleted ${jobIds.length} job(s)`);
-            await renderJobs();
-            return { success: true };
-            
-          case 'update_status':
-            // Prompt for new status
-            const newStatus = prompt('Enter new status (pending, in-progress, completed, cancelled):');
-            if (!newStatus) return { success: false, cancelled: true };
-            
-            const { error: statusError } = await supabase
-              .from('jobs')
-              .update({ status: newStatus })
-              .in('id', jobIds);
-            
-            if (statusError) throw statusError;
-            toast.success(`Updated status for ${jobIds.length} job(s)`);
-            await renderJobs();
-            return { success: true };
-            
-          case 'assign_worker':
-            // Prompt for worker ID (could be enhanced with a dropdown)
-            const workerId = prompt('Enter worker user ID:');
-            if (!workerId) return { success: false, cancelled: true };
-            
-            const { error: assignError } = await supabase
-              .from('jobs')
-              .update({ assigned_worker_id: workerId })
-              .in('id', jobIds);
-            
-            if (assignError) throw assignError;
-            toast.success(`Assigned worker to ${jobIds.length} job(s)`);
-            await renderJobs();
-            return { success: true };
-            
-          default:
-            toast.error('Unknown action');
-            return { success: false, error: 'Unknown action' };
-        }
-      } catch (error) {
-        handleError(error, 'Bulk job action');
-        return { success: false, error };
-      }
     }
 
     // View job details
@@ -2614,15 +2450,6 @@
   
   <!-- Notification Center -->
   <script type="module" src="./js/notification-center.js"></script>
-  
-  <!-- Tooltips -->
-  <script type="module" src="./js/tooltips.js"></script>
-  
-  <!-- Skeleton Loading -->
-  <script type="module" src="./js/skeleton.js"></script>
-  
-  <!-- Bulk Operations -->
-  <script type="module" src="./js/bulk-operations.js"></script>
   
   <!-- Hide loader when page is ready -->
   <script>

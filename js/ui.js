@@ -146,7 +146,7 @@ function createEmptyState(hasAnySites = false) {
 
 // Create a site card HTML
 function createSiteCard(site, options = {}) {
-  const { showBulkCheckbox = false, currentUserProfile = null } = options;
+  const { currentUserProfile = null } = options;
   const statusColors = {
     'Active': 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
     'Paused': 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
@@ -155,62 +155,35 @@ function createSiteCard(site, options = {}) {
   
   const statusClass = statusColors[site.status] || 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
   
-  const statusTooltips = {
-    'Active': 'Site is active and receiving services',
-    'Paused': 'Site is temporarily paused',
-    'In Setup': 'Site is being set up and configured'
-  };
-  
-  const canBulkOperate = currentUserProfile && (currentUserProfile.role === 'admin' || currentUserProfile.role === 'client' || currentUserProfile.role === 'super_admin');
-  
   return `
     <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg hover:shadow-lg transition-shadow">
       <!-- Header -->
       <div class="flex justify-between items-start mb-3">
-        ${canBulkOperate && showBulkCheckbox ? `
-          <div class="flex items-start gap-2 flex-1 min-w-0">
-            <input type="checkbox" class="bulk-select-checkbox w-4 h-4 text-nfgblue border-nfgray rounded focus:ring-nfgblue mt-1" data-item-id="${site.id}">
-            <div class="flex-1 min-w-0">
-              <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">${site.name}</h3>
-              <div class="flex items-center gap-2 mt-1">
-                <p class="text-gray-500 dark:text-gray-400 text-xs truncate">${site.address}</p>
-                <button 
-                  onclick="copyAddress('${site.address.replace(/'/g, "\\'")}', event)" 
-                  class="text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 transition p-1 rounded hover:bg-nfglight dark:hover:bg-gray-700 flex-shrink-0"
-                  data-tooltip="Copy address to clipboard" data-tooltip-position="top">
-                  <i data-lucide="copy" class="w-3 h-3"></i>
-                </button>
-              </div>
-            </div>
+        <div class="flex-1 min-w-0">
+          <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">${site.name}</h3>
+          <div class="flex items-center gap-2 mt-1">
+            <p class="text-gray-500 dark:text-gray-400 text-xs truncate">${site.address}</p>
+            <button 
+              onclick="copyAddress('${site.address.replace(/'/g, "\\'")}', event)" 
+              class="text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 transition p-1 rounded hover:bg-nfglight dark:hover:bg-gray-700 flex-shrink-0">
+              <i data-lucide="copy" class="w-3 h-3"></i>
+            </button>
           </div>
-        ` : `
-          <div class="flex-1 min-w-0">
-            <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">${site.name}</h3>
-            <div class="flex items-center gap-2 mt-1">
-              <p class="text-gray-500 dark:text-gray-400 text-xs truncate">${site.address}</p>
-              <button 
-                onclick="copyAddress('${site.address.replace(/'/g, "\\'")}', event)" 
-                class="text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 transition p-1 rounded hover:bg-nfglight dark:hover:bg-gray-700 flex-shrink-0"
-                data-tooltip="Copy address to clipboard" data-tooltip-position="top">
-                <i data-lucide="copy" class="w-3 h-3"></i>
-              </button>
-            </div>
-          </div>
-        `}
-        <span class="px-2 py-1 rounded-lg text-xs font-medium ${statusClass} ml-2 flex-shrink-0 tooltip-wrapper" data-tooltip="${statusTooltips[site.status] || site.status}" data-tooltip-position="left">${site.status}</span>
+        </div>
+        <span class="px-2 py-1 rounded-lg text-xs font-medium ${statusClass} ml-2 flex-shrink-0">${site.status}</span>
       </div>
       
       <!-- KPIs -->
       <div class="grid grid-cols-3 gap-2 mb-4 py-3 border-t border-b border-nfgray dark:border-gray-700">
-        <div class="text-center" data-tooltip="Total completed jobs at this site" data-tooltip-position="top">
+        <div class="text-center">
           <p class="text-nfgblue dark:text-blue-400 text-xl font-semibold">${site.jobs_completed || 0}</p>
           <p class="text-gray-500 dark:text-gray-400 text-xs">Jobs Done</p>
         </div>
-        <div class="text-center" data-tooltip="Upcoming bookings scheduled for this site" data-tooltip-position="top">
+        <div class="text-center">
           <p class="text-nfgblue dark:text-blue-400 text-xl font-semibold">${site.upcoming_bookings || 0}</p>
           <p class="text-gray-500 dark:text-gray-400 text-xs">Upcoming</p>
         </div>
-        <div class="text-center" data-tooltip="Site rating based on completed jobs" data-tooltip-position="top">
+        <div class="text-center">
           <p class="text-nfgblue dark:text-blue-400 text-xl font-semibold">${site.rating || '—'}</p>
           <p class="text-gray-500 dark:text-gray-400 text-xs">Rating</p>
         </div>
@@ -220,8 +193,7 @@ function createSiteCard(site, options = {}) {
       <button 
         data-action="view-site" 
         data-site-id="${site.id}"
-        class="w-full bg-nfgblue hover:bg-nfgdark text-white rounded-xl py-2 text-sm font-medium transition"
-        data-tooltip="View site details, edit information, and view job history" data-tooltip-position="top">
+        class="w-full bg-nfgblue hover:bg-nfgdark text-white rounded-xl py-2 text-sm font-medium transition">
         View Site
       </button>
     </div>

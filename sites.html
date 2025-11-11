@@ -63,12 +63,6 @@
   <!-- Notification Center -->
   <link rel="stylesheet" href="./css/notification-center.css">
   
-  <!-- Tooltips -->
-  <link rel="stylesheet" href="./css/tooltips.css">
-  
-  <!-- Skeleton Loading -->
-  <link rel="stylesheet" href="./css/skeleton.css">
-  
   <!-- Offline Sync -->
   <script type="module" src="./js/offline-sync.js"></script>
   <script type="module" src="./js/offline-indicator.js"></script>
@@ -169,9 +163,6 @@
         <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">All Sites</h2>
         <p class="text-sm text-gray-500 mt-1">Manage your properties and locations</p>
       </div>
-
-      <!-- Bulk Operations Toolbar -->
-      <div id="bulk-operations-toolbar-container"></div>
 
       <!-- Sites Grid -->
       <div id="sites-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
@@ -632,76 +623,11 @@
         if (reportsNav) reportsNav.style.display = 'none';
       }
       
-      // Show skeleton loading first
-      const grid = document.getElementById('sites-grid');
-      if (grid) {
-        const { createSkeletonGrid, createSkeletonSiteCard, showSkeleton } = await import('./js/skeleton.js');
-        showSkeleton(grid, createSkeletonGrid(6, createSkeletonSiteCard));
-      }
-      
       const sites = await fetchSites()
-      await renderSites(sites, { currentUserProfile, showSkeleton: false })
+      await renderSites(sites, { currentUserProfile })
       
       // Initialize UI event handlers (for View Site buttons and modals)
       initializeUI()
-      
-      // Initialize bulk operations if user can perform them
-      const canBulkOperate = currentUserProfile && (currentUserProfile.role === 'admin' || currentUserProfile.role === 'client' || currentUserProfile.role === 'super_admin');
-      if (canBulkOperate) {
-        const { initBulkOperations, createBulkOperationsToolbar } = await import('./js/bulk-operations.js');
-        const toolbarContainer = document.getElementById('bulk-operations-toolbar-container');
-        if (toolbarContainer) {
-          toolbarContainer.innerHTML = createBulkOperationsToolbar([
-            { id: 'update_status', label: 'Update Status', icon: 'check-circle' },
-            { id: 'delete', label: 'Delete', icon: 'trash-2' }
-          ]);
-        }
-        
-        initBulkOperations('sites-grid', {
-          onSelectionChange: (selectedIds) => {
-            console.log('Selected sites:', selectedIds);
-          },
-          onBulkAction: async (action, itemIds) => {
-            return await handleBulkSiteAction(action, itemIds);
-          }
-        });
-        
-        // Add event listeners for bulk action buttons
-        document.addEventListener('click', async (e) => {
-          const bulkActionBtn = e.target.closest('[data-bulk-action]');
-          if (bulkActionBtn) {
-            e.preventDefault();
-            const action = bulkActionBtn.dataset.bulkAction;
-            const { getSelectedItems, executeBulkAction } = await import('./js/bulk-operations.js');
-            const selectedIds = getSelectedItems();
-            if (selectedIds.length === 0) {
-              const { toast } = await import('./js/notifications.js');
-              toast.warning('Please select at least one site');
-              return;
-            }
-            await executeBulkAction(action, selectedIds);
-          }
-        });
-        
-        if (window.lucide) lucide.createIcons();
-      }
-      
-      // Initialize tooltips
-      const { initTooltips } = await import('./js/tooltips.js');
-      initTooltips();
-      
-      // Handle bulk site actions
-      async function handleBulkSiteAction(action, siteIds) {
-        const { handleError, showConfirm } = await import('./js/notifications.js');
-        const { toast } = await import('./js/notifications.js');
-        const { supabase } = await import('./js/supabase.js');
-        
-        try {
-          switch (action) {
-            case 'delete':
-              const deleteConfirmed = await showConfirm(
-                `Are you sure you want to delete ${siteIds.length} site(s)? This cannot be undone.`,
-                'Delete Sites',
                 'error'
               );
               if (!deleteConfirmed) return { success: false, cancelled: true };
@@ -714,7 +640,7 @@
               if (deleteError) throw deleteError;
               toast.success(`Deleted ${siteIds.length} site(s)`);
               const updatedSites = await fetchSites();
-              await renderSites(updatedSites, { currentUserProfile, showSkeleton: false });
+              await renderSites(updatedSites, { currentUserProfile });
               return { success: true };
               
             case 'update_status':
@@ -1474,15 +1400,6 @@
     </div>
   </div>
 
-  <!-- Tooltips -->
-  <script type="module" src="./js/tooltips.js"></script>
-  
-  <!-- Skeleton Loading -->
-  <script type="module" src="./js/skeleton.js"></script>
-  
-  <!-- Bulk Operations -->
-  <script type="module" src="./js/bulk-operations.js"></script>
-  
   <!-- Hide loader when page is ready -->
   <script>
     window.addEventListener('load', () => {
