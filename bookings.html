@@ -119,16 +119,31 @@
       max-height: 100%;
       overflow-y: auto;
       overflow-x: hidden;
+      /* Hide scrollbar when content doesn't overflow */
+      scrollbar-width: thin;
+      scrollbar-color: transparent transparent;
     }
-    /* Hide scrollbar when not needed (webkit browsers) */
+    /* Hide scrollbar track and thumb by default (webkit browsers) */
     body > div.flex-1 > main::-webkit-scrollbar {
-      width: 8px;
+      width: 0px;
+      background: transparent;
+    }
+    body > div.flex-1 > main::-webkit-scrollbar-track {
+      background: transparent;
     }
     body > div.flex-1 > main::-webkit-scrollbar-thumb {
       background: transparent;
     }
+    /* Only show scrollbar on hover or when scrolling (webkit) */
+    body > div.flex-1 > main:hover::-webkit-scrollbar {
+      width: 8px;
+    }
     body > div.flex-1 > main:hover::-webkit-scrollbar-thumb {
       background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+    }
+    body > div.flex-1 > main:hover::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.3);
     }
   </style>
 
@@ -220,7 +235,7 @@
     </header>
 
     <!-- CONTENT -->
-    <main class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+    <main class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6" style="scrollbar-width: none; -ms-overflow-style: none;">
       <!-- Filter Tabs -->
       <div class="flex gap-2 overflow-x-auto">
         <button class="filter-btn px-4 py-2 rounded-lg bg-nfgblue dark:bg-blue-900 text-white font-medium" data-status="all" data-tooltip="Show all bookings" data-tooltip-position="bottom">
