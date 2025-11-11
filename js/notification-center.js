@@ -362,12 +362,28 @@ function updateBadge() {
  */
 async function markAsRead(notificationId) {
   try {
-    const { error } = await supabase
-      .from('notifications')
-      .update({ read: true, read_at: new Date().toISOString() })
-      .eq('id', notificationId);
+    // Use the database function to mark as read (handles read_at column properly)
+    const { error } = await supabase.rpc('mark_notification_read', {
+      notification_id: notificationId
+    });
     
-    if (error) throw error;
+    if (error) {
+      // Fallback: Try direct update if function doesn't work
+      console.warn('⚠️ RPC function failed, trying direct update:', error);
+      const updateData = { read: true };
+      
+      // Only add read_at if column exists (check error message)
+      if (!error.message?.includes('read_at')) {
+        updateData.read_at = new Date().toISOString();
+      }
+      
+      const { error: updateError } = await supabase
+        .from('notifications')
+        .update(updateData)
+        .eq('id', notificationId);
+      
+      if (updateError) throw updateError;
+    }
     
     // Update cache
     const notification = notificationCache.find(n => n.id === notificationId);
@@ -405,12 +421,37 @@ async function markAllAsRead() {
       return false;
     }
     
-    // Use the database function which bypasses RLS with SECURITY DEFINER
-    const { error } = await supabase.rpc('mark_all_notifications_read');
+    // Try using the database function first
+    let error = null;
+    try {
+      const result = await supabase.rpc('mark_all_notifications_read');
+      error = result.error;
+    } catch (rpcError) {
+      error = rpcError;
+    }
     
+    // If RPC fails, try direct update (fallback)
     if (error) {
-      console.error('❌ Database error:', error);
-      throw error;
+      console.warn('⚠️ RPC function failed, trying direct update:', error);
+      
+      // Check if error is about read_at column
+      const hasReadAtColumn = !error.message?.includes('read_at');
+      
+      const updateData = { read: true };
+      if (hasReadAtColumn) {
+        updateData.read_at = new Date().toISOString();
+      }
+      
+      const { error: updateError } = await supabase
+        .from('notifications')
+        .update(updateData)
+        .eq('user_id', user.id)
+        .eq('read', false);
+      
+      if (updateError) {
+        console.error('❌ Direct update also failed:', updateError);
+        throw updateError;
+      }
     }
     
     // Update cache - mark all as read
