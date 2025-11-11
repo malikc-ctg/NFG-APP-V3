@@ -813,6 +813,8 @@
 
     let currentUser = null;
     let currentUserProfile = null;
+    let allSites = []; // Store all sites for filtering
+    let currentSiteFilter = 'all'; // Current filter value
 
     // Get current user and their profile
     async function getCurrentUser() {
@@ -894,11 +896,66 @@
             return [];
           }
           console.log('✅ Dashboard - Sites fetched for user:', sites);
-          return sites || [];
+          const sitesList = sites || [];
+          
+          // Calculate metrics for sites
+          const sitesWithMetrics = await calculateSiteMetrics(sitesList);
+          return sitesWithMetrics;
         }
       } catch (error) {
         console.error('Error fetching sites:', error);
         return [];
+      }
+    }
+    
+    // Calculate metrics for sites
+    async function calculateSiteMetrics(sites) {
+      if (!sites || sites.length === 0) return sites;
+      
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const siteIds = sites.map(s => s.id);
+        
+        // Fetch upcoming bookings count for each site
+        const { data: bookingCounts } = await supabase
+          .from('bookings')
+          .select('site_id')
+          .eq('status', 'pending')
+          .gte('scheduled_date', today)
+          .in('site_id', siteIds);
+        
+        // Fetch completed jobs count for each site
+        const { data: jobCounts } = await supabase
+          .from('jobs')
+          .select('site_id')
+          .eq('status', 'completed')
+          .in('site_id', siteIds);
+        
+        // Create maps for counts
+        const upcomingBookingsMap = {};
+        const completedJobsMap = {};
+        
+        if (bookingCounts) {
+          bookingCounts.forEach(booking => {
+            upcomingBookingsMap[booking.site_id] = (upcomingBookingsMap[booking.site_id] || 0) + 1;
+          });
+        }
+        
+        if (jobCounts) {
+          jobCounts.forEach(job => {
+            completedJobsMap[job.site_id] = (completedJobsMap[job.site_id] || 0) + 1;
+          });
+        }
+        
+        // Attach metrics to each site
+        return sites.map(site => ({
+          ...site,
+          upcoming_bookings: upcomingBookingsMap[site.id] || 0,
+          jobs_completed: completedJobsMap[site.id] || 0
+        }));
+      } catch (error) {
+        console.error('Error calculating site metrics:', error);
+        return sites;
       }
     }
 
@@ -919,6 +976,15 @@
         if (bookingsNav) bookingsNav.style.display = 'none';
         if (reportsNav) reportsNav.style.display = 'none';
         console.log('🔒 Hidden Bookings and Reports tabs for staff user');
+      }
+      
+      // Load and render sites on overview page
+      try {
+        const sites = await fetchSites();
+        allSites = sites; // Store all sites for filtering
+        renderOverviewSites(filterSitesByStatus(sites, currentSiteFilter));
+      } catch (error) {
+        console.error('Error loading sites on overview:', error);
       }
     });
 
@@ -961,7 +1027,8 @@
       // If navigating to sites page, render sites from Supabase
       if (pageName === 'sites') {
         const sites = await fetchSites();
-        renderSitesFullPage(sites);
+        allSites = sites; // Store all sites for filtering
+        renderSitesFullPage(filterSitesByStatus(sites, currentSiteFilter));
       }
 
       // Re-render icons
@@ -972,6 +1039,131 @@
     
     // Make navigateToPage globally available
     window.navigateToPage = navigateToPage;
+
+    // Filter sites by status
+    function filterSitesByStatus(sites, filter) {
+      if (filter === 'all') {
+        return sites;
+      }
+      // Normalize filter value to match site status (case-insensitive)
+      return sites.filter(site => {
+        const siteStatus = (site.status || '').toLowerCase();
+        const filterStatus = filter.toLowerCase();
+        return siteStatus === filterStatus;
+      });
+    }
+
+    // Apply site filter (called from UI.js)
+    window.applySiteFilter = function(filterValue) {
+      currentSiteFilter = filterValue;
+      
+      // Update filter label
+      const filterLabel = document.getElementById('filter-label');
+      if (filterLabel) {
+        if (filterValue === 'all') {
+          filterLabel.textContent = 'All Sites';
+        } else {
+          filterLabel.textContent = filterValue;
+        }
+      }
+      
+      // Close the dropdown
+      const dropdown = document.getElementById('sites-filter');
+      if (dropdown) {
+        dropdown.classList.add('hidden');
+      }
+      
+      // Filter and re-render sites
+      const filteredSites = filterSitesByStatus(allSites, filterValue);
+      
+      // Check which page we're on
+      const sitesPage = document.getElementById('page-sites');
+      if (sitesPage && !sitesPage.classList.contains('hidden')) {
+        renderSitesFullPage(filteredSites);
+      } else {
+        // On overview page - update the sites grid
+        renderOverviewSites(filteredSites);
+      }
+    };
+
+    // Render sites for overview page
+    function renderOverviewSites(sites) {
+      const grid = document.getElementById('sites-grid');
+      if (!grid) return;
+
+      if (sites.length === 0) {
+        const hasAnySites = allSites.length > 0;
+        if (hasAnySites && currentSiteFilter !== 'all') {
+          // Show "no sites match filter" message
+          grid.innerHTML = `
+            <div class="col-span-full flex flex-col items-center justify-center py-12 px-4">
+              <div class="bg-white dark:bg-gray-800 border-2 border-dashed border-nfgray rounded-xl p-8 max-w-md text-center">
+                <i data-lucide="filter-x" class="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
+                <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-lg mb-2">No Sites Match Filter</h3>
+                <p class="text-gray-500 text-sm">No sites found with status "${currentSiteFilter}"</p>
+              </div>
+            </div>
+          `;
+        } else {
+          // Show "no sites" message
+          grid.innerHTML = `
+            <div class="col-span-full flex flex-col items-center justify-center py-12 px-4">
+              <div class="bg-white dark:bg-gray-800 border-2 border-dashed border-nfgray rounded-xl p-8 max-w-md text-center">
+                <i data-lucide="building-2" class="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
+                <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-lg mb-2">No Sites Yet</h3>
+                <p class="text-gray-500 text-sm mb-4">Get started by adding your first site.</p>
+                <button 
+                  data-action="open-modal" 
+                  data-target="addSiteModal"
+                  class="bg-nfgblue hover:bg-nfgdark text-white rounded-xl px-6 py-3 font-medium transition inline-flex items-center gap-2">
+                  <i data-lucide="plus" class="w-5 h-5"></i>
+                  Add Your First Site
+                </button>
+              </div>
+            </div>
+          `;
+        }
+        if (window.lucide) lucide.createIcons();
+        return;
+      }
+
+      const statusColors = {
+        'Active': 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
+        'Paused': 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
+        'In Setup': 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+      };
+      
+      grid.innerHTML = sites.map(site => {
+        const statusClass = statusColors[site.status] || 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300';
+        
+        return `
+          <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg hover:shadow-lg transition-shadow cursor-pointer"
+               data-action="view-site" 
+               data-site-id="${site.id}">
+            <div class="flex justify-between items-start mb-3">
+              <div class="flex-1 min-w-0">
+                <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-base truncate">${site.name}</h3>
+                <p class="text-gray-500 dark:text-gray-400 text-xs truncate mt-1">${site.address || 'No address'}</p>
+              </div>
+              <span class="px-2 py-1 rounded-lg text-xs font-medium ${statusClass} ml-2 flex-shrink-0">${site.status || 'Active'}</span>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2 pt-3 border-t border-nfgray dark:border-gray-700">
+              <div class="text-center">
+                <p class="text-nfgblue dark:text-blue-400 text-lg font-semibold">${site.jobs_completed || 0}</p>
+                <p class="text-gray-500 dark:text-gray-400 text-xs">Jobs</p>
+              </div>
+              <div class="text-center">
+                <p class="text-nfgblue dark:text-blue-400 text-lg font-semibold">${site.upcoming_bookings || 0}</p>
+                <p class="text-gray-500 dark:text-gray-400 text-xs">Bookings</p>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      if (window.lucide) lucide.createIcons();
+    }
 
     // Render sites for full sites page
     function renderSitesFullPage(sites) {
@@ -1237,7 +1429,15 @@
         document.getElementById('editSiteModal').classList.remove('flex');
 
         // Refresh sites display
-        await renderSites();
+        const sites = await fetchSites();
+        allSites = sites; // Update stored sites
+        renderOverviewSites(filterSitesByStatus(sites, currentSiteFilter));
+        
+        // Also update full sites page if it's visible
+        const sitesPage = document.getElementById('page-sites');
+        if (sitesPage && !sitesPage.classList.contains('hidden')) {
+          renderSitesFullPage(filterSitesByStatus(sites, currentSiteFilter));
+        }
 
         toast.success('Site has been updated successfully!', 'Site Updated');
       } catch (error) {
@@ -1489,6 +1689,63 @@
     // Initialize time clock when page loads
     document.addEventListener('DOMContentLoaded', () => {
       initializeTimeClock();
+    });
+    
+    // Handle add site form submission
+    document.getElementById('add-site-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(e.target);
+      const siteData = {
+        name: formData.get('name'),
+        address: formData.get('address'),
+        status: formData.get('status'),
+        square_footage: formData.get('square_footage') ? parseInt(formData.get('square_footage')) : null,
+        contact_phone: formData.get('contact_phone') || null,
+        contact_email: formData.get('contact_email') || null,
+        notes: formData.get('notes') || null
+      };
+      
+      try {
+        // Create site
+        const { data: newSite, error } = await supabase
+          .from('sites')
+          .insert({
+            ...siteData,
+            created_by: currentUser.id
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        
+        // Close modal
+        document.getElementById('addSiteModal').classList.add('hidden');
+        document.getElementById('addSiteModal').classList.remove('flex');
+        e.target.reset();
+        
+        // Refresh sites
+        const sites = await fetchSites();
+        allSites = sites; // Update stored sites
+        renderOverviewSites(filterSitesByStatus(sites, currentSiteFilter));
+        
+        // Also update full sites page if it's visible
+        const sitesPage = document.getElementById('page-sites');
+        if (sitesPage && !sitesPage.classList.contains('hidden')) {
+          renderSitesFullPage(filterSitesByStatus(sites, currentSiteFilter));
+        }
+        
+        toast.success('Site created successfully!', 'Site Created');
+      } catch (error) {
+        console.error('Error creating site:', error);
+        const { handleError } = await import('./js/notifications.js');
+        const friendlyMessage = handleError(error, 'Creating site');
+        const errorEl = document.getElementById('form-error');
+        if (errorEl) {
+          errorEl.textContent = friendlyMessage;
+          errorEl.classList.remove('hidden');
+        }
+      }
     });
   </script>
 

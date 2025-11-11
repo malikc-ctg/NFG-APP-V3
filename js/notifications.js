@@ -267,10 +267,148 @@ export function showPrompt(message, title = 'Input Required', defaultValue = '')
   });
 }
 
+// Error message mappings for user-friendly errors
+const ERROR_MESSAGES = {
+  // Network errors
+  'Failed to fetch': 'Unable to connect to the server. Please check your internet connection and try again.',
+  'NetworkError': 'Network error. Please check your connection and try again.',
+  'Network request failed': 'Network request failed. Please check your internet connection.',
+  
+  // Authentication errors
+  'Invalid JWT': 'Your session has expired. Please log in again.',
+  'JWT expired': 'Your session has expired. Please log in again.',
+  'Not authenticated': 'You are not logged in. Please log in to continue.',
+  'Unauthorized': 'You do not have permission to perform this action.',
+  
+  // Database errors
+  'permission denied': 'You do not have permission to perform this action.',
+  'relation does not exist': 'Database error. Please contact support if this persists.',
+  'duplicate key value': 'This record already exists. Please check your input.',
+  'foreign key constraint': 'Cannot delete this item because it is being used elsewhere.',
+  'violates check constraint': 'Invalid data. Please check your input and try again.',
+  'null value in column': 'Required field is missing. Please fill in all required fields.',
+  
+  // Common Supabase errors
+  'PGRST116': 'Item not found.',
+  'PGRST204': 'Database schema error. Please contact support.',
+  '42P01': 'Database table not found. Please contact support.',
+  '23505': 'This record already exists.',
+  '23503': 'Cannot perform this action because related data exists.',
+  '23514': 'Invalid data. Please check your input.',
+  
+  // Storage errors
+  'The resource already exists': 'A file with this name already exists.',
+  'The resource was not found': 'File not found.',
+  'Payload too large': 'File is too large. Please use a smaller file.',
+  
+  // Generic errors
+  'Internal Server Error': 'An error occurred on the server. Please try again later.',
+  'Bad Request': 'Invalid request. Please check your input and try again.',
+  'Not Found': 'The requested resource was not found.',
+  'Forbidden': 'You do not have permission to access this resource.',
+};
+
+/**
+ * Get user-friendly error message from error object
+ * @param {Error|string|object} error - Error object, message string, or error with message/code
+ * @returns {string} - User-friendly error message
+ */
+function getUserFriendlyErrorMessage(error) {
+  if (!error) {
+    return 'An unexpected error occurred. Please try again.';
+  }
+  
+  // Extract error message
+  let errorMessage = '';
+  let errorCode = '';
+  
+  if (typeof error === 'string') {
+    errorMessage = error;
+  } else if (error.message) {
+    errorMessage = error.message;
+  } else if (error.error && error.error.message) {
+    errorMessage = error.error.message;
+  }
+  
+  if (error.code) {
+    errorCode = error.code;
+  } else if (error.error && error.error.code) {
+    errorCode = error.error.code;
+  }
+  
+  // Check for mapped error messages
+  for (const [key, message] of Object.entries(ERROR_MESSAGES)) {
+    if (errorMessage.includes(key) || errorCode === key) {
+      return message;
+    }
+  }
+  
+  // Return original message if no mapping found, but clean it up
+  if (errorMessage) {
+    // Remove technical details that users don't need to see
+    const cleaned = errorMessage
+      .replace(/PGRST\d+/g, '') // Remove PGRST codes
+      .replace(/ERROR:\s*\d+:\s*/g, '') // Remove PostgreSQL error codes
+      .replace(/CONTEXT:.*/g, '') // Remove context
+      .trim();
+    
+    return cleaned || 'An error occurred. Please try again.';
+  }
+  
+  return 'An unexpected error occurred. Please try again.';
+}
+
+/**
+ * Handle error with user-friendly message
+ * @param {Error|string|object} error - Error to handle
+ * @param {string} context - Context where error occurred (e.g., 'Creating job', 'Loading sites')
+ * @param {boolean} showDialog - Whether to show error dialog instead of toast
+ * @returns {string} - User-friendly error message
+ */
+export function handleError(error, context = '', showDialog = false) {
+  const friendlyMessage = getUserFriendlyErrorMessage(error);
+  const displayMessage = context ? `${context}: ${friendlyMessage}` : friendlyMessage;
+  
+  console.error('[Error Handler]', context || 'Error', error);
+  
+  if (showDialog) {
+    // Show error dialog for critical errors
+    showConfirm(
+      friendlyMessage,
+      context || 'Error',
+      'error'
+    ).catch(() => {
+      // Fallback to toast if dialog fails
+      toast.error(friendlyMessage, context || 'Error');
+    });
+  } else {
+    // Show toast notification
+    toast.error(friendlyMessage, context || 'Error');
+  }
+  
+  return friendlyMessage;
+}
+
+/**
+ * Show error dialog for critical errors
+ * @param {Error|string|object} error - Error to display
+ * @param {string} title - Dialog title
+ * @param {string} message - Optional custom message (overrides error message)
+ */
+export function showErrorDialog(error, title = 'Error', message = null) {
+  const errorMessage = message || getUserFriendlyErrorMessage(error);
+  
+  return showConfirm(
+    errorMessage,
+    title,
+    'error'
+  );
+}
+
 // Convenience methods
 export const toast = {
   success: (message, title) => showNotification(message, 'success', title),
-  error: (message, title) => showNotification(message, 'error', title),
+  error: (message, title) => showNotification(message, 'error', title, 7000), // Longer duration for errors
   warning: (message, title) => showNotification(message, 'warning', title),
   info: (message, title) => showNotification(message, 'info', title),
   show: (message, title) => showNotification(message, 'default', title)

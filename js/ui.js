@@ -261,7 +261,15 @@ export function initializeUI() {
       e.preventDefault()
       const filterValue = filterBtn.dataset.value
       console.log('[UI] Filter Sites clicked:', filterValue)
-      applyFilter(filterValue)
+      
+      // Check if we're on dashboard (has allSites variable) or sites page
+      if (typeof window.applySiteFilter === 'function') {
+        // Dashboard has its own filter function
+        window.applySiteFilter(filterValue)
+      } else {
+        // Fallback to ui.js filter (for sites.html)
+        applyFilter(filterValue)
+      }
       return
     }
     

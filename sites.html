@@ -642,8 +642,62 @@
       // Initialize UI event handlers (for View Site buttons and modals)
       initializeUI()
       
-      // Initialize global variable for editing
+      // Initialize global variables
       window.currentEditSite = null;
+      
+      // View Job History button handler
+      document.getElementById('view-job-history-btn')?.addEventListener('click', async () => {
+        const siteId = window.currentEditSite?.id;
+        if (!siteId) {
+          toast.error('No site selected. Please close and reopen the site details.', 'Error');
+          return;
+        }
+        await openJobHistoryModal(siteId);
+      });
+      
+      // Close Job History Modal
+      document.getElementById('close-job-history-modal')?.addEventListener('click', () => {
+        document.getElementById('jobHistoryModal').classList.add('hidden');
+      });
+      
+      // Close Photo Viewer Modal
+      document.getElementById('close-photo-viewer')?.addEventListener('click', () => {
+        document.getElementById('photoViewerModal').classList.add('hidden');
+      });
+      
+      // Close photo viewer on backdrop click
+      document.getElementById('photoViewerModal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'photoViewerModal') {
+          document.getElementById('photoViewerModal').classList.add('hidden');
+        }
+      });
+      
+      // Close photo viewer on Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          const photoViewer = document.getElementById('photoViewerModal');
+          if (photoViewer && !photoViewer.classList.contains('hidden')) {
+            photoViewer.classList.add('hidden');
+          }
+          const jobHistory = document.getElementById('jobHistoryModal');
+          if (jobHistory && !jobHistory.classList.contains('hidden')) {
+            jobHistory.classList.add('hidden');
+          }
+        }
+      });
+      
+      // Open photo viewer function (global)
+      window.viewJobPhoto = function(photoUrl, caption) {
+        const modal = document.getElementById('photoViewerModal');
+        const img = document.getElementById('photo-viewer-image');
+        const captionEl = document.getElementById('photo-viewer-caption');
+        
+        if (modal && img && photoUrl) {
+          img.src = photoUrl;
+          captionEl.textContent = caption || 'Job Photo';
+          modal.classList.remove('hidden');
+        }
+      };
       
       // Edit Site button handler
       document.getElementById('edit-site-btn')?.addEventListener('click', () => {
@@ -752,6 +806,243 @@
       // Re-render icons after modals are added
       if (window.lucide) {
         lucide.createIcons()
+      }
+    }
+
+    // Open Job History Modal
+    async function openJobHistoryModal(siteId) {
+      try {
+        console.log('[Job History] Opening modal for site:', siteId);
+        
+        // Get site name
+        const site = window.currentEditSite;
+        const siteName = site?.name || 'Unknown Site';
+        document.getElementById('job-history-site-name').textContent = `Job History - ${siteName}`;
+        
+        // Show modal
+        const modal = document.getElementById('jobHistoryModal');
+        if (!modal) {
+          console.error('[Job History] Modal not found');
+          return;
+        }
+        modal.classList.remove('hidden');
+        
+        // Show loading state
+        const listContainer = document.getElementById('job-history-list');
+        listContainer.innerHTML = `
+          <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+            <i data-lucide="loader" class="w-12 h-12 mx-auto mb-3 animate-spin"></i>
+            <p>Loading job history...</p>
+          </div>
+        `;
+        if (window.lucide) lucide.createIcons();
+        
+        // Fetch all jobs for this site
+        const { data: jobs, error: jobsError } = await supabase
+          .from('jobs')
+          .select('*')
+          .eq('site_id', siteId)
+          .order('created_at', { ascending: false });
+        
+        if (jobsError) {
+          console.error('[Job History] Error fetching jobs:', jobsError);
+          const { handleError } = await import('./js/notifications.js');
+          const friendlyMessage = handleError(jobsError, 'Loading job history');
+          listContainer.innerHTML = `
+            <div class="text-center py-8 text-red-500">
+              <i data-lucide="alert-circle" class="w-12 h-12 mx-auto mb-3"></i>
+              <p>${friendlyMessage}</p>
+            </div>
+          `;
+          if (window.lucide) lucide.createIcons();
+          return;
+        }
+        
+        if (!jobs || jobs.length === 0) {
+          listContainer.innerHTML = `
+            <div class="text-center py-12 text-gray-500 dark:text-gray-400">
+              <i data-lucide="clipboard-x" class="w-16 h-16 mx-auto mb-4 text-gray-300"></i>
+              <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-2">No Jobs Yet</h3>
+              <p>This site doesn't have any jobs yet.</p>
+            </div>
+          `;
+          if (window.lucide) lucide.createIcons();
+          return;
+        }
+        
+        console.log('[Job History] Found', jobs.length, 'jobs');
+        
+        // Fetch tasks and worker info for each job
+        const jobIds = jobs.map(j => j.id);
+        const { data: tasks, error: tasksError } = await supabase
+          .from('job_tasks')
+          .select('*')
+          .in('job_id', jobIds);
+        
+        if (tasksError) {
+          console.warn('[Job History] Error fetching tasks:', tasksError);
+        }
+        
+        // Fetch worker profiles
+        const workerIds = [...new Set(jobs.map(j => j.assigned_worker_id).filter(Boolean))];
+        let workersMap = {};
+        if (workerIds.length > 0) {
+          const { data: workers } = await supabase
+            .from('user_profiles')
+            .select('id, full_name, email')
+            .in('id', workerIds);
+          
+          if (workers) {
+            workers.forEach(w => {
+              workersMap[w.id] = w;
+            });
+          }
+        }
+        
+        // Group tasks by job_id
+        const tasksByJob = {};
+        (tasks || []).forEach(task => {
+          if (!tasksByJob[task.job_id]) {
+            tasksByJob[task.job_id] = [];
+          }
+          tasksByJob[task.job_id].push(task);
+        });
+        
+        // Render jobs
+        const statusColors = {
+          'pending': 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
+          'in-progress': 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+          'completed': 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
+          'cancelled': 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
+        };
+        
+        const statusIcons = {
+          'pending': 'clock',
+          'in-progress': 'loader',
+          'completed': 'check-circle',
+          'cancelled': 'x-circle'
+        };
+        
+        listContainer.innerHTML = jobs.map(job => {
+          const jobTasks = tasksByJob[job.id] || [];
+          const completedTasks = jobTasks.filter(t => t.completed).length;
+          const totalTasks = jobTasks.length;
+          const worker = job.assigned_worker_id ? workersMap[job.assigned_worker_id] : null;
+          const workerName = worker?.full_name || worker?.email || 'Unassigned';
+          const statusClass = statusColors[job.status] || 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300';
+          const statusIcon = statusIcons[job.status] || 'circle';
+          const createdDate = new Date(job.created_at).toLocaleDateString();
+          const completedDate = job.completed_at ? new Date(job.completed_at).toLocaleDateString() : null;
+          const isEmergency = job.job_type === 'emergency';
+          
+          // Get tasks with photos
+          const tasksWithPhotos = jobTasks.filter(t => t.photo_url);
+          
+          return `
+            <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg">
+              <div class="flex items-start justify-between mb-3">
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                    <h5 class="text-lg font-semibold text-nfgblue dark:text-blue-400 ${isEmergency ? 'text-red-600' : ''}">
+                      ${isEmergency ? '🚨 ' : ''}${job.title}
+                    </h5>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                    <span class="flex items-center gap-1">
+                      <i data-lucide="calendar" class="w-3 h-3"></i>
+                      ${createdDate}
+                    </span>
+                    ${completedDate ? `
+                      <span class="flex items-center gap-1">
+                        <i data-lucide="check" class="w-3 h-3"></i>
+                        Completed: ${completedDate}
+                      </span>
+                    ` : ''}
+                    <span class="flex items-center gap-1">
+                      <i data-lucide="user" class="w-3 h-3"></i>
+                      ${workerName}
+                    </span>
+                    <span class="flex items-center gap-1">
+                      <i data-lucide="list-checks" class="w-3 h-3"></i>
+                      ${completedTasks}/${totalTasks} tasks
+                    </span>
+                  </div>
+                </div>
+                <span class="px-3 py-1 rounded-lg text-xs font-medium ${statusClass} flex items-center gap-1 flex-shrink-0 ml-2">
+                  <i data-lucide="${statusIcon}" class="w-3 h-3"></i>
+                  ${job.status.charAt(0).toUpperCase() + job.status.slice(1).replace('-', ' ')}
+                </span>
+              </div>
+              
+              ${job.description ? `
+                <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">${job.description}</p>
+              ` : ''}
+              
+              ${tasksWithPhotos.length > 0 ? `
+                <div class="mb-3">
+                  <h6 class="text-sm font-medium text-nfgblue dark:text-blue-400 mb-2 flex items-center gap-2">
+                    <i data-lucide="image" class="w-4 h-4"></i>
+                    Photos (${tasksWithPhotos.length})
+                  </h6>
+                  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                    ${tasksWithPhotos.map(task => `
+                      <div class="relative group cursor-pointer" onclick="viewJobPhoto('${task.photo_url}', '${(task.title || 'Task').replace(/'/g, "\\'")}')">
+                        <img src="${task.photo_url}" alt="${task.title}" class="w-full h-24 object-cover rounded-lg border border-nfgray dark:border-gray-700 hover:opacity-80 transition">
+                        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 rounded-lg transition flex items-center justify-center">
+                          <i data-lucide="zoom-in" class="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition"></i>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">${task.title || 'Task'}</p>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : ''}
+              
+              ${jobTasks.length > 0 ? `
+                <div class="border-t border-nfgray dark:border-gray-700 pt-3">
+                  <h6 class="text-sm font-medium text-nfgblue dark:text-blue-400 mb-2">Tasks</h6>
+                  <div class="space-y-2">
+                    ${jobTasks.map(task => `
+                      <div class="flex items-center gap-2 text-sm">
+                        ${task.completed ? `
+                          <i data-lucide="check-circle" class="w-4 h-4 text-green-600 flex-shrink-0"></i>
+                          <span class="text-gray-600 dark:text-gray-300 line-through">${task.title}</span>
+                        ` : `
+                          <i data-lucide="circle" class="w-4 h-4 text-gray-400 flex-shrink-0"></i>
+                          <span class="text-gray-700 dark:text-gray-200">${task.title}</span>
+                        `}
+                        ${task.photo_url ? `
+                          <button onclick="viewJobPhoto('${task.photo_url}', '${(task.title || 'Task').replace(/'/g, "\\'")}')" 
+                                  class="ml-auto text-xs px-2 py-1 rounded border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 flex items-center gap-1">
+                            <i data-lucide="image" class="w-3 h-3"></i>
+                            View Photo
+                          </button>
+                        ` : ''}
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+          `;
+        }).join('');
+        
+        if (window.lucide) lucide.createIcons();
+        
+      } catch (error) {
+        console.error('[Job History] Error:', error);
+        const { handleError } = await import('./js/notifications.js');
+        const friendlyMessage = handleError(error, 'Loading job history');
+        const listContainer = document.getElementById('job-history-list');
+        if (listContainer) {
+          listContainer.innerHTML = `
+            <div class="text-center py-8 text-red-500">
+              <i data-lucide="alert-circle" class="w-12 h-12 mx-auto mb-3"></i>
+              <p>${friendlyMessage}</p>
+            </div>
+          `;
+          if (window.lucide) lucide.createIcons();
+        }
       }
     }
 
@@ -865,6 +1156,10 @@
 
         <!-- Action Buttons -->
         <div class="flex flex-wrap gap-3 border-t border-nfgray dark:border-gray-700 pt-4">
+          <button id="view-job-history-btn" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark transition">
+            <i data-lucide="history" class="w-4 h-4"></i>
+            View Job History
+          </button>
           <button class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark transition">
             <i data-lucide="calendar-plus" class="w-4 h-4"></i>
             Schedule Booking
@@ -878,6 +1173,46 @@
             Delete Site
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Job History Modal -->
+  <div id="jobHistoryModal" class="hidden fixed inset-0 bg-black/50 items-center justify-center p-4 z-[60]">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+      <!-- Header -->
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 z-10">
+        <div class="flex items-center gap-3">
+          <i data-lucide="history" class="w-6 h-6 text-nfgblue dark:text-blue-400"></i>
+          <div>
+            <h4 id="job-history-site-name" class="text-nfgblue dark:text-blue-400 font-semibold text-lg">Job History</h4>
+            <p class="text-sm text-gray-500 dark:text-gray-400">All jobs for this site</p>
+          </div>
+        </div>
+        <button id="close-job-history-modal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 flex-shrink-0 text-gray-700 dark:text-gray-300">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      
+      <!-- Job List -->
+      <div id="job-history-list" class="flex-1 overflow-y-auto p-4 space-y-4">
+        <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+          <i data-lucide="loader" class="w-12 h-12 mx-auto mb-3 animate-spin"></i>
+          <p>Loading job history...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Photo Viewer Modal -->
+  <div id="photoViewerModal" class="hidden fixed inset-0 bg-black/90 items-center justify-center p-4 z-[70]">
+    <div class="relative w-full h-full max-w-7xl max-h-[90vh] flex flex-col">
+      <button id="close-photo-viewer" class="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition">
+        <i data-lucide="x" class="w-6 h-6"></i>
+      </button>
+      <img id="photo-viewer-image" src="" alt="Job Photo" class="max-w-full max-h-full object-contain mx-auto">
+      <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-lg">
+        <p id="photo-viewer-caption" class="text-sm"></p>
       </div>
     </div>
   </div>

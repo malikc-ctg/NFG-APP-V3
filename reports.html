@@ -164,15 +164,27 @@
         </div>
         
         <!-- Time Period Filter -->
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
           <select id="time-period" class="px-3 py-2 rounded-xl border border-nfgray focus:ring-2 focus:ring-nfgblue outline-none text-sm">
             <option value="7">Last 7 Days</option>
             <option value="30" selected>Last 30 Days</option>
             <option value="90">Last 90 Days</option>
             <option value="365">This Year</option>
+            <option value="custom">Custom Range</option>
             <option value="all">All Time</option>
           </select>
-          <button id="refresh-btn" class="p-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
+          
+          <!-- Custom Date Range (hidden by default) -->
+          <div id="custom-date-range" class="hidden flex items-center gap-2">
+            <input type="date" id="date-from" class="px-3 py-2 rounded-xl border border-nfgray focus:ring-2 focus:ring-nfgblue outline-none text-sm dark:bg-gray-800">
+            <span class="text-gray-500">to</span>
+            <input type="date" id="date-to" class="px-3 py-2 rounded-xl border border-nfgray focus:ring-2 focus:ring-nfgblue outline-none text-sm dark:bg-gray-800">
+            <button id="apply-date-range" class="px-3 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark text-sm">
+              Apply
+            </button>
+          </div>
+          
+          <button id="refresh-btn" class="p-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700" title="Refresh Reports">
             <i data-lucide="refresh-cw" class="w-4 h-4"></i>
           </button>
         </div>
@@ -429,7 +441,7 @@
 
   <script type="module">
     import { supabase } from './js/supabase.js'
-    import { showNotification, showConfirm, showPrompt, toast, notify } from './js/notifications.js'
+    import { showNotification, showConfirm, showPrompt, toast, notify, handleError } from './js/notifications.js'
 
     let currentUser = null;
     let currentUserProfile = null;
@@ -488,14 +500,24 @@
     }
 
     // Fetch data based on time period
-    async function fetchData(days = 30) {
-      console.log('[Reports] Fetching data for last', days, 'days');
+    async function fetchData(days = 30, customStartDate = null, customEndDate = null) {
+      console.log('[Reports] Fetching data for period:', days, 'days', customStartDate ? `(custom: ${customStartDate} to ${customEndDate})` : '');
       
       try {
         let dateFilter = null;
-        if (days !== 'all') {
+        let dateEndFilter = null;
+        
+        if (days === 'custom' && customStartDate && customEndDate) {
+          // Custom date range
+          dateFilter = new Date(customStartDate).toISOString();
+          const endDate = new Date(customEndDate);
+          endDate.setHours(23, 59, 59, 999); // Include full end date
+          dateEndFilter = endDate.toISOString();
+        } else if (days !== 'all') {
+          // Preset period
           const date = new Date();
           date.setDate(date.getDate() - parseInt(days));
+          date.setHours(0, 0, 0, 0);
           dateFilter = date.toISOString();
         }
 
@@ -506,6 +528,9 @@
         
         if (dateFilter) {
           jobsQuery = jobsQuery.gte('created_at', dateFilter);
+        }
+        if (dateEndFilter) {
+          jobsQuery = jobsQuery.lte('created_at', dateEndFilter);
         }
 
         const { data: jobs, error: jobsError } = await jobsQuery.order('created_at', { ascending: false });
@@ -557,11 +582,14 @@
         if (dateFilter) {
           bookingsQuery = bookingsQuery.gte('created_at', dateFilter);
         }
+        if (dateEndFilter) {
+          bookingsQuery = bookingsQuery.lte('created_at', dateEndFilter);
+        }
 
         const { data: bookings, error: bookingsError } = await bookingsQuery.order('created_at', { ascending: false });
         if (bookingsError) {
           console.error('[Reports] Bookings error:', bookingsError);
-          // Don't fail if bookings error - just log it
+          // Don't fail if bookings error - just log it (bookings are optional)
           console.warn('[Reports] ⚠️ Continuing without bookings data');
           reportsData.bookings = [];
         } else {
@@ -589,7 +617,7 @@
         return true;
       } catch (error) {
         console.error('[Reports] ❌ Error fetching data:', error);
-        toast.error('Failed to load reports data: ' + error.message);
+        handleError(error, 'Loading reports data');
         return false;
       }
     }
@@ -751,10 +779,23 @@
         // Fetch time entries
         const timeRange = document.getElementById('time-period')?.value || '30';
         let dateFilter = null;
+        let dateEndFilter = null;
         
-        if (timeRange !== 'all') {
+        if (timeRange === 'custom') {
+          const dateFrom = document.getElementById('date-from')?.value;
+          const dateTo = document.getElementById('date-to')?.value;
+          if (dateFrom) {
+            dateFilter = new Date(dateFrom).toISOString();
+          }
+          if (dateTo) {
+            const endDate = new Date(dateTo);
+            endDate.setHours(23, 59, 59, 999);
+            dateEndFilter = endDate.toISOString();
+          }
+        } else if (timeRange !== 'all') {
           const date = new Date();
           date.setDate(date.getDate() - parseInt(timeRange));
+          date.setHours(0, 0, 0, 0);
           dateFilter = date.toISOString();
         }
 
@@ -765,6 +806,9 @@
 
         if (dateFilter) {
           query = query.gte('clock_in', dateFilter);
+        }
+        if (dateEndFilter) {
+          query = query.lte('clock_in', dateEndFilter);
         }
 
         const { data: timeEntries, error } = await query;
@@ -1013,7 +1057,20 @@
 
         const workerStats = [];
         const timeRange = document.getElementById('time-period')?.value || '30';
-        const daysInPeriod = timeRange === 'all' ? 365 : parseInt(timeRange);
+        let daysInPeriod = 30;
+        if (timeRange === 'custom') {
+          const dateFrom = document.getElementById('date-from')?.value;
+          const dateTo = document.getElementById('date-to')?.value;
+          if (dateFrom && dateTo) {
+            const start = new Date(dateFrom);
+            const end = new Date(dateTo);
+            daysInPeriod = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+          }
+        } else if (timeRange === 'all') {
+          daysInPeriod = 365;
+        } else {
+          daysInPeriod = parseInt(timeRange);
+        }
         const weeksInPeriod = daysInPeriod / 7;
 
         console.log('[Reports] 📅 Time period:', timeRange, 'days =', weeksInPeriod.toFixed(1), 'weeks');
@@ -1215,16 +1272,37 @@
 
     // Refresh all reports
     async function refreshReports() {
-      const days = document.getElementById('time-period')?.value || '30';
+      const timePeriod = document.getElementById('time-period')?.value || '30';
       const refreshBtn = document.getElementById('refresh-btn');
       const icon = refreshBtn?.querySelector('i');
+      
+      // Handle custom date range
+      let customStartDate = null;
+      let customEndDate = null;
+      
+      if (timePeriod === 'custom') {
+        customStartDate = document.getElementById('date-from')?.value;
+        customEndDate = document.getElementById('date-to')?.value;
+        
+        if (!customStartDate || !customEndDate) {
+          toast.error('Please select both start and end dates for custom range');
+          // Reset to default
+          document.getElementById('time-period').value = '30';
+          return refreshReports();
+        }
+        
+        if (new Date(customStartDate) > new Date(customEndDate)) {
+          toast.error('Start date must be before end date');
+          return;
+        }
+      }
       
       // Add spin animation (if icon exists)
       if (icon) {
         icon.classList.add('animate-spin');
       }
       
-      const success = await fetchData(days);
+      const success = await fetchData(timePeriod, customStartDate, customEndDate);
       
       if (success) {
         updateMetrics();
@@ -1247,28 +1325,70 @@
     }
 
     // Export to CSV
-    function exportToCSV() {
+    async function exportToCSV() {
       try {
-        let csv = 'Job Reports\n\n';
-        csv += 'Job Title,Site,Status,Type,Created Date\n';
+        console.log('[Reports] 📥 Exporting CSV...');
         
-        reportsData.jobs.forEach(job => {
-          const date = new Date(job.created_at).toLocaleDateString();
-          csv += `"${job.title}","${job.sites?.name || 'Unknown'}","${job.status}","${job.job_type}","${date}"\n`;
+        // Get current filter settings
+        const timePeriod = document.getElementById('time-period')?.value || '30';
+        const dateFrom = document.getElementById('date-from')?.value;
+        const dateTo = document.getElementById('date-to')?.value;
+        
+        // Fetch user profiles for worker names
+        const { data: profiles } = await supabase
+          .from('user_profiles')
+          .select('id, full_name, email');
+        const profilesMap = {};
+        (profiles || []).forEach(p => {
+          profilesMap[p.id] = p;
         });
-
-        const blob = new Blob([csv], { type: 'text/csv' });
+        
+        // Build CSV header
+        let csv = 'NFG Jobs Report\n';
+        csv += `Generated: ${new Date().toLocaleString()}\n`;
+        if (timePeriod === 'custom' && dateFrom && dateTo) {
+          csv += `Date Range: ${dateFrom} to ${dateTo}\n`;
+        } else if (timePeriod !== 'all') {
+          csv += `Period: Last ${timePeriod} Days\n`;
+        } else {
+          csv += `Period: All Time\n`;
+        }
+        csv += '\n';
+        
+        // CSV headers
+        csv += 'Job Title,Site,Status,Type,Assigned Worker,Worker Email,Created Date,Completed Date,Total Duration (hours),Description\n';
+        
+        // Add job data
+        reportsData.jobs.forEach(job => {
+          const createdDate = new Date(job.created_at).toLocaleDateString();
+          const completedDate = job.completed_at ? new Date(job.completed_at).toLocaleDateString() : '';
+          const worker = job.assigned_worker_id ? profilesMap[job.assigned_worker_id] : null;
+          const workerName = worker?.full_name || worker?.email || 'Unassigned';
+          const workerEmail = worker?.email || '';
+          const duration = job.total_duration ? (job.total_duration / 3600).toFixed(2) : ''; // Convert seconds to hours
+          const description = (job.description || '').replace(/"/g, '""'); // Escape quotes for CSV
+          
+          csv += `"${job.title}","${job.sites?.name || 'Unknown'}","${job.status}","${job.job_type || 'cleaning'}","${workerName}","${workerEmail}","${createdDate}","${completedDate}","${duration}","${description}"\n`;
+        });
+        
+        // Create and download CSV
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `nfg-jobs-report-${Date.now()}.csv`;
+        const timestamp = new Date().toISOString().split('T')[0];
+        a.download = `nfg-jobs-report-${timestamp}.csv`;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
         
+        console.log('[Reports] ✅ CSV exported successfully');
         toast.success('CSV exported successfully!');
       } catch (error) {
-        console.error('Error exporting CSV:', error);
-        toast.error('Failed to export CSV');
+        console.error('[Reports] ❌ Error exporting CSV:', error);
+        const { handleError } = await import('./js/notifications.js');
+        handleError(error, 'Exporting CSV');
       }
     }
 
@@ -1303,10 +1423,37 @@
       await refreshReports();
 
       // Event listeners
-      document.getElementById('time-period')?.addEventListener('change', refreshReports);
+      const timePeriodSelect = document.getElementById('time-period');
+      const customDateRange = document.getElementById('custom-date-range');
+      const applyDateRangeBtn = document.getElementById('apply-date-range');
+      
+      timePeriodSelect?.addEventListener('change', (e) => {
+        if (e.target.value === 'custom') {
+          customDateRange?.classList.remove('hidden');
+          // Set default dates (last 30 days)
+          const endDate = new Date();
+          const startDate = new Date();
+          startDate.setDate(startDate.getDate() - 30);
+          document.getElementById('date-to')?.setAttribute('value', endDate.toISOString().split('T')[0]);
+          document.getElementById('date-from')?.setAttribute('value', startDate.toISOString().split('T')[0]);
+        } else {
+          customDateRange?.classList.add('hidden');
+          refreshReports();
+        }
+      });
+      
+      applyDateRangeBtn?.addEventListener('click', refreshReports);
       document.getElementById('refresh-btn')?.addEventListener('click', refreshReports);
       document.getElementById('export-csv-btn')?.addEventListener('click', exportToCSV);
       document.getElementById('print-btn')?.addEventListener('click', printReport);
+      
+      // Allow Enter key to apply date range
+      document.getElementById('date-from')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') refreshReports();
+      });
+      document.getElementById('date-to')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') refreshReports();
+      });
       
       // Initialize Lucide icons
       if (typeof lucide !== 'undefined') {
