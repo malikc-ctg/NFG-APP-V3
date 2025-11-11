@@ -628,45 +628,6 @@
       
       // Initialize UI event handlers (for View Site buttons and modals)
       initializeUI()
-                'error'
-              );
-              if (!deleteConfirmed) return { success: false, cancelled: true };
-              
-              const { error: deleteError } = await supabase
-                .from('sites')
-                .delete()
-                .in('id', siteIds);
-              
-              if (deleteError) throw deleteError;
-              toast.success(`Deleted ${siteIds.length} site(s)`);
-              const updatedSites = await fetchSites();
-              await renderSites(updatedSites, { currentUserProfile });
-              return { success: true };
-              
-            case 'update_status':
-              const newStatus = prompt('Enter new status (Active, Paused, In Setup):');
-              if (!newStatus) return { success: false, cancelled: true };
-              
-              const { error: statusError } = await supabase
-                .from('sites')
-                .update({ status: newStatus })
-                .in('id', siteIds);
-              
-              if (statusError) throw statusError;
-              toast.success(`Updated status for ${siteIds.length} site(s)`);
-              const updatedSites2 = await fetchSites();
-              await renderSites(updatedSites2, { currentUserProfile, showSkeleton: false });
-              return { success: true };
-              
-            default:
-              toast.error('Unknown action');
-              return { success: false, error: 'Unknown action' };
-          }
-        } catch (error) {
-          handleError(error, 'Bulk site action');
-          return { success: false, error };
-        }
-      }
       
       // Initialize global variables
       window.currentEditSite = null;
