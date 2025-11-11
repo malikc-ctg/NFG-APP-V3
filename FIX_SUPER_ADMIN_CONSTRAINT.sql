@@ -35,31 +35,39 @@ BEGIN
     END IF;
 END $$;
 
--- Step 4: Since we're using an enum type, we don't need a check constraint
--- The enum itself enforces the valid values
--- But if the column isn't using the enum type, we need to alter it
+-- Step 4: Update the CHECK constraint to include super_admin (if column is TEXT)
+-- OR convert to enum type if it's not already
 
--- Check if the role column is using the enum type
 DO $$
 BEGIN
-    -- Check if column is using enum type
-    IF NOT EXISTS (
-        SELECT 1 
-        FROM information_schema.columns 
-        WHERE table_name = 'user_profiles' 
-        AND column_name = 'role'
-        AND udt_name = 'user_role'
-    ) THEN
-        -- Column exists but isn't using enum - alter it
-        -- First, ensure all existing values are valid
-        UPDATE user_profiles
-        SET role = 'staff'
-        WHERE role NOT IN ('admin', 'client', 'staff', 'super_admin');
+    -- Check what type the role column is
+    DECLARE
+        col_type TEXT;
+    BEGIN
+        SELECT udt_name INTO col_type
+        FROM information_schema.columns
+        WHERE table_name = 'user_profiles'
+        AND column_name = 'role';
         
-        -- Alter column to use enum type
-        ALTER TABLE user_profiles
-        ALTER COLUMN role TYPE user_role USING role::user_role;
-    END IF;
+        IF col_type = 'user_role' THEN
+            -- Column is already using enum type - good!
+            RAISE NOTICE 'Column is already using enum type user_role';
+        ELSIF col_type IN ('text', 'varchar', 'character varying') THEN
+            -- Column is TEXT - we need to update the CHECK constraint
+            -- But first, let's see if we can just drop it and rely on application logic
+            -- OR update it to include super_admin
+            
+            -- Option 1: Drop the constraint entirely (role can be any text)
+            -- This is safer if we're using enum elsewhere
+            RAISE NOTICE 'Column is TEXT type. Constraint should be dropped (handled in Step 2)';
+            
+            -- Option 2: If we want to keep a constraint, update it
+            -- But we can't modify a CHECK constraint, we must drop and recreate
+            -- For now, we'll rely on dropping it (done in Step 2)
+        ELSE
+            RAISE NOTICE 'Column type is: %. May need manual intervention.', col_type;
+        END IF;
+    END;
 END $$;
 
 -- Step 5: Now assign super_admin (should work now)

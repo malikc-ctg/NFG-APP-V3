@@ -41,35 +41,17 @@ BEGIN
 END $$;
 
 -- ============================================
--- STEP 3: Ensure role column uses enum type (if not already)
+-- STEP 3: Handle role column type
 -- ============================================
-DO $$
-BEGIN
-    -- Check if column is using enum type
-    IF EXISTS (
-        SELECT 1 
-        FROM information_schema.columns 
-        WHERE table_name = 'user_profiles' 
-        AND column_name = 'role'
-        AND udt_name != 'user_role'
-    ) THEN
-        -- Column exists but isn't using enum - update existing values first
-        UPDATE user_profiles
-        SET role = 'staff'
-        WHERE role NOT IN ('admin', 'client', 'staff', 'super_admin')
-        AND role IS NOT NULL;
-        
-        -- Alter column to use enum type (if column is text/varchar)
-        -- Note: This might fail if there are invalid values, so we update first
-        BEGIN
-            ALTER TABLE user_profiles
-            ALTER COLUMN role TYPE user_role USING role::text::user_role;
-        EXCEPTION
-            WHEN OTHERS THEN
-                RAISE NOTICE 'Could not alter column type: %. Column may already be correct type.', SQLERRM;
-        END;
-    END IF;
-END $$;
+-- The role column might be TEXT with a CHECK constraint or an enum type
+-- We'll handle both cases:
+-- 1. If it's TEXT: Just remove the constraint (done in Step 1), allow any text
+-- 2. If it's enum: Ensure super_admin is in the enum (done in Step 2)
+
+-- Note: We're keeping it simple - just drop the constraint and allow super_admin
+-- The application will handle role validation
+-- If the column is TEXT, we can set super_admin directly
+-- If the column is enum, the enum must include super_admin (Step 2 handles this)
 
 -- ============================================
 -- STEP 2: Create function to check if user is super admin
