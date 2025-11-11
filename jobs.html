@@ -136,29 +136,50 @@
       display: flex;
       flex-direction: column;
     }
-    /* Scrollable content wrapper - scrollbar hidden here */
+    /* Scrollable content wrapper - scrollbar COMPLETELY hidden */
     body > div.flex-1 > main > div.scrollable-content {
       flex: 1;
-      overflow-y: auto;
+      overflow-y: scroll;
       overflow-x: hidden;
       scrollbar-width: none !important;
       -ms-overflow-style: none !important;
+      /* Force hide scrollbar in all browsers */
+      scrollbar-gutter: stable;
     }
+    /* Chrome/Safari/Edge - completely remove scrollbar */
     body > div.flex-1 > main > div.scrollable-content::-webkit-scrollbar {
-      display: none !important;
       width: 0px !important;
       height: 0px !important;
-      appearance: none !important;
+      display: none !important;
+      background: transparent !important;
       -webkit-appearance: none !important;
+      appearance: none !important;
     }
     body > div.flex-1 > main > div.scrollable-content::-webkit-scrollbar-track {
+      width: 0px !important;
+      height: 0px !important;
       display: none !important;
+      background: transparent !important;
+      -webkit-appearance: none !important;
+      appearance: none !important;
     }
     body > div.flex-1 > main > div.scrollable-content::-webkit-scrollbar-thumb {
+      width: 0px !important;
+      height: 0px !important;
       display: none !important;
+      background: transparent !important;
+      -webkit-appearance: none !important;
+      appearance: none !important;
     }
     body > div.flex-1 > main > div.scrollable-content::-webkit-scrollbar-corner {
+      width: 0px !important;
+      height: 0px !important;
       display: none !important;
+      background: transparent !important;
+    }
+    /* Hide scrollbar in Firefox */
+    body > div.flex-1 > main > div.scrollable-content {
+      scrollbar-width: none !important;
     }
   </style>
 
@@ -724,6 +745,42 @@
       document.body.style.width = '100vw';
       document.body.style.maxHeight = '100vh';
       document.body.style.maxWidth = '100vw';
+      
+      // Hide scrollbar on scrollable content using JavaScript
+      const scrollableContent = document.querySelector('.scrollable-content');
+      if (scrollableContent) {
+        // Force hide scrollbar via inline styles
+        scrollableContent.style.scrollbarWidth = 'none';
+        scrollableContent.style.msOverflowStyle = 'none';
+        // Add a style element to force hide webkit scrollbar
+        const style = document.createElement('style');
+        style.textContent = `
+          .scrollable-content::-webkit-scrollbar {
+            width: 0px !important;
+            height: 0px !important;
+            display: none !important;
+            background: transparent !important;
+            -webkit-appearance: none !important;
+            appearance: none !important;
+          }
+          .scrollable-content::-webkit-scrollbar-track {
+            display: none !important;
+            width: 0px !important;
+            background: transparent !important;
+          }
+          .scrollable-content::-webkit-scrollbar-thumb {
+            display: none !important;
+            width: 0px !important;
+            background: transparent !important;
+          }
+          .scrollable-content::-webkit-scrollbar-corner {
+            display: none !important;
+            width: 0px !important;
+            background: transparent !important;
+          }
+        `;
+        document.head.appendChild(style);
+      }
       
       // Prevent any scrolling on html/body
       document.addEventListener('wheel', (e) => {
