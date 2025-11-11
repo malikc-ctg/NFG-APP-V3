@@ -315,22 +315,29 @@ function renderNotifications(notifications) {
 export async function updateUnreadCount() {
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) return 0;
     
-    const { data, error } = await supabase
+    // Use count query to get unread count
+    const { count, error } = await supabase
       .from('notifications')
-      .select('id', { count: 'exact', head: true })
+      .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id)
       .eq('read', false);
     
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Error getting unread count:', error);
+      throw error;
+    }
     
-    unreadCount = data?.length || 0;
+    unreadCount = count || 0;
     updateBadge();
     
     return unreadCount;
   } catch (error) {
     console.error('❌ Failed to update unread count:', error);
+    // Don't throw, just return 0 so the app doesn't break
+    unreadCount = 0;
+    updateBadge();
     return 0;
   }
 }
@@ -393,18 +400,20 @@ async function markAsRead(notificationId) {
 async function markAllAsRead() {
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
+    if (!user) {
+      toast.error('You must be logged in to mark notifications as read');
+      return false;
+    }
     
-    // Mark all unread notifications as read
-    const { error } = await supabase
-      .from('notifications')
-      .update({ read: true, read_at: new Date().toISOString() })
-      .eq('user_id', user.id)
-      .eq('read', false);
+    // Use the database function which bypasses RLS with SECURITY DEFINER
+    const { error } = await supabase.rpc('mark_all_notifications_read');
     
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Database error:', error);
+      throw error;
+    }
     
-    // Update cache
+    // Update cache - mark all as read
     notificationCache.forEach(n => {
       n.read = true;
       n.read_at = new Date().toISOString();
@@ -421,7 +430,8 @@ async function markAllAsRead() {
     return true;
   } catch (error) {
     console.error('❌ Failed to mark all as read:', error);
-    toast.error('Failed to mark all notifications as read');
+    const errorMessage = error?.message || 'Failed to mark all notifications as read';
+    toast.error(errorMessage);
     return false;
   }
 }
