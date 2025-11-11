@@ -6,14 +6,23 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
   border: 1px solid var(--border-color, #e5e7eb);
   background: white;
   cursor: pointer;
   transition: all 0.2s ease;
   color: #6b7280;
+  flex-shrink: 0;
+}
+
+@media (min-width: 640px) {
+  .notification-bell {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
 }
 
 .dark .notification-bell {
