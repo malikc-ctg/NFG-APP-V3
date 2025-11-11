@@ -72,41 +72,41 @@
 
   <!-- Prevent page scrollbar -->
   <style>
-    html {
+    html, body {
       height: 100%;
+      margin: 0;
+      padding: 0;
       overflow: hidden;
     }
     body {
-      margin: 0;
-      padding: 0;
-      height: 100vh;
-      overflow: hidden;
       display: flex;
+      height: 100vh;
     }
     body > aside {
-      height: 100vh;
       overflow-y: auto;
       overflow-x: hidden;
     }
     body > div.flex-1 {
-      height: 100vh;
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      flex: 1;
+      min-width: 0;
     }
     body > div.flex-1 > header {
       flex-shrink: 0;
     }
     body > div.flex-1 > main {
-      flex: 1;
+      flex: 1 1 auto;
       overflow-y: auto;
       overflow-x: hidden;
       scrollbar-width: none;
       -ms-overflow-style: none;
     }
     body > div.flex-1 > main::-webkit-scrollbar {
-      width: 0;
       display: none;
+      width: 0px;
+      height: 0px;
     }
   </style>
 
