@@ -2408,6 +2408,11 @@
       await loadSitesDropdown();
       await renderJobs();
       
+      // Listen for create job modal opening to reload sites dropdown
+      window.addEventListener('createJobModalOpened', async () => {
+        await loadSitesDropdown();
+      });
+      
       console.log('[Jobs] ✅ Initialization complete');
       
       // Check if we need to auto-open a specific job (from URL parameter)
