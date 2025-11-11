@@ -81,6 +81,7 @@ function createNotificationBell() {
       <i data-lucide="bell" class="w-5 h-5"></i>
       <span id="notification-badge" class="notification-badge hidden">0</span>
     </button>
+    <div id="notification-backdrop" class="notification-backdrop"></div>
     <div id="notification-center" class="notification-center">
       <div class="notification-header">
         <h3>Notifications</h3>
@@ -112,6 +113,7 @@ function createNotificationBell() {
 function setupNotificationListeners() {
   const bell = document.getElementById('notification-bell');
   const center = document.getElementById('notification-center');
+  const backdrop = document.getElementById('notification-backdrop');
   const markAllReadBtn = document.getElementById('mark-all-read-btn');
   
   if (!bell || !center) return;
@@ -128,11 +130,25 @@ function setupNotificationListeners() {
     }
   });
   
-  // Close when clicking outside
-  document.addEventListener('click', (e) => {
-    if (!center.contains(e.target) && !bell.contains(e.target)) {
+  // Close when clicking backdrop (mobile)
+  if (backdrop) {
+    backdrop.addEventListener('click', () => {
       closeNotificationCenter();
+    });
+  }
+  
+  // Close when clicking outside (desktop)
+  document.addEventListener('click', (e) => {
+    if (window.innerWidth > 640) {
+      if (!center.contains(e.target) && !bell.contains(e.target)) {
+        closeNotificationCenter();
+      }
     }
+  });
+  
+  // Prevent clicks inside the notification center from closing it
+  center.addEventListener('click', (e) => {
+    e.stopPropagation();
   });
   
   // Mark all as read
@@ -156,12 +172,20 @@ function setupNotificationListeners() {
 function openNotificationCenter() {
   const center = document.getElementById('notification-center');
   const bell = document.getElementById('notification-bell');
+  const backdrop = document.getElementById('notification-backdrop');
   
   if (center) {
     center.classList.add('open');
   }
   if (bell) {
     bell.classList.add('active');
+  }
+  
+  // Show backdrop on mobile
+  if (backdrop && window.innerWidth <= 640) {
+    backdrop.classList.add('active');
+    // Prevent body scroll when open on mobile
+    document.body.style.overflow = 'hidden';
   }
   
   // Refresh notifications when opening
@@ -174,6 +198,7 @@ function openNotificationCenter() {
 function closeNotificationCenter() {
   const center = document.getElementById('notification-center');
   const bell = document.getElementById('notification-bell');
+  const backdrop = document.getElementById('notification-backdrop');
   
   if (center) {
     center.classList.remove('open');
@@ -181,6 +206,14 @@ function closeNotificationCenter() {
   if (bell) {
     bell.classList.remove('active');
   }
+  
+  // Hide backdrop on mobile
+  if (backdrop) {
+    backdrop.classList.remove('active');
+  }
+  
+  // Restore body scroll
+  document.body.style.overflow = '';
 }
 
 /**

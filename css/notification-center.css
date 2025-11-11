@@ -92,15 +92,44 @@
   overflow: hidden;
 }
 
-/* Mobile: Full width and better positioning */
+/* Mobile: Fixed positioning to prevent cutoff */
 @media (max-width: 640px) {
   .notification-center {
-    width: calc(100vw - 16px);
-    max-width: calc(100vw - 16px);
-    right: 8px;
-    left: 8px;
-    max-height: calc(100vh - 80px);
-    border-radius: 16px;
+    position: fixed;
+    top: 56px; /* Header height (h-14 = 56px) */
+    left: 0;
+    right: 0;
+    width: 100vw;
+    max-width: 100vw;
+    max-height: calc(100vh - 56px); /* Full height minus header */
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-top: 1px solid #e5e7eb;
+    box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+}
+
+/* Backdrop overlay for mobile */
+.notification-backdrop {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.notification-backdrop.active {
+  display: block;
+}
+
+@media (min-width: 641px) {
+  .notification-backdrop {
+    display: none !important;
   }
 }
 
@@ -123,17 +152,27 @@
   justify-content: space-between;
   background: #f9fafb;
   gap: 12px;
+  flex-shrink: 0;
 }
 
-/* Mobile: Compact header */
+/* Mobile: Compact header with sticky positioning */
 @media (max-width: 640px) {
   .notification-header {
-    padding: 10px 12px;
+    padding: 12px 16px;
     gap: 8px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: white;
+    border-bottom: 2px solid #e5e7eb;
+  }
+  
+  .dark .notification-header {
+    background: #1f2937;
   }
   
   .notification-header h3 {
-    font-size: 14px;
+    font-size: 16px;
     margin: 0;
     flex: 1;
     font-weight: 600;
@@ -222,10 +261,11 @@
   max-height: 600px;
 }
 
-/* Mobile: Smaller max height */
+/* Mobile: Full height minus header and header section */
 @media (max-width: 640px) {
   .notification-list {
-    max-height: calc(100vh - 160px);
+    max-height: calc(100vh - 56px - 60px); /* Viewport - header - notification header */
+    min-height: 0;
   }
 }
 
@@ -525,6 +565,33 @@
   from {
     opacity: 0;
     transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Mobile: Slide down animation */
+@media (max-width: 640px) {
+  .notification-center.open {
+    animation: slideDownMobile 0.3s ease-out;
+  }
+}
+
+@keyframes slideDownMobile {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
   }
   to {
     opacity: 1;
