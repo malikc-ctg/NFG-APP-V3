@@ -767,14 +767,6 @@
       document.getElementById('edit-site-form')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        // Show progress indicator
-        const updateBtn = document.getElementById('update-site-btn');
-        const originalText = updateBtn?.querySelector('span')?.textContent || 'Update Site';
-        if (updateBtn) {
-          updateBtn.disabled = true;
-          updateBtn.innerHTML = `<span class="inline-flex items-center gap-2"><div class="spinner w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>Updating...</span>`;
-        }
-        
         const formData = new FormData(e.target);
         const siteId = formData.get('id');
         
@@ -802,26 +794,15 @@
 
           // Refresh sites display
           const sites = await fetchSites();
-          await renderSites(sites, { currentUserProfile, showSkeleton: false });
+          await renderSites(sites, { currentUserProfile });
 
           toast.success('Site has been updated successfully!', 'Site Updated');
-          
-          // Reset button
-          if (updateBtn) {
-            updateBtn.disabled = false;
-            updateBtn.innerHTML = `<span>${originalText}</span>`;
-          }
         } catch (error) {
           console.error('Error updating site:', error);
           const errorEl = document.getElementById('edit-form-error');
           if (errorEl) {
             errorEl.textContent = 'Failed to update site: ' + error.message;
             errorEl.classList.remove('hidden');
-          }
-          // Reset button
-          if (updateBtn) {
-            updateBtn.disabled = false;
-            updateBtn.innerHTML = `<span>${originalText}</span>`;
           }
         }
       });
