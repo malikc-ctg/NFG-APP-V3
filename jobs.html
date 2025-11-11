@@ -97,12 +97,24 @@
       display: flex !important;
       flex-direction: column;
     }
-    /* Ensure main container doesn't cause overflow */
-    body > div:not(#page-loader) {
-      height: 100vh !important;
-      max-height: 100vh !important;
-      overflow: hidden !important;
+    /* Ensure body flex container doesn't overflow */
+    body {
+      align-items: stretch;
+    }
+    /* Sidebar should not cause overflow */
+    body > aside {
+      flex-shrink: 0;
+      overflow-y: auto;
+      max-height: 100vh;
+    }
+    /* Main container should fill remaining space */
+    body > div.flex-1 {
+      flex: 1 1 0;
+      min-height: 0;
+      max-height: 100vh;
+      overflow: hidden;
       display: flex;
+      flex-direction: column;
     }
     #page-loader {
       position: fixed;
