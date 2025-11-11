@@ -971,7 +971,7 @@
       // Show/hide Edit Job button (only for admins and clients)
       const editJobBtn = document.getElementById('edit-job-btn');
       if (editJobBtn) {
-        const isAdminOrClient = currentUserProfile && ['admin', 'client'].includes(currentUserProfile.role);
+        const isAdminOrClient = currentUserProfile && ['admin', 'client', 'super_admin'].includes(currentUserProfile.role);
         if (isAdminOrClient) {
           editJobBtn.classList.remove('hidden');
           editJobBtn.classList.add('inline-flex');
@@ -994,7 +994,7 @@
       if (deleteJobBtn) {
         // Only show for cancelled jobs and only for admin/client
         const isCancelled = job.status === 'cancelled';
-        const canDelete = currentUserProfile && ['admin', 'client'].includes(currentUserProfile.role);
+        const canDelete = currentUserProfile && ['admin', 'client', 'super_admin'].includes(currentUserProfile.role);
         
         if (isCancelled && canDelete) {
           deleteJobBtn.classList.remove('hidden');
