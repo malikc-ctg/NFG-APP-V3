@@ -40,6 +40,38 @@ export function initBulkOperations(tableId, options = {}) {
   updateBulkOperationsUI();
 }
 
+// Set up event delegation for checkboxes (do this once, not on every init)
+let eventDelegationSetup = false;
+if (typeof window !== 'undefined' && !eventDelegationSetup) {
+  eventDelegationSetup = true;
+  
+  // Handle individual checkbox changes
+  document.addEventListener('change', (e) => {
+    if (e.target.classList.contains('bulk-select-checkbox') && e.target.id !== 'bulk-select-all') {
+      const itemId = e.target.dataset.itemId;
+      if (itemId && !isUpdatingProgrammatically) {
+        toggleItemSelection(itemId);
+      }
+    }
+  });
+  
+  // Handle select-all checkbox
+  document.addEventListener('change', (e) => {
+    if (e.target.id === 'bulk-select-all') {
+      if (isUpdatingProgrammatically) return;
+      
+      const checkboxes = document.querySelectorAll('.bulk-select-checkbox:not(#bulk-select-all)');
+      const allItemIds = Array.from(checkboxes).map(cb => cb.dataset.itemId).filter(id => id);
+      
+      if (e.target.checked) {
+        selectAllItems(allItemIds);
+      } else {
+        deselectAllItems();
+      }
+    }
+  });
+}
+
 /**
  * Toggle item selection
  */
@@ -136,26 +168,26 @@ function updateBulkOperationsUI() {
   const toolbar = document.getElementById('bulk-operations-toolbar');
   const selectAllCheckbox = document.getElementById('bulk-select-all');
   
-  // Set flag to prevent event loops
+  // Set flag to prevent event loops during programmatic updates
   isUpdatingProgrammatically = true;
   
   // Update all checkboxes to match selection state
   const checkboxes = document.querySelectorAll('.bulk-select-checkbox');
+  
   checkboxes.forEach(checkbox => {
     const itemId = checkbox.dataset.itemId;
     if (itemId) {
-      // Only update if the state is different to avoid unnecessary events
+      // Update checkbox state to match selection
       const shouldBeChecked = selectedItems.has(itemId);
-      if (checkbox.checked !== shouldBeChecked) {
-        checkbox.checked = shouldBeChecked;
-      }
+      checkbox.checked = shouldBeChecked;
     }
   });
   
-  // Reset flag after a short delay to allow events to settle
-  setTimeout(() => {
+  // Reset flag after a microtask to allow any pending events to be processed
+  // but before user interactions
+  Promise.resolve().then(() => {
     isUpdatingProgrammatically = false;
-  }, 0);
+  });
   
   if (toolbar) {
     if (count > 0) {
