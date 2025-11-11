@@ -129,15 +129,33 @@
     body > div.flex-1 > main {
       flex: 1;
       min-height: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Scrollable content wrapper - scrollbar hidden here */
+    body > div.flex-1 > main > div.scrollable-content {
+      flex: 1;
       overflow-y: auto;
       overflow-x: hidden;
       scrollbar-width: none !important;
       -ms-overflow-style: none !important;
     }
-    body > div.flex-1 > main::-webkit-scrollbar {
+    body > div.flex-1 > main > div.scrollable-content::-webkit-scrollbar {
       display: none !important;
-      width: 0 !important;
-      height: 0 !important;
+      width: 0px !important;
+      height: 0px !important;
+      appearance: none !important;
+      -webkit-appearance: none !important;
+    }
+    body > div.flex-1 > main > div.scrollable-content::-webkit-scrollbar-track {
+      display: none !important;
+    }
+    body > div.flex-1 > main > div.scrollable-content::-webkit-scrollbar-thumb {
+      display: none !important;
+    }
+    body > div.flex-1 > main > div.scrollable-content::-webkit-scrollbar-corner {
+      display: none !important;
     }
   </style>
 
@@ -229,12 +247,13 @@
     </header>
 
     <!-- CONTENT -->
-    <main class="flex-1 p-4 md:p-6 space-y-6" style="scrollbar-width: none; -ms-overflow-style: none;">
-      <!-- Filter Tabs -->
-      <div class="flex gap-2 overflow-x-auto">
-        <button class="filter-btn px-4 py-2 rounded-lg bg-nfgblue dark:bg-blue-900 text-white font-medium" data-status="all" data-tooltip="Show all bookings" data-tooltip-position="bottom">
-          All
-        </button>
+    <main class="flex-1 flex flex-col overflow-hidden">
+      <div class="flex-shrink-0 p-4 md:p-6 pb-0">
+        <!-- Filter Tabs -->
+        <div class="flex gap-2 overflow-x-hidden">
+          <button class="filter-btn px-4 py-2 rounded-lg bg-nfgblue dark:bg-blue-900 text-white font-medium" data-status="all" data-tooltip="Show all bookings" data-tooltip-position="bottom">
+            All
+          </button>
         <button class="filter-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700" data-status="pending" data-tooltip="Show pending bookings" data-tooltip-position="bottom">
           Pending
         </button>
@@ -248,10 +267,13 @@
 
       <!-- Bulk Operations Toolbar -->
       <div id="bulk-operations-toolbar-container"></div>
+      </div>
 
-      <!-- Bookings Table -->
-      <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg overflow-hidden">
-        <table class="w-full">
+      <!-- Scrollable content area -->
+      <div class="scrollable-content flex-1 p-4 md:p-6 pt-4">
+        <!-- Bookings Table -->
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg overflow-hidden">
+          <table class="w-full">
           <thead class="bg-nfglight border-b border-nfgray dark:border-gray-700">
             <tr>
               <th class="text-left p-4 text-sm font-semibold text-nfgblue dark:text-blue-400 w-12">
@@ -267,7 +289,8 @@
           <tbody id="bookings-table-body">
             <!-- Bookings will be rendered here -->
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
     </main>
   </div>

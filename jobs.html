@@ -132,15 +132,33 @@
     body > div.flex-1 > main {
       flex: 1;
       min-height: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Scrollable content wrapper - scrollbar hidden here */
+    body > div.flex-1 > main > div.scrollable-content {
+      flex: 1;
       overflow-y: auto;
       overflow-x: hidden;
       scrollbar-width: none !important;
       -ms-overflow-style: none !important;
     }
-    body > div.flex-1 > main::-webkit-scrollbar {
+    body > div.flex-1 > main > div.scrollable-content::-webkit-scrollbar {
       display: none !important;
-      width: 0 !important;
-      height: 0 !important;
+      width: 0px !important;
+      height: 0px !important;
+      appearance: none !important;
+      -webkit-appearance: none !important;
+    }
+    body > div.flex-1 > main > div.scrollable-content::-webkit-scrollbar-track {
+      display: none !important;
+    }
+    body > div.flex-1 > main > div.scrollable-content::-webkit-scrollbar-thumb {
+      display: none !important;
+    }
+    body > div.flex-1 > main > div.scrollable-content::-webkit-scrollbar-corner {
+      display: none !important;
     }
   </style>
 
@@ -233,36 +251,41 @@
     </header>
 
     <!-- CONTENT -->
-    <main class="flex-1 p-4 md:p-6 space-y-6" style="scrollbar-width: none; -ms-overflow-style: none;">
-      <div>
-        <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Jobs</h2>
-        <p class="text-sm text-gray-500 mt-1">Track active jobs and work orders</p>
+    <main class="flex-1 flex flex-col overflow-hidden">
+      <div class="flex-shrink-0 p-4 md:p-6 pb-0">
+        <div>
+          <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Jobs</h2>
+          <p class="text-sm text-gray-500 mt-1">Track active jobs and work orders</p>
+        </div>
+
+        <!-- Status Tabs -->
+        <div class="flex gap-1 sm:gap-2 border-b border-nfgray overflow-x-hidden mt-6">
+          <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-nfgblue dark:text-blue-400 border-b-2 border-nfgblue whitespace-nowrap flex-shrink-0" data-status="all" data-tooltip="Show all jobs" data-tooltip-position="bottom">
+            All Jobs
+          </button>
+          <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-status="pending" data-tooltip="Show pending jobs that haven't been started" data-tooltip-position="bottom">
+            Pending
+          </button>
+          <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-status="in-progress" data-tooltip="Show jobs currently in progress" data-tooltip-position="bottom">
+            In Progress
+          </button>
+          <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-status="completed" data-tooltip="Show completed jobs" data-tooltip-position="bottom">
+            Completed
+          </button>
+          <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-status="cancelled" data-tooltip="Show cancelled jobs" data-tooltip-position="bottom">
+            Cancelled
+          </button>
+        </div>
+
+        <!-- Bulk Operations Toolbar -->
+        <div id="bulk-operations-toolbar-container"></div>
       </div>
 
-      <!-- Status Tabs -->
-      <div class="flex gap-1 sm:gap-2 border-b border-nfgray overflow-x-hidden">
-        <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-nfgblue dark:text-blue-400 border-b-2 border-nfgblue whitespace-nowrap flex-shrink-0" data-status="all" data-tooltip="Show all jobs" data-tooltip-position="bottom">
-          All Jobs
-        </button>
-        <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-status="pending" data-tooltip="Show pending jobs that haven't been started" data-tooltip-position="bottom">
-          Pending
-        </button>
-        <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-status="in-progress" data-tooltip="Show jobs currently in progress" data-tooltip-position="bottom">
-          In Progress
-        </button>
-        <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-status="completed" data-tooltip="Show completed jobs" data-tooltip-position="bottom">
-          Completed
-        </button>
-        <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-status="cancelled" data-tooltip="Show cancelled jobs" data-tooltip-position="bottom">
-          Cancelled
-        </button>
+      <!-- Scrollable content area -->
+      <div class="scrollable-content flex-1 p-4 md:p-6 pt-4">
+        <!-- Jobs Grid -->
+        <div id="jobs-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
       </div>
-
-      <!-- Bulk Operations Toolbar -->
-      <div id="bulk-operations-toolbar-container"></div>
-
-      <!-- Jobs Grid -->
-      <div id="jobs-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
     </main>
   </div>
 
