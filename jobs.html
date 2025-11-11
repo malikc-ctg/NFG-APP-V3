@@ -136,50 +136,31 @@
       display: flex;
       flex-direction: column;
     }
-    /* Scrollable content wrapper - scrollbar COMPLETELY hidden */
+    /* Scrollable content wrapper - NO SCROLLBAR AT ALL */
     body > div.flex-1 > main > div.scrollable-content {
       flex: 1;
       overflow-y: scroll;
       overflow-x: hidden;
+      /* Hide scrollbar by making it invisible and 0 width */
       scrollbar-width: none !important;
       -ms-overflow-style: none !important;
-      /* Force hide scrollbar in all browsers */
-      scrollbar-gutter: stable;
+      /* Use negative margin to hide scrollbar completely */
+      margin-right: -20px !important;
+      padding-right: 20px !important;
     }
-    /* Chrome/Safari/Edge - completely remove scrollbar */
+    /* Chrome/Safari/Edge - make scrollbar invisible */
     body > div.flex-1 > main > div.scrollable-content::-webkit-scrollbar {
       width: 0px !important;
-      height: 0px !important;
       display: none !important;
       background: transparent !important;
       -webkit-appearance: none !important;
-      appearance: none !important;
     }
-    body > div.flex-1 > main > div.scrollable-content::-webkit-scrollbar-track {
-      width: 0px !important;
-      height: 0px !important;
-      display: none !important;
-      background: transparent !important;
-      -webkit-appearance: none !important;
-      appearance: none !important;
-    }
-    body > div.flex-1 > main > div.scrollable-content::-webkit-scrollbar-thumb {
-      width: 0px !important;
-      height: 0px !important;
-      display: none !important;
-      background: transparent !important;
-      -webkit-appearance: none !important;
-      appearance: none !important;
-    }
+    body > div.flex-1 > main > div.scrollable-content::-webkit-scrollbar-track,
+    body > div.flex-1 > main > div.scrollable-content::-webkit-scrollbar-thumb,
     body > div.flex-1 > main > div.scrollable-content::-webkit-scrollbar-corner {
-      width: 0px !important;
-      height: 0px !important;
       display: none !important;
+      width: 0px !important;
       background: transparent !important;
-    }
-    /* Hide scrollbar in Firefox */
-    body > div.flex-1 > main > div.scrollable-content {
-      scrollbar-width: none !important;
     }
   </style>
 
@@ -746,39 +727,40 @@
       document.body.style.maxHeight = '100vh';
       document.body.style.maxWidth = '100vw';
       
-      // Hide scrollbar on scrollable content using JavaScript
+      // FORCE REMOVE SCROLLBAR - use negative margin technique
       const scrollableContent = document.querySelector('.scrollable-content');
       if (scrollableContent) {
-        // Force hide scrollbar via inline styles
+        // Apply negative margin to hide scrollbar
+        scrollableContent.style.marginRight = '-20px';
+        scrollableContent.style.paddingRight = '20px';
         scrollableContent.style.scrollbarWidth = 'none';
         scrollableContent.style.msOverflowStyle = 'none';
-        // Add a style element to force hide webkit scrollbar
+        // Inject style to completely hide webkit scrollbar
         const style = document.createElement('style');
+        style.id = 'force-hide-scrollbar';
         style.textContent = `
+          .scrollable-content {
+            margin-right: -20px !important;
+            padding-right: 20px !important;
+          }
           .scrollable-content::-webkit-scrollbar {
             width: 0px !important;
-            height: 0px !important;
             display: none !important;
             background: transparent !important;
             -webkit-appearance: none !important;
             appearance: none !important;
           }
-          .scrollable-content::-webkit-scrollbar-track {
-            display: none !important;
-            width: 0px !important;
-            background: transparent !important;
-          }
-          .scrollable-content::-webkit-scrollbar-thumb {
-            display: none !important;
-            width: 0px !important;
-            background: transparent !important;
-          }
+          .scrollable-content::-webkit-scrollbar-track,
+          .scrollable-content::-webkit-scrollbar-thumb,
           .scrollable-content::-webkit-scrollbar-corner {
             display: none !important;
             width: 0px !important;
             background: transparent !important;
           }
         `;
+        // Remove existing style if present
+        const existing = document.getElementById('force-hide-scrollbar');
+        if (existing) existing.remove();
         document.head.appendChild(style);
       }
       
