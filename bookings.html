@@ -101,15 +101,23 @@
       min-height: 0;
       overflow-y: auto;
       overflow-x: hidden;
-    }
-    /* Completely hide scrollbar - works in all modern browsers */
-    body > div.flex-1 > main {
-      scrollbar-width: none;
-      -ms-overflow-style: none;
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
     }
     body > div.flex-1 > main::-webkit-scrollbar {
-      width: 0px;
-      background: transparent;
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+      -webkit-appearance: none !important;
+    }
+    body > div.flex-1 > main::-webkit-scrollbar-track {
+      display: none !important;
+    }
+    body > div.flex-1 > main::-webkit-scrollbar-thumb {
+      display: none !important;
+    }
+    body > div.flex-1 > main::-webkit-scrollbar-corner {
+      display: none !important;
     }
   </style>
 
@@ -201,7 +209,7 @@
     </header>
 
     <!-- CONTENT -->
-    <main class="flex-1 p-4 md:p-6 space-y-6">
+    <main class="flex-1 p-4 md:p-6 space-y-6" style="scrollbar-width: none; -ms-overflow-style: none;">
       <!-- Filter Tabs -->
       <div class="flex gap-2 overflow-x-auto">
         <button class="filter-btn px-4 py-2 rounded-lg bg-nfgblue dark:bg-blue-900 text-white font-medium" data-status="all" data-tooltip="Show all bookings" data-tooltip-position="bottom">
