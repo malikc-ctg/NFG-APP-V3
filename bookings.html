@@ -1273,7 +1273,7 @@
 
     // Filter buttons
     document.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         document.querySelectorAll('.filter-btn').forEach(b => {
           b.classList.remove('bg-nfgblue', 'text-white');
           b.classList.add('border', 'border-nfgray', 'hover:bg-nfglight');
