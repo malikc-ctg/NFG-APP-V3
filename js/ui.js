@@ -169,7 +169,7 @@ function createSiteCard(site, options = {}) {
       <div class="flex justify-between items-start mb-3">
         ${canBulkOperate && showBulkCheckbox ? `
           <div class="flex items-start gap-2 flex-1 min-w-0">
-            <input type="checkbox" class="bulk-select-checkbox w-4 h-4 text-nfgblue border-nfgray rounded focus:ring-nfgblue mt-1" data-item-id="${site.id}" onchange="window.toggleBulkSelection && window.toggleBulkSelection('${site.id}')">
+            <input type="checkbox" class="bulk-select-checkbox w-4 h-4 text-nfgblue border-nfgray rounded focus:ring-nfgblue mt-1" data-item-id="${site.id}">
             <div class="flex-1 min-w-0">
               <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">${site.name}</h3>
               <div class="flex items-center gap-2 mt-1">
