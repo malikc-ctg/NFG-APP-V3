@@ -70,6 +70,20 @@
   <script type="module" src="./js/offline-sync.js"></script>
   <script type="module" src="./js/offline-indicator.js"></script>
 
+  <!-- Prevent page scrollbar -->
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    body {
+      height: 100vh;
+      overflow: hidden;
+    }
+  </style>
+
 </head>
 
 <body class="font-inter bg-nfbg dark:bg-gray-900 h-screen flex text-nftext dark:text-gray-200 overflow-hidden">
