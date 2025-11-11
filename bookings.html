@@ -76,19 +76,30 @@
       box-sizing: border-box;
     }
     html {
-      height: 100%;
-      margin: 0;
-      padding: 0;
+      height: 100% !important;
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
       overflow: hidden !important;
+      position: relative;
     }
     body {
       height: 100vh !important;
       max-height: 100vh !important;
+      width: 100% !important;
       margin: 0 !important;
       padding: 0 !important;
       overflow: hidden !important;
-      display: flex;
+      position: relative;
+      display: flex !important;
       flex-direction: column;
+    }
+    /* Ensure main container doesn't cause overflow */
+    body > div:not(#page-loader) {
+      height: 100vh !important;
+      max-height: 100vh !important;
+      overflow: hidden !important;
+      display: flex;
     }
     #page-loader {
       position: fixed;
@@ -97,6 +108,8 @@
       width: 100vw;
       height: 100vh;
       z-index: 99999;
+      margin: 0;
+      padding: 0;
     }
   </style>
 
