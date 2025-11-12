@@ -442,7 +442,7 @@ async function fetchInventorySummary() {
     
     // Map category icons
     const categoryIcons = {
-      'Cleaning Supplies': 'broom',
+      'Cleaning Supplies': 'sparkles',
       'Chemicals': 'droplet',
       'Tools': 'wrench',
       'Paper Products': 'file-text',
