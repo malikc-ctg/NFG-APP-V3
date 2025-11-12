@@ -39,3 +39,5 @@ FROM pg_proc
 WHERE proname = 'send_notification_email';
 
 
+
+

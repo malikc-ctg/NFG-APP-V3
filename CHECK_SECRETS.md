@@ -50,3 +50,5 @@ If the trigger is firing but secrets aren't set, the Edge Function will receive 
 Check if `RESEND_API_KEY` exists in Secrets right now!
 
 
+
+

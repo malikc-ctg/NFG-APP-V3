@@ -153,3 +153,5 @@ If you want to use `noreply@yourdomain.com`:
 Your notification emails are now set up! Test it by creating a booking or assigning a worker to a site.
 
 
+
+

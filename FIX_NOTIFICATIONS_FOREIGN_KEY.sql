@@ -51,3 +51,5 @@ AND kcu.column_name = 'user_id';
 SELECT '✅ Foreign key fixed! Notifications now reference auth.users correctly.' AS status;
 
 
+
+

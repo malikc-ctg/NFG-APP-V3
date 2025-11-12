@@ -127,3 +127,5 @@ SELECT '✅ COMPLETE! Email notifications are now set up!' AS status;
 SELECT '📧 Check: 1) Edge Function logs 2) Resend logs 3) Your email inbox' AS next_steps;
 
 
+
+
