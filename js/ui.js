@@ -46,16 +46,6 @@ export async function renderSites(sites, options = {}) {
     grid.innerHTML = filteredSites.map(site => createSiteCard(site, { showBulkCheckbox: canBulkOperate, currentUserProfile })).join('')
     console.log('[UI] ✅ Sites rendered! Check for View Site buttons with data-action="view-site"')
     
-    // Initialize tooltips
-    if (typeof window !== 'undefined') {
-      try {
-        const { initTooltips } = await import('./tooltips.js');
-        initTooltips();
-      } catch (error) {
-        console.error('[UI] Error initializing tooltips:', error);
-      }
-    }
-    
     // Initialize Lucide icons
     if (window.lucide) {
       lucide.createIcons();

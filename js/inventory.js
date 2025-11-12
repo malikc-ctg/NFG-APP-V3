@@ -87,17 +87,6 @@ async function fetchSites() {
   return sites;
 }
 
-// Map invalid icon names to valid Lucide icons
-function getValidIcon(iconName) {
-  const iconMap = {
-    'broom': 'sparkles',  // broom is not a valid Lucide icon
-    // Add more invalid icon mappings here if needed
-  };
-  
-  // Return mapped icon if exists, otherwise return the original or 'package' as fallback
-  return iconMap[iconName] || iconName || 'package';
-}
-
 // Render inventory table
 async function renderInventory() {
   const tableBody = document.getElementById('inventory-table-body');
@@ -185,14 +174,11 @@ async function renderInventory() {
         'ok': 'Item is in stock and quantity is sufficient'
       };
       
-      // Get valid icon name
-      const validIcon = getValidIcon(item.category_icon);
-      
       return `
         <tr class="${rowClass}">
           <td class="px-4 py-3">
             <div class="flex items-center gap-2">
-              <i data-lucide="${validIcon}" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
+              <i data-lucide="${item.category_icon || 'package'}" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
               <div>
                 <div class="font-medium text-nfgblue dark:text-blue-400">${item.item_name}</div>
                 <div class="text-xs text-gray-500 md:hidden dark:text-gray-400">${item.category_name}</div>
@@ -229,14 +215,6 @@ async function renderInventory() {
     }).join('');
     
     if (window.lucide) lucide.createIcons();
-    
-    // Initialize tooltips
-    try {
-      const { initTooltips } = await import('./tooltips.js');
-      initTooltips();
-    } catch (error) {
-      console.error('Error initializing tooltips:', error);
-    }
   } catch (error) {
     console.error('Error rendering inventory:', error);
     tableBody.innerHTML = `
