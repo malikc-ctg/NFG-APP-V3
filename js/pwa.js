@@ -9,32 +9,124 @@ let serviceWorkerRegistration = null;
 let currentSubscription = null;
 let cachedVapidKey = null;
 
-// Install prompt
-let deferredPrompt;
+// Install prompt - ONE TIME ONLY on desktop after login
+let deferredPrompt = null;
 const installBanner = document.createElement('div');
 
-window.addEventListener('beforeinstallprompt', (e) => {
-  // Prevent Chrome 67 and earlier from automatically showing the prompt
-  e.preventDefault();
-  deferredPrompt = e;
-  
-  // Show custom install banner
-  showInstallBanner();
-});
+// Check if running as PWA
+export function isPWA() {
+  return window.matchMedia('(display-mode: standalone)').matches || 
+         window.navigator.standalone === true;
+}
 
-function showInstallBanner() {
+// Check if device is desktop (not mobile/tablet)
+function isDesktop() {
+  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+  const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+  const isTablet = /ipad|android(?!.*mobile)/i.test(userAgent.toLowerCase());
+  
+  // Also check screen size as fallback
+  const hasLargeScreen = window.innerWidth >= 768;
+  
+  return !isMobile && !isTablet && hasLargeScreen;
+}
+
+// Check if install prompt was already shown/dismissed (PERMANENT - never show again)
+function wasInstallPromptDismissed() {
+  return localStorage.getItem('pwa-install-dismissed') === 'true';
+}
+
+// Check if user is on dashboard page (after login)
+function isDashboardPage() {
+  const path = window.location.pathname || window.location.href;
+  return path.includes('dashboard.html') || path.endsWith('/dashboard.html') || path === '/dashboard.html';
+}
+
+// Check if user is authenticated
+async function isAuthenticated() {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    return !!session;
+  } catch (error) {
+    console.error('[PWA Install] Error checking auth:', error);
+    return false;
+  }
+}
+
+// Mark install prompt as dismissed (PERMANENT - never show again)
+function markInstallPromptDismissed() {
+  localStorage.setItem('pwa-install-dismissed', 'true');
+  console.log('[PWA Install] Prompt dismissed permanently - will never show again');
+}
+
+// Check if install prompt should be shown
+async function shouldShowInstallPrompt() {
+  // 1. Must be desktop
+  if (!isDesktop()) {
+    console.log('[PWA Install] Skipping - not desktop device');
+    return false;
+  }
+  
+  // 2. Must not already be installed
+  if (isPWA()) {
+    console.log('[PWA Install] Skipping - app already installed');
+    return false;
+  }
+  
+  // 3. Must not have been dismissed before (PERMANENT - never show again)
+  if (wasInstallPromptDismissed()) {
+    console.log('[PWA Install] Skipping - prompt already dismissed (permanent)');
+    return false;
+  }
+  
+  // 4. Must be on dashboard page ONLY (after login)
+  if (!isDashboardPage()) {
+    console.log('[PWA Install] Skipping - not on dashboard page');
+    return false;
+  }
+  
+  // 5. Must be authenticated
+  const authenticated = await isAuthenticated();
+  if (!authenticated) {
+    console.log('[PWA Install] Skipping - not authenticated');
+    return false;
+  }
+  
+  // 6. Must have deferredPrompt available
+  if (!deferredPrompt) {
+    console.log('[PWA Install] Skipping - no install prompt available');
+    return false;
+  }
+  
+  console.log('[PWA Install] ✅ All conditions met - showing install prompt (ONE TIME ONLY)');
+  return true;
+}
+
+// Show install banner (only if all conditions are met)
+async function showInstallBanner() {
+  // Check if we should show it
+  const shouldShow = await shouldShowInstallPrompt();
+  if (!shouldShow) {
+    return;
+  }
+  
+  // Don't show if banner already exists
+  if (document.getElementById('pwa-install-banner')) {
+    return;
+  }
+  
   installBanner.id = 'pwa-install-banner';
   installBanner.className = 'fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 z-50 border-2 border-nfgblue animate-slide-up';
   installBanner.innerHTML = `
     <div class="flex items-start gap-3">
       <img 
-        src="/assets/icons/icon-192.png" 
+        src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/NFG%20one.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL05GRyBvbmUucG5nIiwiaWF0IjoxNzYyOTc5NzU5LCJleHAiOjQ4ODUwNDM3NTl9.fnJIDQep2yYlgGKlBRNnkrUoUzXzG7eac39GG6NQPuU" 
         alt="NFG" 
         class="w-12 h-12 rounded-lg"
       >
       <div class="flex-1">
         <h3 class="font-bold text-gray-900 dark:text-white mb-1">Install NFG App</h3>
-        <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">Add to your home screen for quick access and offline use!</p>
+        <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">Add to your desktop for quick access and offline use!</p>
         <div class="flex gap-2">
           <button 
             id="pwa-install-btn" 
@@ -70,32 +162,62 @@ function showInstallBanner() {
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
     
-    console.log(`User response to install prompt: ${outcome}`);
+    console.log(`[PWA Install] User response: ${outcome}`);
     
     if (outcome === 'accepted') {
       console.log('✅ User accepted the install prompt');
+      // Mark as dismissed so it never shows again (even if installation fails)
+      markInstallPromptDismissed();
+    } else {
+      // User declined - mark as dismissed permanently
+      markInstallPromptDismissed();
     }
     
     deferredPrompt = null;
     installBanner.remove();
   });
   
-  // Dismiss buttons
+  // Dismiss buttons - mark as dismissed PERMANENTLY
   document.getElementById('pwa-dismiss-btn').addEventListener('click', () => {
+    markInstallPromptDismissed();
     installBanner.remove();
-    // Show again in 7 days
-    localStorage.setItem('pwa-dismissed', Date.now() + (7 * 24 * 60 * 60 * 1000));
   });
   
   document.getElementById('pwa-close-btn').addEventListener('click', () => {
+    markInstallPromptDismissed();
     installBanner.remove();
   });
 }
+
+// Listen for beforeinstallprompt event (capture it whenever it fires, on any page)
+window.addEventListener('beforeinstallprompt', (e) => {
+  // Prevent Chrome 67 and earlier from automatically showing the prompt
+  e.preventDefault();
+  deferredPrompt = e;
+  
+  console.log('[PWA Install] beforeinstallprompt event fired - captured for later use');
+  
+  // If we're on dashboard page, try to show it
+  if (isDashboardPage()) {
+    setTimeout(async () => {
+      await showInstallBanner();
+    }, 1500);
+  }
+});
 
 // Track installation
 window.addEventListener('appinstalled', () => {
   console.log('✅ NFG App installed successfully!');
   deferredPrompt = null;
+  
+  // Mark as dismissed so it never shows again
+  markInstallPromptDismissed();
+  
+  // Remove banner if still visible
+  const banner = document.getElementById('pwa-install-banner');
+  if (banner) {
+    banner.remove();
+  }
   
   // Show success notification
   if (typeof toast !== 'undefined') {
@@ -103,10 +225,26 @@ window.addEventListener('appinstalled', () => {
   }
 });
 
-// Check if running as PWA
-export function isPWA() {
-  return window.matchMedia('(display-mode: standalone)').matches || 
-         window.navigator.standalone === true;
+// Check on dashboard page load (after login redirect) - ONE TIME ONLY
+if (isDashboardPage()) {
+  // Function to check and show install prompt on dashboard
+  const checkAndShowInstallPrompt = async () => {
+    const authenticated = await isAuthenticated();
+    if (authenticated && deferredPrompt) {
+      // Only show if all conditions are met (one time only)
+      await showInstallBanner();
+    }
+  };
+  
+  // Wait for page to fully load and auth to be ready
+  if (document.readyState === 'loading') {
+    window.addEventListener('load', () => {
+      setTimeout(checkAndShowInstallPrompt, 2000);
+    });
+  } else {
+    // DOM already loaded
+    setTimeout(checkAndShowInstallPrompt, 2000);
+  }
 }
 
 // Add PWA badge to UI if installed
