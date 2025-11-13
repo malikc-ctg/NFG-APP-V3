@@ -415,13 +415,15 @@ async function requestSyncFromClient() {
     // The client will handle the actual sync and we don't need to wait for response
     // since sync operations can take time and we don't want to block the service worker
     clients.forEach(client => {
-      client.postMessage({
-        type: 'REQUEST_SYNC',
-        timestamp: new Date().toISOString(),
-        source: 'service-worker'
-      }).catch(err => {
+      try {
+        client.postMessage({
+          type: 'REQUEST_SYNC',
+          timestamp: new Date().toISOString(),
+          source: 'service-worker'
+        });
+      } catch (err) {
         console.warn('[SW v3] Failed to send sync request to client:', err);
-      });
+      }
     });
     
     // Return immediately - sync will happen in background
