@@ -44,6 +44,9 @@
   <!-- Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   
+  <!-- FullCalendar CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+  
   <!-- Mobile Menu Styles -->
   <link rel="stylesheet" href="./css/mobile-menu.css">
   
@@ -153,6 +156,65 @@
       width: 0px !important;
       background: transparent !important;
     }
+    
+    /* FullCalendar Dark Mode Support */
+    .dark .fc {
+      color: #E5E7EB;
+    }
+    
+    .dark .fc-theme-standard td,
+    .dark .fc-theme-standard th {
+      border-color: #374151;
+    }
+    
+    .dark .fc-theme-standard .fc-scrollgrid {
+      border-color: #374151;
+    }
+    
+    .dark .fc-daygrid-day-frame,
+    .dark .fc-timeGridDay-view .fc-timegrid-slot,
+    .dark .fc-timeGridWeek-view .fc-timegrid-slot {
+      background-color: #1F2937;
+    }
+    
+    .dark .fc-daygrid-day-top {
+      color: #E5E7EB;
+    }
+    
+    .dark .fc-col-header-cell-cushion,
+    .dark .fc-timegrid-slot-label-cushion {
+      color: #9CA3AF;
+    }
+    
+    /* Calendar container height */
+    #calendar-container {
+      min-height: 600px;
+      height: 100%;
+    }
+    
+    #calendar {
+      height: 100%;
+      min-height: 600px;
+    }
+    
+    /* FullCalendar event styling */
+    .fc-event {
+      cursor: pointer;
+      border-radius: 4px;
+      padding: 2px 4px;
+      font-size: 0.875rem;
+    }
+    
+    .fc-event:hover {
+      opacity: 0.9;
+    }
+    
+    /* All-day events */
+    .fc-daygrid-event {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
   </style>
 
 </head>
@@ -244,28 +306,73 @@
 
     <!-- CONTENT -->
     <main class="flex-1 flex flex-col overflow-hidden">
-      <div class="flex-shrink-0 p-4 md:p-6 pb-0">
-        <!-- Filter Tabs -->
-        <div class="flex gap-2 overflow-x-hidden">
-        <button class="filter-btn px-4 py-2 rounded-lg bg-nfgblue dark:bg-blue-900 text-white font-medium" data-status="all">
-          All
-        </button>
-        <button class="filter-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700" data-status="pending">
-          Pending
-        </button>
-        <button class="filter-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700" data-status="completed">
-          Completed
-        </button>
-        <button class="filter-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700" data-status="cancelled">
-          Cancelled
-        </button>
-      </div>
+      <div class="flex-shrink-0 p-4 md:p-6 pb-0 space-y-4">
+        <!-- View Toggle and Filter Tabs -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <!-- View Toggle -->
+          <div class="flex items-center gap-2">
+            <button id="view-table-btn" class="view-toggle-btn px-4 py-2 rounded-lg bg-nfgblue dark:bg-blue-900 text-white font-medium flex items-center gap-2">
+              <i data-lucide="list" class="w-4 h-4"></i>
+              <span>Table</span>
+            </button>
+            <button id="view-calendar-btn" class="view-toggle-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700 font-medium flex items-center gap-2">
+              <i data-lucide="calendar" class="w-4 h-4"></i>
+              <span>Calendar</span>
+            </button>
+          </div>
+          
+          <!-- Filter Tabs -->
+          <div class="flex gap-2 overflow-x-auto">
+            <button class="filter-btn px-4 py-2 rounded-lg bg-nfgblue dark:bg-blue-900 text-white font-medium whitespace-nowrap" data-status="all">
+              All
+            </button>
+            <button class="filter-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700 whitespace-nowrap" data-status="pending">
+              Pending
+            </button>
+            <button class="filter-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700 whitespace-nowrap" data-status="completed">
+              Completed
+            </button>
+            <button class="filter-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700 whitespace-nowrap" data-status="cancelled">
+              Cancelled
+            </button>
+          </div>
+        </div>
+        
+        <!-- Calendar View Controls (hidden by default) -->
+        <div id="calendar-controls" class="hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <!-- Calendar View Type Toggle -->
+          <div class="flex items-center gap-2">
+            <button id="calendar-view-week" class="calendar-view-btn px-4 py-2 rounded-lg bg-nfgblue dark:bg-blue-900 text-white font-medium">
+              Week
+            </button>
+            <button id="calendar-view-day" class="calendar-view-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700 font-medium">
+              Day
+            </button>
+            <button id="calendar-view-month" class="calendar-view-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700 font-medium">
+              Month
+            </button>
+          </div>
+          
+          <!-- Calendar Navigation -->
+          <div class="flex items-center gap-2">
+            <button id="calendar-prev" class="px-3 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            <button id="calendar-today" class="px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700 font-medium">
+              Today
+            </button>
+            <button id="calendar-next" class="px-3 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+            <span id="calendar-date-range" class="px-4 py-2 font-medium text-nfgblue dark:text-blue-400 text-sm sm:text-base"></span>
+          </div>
+        </div>
       </div>
 
       <!-- Scrollable content area -->
       <div class="scrollable-content flex-1 p-4 md:p-6 pt-4">
-        <!-- Bookings Table -->
-        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg overflow-hidden">
+        <!-- Bookings Table View -->
+        <div id="bookings-table-container" class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg overflow-hidden">
           <table class="w-full">
           <thead class="bg-nfglight border-b border-nfgray dark:border-gray-700">
             <tr>
@@ -280,6 +387,13 @@
             <!-- Bookings will be rendered here -->
           </tbody>
           </table>
+        </div>
+        
+        <!-- Calendar View (hidden by default) -->
+        <div id="calendar-container" class="hidden h-full">
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4 h-full flex flex-col">
+            <div id="calendar" class="flex-1 min-h-0"></div>
+          </div>
         </div>
       </div>
     </main>
@@ -493,6 +607,9 @@
 
   <!-- PWA Installation -->
   <script type="module" src="./js/pwa.js"></script>
+  
+  <!-- FullCalendar JS -->
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
 
   <!-- ========== SCRIPTS ========== -->
   <script>
@@ -618,12 +735,16 @@
     let currentUser = null;
     let currentUserProfile = null;
     let bookings = [];
+    let jobs = [];
     let sites = [];
     let currentFilter = 'all';
     let currentBooking = null;
     let categories = [];
     let services = [];
     let selectedServices = new Set();
+    let calendar = null;
+    let currentView = 'table'; // 'table' or 'calendar'
+    let currentCalendarView = 'timeGridWeek'; // 'timeGridDay', 'timeGridWeek', 'dayGridMonth'
 
     // ========== AUTH & INIT ==========
     async function getCurrentUser() {
@@ -670,6 +791,10 @@
       await loadCategories();
       await loadServices();
       await loadBookings();
+      await loadJobs();
+      
+      // Initialize view toggle
+      initViewToggle();
       
       // Hide Bookings and Reports nav for staff
       if (currentUserProfile && currentUserProfile.role === 'staff') {
@@ -719,9 +844,47 @@
         if (error) throw error;
         bookings = data || [];
         await renderBookings();
+        if (currentView === 'calendar') {
+          updateCalendar();
+        }
       } catch (error) {
         console.error('Error loading bookings:', error);
         alert('Failed to load bookings. Please refresh the page.');
+      }
+    }
+
+    async function loadJobs() {
+      try {
+        console.log('🔍 Loading jobs for user:', currentUser.id);
+        
+        // For staff, only show assigned jobs
+        if (currentUserProfile && currentUserProfile.role === 'staff') {
+          const { data, error } = await supabase
+            .from('jobs')
+            .select('*, sites(name, address), user_profiles(full_name)')
+            .eq('assigned_worker_id', currentUser.id)
+            .order('scheduled_date', { ascending: false });
+          
+          if (error) throw error;
+          jobs = data || [];
+        } else {
+          // For admin/client, show all their jobs
+          const { data, error } = await supabase
+            .from('jobs')
+            .select('*, sites(name, address), user_profiles(full_name)')
+            .eq('created_by', currentUser.id)
+            .order('scheduled_date', { ascending: false });
+          
+          if (error) throw error;
+          jobs = data || [];
+        }
+        
+        if (currentView === 'calendar') {
+          updateCalendar();
+        }
+      } catch (error) {
+        console.error('Error loading jobs:', error);
+        // Don't show error alert for jobs, just log it
       }
     }
 
@@ -930,20 +1093,7 @@
     };
 
     // ========== MODAL FUNCTIONS ==========
-    function openCreateBookingModal() {
-      document.getElementById('createBookingModal').classList.remove('hidden');
-      document.getElementById('booking-title').value = '';
-      document.getElementById('booking-site').value = '';
-      document.getElementById('booking-date').value = '';
-      document.getElementById('booking-description').value = '';
-      document.getElementById('booking-emergency').checked = false; // Reset emergency checkbox
-      document.getElementById('service-category-filter').value = '';
-      document.getElementById('service-search').value = '';
-      selectedServices.clear();
-      renderServices();
-      renderSelectedServices();
-      if (window.lucide) lucide.createIcons();
-    }
+    // openCreateBookingModal is now defined above in calendar section
 
     function closeModals() {
       document.getElementById('createBookingModal').classList.add('hidden');
@@ -1196,11 +1346,12 @@
         }
 
         const assignedTo = site.assigned_worker_id ? 'assigned to site worker' : 'unassigned';
-        const emergencyNote = isEmergency ? '\n🚨 EMERGENCY REQUEST - Priority handling!' : '';
-        const recurrenceNote = frequency === 'recurring' ? `\n🔄 RECURRING: Next booking will auto-create when job completes (${recurrencePattern})` : '';
+        const emergencyNote = isEmergency ? '\nEMERGENCY REQUEST - Priority handling!' : '';
+        const recurrenceNote = frequency === 'recurring' ? `\nRECURRING: Next booking will auto-create when job completes (${recurrencePattern})` : '';
         toast.success(`Booking & Job created successfully!\n\nJob is ${assignedTo}.\nStaff will see it in their feed.${emergencyNote}${recurrenceNote}`, 'Booking Created');
         closeModals();
         await loadBookings();
+        await loadJobs();
       } catch (error) {
         console.error('Error creating booking:', error);
         toast.error('Failed to create booking: ' + error.message, 'Creation Error');
@@ -1241,14 +1392,472 @@
         toast.success('Booking has been cancelled.', 'Booking Cancelled');
         closeModals();
         await loadBookings();
+        await loadJobs();
       } catch (error) {
         console.error('Error cancelling booking:', error);
         toast.error('Failed to cancel booking: ' + error.message, 'Cancel Error');
       }
     }
 
+    // ========== RECURRING EVENTS EXPANSION ==========
+    function expandRecurringEvents(item) {
+      // Check if item is recurring
+      if (!item.frequency || item.frequency !== 'recurring' || !item.recurrence_pattern) {
+        return [item]; // Single event
+      }
+      
+      // Check if scheduled_date exists
+      if (!item.scheduled_date) {
+        return [item]; // No date, can't expand
+      }
+      
+      const occurrences = [];
+      const startDate = new Date(item.scheduled_date);
+      
+      // Validate date
+      if (isNaN(startDate.getTime())) {
+        console.warn('Invalid scheduled_date for recurring event:', item);
+        return [item];
+      }
+      
+      const pattern = item.recurrence_pattern; // 'weekly', 'biweekly', 'monthly'
+      const endDate = new Date();
+      endDate.setFullYear(endDate.getFullYear() + 1); // Show 1 year ahead
+      
+      let currentDate = new Date(startDate);
+      let count = 0;
+      const maxOccurrences = 52; // Limit to prevent too many events
+      
+      while (currentDate <= endDate && count < maxOccurrences) {
+        occurrences.push({
+          ...item,
+          scheduled_date: currentDate.toISOString().split('T')[0],
+          isRecurringInstance: count > 0, // First one is original
+          originalId: item.id
+        });
+        
+        // Calculate next occurrence
+        if (pattern === 'weekly') {
+          currentDate.setDate(currentDate.getDate() + 7);
+        } else if (pattern === 'biweekly') {
+          currentDate.setDate(currentDate.getDate() + 14);
+        } else if (pattern === 'monthly') {
+          currentDate.setMonth(currentDate.getMonth() + 1);
+        } else {
+          // Unknown pattern, break
+          break;
+        }
+        count++;
+      }
+      
+      return occurrences;
+    }
+
+    // ========== CALENDAR FORMATTING ==========
+    function getJobStatusColor(status) {
+      const colors = {
+        'pending': '#0D47A1', // Blue
+        'in-progress': '#F59E0B', // Yellow/Orange
+        'completed': '#10B981', // Green
+        'cancelled': '#6B7280' // Gray
+      };
+      return colors[status] || '#6B7280';
+    }
+
+    function getBookingStatusColor(status) {
+      const colors = {
+        'pending': '#6366F1', // Purple/Indigo
+        'completed': '#10B981', // Green
+        'cancelled': '#6B7280' // Gray
+      };
+      return colors[status] || '#6B7280';
+    }
+
+    function formatJobsForCalendar(jobsList) {
+      const allJobs = jobsList.flatMap(expandRecurringEvents);
+      
+      return allJobs
+        .filter(job => {
+          // Apply filter
+          if (currentFilter !== 'all' && job.status !== currentFilter) {
+            return false;
+          }
+          // Only show jobs with scheduled_date
+          return job.scheduled_date;
+        })
+        .map(job => {
+          const siteName = job.sites?.name || 'Unknown';
+          const title = `${job.title} - ${siteName}`;
+          
+          // Handle all-day events (scheduled_date is DATE type, not TIMESTAMP)
+          // DATE fields from database are already in YYYY-MM-DD format
+          const isAllDay = !job.scheduled_date || !job.scheduled_date.includes('T');
+          
+          return {
+            id: `job-${job.id}${job.isRecurringInstance ? '-' + job.scheduled_date : ''}`,
+            title: title,
+            start: job.scheduled_date,
+            allDay: true, // All jobs/bookings are all-day events (DATE field, not TIMESTAMP)
+            backgroundColor: getJobStatusColor(job.status),
+            borderColor: job.job_type === 'emergency' ? '#EF4444' : getJobStatusColor(job.status),
+            borderWidth: job.job_type === 'emergency' ? 2 : 1,
+            textColor: '#ffffff',
+            extendedProps: {
+              type: 'job',
+              id: job.id,
+              status: job.status,
+              jobType: job.job_type || 'cleaning',
+              isEmergency: job.job_type === 'emergency',
+              isRecurring: job.frequency === 'recurring',
+              siteName: siteName
+            }
+          };
+        });
+    }
+
+    function formatBookingsForCalendar(bookingsList) {
+      const allBookings = bookingsList.flatMap(expandRecurringEvents);
+      
+      return allBookings
+        .filter(booking => {
+          // Apply filter
+          if (currentFilter !== 'all' && booking.status !== currentFilter) {
+            return false;
+          }
+          // Only show bookings with scheduled_date
+          return booking.scheduled_date;
+        })
+        .map(booking => {
+          const siteName = booking.sites?.name || 'Unknown';
+          const title = `${booking.title} - ${siteName}`;
+          
+          // Handle all-day events (scheduled_date is DATE type, not TIMESTAMP)
+          // DATE fields from database are already in YYYY-MM-DD format
+          const isAllDay = !booking.scheduled_date || !booking.scheduled_date.includes('T');
+          
+          return {
+            id: `booking-${booking.id}${booking.isRecurringInstance ? '-' + booking.scheduled_date : ''}`,
+            title: title,
+            start: booking.scheduled_date,
+            allDay: true, // All bookings are all-day events (DATE field, not TIMESTAMP)
+            backgroundColor: getBookingStatusColor(booking.status),
+            borderColor: booking.is_emergency ? '#EF4444' : getBookingStatusColor(booking.status),
+            borderStyle: 'dashed', // Distinguish from jobs
+            borderWidth: booking.is_emergency ? 2 : 1,
+            textColor: '#ffffff',
+            extendedProps: {
+              type: 'booking',
+              id: booking.id,
+              status: booking.status,
+              isEmergency: booking.is_emergency || false,
+              isRecurring: booking.frequency === 'recurring',
+              siteName: siteName
+            }
+          };
+        });
+    }
+
+    // ========== CALENDAR INITIALIZATION ==========
+    function initCalendar() {
+      if (calendar) {
+        calendar.destroy();
+        calendar = null;
+      }
+
+      const calendarEl = document.getElementById('calendar');
+      if (!calendarEl) return;
+
+      const isDarkMode = document.documentElement.classList.contains('dark');
+      
+      calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: currentCalendarView,
+        headerToolbar: false, // We'll use custom navigation
+        editable: true, // Enable drag-and-drop
+        droppable: false,
+        dayMaxEvents: true,
+        height: 'auto',
+        contentHeight: 'auto',
+        weekNumbers: false,
+        firstDay: 0, // Sunday
+        slotMinTime: '06:00:00',
+        slotMaxTime: '22:00:00',
+        allDaySlot: true,
+        nowIndicator: true,
+        eventDisplay: 'block',
+        eventTimeFormat: {
+          hour: 'numeric',
+          minute: '2-digit',
+          meridiem: 'short'
+        },
+        
+        // Only show time slots for week/day views
+        slotLabelFormat: {
+          hour: 'numeric',
+          minute: '2-digit',
+          meridiem: 'short'
+        },
+        
+        // Theme colors
+        eventColor: '#0D47A1',
+        
+        // Dark mode support - FullCalendar will use CSS variables
+        themeSystem: 'standard',
+        
+        // Event constraint - only allow dragging within view (for timed events)
+        eventConstraint: {
+          start: '06:00',
+          end: '22:00'
+        },
+        
+        // Date click - create booking
+        dateClick: (info) => {
+          // Extract date from click event
+          let clickedDate;
+          if (info.dateStr) {
+            // dateStr is in format YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss
+            clickedDate = info.dateStr.split('T')[0];
+          } else if (info.date) {
+            clickedDate = info.date.toISOString().split('T')[0];
+          } else {
+            clickedDate = new Date().toISOString().split('T')[0];
+          }
+          openCreateBookingModal(clickedDate);
+        },
+        
+        // Event click - view details
+        eventClick: (info) => {
+          const eventType = info.event.extendedProps.type;
+          const eventId = info.event.extendedProps.id;
+          
+          if (eventType === 'job') {
+            // Open job details (navigate to jobs page)
+            window.location.href = `jobs.html?job=${eventId}`;
+          } else if (eventType === 'booking') {
+            // Open booking details
+            viewBooking(eventId);
+          }
+        },
+        
+        // Drag and drop
+        eventDrop: async (info) => {
+          // Get new date (handle both all-day and timed events)
+          let newDate;
+          if (info.event.allDay) {
+            // All-day event - use dateStr directly
+            newDate = info.event.startStr ? info.event.startStr.split('T')[0] : info.event.start.toISOString().split('T')[0];
+          } else {
+            // Timed event - extract date from ISO string
+            newDate = info.event.start.toISOString().split('T')[0];
+          }
+          
+          const eventType = info.event.extendedProps.type;
+          const eventId = info.event.extendedProps.id;
+          const isRecurring = info.event.extendedProps.isRecurring;
+          
+          // Show confirmation with appropriate message
+          let confirmMessage = `Reschedule ${eventType} to ${newDate}?`;
+          if (isRecurring) {
+            confirmMessage = `Reschedule recurring ${eventType} to ${newDate}? This will reschedule the entire series.`;
+          }
+          
+          const confirmed = await showConfirm(
+            confirmMessage,
+            'Reschedule Event'
+          );
+          
+          if (!confirmed) {
+            info.revert(); // Revert the drag
+            return;
+          }
+          
+          // Update in database
+          try {
+            if (eventType === 'job') {
+              const { error } = await supabase
+                .from('jobs')
+                .update({ 
+                  scheduled_date: newDate,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', eventId);
+              
+              if (error) throw error;
+            } else if (eventType === 'booking') {
+              const { error } = await supabase
+                .from('bookings')
+                .update({ 
+                  scheduled_date: newDate,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', eventId);
+              
+              if (error) throw error;
+            }
+            
+            toast.success(`${eventType.charAt(0).toUpperCase() + eventType.slice(1)} rescheduled successfully`);
+            // Reload data to update calendar
+            await loadBookings();
+            await loadJobs();
+          } catch (error) {
+            console.error('Error rescheduling:', error);
+            info.revert();
+            toast.error('Failed to reschedule: ' + error.message);
+          }
+        },
+        
+        // Update date range display
+        datesSet: (dateInfo) => {
+          updateCalendarDateRange(dateInfo);
+        },
+        
+        // Events
+        events: (fetchInfo, successCallback, failureCallback) => {
+          try {
+            const jobEvents = formatJobsForCalendar(jobs);
+            const bookingEvents = formatBookingsForCalendar(bookings);
+            const allEvents = [...jobEvents, ...bookingEvents];
+            successCallback(allEvents);
+          } catch (error) {
+            console.error('Error loading calendar events:', error);
+            failureCallback(error);
+          }
+        }
+      });
+      
+      calendar.render();
+      updateCalendarDateRange(calendar.view);
+    }
+
+    function updateCalendar() {
+      if (!calendar) return;
+      calendar.refetchEvents();
+    }
+
+    function updateCalendarDateRange(dateInfo) {
+      const dateRangeEl = document.getElementById('calendar-date-range');
+      if (!dateRangeEl) return;
+      
+      let dateText = '';
+      if (currentCalendarView === 'timeGridDay') {
+        dateText = dateInfo.start.toLocaleDateString('en-US', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
+      } else if (currentCalendarView === 'timeGridWeek') {
+        const start = dateInfo.start;
+        const end = dateInfo.end;
+        dateText = `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+      } else if (currentCalendarView === 'dayGridMonth') {
+        dateText = dateInfo.start.toLocaleDateString('en-US', { 
+          month: 'long', 
+          year: 'numeric' 
+        });
+      }
+      
+      dateRangeEl.textContent = dateText;
+    }
+
+    // ========== VIEW TOGGLE ==========
+    function initViewToggle() {
+      const tableBtn = document.getElementById('view-table-btn');
+      const calendarBtn = document.getElementById('view-calendar-btn');
+      const tableContainer = document.getElementById('bookings-table-container');
+      const calendarContainer = document.getElementById('calendar-container');
+      const calendarControls = document.getElementById('calendar-controls');
+      
+      tableBtn?.addEventListener('click', () => {
+        toggleView('table');
+      });
+      
+      calendarBtn?.addEventListener('click', () => {
+        toggleView('calendar');
+      });
+    }
+
+    function toggleView(view) {
+      currentView = view;
+      const tableBtn = document.getElementById('view-table-btn');
+      const calendarBtn = document.getElementById('view-calendar-btn');
+      const tableContainer = document.getElementById('bookings-table-container');
+      const calendarContainer = document.getElementById('calendar-container');
+      const calendarControls = document.getElementById('calendar-controls');
+      
+      if (view === 'table') {
+        // Show table, hide calendar
+        tableContainer?.classList.remove('hidden');
+        calendarContainer?.classList.add('hidden');
+        calendarControls?.classList.add('hidden');
+        
+        // Update button styles
+        tableBtn?.classList.add('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
+        tableBtn?.classList.remove('border', 'border-nfgray', 'hover:bg-nfglight');
+        calendarBtn?.classList.remove('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
+        calendarBtn?.classList.add('border', 'border-nfgray', 'hover:bg-nfglight');
+      } else {
+        // Show calendar, hide table
+        tableContainer?.classList.add('hidden');
+        calendarContainer?.classList.remove('hidden');
+        calendarControls?.classList.remove('hidden');
+        
+        // Update button styles
+        calendarBtn?.classList.add('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
+        calendarBtn?.classList.remove('border', 'border-nfgray', 'hover:bg-nfglight');
+        tableBtn?.classList.remove('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
+        tableBtn?.classList.add('border', 'border-nfgray', 'hover:bg-nfglight');
+        
+        // Initialize calendar if not already done
+        if (!calendar) {
+          initCalendar();
+        } else {
+          updateCalendar();
+        }
+      }
+      
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function changeCalendarView(viewType) {
+      currentCalendarView = viewType;
+      
+      if (!calendar) return;
+      
+      calendar.changeView(viewType);
+      updateCalendarDateRange(calendar.view);
+      
+      // Update button styles
+      document.querySelectorAll('.calendar-view-btn').forEach(btn => {
+        btn.classList.remove('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
+        btn.classList.add('border', 'border-nfgray', 'hover:bg-nfglight');
+      });
+      
+      const activeBtn = document.getElementById(`calendar-view-${viewType === 'timeGridDay' ? 'day' : viewType === 'timeGridWeek' ? 'week' : 'month'}`);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
+        activeBtn.classList.remove('border', 'border-nfgray', 'hover:bg-nfglight');
+      }
+    }
+
+    function openCreateBookingModal(prefilledDate = null) {
+      document.getElementById('createBookingModal').classList.remove('hidden');
+      document.getElementById('booking-title').value = '';
+      document.getElementById('booking-site').value = '';
+      document.getElementById('booking-date').value = prefilledDate || '';
+      document.getElementById('booking-description').value = '';
+      document.getElementById('booking-emergency').checked = false;
+      document.getElementById('service-category-filter').value = '';
+      document.getElementById('service-search').value = '';
+      selectedServices.clear();
+      renderServices();
+      renderSelectedServices();
+      if (window.lucide) lucide.createIcons();
+    }
+
     // ========== EVENT LISTENERS ==========
-    document.getElementById('create-booking-btn')?.addEventListener('click', openCreateBookingModal);
+    document.getElementById('create-booking-btn')?.addEventListener('click', () => {
+      openCreateBookingModal();
+    });
 
     document.querySelectorAll('.close-modal').forEach(btn => {
       btn.addEventListener('click', closeModals);
@@ -1275,15 +1884,53 @@
     document.querySelectorAll('.filter-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         document.querySelectorAll('.filter-btn').forEach(b => {
-          b.classList.remove('bg-nfgblue', 'text-white');
+          b.classList.remove('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
           b.classList.add('border', 'border-nfgray', 'hover:bg-nfglight');
         });
-        btn.classList.add('bg-nfgblue', 'text-white');
+        btn.classList.add('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
         btn.classList.remove('border', 'border-nfgray', 'hover:bg-nfglight');
         
         currentFilter = btn.dataset.status;
         await renderBookings();
+        if (currentView === 'calendar') {
+          updateCalendar();
+        }
       });
+    });
+
+    // Calendar view type toggle
+    document.getElementById('calendar-view-week')?.addEventListener('click', () => {
+      changeCalendarView('timeGridWeek');
+    });
+    
+    document.getElementById('calendar-view-day')?.addEventListener('click', () => {
+      changeCalendarView('timeGridDay');
+    });
+    
+    document.getElementById('calendar-view-month')?.addEventListener('click', () => {
+      changeCalendarView('dayGridMonth');
+    });
+
+    // Calendar navigation
+    document.getElementById('calendar-prev')?.addEventListener('click', () => {
+      if (calendar) {
+        calendar.prev();
+        updateCalendarDateRange(calendar.view);
+      }
+    });
+    
+    document.getElementById('calendar-next')?.addEventListener('click', () => {
+      if (calendar) {
+        calendar.next();
+        updateCalendarDateRange(calendar.view);
+      }
+    });
+    
+    document.getElementById('calendar-today')?.addEventListener('click', () => {
+      if (calendar) {
+        calendar.today();
+        updateCalendarDateRange(calendar.view);
+      }
     });
 
     // Logout
