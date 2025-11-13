@@ -2527,12 +2527,13 @@
       console.log('[Reports] ✅ User authenticated:', user.email);
       console.log('[Reports] 👤 User role:', currentUserProfile?.role || 'unknown');
       
-      // Hide Reports navigation for staff (but allow Bookings for calendar view)
+      // Update page description and Bookings link for staff
       if (currentUserProfile && currentUserProfile.role === 'staff') {
-        const reportsNav = document.getElementById('nav-reports');
-        if (reportsNav) reportsNav.style.display = 'none';
+        const descriptionEl = document.getElementById('reports-description');
+        if (descriptionEl) {
+          descriptionEl.textContent = 'View your time tracking and time sheets';
+        }
         
-        // Update Bookings link text for staff to indicate calendar view
         const bookingsNav = document.getElementById('nav-bookings');
         if (bookingsNav) {
           const bookingsText = bookingsNav.querySelector('span') || bookingsNav.childNodes[bookingsNav.childNodes.length - 1];
@@ -2542,6 +2543,14 @@
             bookingsNav.innerHTML = '<i data-lucide="calendar" class="w-4 h-4"></i> Schedule';
             if (window.lucide) lucide.createIcons();
           }
+        }
+        
+        // Auto-switch to Time Tracking tab for staff
+        const timeTrackingTab = document.getElementById('tab-time-tracking');
+        if (timeTrackingTab) {
+          setTimeout(() => {
+            timeTrackingTab.click();
+          }, 500);
         }
       }
 

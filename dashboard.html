@@ -973,11 +973,8 @@
       // Get current user on page load
       await getCurrentUser();
       
-      // Hide Reports for staff users (but allow Bookings for calendar view)
+      // Update Bookings link text for staff to indicate calendar view (but keep Reports visible for time tracking)
       if (currentUserProfile && currentUserProfile.role === 'staff') {
-        const reportsNav = document.getElementById('nav-reports');
-        if (reportsNav) reportsNav.style.display = 'none';
-        
         // Update Bookings link text for staff to indicate calendar view
         const bookingsNav = document.getElementById('nav-bookings');
         if (bookingsNav) {
