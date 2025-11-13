@@ -1945,7 +1945,7 @@
         
         let query = supabase
           .from('staff_time_logs')
-          .select('*, user_profiles(full_name, email), jobs(title, sites(name))');
+          .select('*, jobs(title, sites(name))');
         
         if (statusFilter) {
           query = query.eq('status', statusFilter);
@@ -1956,6 +1956,27 @@
         }
         
         const { data: entries, error } = await query.order('clock_in', { ascending: false });
+        
+        if (error) throw error;
+        
+        // Fetch user profiles separately
+        if (entries && entries.length > 0) {
+          const userIds = [...new Set(entries.map(e => e.user_id))];
+          const { data: profiles } = await supabase
+            .from('user_profiles')
+            .select('id, full_name, email')
+            .in('id', userIds);
+          
+          // Merge profiles into entries
+          const profilesMap = {};
+          (profiles || []).forEach(p => {
+            profilesMap[p.id] = p;
+          });
+          
+          entries.forEach(entry => {
+            entry.user_profiles = profilesMap[entry.user_id] || null;
+          });
+        }
         
         if (error) {
           console.error('Error loading pending entries:', error);
@@ -2178,10 +2199,31 @@
         // Fetch all time entries
         const { data: timeEntries, error } = await supabase
           .from('staff_time_logs')
-          .select('*, user_profiles(full_name, email), jobs(title, sites(name))')
+          .select('*, jobs(title, sites(name))')
           .gte('clock_in', startDate + 'T00:00:00')
           .lte('clock_in', endDate + 'T23:59:59')
           .eq('status', 'approved'); // Only approved entries for reports
+        
+        if (error) throw error;
+        
+        // Fetch user profiles separately
+        if (timeEntries && timeEntries.length > 0) {
+          const userIds = [...new Set(timeEntries.map(e => e.user_id))];
+          const { data: profiles } = await supabase
+            .from('user_profiles')
+            .select('id, full_name, email')
+            .in('id', userIds);
+          
+          // Merge profiles into entries
+          const profilesMap = {};
+          (profiles || []).forEach(p => {
+            profilesMap[p.id] = p;
+          });
+          
+          timeEntries.forEach(entry => {
+            entry.user_profiles = profilesMap[entry.user_id] || null;
+          });
+        }
         
         if (error) {
           console.error('Error loading time reports:', error);
