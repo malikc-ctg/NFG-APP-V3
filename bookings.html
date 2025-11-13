@@ -1343,7 +1343,7 @@
           .from('bookings')
           .select('*, sites(name, address)')
           .eq('created_by', currentUser.id)
-          .order('scheduled_date', { ascending: false });
+          .order('scheduled_datetime', { ascending: false });
 
         if (error) throw error;
         bookings = data || [];
@@ -2371,6 +2371,9 @@
         eventDrop: async (info) => {
           const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
           const eventType = info.event.extendedProps.type;
+          const eventId = info.event.extendedProps.id;
+          const isAllDay = info.event.extendedProps.isAllDay !== false && info.event.allDay;
+          const newIsAllDay = info.event.allDay;
           
           // Staff can only reschedule jobs (their assigned jobs)
           if (isStaff && eventType !== 'job') {
@@ -2379,23 +2382,53 @@
             return;
           }
           
-          // Get new date (handle both all-day and timed events)
-          let newDate;
-          if (info.event.allDay) {
-            // All-day event - use dateStr directly
-            newDate = info.event.startStr ? info.event.startStr.split('T')[0] : info.event.start.toISOString().split('T')[0];
-          } else {
-            // Timed event - extract date from ISO string
-            newDate = info.event.start.toISOString().split('T')[0];
+          // Get new date/datetime (handle both all-day and timed events)
+          const newStart = info.event.start;
+          if (!newStart) {
+            toast.error('Invalid date selected');
+            info.revert();
+            return;
           }
           
-          const eventId = info.event.extendedProps.id;
-          const isRecurring = info.event.extendedProps.isRecurring;
+          // Format new date/datetime
+          let newDate = null; // For scheduled_date (YYYY-MM-DD)
+          let newDatetime = null; // For scheduled_datetime (ISO string)
           
-          // Show confirmation with appropriate message
-          let confirmMessage = `Reschedule ${eventType} to ${newDate}?`;
+          if (newIsAllDay) {
+            // All-day event: use date only
+            newDate = newStart.toISOString().split('T')[0];
+            newDatetime = `${newDate}T09:00:00`; // Placeholder time for all-day
+          } else {
+            // Timed event: preserve time if original was timed, otherwise use current time
+            if (!isAllDay && info.event.start) {
+              // Original was timed: preserve the time from the new position
+              const originalStart = new Date(info.oldEvent.start);
+              const newTime = new Date(newStart);
+              
+              // If dragged to a different time slot, use the new time
+              // If dragged to a different date but same time slot, preserve original time
+              // For simplicity, always use the new time when dragged to time slot
+              newDatetime = newTime.toISOString();
+              newDate = newDatetime.split('T')[0];
+            } else {
+              // Original was all-day but dragged to time slot: use new time
+              newDatetime = newStart.toISOString();
+              newDate = newDatetime.split('T')[0];
+            }
+          }
+          
+          const isRecurring = info.event.extendedProps.isRecurring;
+          const dateStr = newDate;
+          const timeStr = newIsAllDay ? '' : new Date(newDatetime).toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: true 
+          });
+          const displayDate = timeStr ? `${dateStr} at ${timeStr}` : dateStr;
+          
+          let confirmMessage = `Reschedule ${eventType} to ${displayDate}?`;
           if (isRecurring) {
-            confirmMessage = `Reschedule recurring ${eventType} to ${newDate}? This will reschedule the entire series.`;
+            confirmMessage = `Reschedule recurring ${eventType} to ${displayDate}? This will reschedule the entire series.`;
           }
           
           const confirmed = await showConfirm(
@@ -2404,19 +2437,23 @@
           );
           
           if (!confirmed) {
-            info.revert(); // Revert the drag
+            info.revert();
             return;
           }
           
           // Update in database
           try {
+            const updateData = {
+              scheduled_date: newDate, // Keep for backward compatibility
+              scheduled_datetime: newDatetime, // New datetime field
+              is_all_day: newIsAllDay, // Update all-day flag
+              updated_at: new Date().toISOString()
+            };
+            
             if (eventType === 'job') {
               const { error } = await supabase
                 .from('jobs')
-                .update({ 
-                  scheduled_date: newDate,
-                  updated_at: new Date().toISOString()
-                })
+                .update(updateData)
                 .eq('id', eventId);
               
               if (error) throw error;
@@ -2425,10 +2462,7 @@
               if (!isStaff) {
                 const { error } = await supabase
                   .from('bookings')
-                  .update({ 
-                    scheduled_date: newDate,
-                    updated_at: new Date().toISOString()
-                  })
+                  .update(updateData)
                   .eq('id', eventId);
                 
                 if (error) throw error;
