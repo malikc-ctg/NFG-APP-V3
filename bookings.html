@@ -2082,6 +2082,36 @@
       // Update button styles
       updateCalendarViewButtonStyles();
     }
+    
+    // Helper function to update calendar view button styles
+    function updateCalendarViewButtonStyles() {
+      // Map currentCalendarView to button ID suffix
+      let buttonIdSuffix = '';
+      if (currentCalendarView === 'timeGridDay') {
+        buttonIdSuffix = 'day';
+      } else if (currentCalendarView === 'timeGridWeek') {
+        buttonIdSuffix = 'week';
+      } else if (currentCalendarView === 'dayGridMonth') {
+        buttonIdSuffix = 'month';
+      }
+      
+      // Update all calendar view buttons - remove active styles
+      document.querySelectorAll('.calendar-view-btn').forEach(btn => {
+        // Remove active (blue) styles
+        btn.classList.remove('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
+        // Add inactive (border) styles
+        btn.classList.add('border', 'border-nfgray', 'hover:bg-nfglight', 'dark:hover:bg-gray-600', 'dark:bg-gray-700');
+      });
+      
+      // Set active button styles
+      const activeBtn = document.getElementById(`calendar-view-${buttonIdSuffix}`);
+      if (activeBtn) {
+        // Remove inactive styles
+        activeBtn.classList.remove('border', 'border-nfgray', 'hover:bg-nfglight', 'dark:hover:bg-gray-600', 'dark:bg-gray-700');
+        // Add active styles
+        activeBtn.classList.add('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
+      }
+    }
 
     function openCreateBookingModal(prefilledDate = null) {
       document.getElementById('createBookingModal').classList.remove('hidden');
