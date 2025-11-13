@@ -2200,10 +2200,27 @@
             }
           }
           
+          // Calculate end time based on estimated_hours (only for timed events)
+          let endDate = null;
+          if (!isAllDay && job.scheduled_datetime) {
+            try {
+              const startDateTime = new Date(startDate);
+              // Get estimated hours (default to 1 hour if not set)
+              const estimatedHours = parseFloat(job.estimated_hours) || 1;
+              // Add hours to start time
+              const endDateTime = new Date(startDateTime.getTime() + (estimatedHours * 60 * 60 * 1000));
+              endDate = endDateTime.toISOString();
+            } catch (e) {
+              // If calculation fails, leave endDate as null (event will be point-in-time)
+              console.warn('Failed to calculate end time for job:', job.id, e);
+            }
+          }
+          
           return {
             id: `job-${job.id}${job.isRecurringInstance ? '-' + (job.scheduled_datetime || job.scheduled_date) : ''}`,
             title: displayTitle,
             start: startDate,
+            end: endDate, // Add end time for duration display
             allDay: isAllDay,
             backgroundColor: statusColor,
             borderColor: isEmergency ? '#EF4444' : statusColor,
@@ -2289,10 +2306,35 @@
             }
           }
           
+          // Calculate end time based on estimated_hours (only for timed events)
+          // Note: Bookings might not have estimated_hours, so we'll check if it exists
+          // If not, we can use the linked job's estimated_hours or default to 1 hour
+          let endDate = null;
+          if (!isAllDay && booking.scheduled_datetime) {
+            try {
+              const startDateTime = new Date(startDate);
+              // Get estimated hours from booking or linked job, default to 1 hour
+              let estimatedHours = 1;
+              if (booking.estimated_hours) {
+                estimatedHours = parseFloat(booking.estimated_hours);
+              } else if (booking.job_id && booking.jobs?.estimated_hours) {
+                // Try to get from linked job if available
+                estimatedHours = parseFloat(booking.jobs.estimated_hours);
+              }
+              // Add hours to start time
+              const endDateTime = new Date(startDateTime.getTime() + (estimatedHours * 60 * 60 * 1000));
+              endDate = endDateTime.toISOString();
+            } catch (e) {
+              // If calculation fails, leave endDate as null (event will be point-in-time)
+              console.warn('Failed to calculate end time for booking:', booking.id, e);
+            }
+          }
+          
           return {
             id: `booking-${booking.id}${booking.isRecurringInstance ? '-' + (booking.scheduled_datetime || booking.scheduled_date) : ''}`,
             title: displayTitle,
             start: startDate,
+            end: endDate, // Add end time for duration display
             allDay: isAllDay,
             backgroundColor: statusColor,
             borderColor: isEmergency ? '#EF4444' : statusColor,
