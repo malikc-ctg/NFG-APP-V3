@@ -1339,29 +1339,86 @@
       
       try {
         console.log('🔍 Loading bookings for user:', currentUser.id);
-        // Try to order by scheduled_datetime, fallback to scheduled_date if column doesn't exist
-        let query = supabase
+        
+        // Use scheduled_date for ordering (backward compatible)
+        // Note: Removed jobs(estimated_hours) join to avoid relationship errors
+        // Will fetch estimated_hours separately if needed
+        let { data, error } = await supabase
           .from('bookings')
-          .select('*, sites(name, address), jobs(estimated_hours)')
-          .eq('created_by', currentUser.id);
+          .select('*, sites(name, address)')
+          .eq('created_by', currentUser.id)
+          .order('scheduled_date', { ascending: false });
         
-        // Try ordering by scheduled_datetime first, fallback to scheduled_date
-        let { data, error } = await query.order('scheduled_datetime', { ascending: false });
-        
-        // If error and it's about missing column, retry with scheduled_date
-        if (error && (error.code === 'PGRST204' || error.message?.includes('scheduled_datetime'))) {
-          console.warn('⚠️ scheduled_datetime column not found, using scheduled_date for ordering');
-          const retryQuery = supabase
-            .from('bookings')
-            .select('*, sites(name, address), jobs(estimated_hours)')
-            .eq('created_by', currentUser.id);
-          const retryResult = await retryQuery.order('scheduled_date', { ascending: false });
-          data = retryResult.data;
-          error = retryResult.error;
+        if (error) {
+          console.error('❌ Error loading bookings:', error);
+          console.error('❌ Error code:', error.code);
+          console.error('❌ Error message:', error.message);
+          console.error('❌ Error details:', JSON.stringify(error, null, 2));
+          
+          // If it's a relationship error, try without sites join
+          if (error.code === 'PGRST200' || error.message?.includes('relationship')) {
+            console.warn('⚠️ Relationship error detected, trying without sites join');
+            const retryQuery = supabase
+              .from('bookings')
+              .select('*')
+              .eq('created_by', currentUser.id)
+              .order('scheduled_date', { ascending: false });
+            
+            const retryResult = await retryQuery;
+            if (!retryResult.error) {
+              // Manually fetch sites for each booking
+              const bookingIds = retryResult.data.map(b => b.site_id).filter(Boolean);
+              if (bookingIds.length > 0) {
+                const { data: sitesData } = await supabase
+                  .from('sites')
+                  .select('id, name, address')
+                  .in('id', bookingIds);
+                
+                const sitesMap = {};
+                (sitesData || []).forEach(site => {
+                  sitesMap[site.id] = site;
+                });
+                
+                // Attach sites to bookings
+                retryResult.data.forEach(booking => {
+                  booking.sites = sitesMap[booking.site_id] || null;
+                });
+              }
+              
+              data = retryResult.data;
+              error = null;
+            } else {
+              throw retryResult.error;
+            }
+          } else {
+            throw error;
+          }
         }
         
         if (error) throw error;
         bookings = data || [];
+        
+        // Fetch estimated_hours from linked jobs if job_id exists
+        const bookingsWithJobIds = bookings.filter(b => b.job_id);
+        if (bookingsWithJobIds.length > 0) {
+          const jobIds = bookingsWithJobIds.map(b => b.job_id);
+          const { data: jobsData } = await supabase
+            .from('jobs')
+            .select('id, estimated_hours')
+            .in('id', jobIds);
+          
+          const jobsMap = {};
+          (jobsData || []).forEach(job => {
+            jobsMap[job.id] = job;
+          });
+          
+          // Attach estimated_hours to bookings
+          bookings.forEach(booking => {
+            if (booking.job_id && jobsMap[booking.job_id]) {
+              booking.jobs = { estimated_hours: jobsMap[booking.job_id].estimated_hours };
+            }
+          });
+        }
         await renderBookings();
         if (currentView === 'calendar') {
           updateCalendar();
@@ -1384,25 +1441,12 @@
           // Query jobs assigned to this staff member
           // assigned_worker_id references user_profiles(id), which equals auth.users(id)
           // Note: Removed user_profiles join to avoid PGRST200 relationship error
-          let query = supabase
+          // Use scheduled_date for ordering (backward compatible)
+          const { data, error } = await supabase
             .from('jobs')
             .select('*, sites(name, address)')
-            .eq('assigned_worker_id', currentUser.id);
-          
-          // Try ordering by scheduled_datetime first, fallback to scheduled_date
-          let { data, error } = await query.order('scheduled_datetime', { ascending: false });
-          
-          // If error and it's about missing column, retry with scheduled_date
-          if (error && (error.code === 'PGRST204' || error.message?.includes('scheduled_datetime'))) {
-            console.warn('⚠️ scheduled_datetime column not found, using scheduled_date for ordering');
-            const retryQuery = supabase
-              .from('jobs')
-              .select('*, sites(name, address)')
-              .eq('assigned_worker_id', currentUser.id);
-            const retryResult = await retryQuery.order('scheduled_date', { ascending: false });
-            data = retryResult.data;
-            error = retryResult.error;
-          }
+            .eq('assigned_worker_id', currentUser.id)
+            .order('scheduled_date', { ascending: false });
           
           if (error) {
             console.error('❌ Error loading jobs for staff:', error);
@@ -1450,25 +1494,12 @@
         } else {
           // For admin/client, show all their jobs
           console.log('🔍 Loading jobs for admin/client');
-          let query = supabase
+          // Use scheduled_date for ordering (backward compatible)
+          const { data, error } = await supabase
             .from('jobs')
             .select('*, sites(name, address)')
-            .eq('created_by', currentUser.id);
-          
-          // Try ordering by scheduled_datetime first, fallback to scheduled_date
-          let { data, error } = await query.order('scheduled_datetime', { ascending: false });
-          
-          // If error and it's about missing column, retry with scheduled_date
-          if (error && (error.code === 'PGRST204' || error.message?.includes('scheduled_datetime'))) {
-            console.warn('⚠️ scheduled_datetime column not found, using scheduled_date for ordering');
-            const retryQuery = supabase
-              .from('jobs')
-              .select('*, sites(name, address)')
-              .eq('created_by', currentUser.id);
-            const retryResult = await retryQuery.order('scheduled_date', { ascending: false });
-            data = retryResult.data;
-            error = retryResult.error;
-          }
+            .eq('created_by', currentUser.id)
+            .order('scheduled_date', { ascending: false });
           
           if (error) {
             console.error('❌ Error loading jobs for admin/client:', error);
