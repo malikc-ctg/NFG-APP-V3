@@ -308,7 +308,7 @@
     <main class="flex-1 flex flex-col overflow-hidden">
       <div class="flex-shrink-0 p-4 md:p-6 pb-0 space-y-4">
         <!-- View Toggle and Filter Tabs -->
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div id="view-toggle-section" class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <!-- View Toggle -->
           <div class="flex items-center gap-2">
             <button id="view-table-btn" class="view-toggle-btn px-4 py-2 rounded-lg bg-nfgblue dark:bg-blue-900 text-white font-medium flex items-center gap-2">
@@ -322,7 +322,7 @@
           </div>
           
           <!-- Filter Tabs -->
-          <div class="flex gap-2 overflow-x-auto">
+          <div id="filter-tabs-section" class="flex gap-2 overflow-x-auto">
             <button class="filter-btn px-4 py-2 rounded-lg bg-nfgblue dark:bg-blue-900 text-white font-medium whitespace-nowrap" data-status="all">
               All
             </button>
@@ -770,12 +770,8 @@
         
         currentUserProfile = profile;
         
-        // Staff users cannot access bookings
-        if (currentUserProfile && currentUserProfile.role === 'staff') {
-          alert('Staff cannot access the Bookings page.');
-          window.location.href = './dashboard.html';
-          return null;
-        }
+        // Staff users can access calendar view only (no bookings data)
+        // No redirect needed - they'll see calendar with jobs only
         
         return user;
       } catch (error) {
@@ -787,17 +783,71 @@
 
     async function init() {
       await getCurrentUser();
-      await loadSites();
-      await loadCategories();
-      await loadServices();
-      await loadBookings();
+      
+      const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
+      
+      // Staff only: Skip loading bookings, sites for booking creation, categories, and services
+      if (!isStaff) {
+        await loadSites();
+        await loadCategories();
+        await loadServices();
+        await loadBookings();
+      }
+      
+      // All users: Load jobs (staff will see assigned jobs only)
       await loadJobs();
       
       // Initialize view toggle
       initViewToggle();
       
-      // Hide Bookings and Reports nav for staff
-      if (currentUserProfile && currentUserProfile.role === 'staff') {
+      // Staff only: Force calendar view, hide table view and booking creation
+      if (isStaff) {
+        // Hide entire view toggle section (staff only see calendar)
+        const viewToggleSection = document.getElementById('view-toggle-section');
+        if (viewToggleSection) {
+          viewToggleSection.style.display = 'none';
+        }
+        
+        // Hide filter tabs section (staff don't need to filter)
+        const filterTabsSection = document.getElementById('filter-tabs-section');
+        if (filterTabsSection) {
+          filterTabsSection.style.display = 'none';
+        }
+        
+        // Force calendar view immediately (before toggleView is called)
+        const tableContainer = document.getElementById('bookings-table-container');
+        const calendarContainer = document.getElementById('calendar-container');
+        const calendarControls = document.getElementById('calendar-controls');
+        
+        if (tableContainer) tableContainer.classList.add('hidden');
+        if (calendarContainer) calendarContainer.classList.remove('hidden');
+        if (calendarControls) calendarControls.classList.remove('hidden');
+        
+        // Set current view to calendar
+        currentView = 'calendar';
+        
+        // Initialize calendar immediately for staff
+        setTimeout(() => {
+          if (!calendar) {
+            initCalendar();
+          } else {
+            updateCalendar();
+          }
+        }, 100);
+        
+        // Hide "New Booking" button
+        const createBookingBtn = document.getElementById('create-booking-btn');
+        if (createBookingBtn) createBookingBtn.style.display = 'none';
+        
+        // Update page header title for staff
+        const pageTitle = document.querySelector('header h1');
+        if (pageTitle) {
+          pageTitle.textContent = 'Schedule Calendar';
+        }
+      }
+      
+      // Hide Bookings and Reports nav for staff (if they somehow access it)
+      if (isStaff) {
         const bookingsNav = document.getElementById('nav-bookings');
         const reportsNav = document.getElementById('nav-reports');
         if (bookingsNav) bookingsNav.style.display = 'none';
@@ -833,6 +883,13 @@
     }
 
     async function loadBookings() {
+      // Staff users don't see bookings
+      const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
+      if (isStaff) {
+        bookings = [];
+        return;
+      }
+      
       try {
         console.log('🔍 Loading bookings for user:', currentUser.id);
         const { data, error } = await supabase
@@ -1475,13 +1532,16 @@
 
     function formatJobsForCalendar(jobsList) {
       const allJobs = jobsList.flatMap(expandRecurringEvents);
+      const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
       
       return allJobs
         .filter(job => {
-          // Apply filter
-          if (currentFilter !== 'all' && job.status !== currentFilter) {
+          // Staff: Only show assigned jobs
+          // Non-staff: Apply filter
+          if (!isStaff && currentFilter !== 'all' && job.status !== currentFilter) {
             return false;
           }
+          // Staff: Show all statuses (no filter needed since filter tabs are hidden)
           // Only show jobs with scheduled_date
           return job.scheduled_date;
         })
@@ -1516,6 +1576,12 @@
     }
 
     function formatBookingsForCalendar(bookingsList) {
+      // Staff users don't see bookings
+      const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
+      if (isStaff) {
+        return [];
+      }
+      
       const allBookings = bookingsList.flatMap(expandRecurringEvents);
       
       return allBookings
@@ -1611,6 +1677,13 @@
         
         // Date click - create booking
         dateClick: (info) => {
+          // Staff cannot create bookings
+          const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
+          if (isStaff) {
+            toast.info('Staff can view assigned jobs in calendar view only');
+            return;
+          }
+          
           // Extract date from click event
           let clickedDate;
           if (info.dateStr) {
@@ -1628,18 +1701,34 @@
         eventClick: (info) => {
           const eventType = info.event.extendedProps.type;
           const eventId = info.event.extendedProps.id;
+          const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
           
           if (eventType === 'job') {
             // Open job details (navigate to jobs page)
             window.location.href = `jobs.html?job=${eventId}`;
           } else if (eventType === 'booking') {
-            // Open booking details
+            // Staff cannot view booking details
+            if (isStaff) {
+              toast.info('Only assigned jobs are visible in calendar view');
+              return;
+            }
+            // Open booking details (non-staff only)
             viewBooking(eventId);
           }
         },
         
         // Drag and drop
         eventDrop: async (info) => {
+          const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
+          const eventType = info.event.extendedProps.type;
+          
+          // Staff can only reschedule jobs (their assigned jobs)
+          if (isStaff && eventType !== 'job') {
+            info.revert();
+            toast.info('Staff can only reschedule assigned jobs');
+            return;
+          }
+          
           // Get new date (handle both all-day and timed events)
           let newDate;
           if (info.event.allDay) {
@@ -1650,7 +1739,6 @@
             newDate = info.event.start.toISOString().split('T')[0];
           }
           
-          const eventType = info.event.extendedProps.type;
           const eventId = info.event.extendedProps.id;
           const isRecurring = info.event.extendedProps.isRecurring;
           
@@ -1683,15 +1771,18 @@
               
               if (error) throw error;
             } else if (eventType === 'booking') {
-              const { error } = await supabase
-                .from('bookings')
-                .update({ 
-                  scheduled_date: newDate,
-                  updated_at: new Date().toISOString()
-                })
-                .eq('id', eventId);
-              
-              if (error) throw error;
+              // Non-staff only
+              if (!isStaff) {
+                const { error } = await supabase
+                  .from('bookings')
+                  .update({ 
+                    scheduled_date: newDate,
+                    updated_at: new Date().toISOString()
+                  })
+                  .eq('id', eventId);
+                
+                if (error) throw error;
+              }
             }
             
             toast.success(`${eventType.charAt(0).toUpperCase() + eventType.slice(1)} rescheduled successfully`);
@@ -1777,6 +1868,14 @@
     }
 
     function toggleView(view) {
+      const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
+      
+      // Staff can only use calendar view
+      if (isStaff && view === 'table') {
+        console.log('Staff can only view calendar');
+        return;
+      }
+      
       currentView = view;
       const tableBtn = document.getElementById('view-table-btn');
       const calendarBtn = document.getElementById('view-calendar-btn');
