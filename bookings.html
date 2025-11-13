@@ -716,21 +716,6 @@
             </button>
           </div>
           
-          <!-- Filter Tabs -->
-          <div id="filter-tabs-section" class="flex gap-2 overflow-x-auto">
-            <button class="filter-btn px-4 py-2 rounded-lg bg-nfgblue dark:bg-blue-900 text-white font-medium whitespace-nowrap" data-status="all">
-              All
-            </button>
-            <button class="filter-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700 whitespace-nowrap" data-status="pending">
-              Pending
-            </button>
-            <button class="filter-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700 whitespace-nowrap" data-status="completed">
-              Completed
-            </button>
-            <button class="filter-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700 whitespace-nowrap" data-status="cancelled">
-              Cancelled
-            </button>
-          </div>
         </div>
         
         <!-- Calendar View Controls (hidden by default) -->
@@ -1132,6 +1117,7 @@
     let bookings = [];
     let jobs = [];
     let sites = [];
+    // Filter removed - always show all bookings
     let currentFilter = 'all';
     let currentBooking = null;
     let categories = [];
@@ -1203,11 +1189,7 @@
           viewToggleSection.style.display = 'none';
         }
         
-        // Hide filter tabs section (staff don't need to filter)
-        const filterTabsSection = document.getElementById('filter-tabs-section');
-        if (filterTabsSection) {
-          filterTabsSection.style.display = 'none';
-        }
+        // Filter tabs section is already removed
         
         // Force calendar view immediately (before toggleView is called)
         const tableContainer = document.getElementById('bookings-table-container');
@@ -1442,10 +1424,8 @@
     async function renderBookings() {
       const tbody = document.getElementById('bookings-table-body');
       
-      let filteredBookings = bookings;
-      if (currentFilter !== 'all') {
-        filteredBookings = bookings.filter(b => b.status === currentFilter);
-      }
+      // Show all bookings (filter removed)
+      const filteredBookings = bookings;
 
       if (filteredBookings.length === 0) {
         tbody.innerHTML = `
@@ -1993,11 +1973,7 @@
       return allJobs
         .filter(job => {
           // Staff: Only show assigned jobs
-          // Non-staff: Apply filter
-          if (!isStaff && currentFilter !== 'all' && job.status !== currentFilter) {
-            return false;
-          }
-          // Staff: Show all statuses (no filter needed since filter tabs are hidden)
+          // Show all jobs regardless of status (filter removed)
           // Only show jobs with scheduled_date
           return job.scheduled_date;
         })
@@ -2054,10 +2030,7 @@
       
       return allBookings
         .filter(booking => {
-          // Apply filter
-          if (currentFilter !== 'all' && booking.status !== currentFilter) {
-            return false;
-          }
+          // Show all bookings (filter removed)
           // Only show bookings with scheduled_date
           return booking.scheduled_date;
         })
@@ -2571,23 +2544,7 @@
     document.getElementById('service-category-filter')?.addEventListener('change', renderServices);
     document.getElementById('service-search')?.addEventListener('input', renderServices);
 
-    // Filter buttons
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        document.querySelectorAll('.filter-btn').forEach(b => {
-          b.classList.remove('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
-          b.classList.add('border', 'border-nfgray', 'hover:bg-nfglight');
-        });
-        btn.classList.add('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
-        btn.classList.remove('border', 'border-nfgray', 'hover:bg-nfglight');
-        
-        currentFilter = btn.dataset.status;
-        await renderBookings();
-        if (currentView === 'calendar') {
-          updateCalendar();
-        }
-      });
-    });
+    // Filter buttons removed - always show all bookings
 
     // Direct function to update button styles synchronously
     function updateButtonStyles(activeButton) {
