@@ -1463,8 +1463,18 @@
           updateCalendar();
         }
       } catch (error) {
-        console.error('Error loading bookings:', error);
-        toast.error('Failed to load bookings: ' + (error.message || 'Unknown error'), 'Loading Error');
+        console.error('❌ Error loading bookings:', error);
+        console.error('❌ Full error object:', JSON.stringify(error, null, 2));
+        console.error('❌ Error stack:', error.stack);
+        
+        // Show detailed error to user
+        const errorMsg = error.message || error.code || 'Unknown error';
+        const errorDetails = error.details || error.hint || '';
+        toast.error(`Failed to load bookings: ${errorMsg}${errorDetails ? ' - ' + errorDetails : ''}`, 'Loading Error');
+        
+        // Set empty array so page doesn't break
+        bookings = [];
+        await renderBookings();
       }
     }
 
