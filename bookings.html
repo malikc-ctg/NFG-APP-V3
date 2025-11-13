@@ -1344,12 +1344,35 @@
         let bookingsData = null;
         let bookingsError = null;
         
-        // First, try the simplest query possible - just get all bookings
-        console.log('🔍 Attempting to load bookings...');
-        let result = await supabase.from('bookings').select('*').limit(100);
+        // Try loading bookings with created_by filter first
+        console.log('🔍 Attempting to load bookings for user:', currentUser.id);
+        let result = await supabase
+          .from('bookings')
+          .select('*')
+          .eq('created_by', currentUser.id)
+          .limit(100);
+        
+        // If created_by fails, try client_id
+        if (result.error && (result.error.code === 'PGRST204' || result.error.message?.includes('created_by') || result.error.message?.includes('column'))) {
+          console.warn('⚠️ created_by column not found, trying client_id');
+          result = await supabase
+            .from('bookings')
+            .select('*')
+            .eq('client_id', currentUser.id)
+            .limit(100);
+        }
+        
+        // If client_id also fails, try without filter (might be RLS blocking)
+        if (result.error) {
+          console.warn('⚠️ Filtered query failed, trying without filter:', result.error.message);
+          result = await supabase
+            .from('bookings')
+            .select('*')
+            .limit(100);
+        }
         
         if (result.error) {
-          console.error('❌ Error loading bookings (simple query):', result.error);
+          console.error('❌ Error loading bookings:', result.error);
           console.error('❌ Error code:', result.error.code);
           console.error('❌ Error message:', result.error.message);
           console.error('❌ Error details:', JSON.stringify(result.error, null, 2));
@@ -1357,17 +1380,28 @@
         }
         
         bookingsData = result.data || [];
-        console.log(`✅ Loaded ${bookingsData.length} total bookings from database`);
+        console.log(`✅ Loaded ${bookingsData.length} bookings from database`);
         
-        // Filter by user (try both created_by and client_id)
-        const userBookings = bookingsData.filter(b => {
-          return (b.created_by === currentUser.id) || 
-                 (b.client_id === currentUser.id) ||
-                 (!b.created_by && !b.client_id); // Include bookings without owner (for testing)
-        });
-        
-        console.log(`✅ Filtered to ${userBookings.length} bookings for current user (${currentUser.id})`);
-        bookingsData = userBookings;
+        // If we loaded all bookings, filter by user client-side
+        if (bookingsData.length > 0) {
+          const firstBooking = bookingsData[0];
+          const hasCreatedBy = 'created_by' in firstBooking;
+          const hasClientId = 'client_id' in firstBooking;
+          
+          console.log('📋 Booking columns:', Object.keys(firstBooking));
+          console.log('📋 Has created_by:', hasCreatedBy);
+          console.log('📋 Has client_id:', hasClientId);
+          
+          // Filter by user if we loaded all bookings
+          if (hasCreatedBy || hasClientId) {
+            const userBookings = bookingsData.filter(b => {
+              return (hasCreatedBy && b.created_by === currentUser.id) || 
+                     (hasClientId && b.client_id === currentUser.id);
+            });
+            console.log(`✅ Filtered to ${userBookings.length} bookings for current user`);
+            bookingsData = userBookings;
+          }
+        }
         
         // Sort by scheduled_date if available (client-side sorting)
         if (bookingsData && bookingsData.length > 0) {
