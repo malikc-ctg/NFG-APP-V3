@@ -1962,68 +1962,6 @@
       await viewJob(currentJobId);
     });
 
-          if (clockError && !clockError.message.includes('does not exist')) {
-            console.error('Error checking clock status:', clockError);
-          }
-
-          if (!activeClockIn) {
-            toast.warning(
-              'You must clock in before starting a job. Go to the Overview page and click "Clock In" first.',
-              '🕐 Not Clocked In'
-            );
-            return;
-          }
-          
-          console.log('✅ Staff is clocked in, can proceed with job');
-        } catch (err) {
-          console.warn('Could not verify clock status:', err);
-          // If time_entries table doesn't exist, allow job start
-        }
-      }
-      
-      // Check if job has a scheduled date and if it's in the future
-      if (job.scheduled_date) {
-        const scheduledDate = new Date(job.scheduled_date);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Reset time to start of day
-        scheduledDate.setHours(0, 0, 0, 0); // Reset time to start of day
-        
-        if (scheduledDate > today) {
-          const formattedDate = scheduledDate.toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-          });
-          
-          toast.warning(
-            `This job is scheduled for ${formattedDate}. You cannot start it until the scheduled date.`,
-            '🗓️ Not Yet Scheduled'
-          );
-          return;
-        }
-      }
-      
-      const now = new Date().toISOString();
-      
-      const { error } = await supabase
-        .from('jobs')
-        .update({ 
-          status: 'in-progress',
-          work_started_at: now
-        })
-        .eq('id', currentJobId);
-
-      if (error) {
-        console.error('Error starting work:', error);
-        toast.error('Failed to start work. Please try again.', 'Start Error');
-      } else {
-        console.log('✅ Work started!');
-        // Refresh the job view to show timer
-        await viewJob(currentJobId);
-      }
-    });
-
     // End Work button (for staff)
     document.getElementById('end-work-btn')?.addEventListener('click', async () => {
       const confirmed = await showConfirm('End work on this job? The timer will stop.', 'End Work', 'info');
