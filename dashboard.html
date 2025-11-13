@@ -973,13 +973,24 @@
       // Get current user on page load
       await getCurrentUser();
       
-      // Hide Bookings and Reports for staff users
+      // Hide Reports for staff users (but allow Bookings for calendar view)
       if (currentUserProfile && currentUserProfile.role === 'staff') {
-        const bookingsNav = document.getElementById('nav-bookings');
         const reportsNav = document.getElementById('nav-reports');
-        if (bookingsNav) bookingsNav.style.display = 'none';
         if (reportsNav) reportsNav.style.display = 'none';
-        console.log('🔒 Hidden Bookings and Reports tabs for staff user');
+        
+        // Update Bookings link text for staff to indicate calendar view
+        const bookingsNav = document.getElementById('nav-bookings');
+        if (bookingsNav) {
+          const bookingsText = bookingsNav.querySelector('span') || bookingsNav.childNodes[bookingsNav.childNodes.length - 1];
+          if (bookingsText && bookingsText.textContent) {
+            bookingsText.textContent = 'Schedule';
+          } else {
+            // If no span, update the link text directly
+            bookingsNav.innerHTML = '<i data-lucide="calendar" class="w-4 h-4"></i> Schedule';
+            if (window.lucide) lucide.createIcons();
+          }
+        }
+        console.log('🔒 Hidden Reports tab for staff user, Bookings shows as Schedule');
       }
       
       // Load and render sites on overview page

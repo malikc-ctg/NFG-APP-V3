@@ -1414,12 +1414,22 @@
       console.log('[Reports] ✅ User authenticated:', user.email);
       console.log('[Reports] 👤 User role:', currentUserProfile?.role || 'unknown');
       
-      // Hide Bookings and Reports navigation for staff (shouldn't reach here, but just in case)
+      // Hide Reports navigation for staff (but allow Bookings for calendar view)
       if (currentUserProfile && currentUserProfile.role === 'staff') {
-        const bookingsNav = document.getElementById('nav-bookings');
         const reportsNav = document.getElementById('nav-reports');
-        if (bookingsNav) bookingsNav.style.display = 'none';
         if (reportsNav) reportsNav.style.display = 'none';
+        
+        // Update Bookings link text for staff to indicate calendar view
+        const bookingsNav = document.getElementById('nav-bookings');
+        if (bookingsNav) {
+          const bookingsText = bookingsNav.querySelector('span') || bookingsNav.childNodes[bookingsNav.childNodes.length - 1];
+          if (bookingsText && bookingsText.textContent) {
+            bookingsText.textContent = 'Schedule';
+          } else {
+            bookingsNav.innerHTML = '<i data-lucide="calendar" class="w-4 h-4"></i> Schedule';
+            if (window.lucide) lucide.createIcons();
+          }
+        }
       }
 
       // Load initial data
