@@ -2318,7 +2318,22 @@
             const jobEvents = formatJobsForCalendar(jobs);
             const bookingEvents = formatBookingsForCalendar(bookings);
             const allEvents = [...jobEvents, ...bookingEvents];
-            successCallback(allEvents);
+            
+            // Deduplicate events based on ID + start date (handles recurring instances on same date)
+            const uniqueEventsMap = new Map();
+            allEvents.forEach(event => {
+              // Use ID + start date as unique key to handle recurring instances on same date
+              const uniqueKey = `${event.id}-${event.start}`;
+              if (!uniqueEventsMap.has(uniqueKey)) {
+                uniqueEventsMap.set(uniqueKey, event);
+              } else {
+                console.warn('⚠️ Duplicate event detected and removed:', event.id, event.start, event.title);
+              }
+            });
+            
+            const uniqueEvents = Array.from(uniqueEventsMap.values());
+            console.log(`📅 Calendar: ${uniqueEvents.length} unique events (${allEvents.length} before deduplication)`);
+            successCallback(uniqueEvents);
           } catch (error) {
             console.error('Error loading calendar events:', error);
             failureCallback(error);
