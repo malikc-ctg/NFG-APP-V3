@@ -1,5 +1,10 @@
 // Enhanced Service Worker for NFG App
-// Version 3.0 - Improved Push Notification Handling
+// Version 3.1 - Offline Sync Support
+// Features:
+// - Push notifications
+// - Offline caching
+// - Background sync for queued operations
+// - Automatic sync when device comes back online
 
 const CACHE_NAME = 'nfg-app-v3';
 const OFFLINE_URL = '/offline.html';
@@ -363,19 +368,29 @@ self.addEventListener('message', (event) => {
 });
 
 // ============================================
-// SYNC EVENT - Background sync
+// SYNC EVENT - Background sync for offline operations
 // ============================================
+// This event fires when the browser detects the device is back online
+// and there are pending operations queued for sync.
+// The service worker requests the client to sync queued operations to Supabase.
 self.addEventListener('sync', (event) => {
   console.log('[SW v3] Background sync triggered:', event.tag);
   
   if (event.tag === 'sync-data') {
     event.waitUntil(
       requestSyncFromClient()
-        .then(() => {
-          console.log('[SW v3] Background sync request sent to client');
+        .then((result) => {
+          console.log('[SW v3] Background sync request sent to client:', result);
         })
         .catch((error) => {
           console.error('[SW v3] Background sync request failed:', error);
+          // Retry sync if it fails (browser will retry automatically)
+          // But we can also manually retry after a delay
+          setTimeout(() => {
+            requestSyncFromClient().catch(err => {
+              console.warn('[SW v3] Retry sync also failed:', err);
+            });
+          }, 5000);
         })
     );
   }
@@ -387,13 +402,31 @@ self.addEventListener('sync', (event) => {
 async function requestSyncFromClient() {
   try {
     // Request sync from all clients
-    const clients = await self.clients.matchAll();
+    const clients = await self.clients.matchAll({ includeUncontrolled: true });
+    
+    if (clients.length === 0) {
+      console.log('[SW v3] No clients available for sync');
+      return { synced: 0, failed: 0 };
+    }
+    
+    console.log(`[SW v3] Requesting sync from ${clients.length} client(s)`);
+    
+    // Send sync request to all clients
+    // The client will handle the actual sync and we don't need to wait for response
+    // since sync operations can take time and we don't want to block the service worker
     clients.forEach(client => {
       client.postMessage({
         type: 'REQUEST_SYNC',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        source: 'service-worker'
+      }).catch(err => {
+        console.warn('[SW v3] Failed to send sync request to client:', err);
       });
     });
+    
+    // Return immediately - sync will happen in background
+    return { synced: 0, failed: 0, requested: true };
+    
   } catch (error) {
     console.error('[SW v3] Error requesting sync from client:', error);
     throw error;

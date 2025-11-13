@@ -386,6 +386,39 @@ export function initOfflineSync() {
     });
   }
 
+  // Listen for sync requests from service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', async (event) => {
+      if (event.data && event.data.type === 'REQUEST_SYNC') {
+        console.log('[OfflineSync] Sync requested by service worker');
+        try {
+          const result = await syncOfflineQueue();
+          
+          // Send response back to service worker
+          if (event.ports && event.ports[0]) {
+            event.ports[0].postMessage({
+              type: 'SYNC_COMPLETE',
+              synced: result.synced,
+              failed: result.failed,
+              timestamp: new Date().toISOString()
+            });
+          }
+        } catch (error) {
+          console.error('[OfflineSync] Sync error:', error);
+          
+          // Send error back to service worker
+          if (event.ports && event.ports[0]) {
+            event.ports[0].postMessage({
+              type: 'SYNC_ERROR',
+              error: error.message,
+              timestamp: new Date().toISOString()
+            });
+          }
+        }
+      }
+    });
+  }
+
   // Update indicator initially
   updateSyncIndicator();
   
