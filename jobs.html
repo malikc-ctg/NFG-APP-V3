@@ -706,6 +706,30 @@
           </div>
         </div>
 
+        <!-- Time Selection (shown after date is selected) -->
+        <div id="edit-job-time-section" class="hidden">
+          <label class="block text-sm font-medium mb-1.5">Scheduled Time</label>
+          <div class="flex items-center gap-4">
+            <input 
+              type="time" 
+              name="scheduled_time" 
+              id="edit-job-scheduled-time" 
+              class="flex-1 border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
+            />
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input 
+                type="checkbox" 
+                id="edit-job-all-day" 
+                class="w-4 h-4 text-nfgblue border-nfgray rounded focus:ring-nfgblue"
+              />
+              <span class="text-sm text-gray-600 dark:text-gray-400">All Day</span>
+            </label>
+          </div>
+          <p class="text-xs text-gray-500 mt-1.5">
+            Select a specific time or leave as "All Day" for the entire day
+          </p>
+        </div>
+
         <div>
           <label class="block text-sm font-medium mb-1.5">Description</label>
           <textarea name="description" id="edit-job-description" rows="3" placeholder="Add job details..." class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none resize-none"></textarea>
@@ -2105,15 +2129,19 @@
       const scheduledTime = formData.get('scheduled_time');
       const isAllDay = document.getElementById('job-all-day')?.checked || false;
       
-      // Combine date + time into datetime string
+      // Combine date + time into datetime string with proper timezone handling
       let scheduledDatetime = null;
       if (scheduledDate) {
         if (isAllDay || !scheduledTime) {
-          // All-day event: store as date at 9:00 AM (will be handled by is_all_day flag)
-          scheduledDatetime = `${scheduledDate}T09:00:00`;
+          // All-day event: store as date at midnight in user's local timezone
+          // Create a Date object at midnight local time, then convert to ISO string
+          const date = new Date(scheduledDate + 'T00:00:00');
+          scheduledDatetime = date.toISOString();
         } else {
-          // Timed event: combine date + time
-          scheduledDatetime = `${scheduledDate}T${scheduledTime}:00`;
+          // Timed event: combine date + time in user's local timezone
+          // Create a Date object with local date/time, then convert to ISO string (UTC)
+          const date = new Date(scheduledDate + 'T' + scheduledTime + ':00');
+          scheduledDatetime = date.toISOString();
         }
       }
       
@@ -2335,7 +2363,57 @@
       document.getElementById('edit-job-title').value = job.title || '';
       document.getElementById('edit-job-type').value = job.job_type || 'cleaning';
       document.getElementById('edit-job-frequency-select').value = job.frequency || 'single visit';
-      document.getElementById('edit-job-scheduled-date').value = job.scheduled_date ? new Date(job.scheduled_date).toISOString().split('T')[0] : '';
+      
+      // Handle scheduled date and time
+      const editDateInput = document.getElementById('edit-job-scheduled-date');
+      const editTimeSection = document.getElementById('edit-job-time-section');
+      const editTimeInput = document.getElementById('edit-job-scheduled-time');
+      const editAllDayCheckbox = document.getElementById('edit-job-all-day');
+      
+      if (job.scheduled_datetime) {
+        // Parse scheduled_datetime (UTC) and convert to local time
+        const scheduledDate = new Date(job.scheduled_datetime);
+        editDateInput.value = scheduledDate.toISOString().split('T')[0];
+        
+        // Show time section
+        editTimeSection?.classList.remove('hidden');
+        
+        // Check if it's all-day
+        const isAllDay = job.is_all_day || false;
+        editAllDayCheckbox.checked = isAllDay;
+        
+        if (isAllDay) {
+          // For all-day events, set time input to disabled and clear value
+          editTimeInput.disabled = true;
+          editTimeInput.value = '';
+        } else {
+          // For timed events, extract local time (HH:MM format)
+          editTimeInput.disabled = false;
+          const hours = String(scheduledDate.getHours()).padStart(2, '0');
+          const minutes = String(scheduledDate.getMinutes()).padStart(2, '0');
+          editTimeInput.value = `${hours}:${minutes}`;
+        }
+      } else if (job.scheduled_date) {
+        // Fallback to scheduled_date if scheduled_datetime doesn't exist
+        editDateInput.value = job.scheduled_date;
+        editTimeSection?.classList.remove('hidden');
+        const isAllDay = job.is_all_day !== undefined ? job.is_all_day : true;
+        editAllDayCheckbox.checked = isAllDay;
+        editTimeInput.disabled = isAllDay;
+        if (!isAllDay) {
+          // Default to 9:00 AM if not all-day but no time specified
+          editTimeInput.value = '09:00';
+        } else {
+          editTimeInput.value = '';
+        }
+      } else {
+        editDateInput.value = '';
+        editTimeSection?.classList.add('hidden');
+        editAllDayCheckbox.checked = true;
+        editTimeInput.disabled = true;
+        editTimeInput.value = '';
+      }
+      
       document.getElementById('edit-job-estimated-hours').value = job.estimated_hours || '';
       document.getElementById('edit-job-description').value = job.description || '';
 
@@ -2378,6 +2456,35 @@
       if (window.lucide) lucide.createIcons();
     });
 
+    // Edit Job form - Date selection - show time input when date is selected
+    document.getElementById('edit-job-scheduled-date')?.addEventListener('change', (e) => {
+      const timeSection = document.getElementById('edit-job-time-section');
+      if (e.target.value) {
+        timeSection?.classList.remove('hidden');
+        // Set default time to 9:00 AM if not already set and not all-day
+        const timeInput = document.getElementById('edit-job-scheduled-time');
+        const allDayCheckbox = document.getElementById('edit-job-all-day');
+        if (timeInput && !timeInput.value && !allDayCheckbox?.checked) {
+          timeInput.value = '09:00';
+        }
+      } else {
+        timeSection?.classList.add('hidden');
+      }
+    });
+
+    // Edit Job form - All-day checkbox - toggle time input disabled state
+    document.getElementById('edit-job-all-day')?.addEventListener('change', (e) => {
+      const timeInput = document.getElementById('edit-job-scheduled-time');
+      if (timeInput) {
+        timeInput.disabled = e.target.checked;
+        if (e.target.checked) {
+          timeInput.value = ''; // Clear time when all-day is checked
+        } else {
+          timeInput.value = timeInput.value || '09:00'; // Set default if empty
+        }
+      }
+    });
+
     // Edit Job form submission
     document.getElementById('edit-job-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -2388,12 +2495,33 @@
 
       const formData = new FormData(e.target);
       
+      // Handle scheduled date and time
+      const scheduledDate = formData.get('scheduled_date');
+      const scheduledTime = formData.get('scheduled_time');
+      const isAllDay = document.getElementById('edit-job-all-day')?.checked || false;
+      
+      // Combine date + time into datetime string with proper timezone handling
+      let scheduledDatetime = null;
+      if (scheduledDate) {
+        if (isAllDay || !scheduledTime) {
+          // All-day event: store as date at midnight in user's local timezone
+          const date = new Date(scheduledDate + 'T00:00:00');
+          scheduledDatetime = date.toISOString();
+        } else {
+          // Timed event: combine date + time in user's local timezone
+          const date = new Date(scheduledDate + 'T' + scheduledTime + ':00');
+          scheduledDatetime = date.toISOString();
+        }
+      }
+      
       const jobData = {
         title: formData.get('title'),
         site_id: formData.get('site_id'),
         job_type: formData.get('job_type'),
         frequency: formData.get('frequency'),
-        scheduled_date: formData.get('scheduled_date') || null,
+        scheduled_date: scheduledDate || null, // Keep for backward compatibility
+        scheduled_datetime: scheduledDatetime, // New datetime field with timezone
+        is_all_day: isAllDay, // Track if all-day event
         estimated_hours: formData.get('estimated_hours') || null,
         description: formData.get('description') || null,
         updated_at: new Date().toISOString()
