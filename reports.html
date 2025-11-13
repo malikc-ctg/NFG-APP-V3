@@ -2545,18 +2545,45 @@
           }
         }
         
-        // Auto-switch to Time Tracking tab for staff
-        const timeTrackingTab = document.getElementById('tab-time-tracking');
-        if (timeTrackingTab) {
-          setTimeout(() => {
-            timeTrackingTab.click();
-          }, 500);
+        // Hide Overview tab for staff - they only see Time Tracking
+        const overviewTab = document.getElementById('tab-overview');
+        if (overviewTab) {
+          overviewTab.style.display = 'none';
         }
+        
+        // Hide Overview tab content
+        const overviewContent = document.getElementById('tab-content-overview');
+        if (overviewContent) {
+          overviewContent.classList.add('hidden');
+        }
+        
+        // Show Time Tracking tab content and make it active
+        const timeTrackingTab = document.getElementById('tab-time-tracking');
+        const timeTrackingContent = document.getElementById('tab-content-time-tracking');
+        
+        if (timeTrackingTab) {
+          // Make Time Tracking tab active
+          timeTrackingTab.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+          timeTrackingTab.classList.add('border-nfgblue', 'text-nfgblue', 'dark:text-blue-400');
+        }
+        
+        if (timeTrackingContent) {
+          timeTrackingContent.classList.remove('hidden');
+        }
+        
+        // Load time tracking data immediately for staff
+        setTimeout(() => {
+          loadTimeTrackingData();
+        }, 300);
       }
 
-      // Load initial data
-      console.log('[Reports] 📊 Loading initial reports data...');
-      await refreshReports();
+      // Load initial data (skip Overview data for staff)
+      if (!currentUserProfile || currentUserProfile.role !== 'staff') {
+        console.log('[Reports] 📊 Loading initial reports data...');
+        await refreshReports();
+      } else {
+        console.log('[Reports] 👤 Staff user - skipping Overview data, loading Time Tracking only');
+      }
 
       // Event listeners
       const timePeriodSelect = document.getElementById('time-period');
