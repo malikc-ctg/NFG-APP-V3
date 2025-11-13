@@ -1527,7 +1527,28 @@
           'cancelled': 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-300'
         };
 
-        const date = new Date(booking.scheduled_date).toLocaleDateString();
+        // Format date with time if available
+        let dateStr = '';
+        if (booking.scheduled_datetime) {
+          const date = new Date(booking.scheduled_datetime);
+          if (booking.is_all_day) {
+            dateStr = date.toLocaleDateString();
+          } else {
+            dateStr = date.toLocaleString('en-US', { 
+              month: 'short', 
+              day: 'numeric', 
+              year: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true
+            });
+          }
+        } else if (booking.scheduled_date) {
+          // Fallback to date only (backward compatibility)
+          dateStr = new Date(booking.scheduled_date).toLocaleDateString();
+        } else {
+          dateStr = 'No date';
+        }
 
         return `
           <tr class="border-b border-nfgray hover:bg-nfglight/50 transition">
@@ -1538,7 +1559,7 @@
               <p class="text-gray-700 dark:text-gray-300">${booking.sites?.name || 'Unknown'}</p>
             </td>
             <td class="p-4">
-              <p class="text-gray-700 dark:text-gray-300">${date}</p>
+              <p class="text-gray-700 dark:text-gray-300">${dateStr}</p>
             </td>
             <td class="p-4">
               <span class="px-3 py-1 rounded-full text-xs font-medium ${statusColors[booking.status] || 'bg-gray-100 text-gray-800'}">
@@ -1693,7 +1714,40 @@
           siteContainer.textContent = data.sites?.name || 'Unknown';
         }
         
-        document.getElementById('view-booking-date').textContent = new Date(data.scheduled_date).toLocaleDateString();
+        // Format date with time if available
+        let dateStr = '';
+        if (data.scheduled_datetime) {
+          const date = new Date(data.scheduled_datetime);
+          if (data.is_all_day) {
+            dateStr = date.toLocaleDateString('en-US', { 
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            });
+          } else {
+            dateStr = date.toLocaleString('en-US', { 
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true
+            });
+          }
+        } else if (data.scheduled_date) {
+          // Fallback to date only (backward compatibility)
+          dateStr = new Date(data.scheduled_date).toLocaleDateString('en-US', { 
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          });
+        } else {
+          dateStr = 'No date';
+        }
+        document.getElementById('view-booking-date').textContent = dateStr;
         document.getElementById('view-booking-description').textContent = data.description || 'No description provided.';
         
         const statusBadge = document.getElementById('view-booking-status');
