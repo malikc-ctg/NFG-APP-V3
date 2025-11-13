@@ -1344,64 +1344,62 @@
         let bookingsData = null;
         let bookingsError = null;
         
-        // Try different combinations: created_by/client_id and with/without ordering
-        let queries = [
-          // Try 1: created_by with scheduled_date ordering
-          () => supabase.from('bookings').select('*').eq('created_by', currentUser.id).order('scheduled_date', { ascending: false }),
-          // Try 2: client_id with scheduled_date ordering
-          () => supabase.from('bookings').select('*').eq('client_id', currentUser.id).order('scheduled_date', { ascending: false }),
-          // Try 3: created_by without ordering
-          () => supabase.from('bookings').select('*').eq('created_by', currentUser.id),
-          // Try 4: client_id without ordering
-          () => supabase.from('bookings').select('*').eq('client_id', currentUser.id),
-          // Try 5: Just get all bookings (no filter)
-          () => supabase.from('bookings').select('*')
-        ];
+        // First, try the simplest query possible - just get all bookings
+        console.log('🔍 Attempting to load bookings...');
+        let result = await supabase.from('bookings').select('*').limit(100);
         
-        bookingsError = null;
-        for (let i = 0; i < queries.length; i++) {
-          try {
-            const result = await queries[i]();
-            if (!result.error) {
-              bookingsData = result.data;
-              bookingsError = null;
-              console.log(`✅ Loaded bookings using query ${i + 1}`);
-              
-              // If we used query 5 (no filter), filter client-side
-              if (i === 4) {
-                bookingsData = bookingsData.filter(b => 
-                  (b.created_by === currentUser.id || b.client_id === currentUser.id)
-                );
-                console.log(`✅ Filtered to ${bookingsData.length} bookings for current user`);
-              }
-              
-              // Sort by scheduled_date if available
-              if (bookingsData && bookingsData.length > 0 && bookingsData[0].scheduled_date) {
-                bookingsData.sort((a, b) => {
-                  const dateA = new Date(a.scheduled_date);
-                  const dateB = new Date(b.scheduled_date);
-                  return dateB - dateA; // Descending
-                });
-              }
-              
-              break;
-            } else {
-              bookingsError = result.error;
-              console.warn(`⚠️ Query ${i + 1} failed:`, result.error.message);
-            }
-          } catch (err) {
-            bookingsError = err;
-            console.warn(`⚠️ Query ${i + 1} exception:`, err.message);
-          }
+        if (result.error) {
+          console.error('❌ Error loading bookings (simple query):', result.error);
+          console.error('❌ Error code:', result.error.code);
+          console.error('❌ Error message:', result.error.message);
+          console.error('❌ Error details:', JSON.stringify(result.error, null, 2));
+          throw result.error;
         }
         
-        if (bookingsError || !bookingsData) {
-          console.error('❌ All booking queries failed');
-          console.error('❌ Last error:', bookingsError);
-          console.error('❌ Error code:', bookingsError?.code);
-          console.error('❌ Error message:', bookingsError?.message);
-          console.error('❌ Error details:', JSON.stringify(bookingsError, null, 2));
-          throw bookingsError || new Error('Failed to load bookings');
+        bookingsData = result.data || [];
+        console.log(`✅ Loaded ${bookingsData.length} total bookings from database`);
+        
+        // Filter by user (try both created_by and client_id)
+        const userBookings = bookingsData.filter(b => {
+          return (b.created_by === currentUser.id) || 
+                 (b.client_id === currentUser.id) ||
+                 (!b.created_by && !b.client_id); // Include bookings without owner (for testing)
+        });
+        
+        console.log(`✅ Filtered to ${userBookings.length} bookings for current user (${currentUser.id})`);
+        bookingsData = userBookings;
+        
+        // Sort by scheduled_date if available (client-side sorting)
+        if (bookingsData && bookingsData.length > 0) {
+          // Check what date columns exist
+          const firstBooking = bookingsData[0];
+          console.log('📋 Sample booking columns:', Object.keys(firstBooking));
+          console.log('📋 Sample booking:', {
+            id: firstBooking.id,
+            title: firstBooking.title,
+            scheduled_date: firstBooking.scheduled_date,
+            scheduled_datetime: firstBooking.scheduled_datetime,
+            created_by: firstBooking.created_by,
+            client_id: firstBooking.client_id
+          });
+          
+          // Sort by scheduled_date if it exists
+          if (firstBooking.scheduled_date || firstBooking.scheduled_datetime) {
+            bookingsData.sort((a, b) => {
+              const dateA = new Date(a.scheduled_datetime || a.scheduled_date || 0);
+              const dateB = new Date(b.scheduled_datetime || b.scheduled_date || 0);
+              return dateB - dateA; // Descending (newest first)
+            });
+            console.log('✅ Sorted bookings by date');
+          } else {
+            // Sort by created_at as fallback
+            bookingsData.sort((a, b) => {
+              const dateA = new Date(a.created_at || 0);
+              const dateB = new Date(b.created_at || 0);
+              return dateB - dateA;
+            });
+            console.log('✅ Sorted bookings by created_at');
+          }
         }
         
         bookings = bookingsData || [];
