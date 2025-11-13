@@ -1344,9 +1344,10 @@
           
           // Query jobs assigned to this staff member
           // assigned_worker_id references user_profiles(id), which equals auth.users(id)
+          // Note: Removed user_profiles join to avoid PGRST200 relationship error
           const { data, error } = await supabase
             .from('jobs')
-            .select('*, sites(name, address), user_profiles(full_name)')
+            .select('*, sites(name, address)')
             .eq('assigned_worker_id', currentUser.id)
             .order('scheduled_date', { ascending: false });
           
@@ -1398,7 +1399,7 @@
           console.log('🔍 Loading jobs for admin/client');
           const { data, error } = await supabase
             .from('jobs')
-            .select('*, sites(name, address), user_profiles(full_name)')
+            .select('*, sites(name, address)')
             .eq('created_by', currentUser.id)
             .order('scheduled_date', { ascending: false });
           
@@ -2373,23 +2374,58 @@
       const dateRangeEl = document.getElementById('calendar-date-range');
       if (!dateRangeEl) return;
       
+      // Handle case where dateInfo might be undefined or missing properties
+      if (!dateInfo) {
+        console.warn('⚠️ updateCalendarDateRange: dateInfo is undefined');
+        return;
+      }
+      
+      // Handle FullCalendar view object (calendar.view) vs datesSet event object
+      let start, end;
+      if (dateInfo.start) {
+        start = dateInfo.start;
+        end = dateInfo.end;
+      } else if (dateInfo.activeStart) {
+        // FullCalendar view object has activeStart/activeEnd
+        start = dateInfo.activeStart;
+        end = dateInfo.activeEnd;
+      } else {
+        console.warn('⚠️ updateCalendarDateRange: dateInfo missing start/activeStart');
+        return;
+      }
+      
+      if (!start) {
+        console.warn('⚠️ updateCalendarDateRange: start date is undefined');
+        return;
+      }
+      
       let dateText = '';
-      if (currentCalendarView === 'timeGridDay') {
-        dateText = dateInfo.start.toLocaleDateString('en-US', { 
-          weekday: 'long', 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
-        });
-      } else if (currentCalendarView === 'timeGridWeek') {
-        const start = dateInfo.start;
-        const end = dateInfo.end;
-        dateText = `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
-      } else if (currentCalendarView === 'dayGridMonth') {
-        dateText = dateInfo.start.toLocaleDateString('en-US', { 
-          month: 'long', 
-          year: 'numeric' 
-        });
+      try {
+        if (currentCalendarView === 'timeGridDay') {
+          dateText = start.toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          });
+        } else if (currentCalendarView === 'timeGridWeek') {
+          if (end) {
+            dateText = `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+          } else {
+            dateText = start.toLocaleDateString('en-US', { 
+              month: 'long', 
+              year: 'numeric' 
+            });
+          }
+        } else if (currentCalendarView === 'dayGridMonth') {
+          dateText = start.toLocaleDateString('en-US', { 
+            month: 'long', 
+            year: 'numeric' 
+          });
+        }
+      } catch (error) {
+        console.error('❌ Error formatting date range:', error);
+        dateText = 'Loading...';
       }
       
       dateRangeEl.textContent = dateText;
