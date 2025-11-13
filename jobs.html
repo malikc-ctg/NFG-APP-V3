@@ -2426,6 +2426,43 @@
         editRecurrenceSection?.classList.add('hidden');
       }
 
+      // Helper function to clean up and reinitialize dropdown
+      const cleanupAndInitDropdown = (selectElement) => {
+        if (!selectElement) return;
+        
+        // Find the select element's parent container
+        const parent = selectElement.parentElement;
+        if (!parent) return;
+        
+        // Remove ALL existing wrappers that are siblings of this select
+        // NFGDropdown inserts the wrapper BEFORE the select element
+        let sibling = selectElement.previousElementSibling;
+        while (sibling) {
+          const nextSibling = sibling.previousElementSibling;
+          if (sibling.classList && sibling.classList.contains('nfg-select-wrapper')) {
+            sibling.remove();
+          }
+          sibling = nextSibling;
+        }
+        
+        // Also check if select is inside a wrapper (shouldn't happen, but just in case)
+        if (parent.classList && parent.classList.contains('nfg-select-wrapper')) {
+          // Move select out of wrapper before removing wrapper
+          const grandparent = parent.parentElement;
+          if (grandparent) {
+            grandparent.insertBefore(selectElement, parent);
+            parent.remove();
+          }
+        }
+        
+        // Show the select element and make sure it's visible
+        selectElement.style.display = '';
+        selectElement.style.visibility = 'visible';
+        
+        // Reinitialize dropdown (this will create a new wrapper)
+        new NFGDropdown(selectElement);
+      };
+
       // Load sites dropdown for edit form
       const sites = await getSites();
       const editSiteSelect = document.getElementById('edit-job-site-select');
@@ -2433,20 +2470,15 @@
         editSiteSelect.innerHTML = '<option value="">Select a site</option>' + 
           sites.map(site => `<option value="${site.id}" ${site.id == job.site_id ? 'selected' : ''}>${site.name}</option>`).join('');
         
-        // Reinitialize custom dropdown
-        const wrapper = editSiteSelect.previousElementSibling;
-        if (wrapper && wrapper.classList.contains('nfg-select-wrapper')) {
-          wrapper.remove();
-        }
-        editSiteSelect.style.display = '';
-        new NFGDropdown(editSiteSelect);
+        // Clean up and reinitialize
+        cleanupAndInitDropdown(editSiteSelect);
       }
 
-      // Reinitialize other dropdowns
-      new NFGDropdown(document.getElementById('edit-job-type'));
-      new NFGDropdown(document.getElementById('edit-job-frequency-select'));
+      // Clean up and reinitialize other dropdowns
+      cleanupAndInitDropdown(document.getElementById('edit-job-type'));
+      cleanupAndInitDropdown(document.getElementById('edit-job-frequency-select'));
       if (job.frequency === 'recurring') {
-        new NFGDropdown(document.getElementById('edit-job-recurrence-pattern'));
+        cleanupAndInitDropdown(document.getElementById('edit-job-recurrence-pattern'));
       }
 
       // Open edit modal
