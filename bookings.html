@@ -878,9 +878,9 @@
                 calendar.setOption('height', availableHeight > 600 ? availableHeight : 600);
                 calendar.updateSize();
               }
-              // Setup buttons and update styles after calendar is initialized
-              setupCalendarViewButtons();
-              updateCalendarViewButtonStyles();
+              // Update button styles after calendar is initialized
+              const viewType = currentCalendarView === 'timeGridDay' ? 'day' : currentCalendarView === 'timeGridWeek' ? 'week' : 'month';
+              updateButtonStyles(viewType);
             }, 200);
           } else {
             // Recalculate height and update
@@ -892,9 +892,9 @@
             calendar.setOption('height', availableHeight > 600 ? availableHeight : 600);
             calendar.updateSize();
             updateCalendar();
-            // Setup buttons and update styles
-            setupCalendarViewButtons();
-            updateCalendarViewButtonStyles();
+            // Update button styles
+            const viewType = currentCalendarView === 'timeGridDay' ? 'day' : currentCalendarView === 'timeGridWeek' ? 'week' : 'month';
+            updateButtonStyles(viewType);
           }
         }, 100);
         
@@ -1912,7 +1912,8 @@
           }
         }
         // Ensure button styles are correct after calendar renders
-        updateCalendarViewButtonStyles();
+        const viewType = currentCalendarView === 'timeGridDay' ? 'day' : currentCalendarView === 'timeGridWeek' ? 'week' : 'month';
+        updateButtonStyles(viewType);
       }, 200);
       
       // Handle window resize to update calendar height
@@ -2060,8 +2061,7 @@
       console.log('[Calendar] changeCalendarView called with:', viewType);
       currentCalendarView = viewType;
       
-      // Update button styles FIRST, before calendar operations
-      updateCalendarViewButtonStyles();
+      // Button styles are updated in the click handler before this function is called
       
       if (!calendar) {
         // If calendar doesn't exist yet, button styles are already updated
@@ -2184,59 +2184,47 @@
       });
     });
 
-    // Calendar view type toggle - use event delegation to ensure it works
-    function setupCalendarViewButtons() {
+    // Direct function to update button styles synchronously
+    function updateButtonStyles(activeButton) {
       const weekBtn = document.getElementById('calendar-view-week');
       const dayBtn = document.getElementById('calendar-view-day');
       const monthBtn = document.getElementById('calendar-view-month');
       
-      // Remove existing listeners by cloning and replacing
-      if (weekBtn) {
-        const newWeekBtn = weekBtn.cloneNode(true);
-        weekBtn.parentNode?.replaceChild(newWeekBtn, weekBtn);
-        newWeekBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          changeCalendarView('timeGridWeek');
-        });
-      }
+      // Inactive classes
+      const inactive = 'calendar-view-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700 font-medium';
+      // Active classes
+      const active = 'calendar-view-btn px-4 py-2 rounded-lg bg-nfgblue dark:bg-blue-900 text-white font-medium';
       
-      if (dayBtn) {
-        const newDayBtn = dayBtn.cloneNode(true);
-        dayBtn.parentNode?.replaceChild(newDayBtn, dayBtn);
-        newDayBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          changeCalendarView('timeGridDay');
-        });
-      }
-      
-      if (monthBtn) {
-        const newMonthBtn = monthBtn.cloneNode(true);
-        monthBtn.parentNode?.replaceChild(newMonthBtn, monthBtn);
-        newMonthBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          changeCalendarView('dayGridMonth');
-        });
-      }
+      // Set all buttons
+      if (weekBtn) weekBtn.className = activeButton === 'week' ? active : inactive;
+      if (dayBtn) dayBtn.className = activeButton === 'day' ? active : inactive;
+      if (monthBtn) monthBtn.className = activeButton === 'month' ? active : inactive;
     }
     
-    // Setup calendar view buttons
-    setupCalendarViewButtons();
-    
-    // Also setup when calendar controls become visible
-    const observer = new MutationObserver(() => {
-      const calendarControls = document.getElementById('calendar-controls');
-      if (calendarControls && !calendarControls.classList.contains('hidden')) {
-        setupCalendarViewButtons();
-      }
+    // Calendar view type toggle - direct event listeners with immediate style update
+    document.getElementById('calendar-view-week')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // Update button styles immediately BEFORE changing view
+      updateButtonStyles('week');
+      changeCalendarView('timeGridWeek');
     });
     
-    const calendarControlsContainer = document.getElementById('calendar-controls');
-    if (calendarControlsContainer) {
-      observer.observe(calendarControlsContainer, { attributes: true, attributeFilter: ['class'] });
-    }
+    document.getElementById('calendar-view-day')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // Update button styles immediately BEFORE changing view
+      updateButtonStyles('day');
+      changeCalendarView('timeGridDay');
+    });
+    
+    document.getElementById('calendar-view-month')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // Update button styles immediately BEFORE changing view
+      updateButtonStyles('month');
+      changeCalendarView('dayGridMonth');
+    });
 
     // Calendar navigation
     document.getElementById('calendar-prev')?.addEventListener('click', () => {
