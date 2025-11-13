@@ -2327,7 +2327,13 @@
       });
       
       calendar.render();
-      updateCalendarDateRange(calendar.view);
+      
+      // Update date range after calendar renders (with delay to ensure view is ready)
+      setTimeout(() => {
+        if (calendar && calendar.view) {
+          updateCalendarDateRange(calendar.view);
+        }
+      }, 100);
       
       // Update calendar size after render to ensure proper height
       setTimeout(() => {
