@@ -2211,10 +2211,11 @@
       // Use scheduled_datetime if available, otherwise scheduled_date
       let startDateTime = null;
       if (item.scheduled_datetime) {
+        // Parse UTC datetime from database - JavaScript Date converts to local time
         startDateTime = new Date(item.scheduled_datetime);
       } else if (item.scheduled_date) {
-        // If only date is available, create a date at 9:00 AM
-        startDateTime = new Date(`${item.scheduled_date}T09:00:00`);
+        // If only date is available, create a date at midnight local time
+        startDateTime = new Date(item.scheduled_date + 'T00:00:00');
       }
       
       // Validate date
@@ -2227,28 +2228,34 @@
       const endDate = new Date();
       endDate.setFullYear(endDate.getFullYear() + 1); // Show 1 year ahead
       
-      // Preserve original time if datetime exists
-      const originalTime = item.scheduled_datetime 
-        ? startDateTime.toTimeString().slice(0, 8) // Get HH:MM:SS
-        : '09:00:00'; // Default to 9:00 AM if only date
+      // Preserve original time in local time (startDateTime is already in local time)
+      const originalHours = startDateTime.getHours();
+      const originalMinutes = startDateTime.getMinutes();
+      const originalSeconds = startDateTime.getSeconds();
+      const isAllDay = item.is_all_day || false;
       
       let currentDateTime = new Date(startDateTime);
       let count = 0;
       const maxOccurrences = 52; // Limit to prevent too many events
-      const isAllDay = item.is_all_day !== false && !item.scheduled_datetime;
       
       while (currentDateTime <= endDate && count < maxOccurrences) {
-        // Format date for scheduled_date (YYYY-MM-DD)
-        const dateStr = currentDateTime.toISOString().split('T')[0];
+        // Format date for scheduled_date (YYYY-MM-DD) - use local date
+        const year = currentDateTime.getFullYear();
+        const month = String(currentDateTime.getMonth() + 1).padStart(2, '0');
+        const day = String(currentDateTime.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
         
-        // Format datetime for scheduled_datetime (preserve time)
+        // Format datetime for scheduled_datetime (preserve time in local timezone)
         let datetimeStr = null;
         if (!isAllDay && item.scheduled_datetime) {
-          // Preserve the original time
-          datetimeStr = `${dateStr}T${originalTime}`;
+          // Create a Date object with the current date and original time (in local time)
+          const occurrenceDateTime = new Date(year, currentDateTime.getMonth(), day, originalHours, originalMinutes, originalSeconds);
+          // Convert to ISO string (UTC) for storage
+          datetimeStr = occurrenceDateTime.toISOString();
         } else {
-          // All-day event: use 9:00 AM as placeholder
-          datetimeStr = `${dateStr}T09:00:00`;
+          // All-day event: use midnight local time
+          const occurrenceDateTime = new Date(year, currentDateTime.getMonth(), day, 0, 0, 0);
+          datetimeStr = occurrenceDateTime.toISOString();
         }
         
         occurrences.push({
