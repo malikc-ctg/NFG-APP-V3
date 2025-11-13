@@ -844,24 +844,7 @@
         currentView = 'calendar';
         
         // Update calendar view button styles for staff (week is default)
-        const weekBtn = document.getElementById('calendar-view-week');
-        const dayBtn = document.getElementById('calendar-view-day');
-        const monthBtn = document.getElementById('calendar-view-month');
-        
-        // Set week button as active (default view)
-        if (weekBtn) {
-          weekBtn.classList.remove('border', 'border-nfgray', 'hover:bg-nfglight', 'dark:hover:bg-gray-600', 'dark:bg-gray-700');
-          weekBtn.classList.add('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
-        }
-        // Ensure day and month buttons are inactive
-        if (dayBtn) {
-          dayBtn.classList.remove('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
-          dayBtn.classList.add('border', 'border-nfgray', 'hover:bg-nfglight', 'dark:hover:bg-gray-600', 'dark:bg-gray-700');
-        }
-        if (monthBtn) {
-          monthBtn.classList.remove('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
-          monthBtn.classList.add('border', 'border-nfgray', 'hover:bg-nfglight', 'dark:hover:bg-gray-600', 'dark:bg-gray-700');
-        }
+        updateButtonStyles('week');
         
         // Initialize calendar immediately for staff with proper height
         setTimeout(() => {
