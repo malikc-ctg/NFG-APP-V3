@@ -186,15 +186,31 @@
       color: #9CA3AF;
     }
     
-    /* Calendar container height */
+    /* Calendar container height - make it fill available space */
     #calendar-container {
-      min-height: 600px;
+      position: relative;
+      min-height: calc(100vh - 280px);
+      height: auto;
+    }
+    
+    #calendar-container .bg-white,
+    #calendar-container .dark\:bg-gray-800 {
+      min-height: calc(100vh - 320px);
       height: 100%;
     }
     
     #calendar {
-      height: 100%;
-      min-height: 600px;
+      height: auto !important;
+      min-height: calc(100vh - 360px);
+    }
+    
+    /* FullCalendar height calculation */
+    .fc {
+      height: 100% !important;
+    }
+    
+    .fc-view-harness {
+      height: 100% !important;
     }
     
     /* FullCalendar event styling */
@@ -390,9 +406,9 @@
         </div>
         
         <!-- Calendar View (hidden by default) -->
-        <div id="calendar-container" class="hidden h-full">
-          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4 h-full flex flex-col">
-            <div id="calendar" class="flex-1 min-h-0"></div>
+        <div id="calendar-container" class="hidden absolute inset-0 top-0 bottom-0 left-0 right-0 p-4 md:p-6 pt-4 overflow-auto">
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4 h-full min-h-[calc(100vh-280px)] flex flex-col">
+            <div id="calendar" class="flex-1 w-full"></div>
           </div>
         </div>
       </div>
@@ -818,19 +834,46 @@
         const tableContainer = document.getElementById('bookings-table-container');
         const calendarContainer = document.getElementById('calendar-container');
         const calendarControls = document.getElementById('calendar-controls');
+        const scrollableContent = document.querySelector('.scrollable-content');
         
         if (tableContainer) tableContainer.classList.add('hidden');
         if (calendarContainer) calendarContainer.classList.remove('hidden');
         if (calendarControls) calendarControls.classList.remove('hidden');
         
+        // Make scrollable content fill available space for calendar
+        if (scrollableContent) {
+          scrollableContent.style.position = 'relative';
+          scrollableContent.style.minHeight = 'calc(100vh - 200px)';
+        }
+        
         // Set current view to calendar
         currentView = 'calendar';
         
-        // Initialize calendar immediately for staff
+        // Initialize calendar immediately for staff with proper height
         setTimeout(() => {
           if (!calendar) {
             initCalendar();
+            // Update calendar size after a short delay to ensure container is rendered
+            setTimeout(() => {
+              if (calendar) {
+                const scrollableContentEl = document.querySelector('.scrollable-content');
+                const availableHeight = scrollableContentEl 
+                  ? scrollableContentEl.offsetHeight - 100
+                  : window.innerHeight - 300;
+                
+                calendar.setOption('height', availableHeight > 600 ? availableHeight : 600);
+                calendar.updateSize();
+              }
+            }, 200);
           } else {
+            // Recalculate height and update
+            const scrollableContentEl = document.querySelector('.scrollable-content');
+            const availableHeight = scrollableContentEl 
+              ? scrollableContentEl.offsetHeight - 100
+              : window.innerHeight - 300;
+            
+            calendar.setOption('height', availableHeight > 600 ? availableHeight : 600);
+            calendar.updateSize();
             updateCalendar();
           }
         }, 100);
@@ -1645,14 +1688,20 @@
 
       const isDarkMode = document.documentElement.classList.contains('dark');
       
+      // Calculate available height for calendar
+      const calendarContainer = calendarEl.closest('#calendar-container');
+      const scrollableContent = calendarContainer?.closest('.scrollable-content');
+      const availableHeight = scrollableContent 
+        ? scrollableContent.offsetHeight - 100 // Subtract padding and controls
+        : window.innerHeight - 300; // Fallback calculation
+      
       calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: currentCalendarView,
         headerToolbar: false, // We'll use custom navigation
         editable: true, // Enable drag-and-drop
         droppable: false,
         dayMaxEvents: true,
-        height: 'auto',
-        contentHeight: 'auto',
+        height: availableHeight > 600 ? availableHeight : 600, // Minimum 600px, use calculated height if larger
         weekNumbers: false,
         firstDay: 0, // Sunday
         slotMinTime: '06:00:00',
@@ -1892,12 +1941,19 @@
       const tableContainer = document.getElementById('bookings-table-container');
       const calendarContainer = document.getElementById('calendar-container');
       const calendarControls = document.getElementById('calendar-controls');
+      const scrollableContent = document.querySelector('.scrollable-content');
       
       if (view === 'table') {
         // Show table, hide calendar
         tableContainer?.classList.remove('hidden');
         calendarContainer?.classList.add('hidden');
         calendarControls?.classList.add('hidden');
+        
+        // Reset scrollable content for table view
+        if (scrollableContent) {
+          scrollableContent.style.position = 'relative';
+          scrollableContent.style.height = 'auto';
+        }
         
         // Update button styles
         tableBtn?.classList.add('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
@@ -1910,17 +1966,36 @@
         calendarContainer?.classList.remove('hidden');
         calendarControls?.classList.remove('hidden');
         
+        // Make scrollable content fill available space for calendar
+        if (scrollableContent) {
+          scrollableContent.style.position = 'relative';
+          scrollableContent.style.minHeight = 'calc(100vh - 200px)';
+        }
+        
         // Update button styles
         calendarBtn?.classList.add('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
         calendarBtn?.classList.remove('border', 'border-nfgray', 'hover:bg-nfglight');
         tableBtn?.classList.remove('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
         tableBtn?.classList.add('border', 'border-nfgray', 'hover:bg-nfglight');
         
-        // Initialize calendar if not already done
+        // Initialize calendar if not already done, then update height
         if (!calendar) {
           initCalendar();
         } else {
-          updateCalendar();
+          // Recalculate calendar height after showing
+          setTimeout(() => {
+            if (calendar) {
+              const calendarContainerEl = document.getElementById('calendar-container');
+              const scrollableContentEl = calendarContainerEl?.closest('.scrollable-content');
+              const availableHeight = scrollableContentEl 
+                ? scrollableContentEl.offsetHeight - 100
+                : window.innerHeight - 300;
+              
+              calendar.setOption('height', availableHeight > 600 ? availableHeight : 600);
+              calendar.updateSize();
+            }
+            updateCalendar();
+          }, 100);
         }
       }
       
