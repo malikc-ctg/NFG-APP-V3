@@ -2662,6 +2662,42 @@
       // Listen for create job modal opening to reload sites dropdown
       window.addEventListener('createJobModalOpened', async () => {
         await loadSitesDropdown();
+        
+        // Initialize Job Type dropdown
+        const jobTypeSelect = document.querySelector('#createJobModal select[name="job_type"]');
+        if (jobTypeSelect) {
+          // Clean up existing wrapper if any
+          let wrapper = jobTypeSelect.previousElementSibling;
+          if (wrapper && wrapper.classList.contains('nfg-select-wrapper')) {
+            wrapper.remove();
+          }
+          jobTypeSelect.style.display = '';
+          new NFGDropdown(jobTypeSelect);
+        }
+        
+        // Initialize Frequency dropdown
+        const frequencySelect = document.getElementById('job-frequency-select');
+        if (frequencySelect) {
+          // Clean up existing wrapper if any
+          let wrapper = frequencySelect.previousElementSibling;
+          if (wrapper && wrapper.classList.contains('nfg-select-wrapper')) {
+            wrapper.remove();
+          }
+          frequencySelect.style.display = '';
+          new NFGDropdown(frequencySelect);
+        }
+        
+        // Initialize Recurrence Pattern dropdown (if visible)
+        const recurrenceSelect = document.querySelector('#createJobModal select[name="recurrence_pattern"]');
+        if (recurrenceSelect) {
+          // Clean up existing wrapper if any
+          let wrapper = recurrenceSelect.previousElementSibling;
+          if (wrapper && wrapper.classList.contains('nfg-select-wrapper')) {
+            wrapper.remove();
+          }
+          recurrenceSelect.style.display = '';
+          new NFGDropdown(recurrenceSelect);
+        }
       });
       
       console.log('[Jobs] ✅ Initialization complete');
