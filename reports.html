@@ -1978,26 +1978,20 @@
           });
         }
         
-        if (error) {
-          console.error('Error loading pending entries:', error);
-          if (error.code === 'PGRST204' || error.message?.includes('does not exist')) {
-            document.getElementById('pending-time-entries-table').innerHTML = `
-              <tr>
-                <td colspan="9" class="px-4 py-8 text-center text-gray-500">
-                  Time tracking not yet set up. Please run the database migration.
-                </td>
-              </tr>
-            `;
-            return;
-          }
-          toast.error('Failed to load pending entries: ' + error.message);
-          return;
-        }
-        
         renderPendingTimeEntriesTable(entries || []);
       } catch (error) {
         console.error('Error in loadPendingTimeEntries:', error);
-        toast.error('Failed to load pending entries');
+        if (error.code === 'PGRST204' || error.message?.includes('does not exist')) {
+          document.getElementById('pending-time-entries-table').innerHTML = `
+            <tr>
+              <td colspan="9" class="px-4 py-8 text-center text-gray-500">
+                Time tracking not yet set up. Please run the database migration.
+              </td>
+            </tr>
+          `;
+        } else {
+          toast.error('Failed to load pending entries: ' + (error.message || 'Unknown error'));
+        }
       }
     }
     
@@ -2225,16 +2219,6 @@
           });
         }
         
-        if (error) {
-          console.error('Error loading time reports:', error);
-          if (error.code === 'PGRST204' || error.message?.includes('does not exist')) {
-            // Table doesn't exist yet
-            return;
-          }
-          toast.error('Failed to load time reports: ' + error.message);
-          return;
-        }
-        
         const entries = timeEntries || [];
         
         // Calculate metrics
@@ -2267,7 +2251,11 @@
         renderStaffTimeSummaryTable(entries, startDate, endDate);
       } catch (error) {
         console.error('Error in loadTimeReports:', error);
-        toast.error('Failed to load time reports');
+        if (error.code === 'PGRST204' || error.message?.includes('does not exist')) {
+          // Table doesn't exist yet - silently return
+          return;
+        }
+        toast.error('Failed to load time reports: ' + (error.message || 'Unknown error'));
       }
     }
     
