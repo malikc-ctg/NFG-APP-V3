@@ -164,7 +164,7 @@
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Reports & Analytics</h2>
-          <p class="text-sm text-gray-500 mt-1">View performance metrics and generate reports</p>
+          <p class="text-sm text-gray-500 mt-1" id="reports-description">View performance metrics and generate reports</p>
         </div>
         
         <!-- Time Period Filter -->
@@ -725,15 +725,6 @@
         }
         
         currentUserProfile = profile;
-        
-        // Staff users cannot access reports - redirect to dashboard
-        if (currentUserProfile && currentUserProfile.role === 'staff') {
-          toast.error('Staff cannot access the Reports page.');
-          setTimeout(() => {
-            window.location.href = './dashboard.html';
-          }, 2000);
-          return null;
-        }
         
         return user;
       } catch (error) {
