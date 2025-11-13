@@ -194,8 +194,32 @@
         </div>
       </div>
 
-      <!-- Metric Cards -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <!-- Tab Navigation -->
+      <div class="border-b border-nfgray dark:border-gray-700">
+        <nav class="flex gap-2 -mb-px">
+          <button 
+            id="tab-overview" 
+            class="tab-btn px-4 py-2 text-sm font-medium border-b-2 border-nfgblue text-nfgblue dark:text-blue-400 transition-colors"
+            data-tab="overview"
+          >
+            <i data-lucide="bar-chart-3" class="w-4 h-4 inline mr-2"></i>
+            Overview
+          </button>
+          <button 
+            id="tab-time-tracking" 
+            class="tab-btn px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-nfgblue hover:border-gray-300 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
+            data-tab="time-tracking"
+          >
+            <i data-lucide="clock" class="w-4 h-4 inline mr-2"></i>
+            Time Tracking
+          </button>
+        </nav>
+      </div>
+
+      <!-- Overview Tab Content (existing content) -->
+      <div id="tab-content-overview" class="tab-content space-y-6">
+        <!-- Metric Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <!-- Total Jobs -->
         <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
           <div class="flex items-center justify-between">
@@ -374,6 +398,220 @@
           </table>
         </div>
       </div>
+      </div>
+      <!-- END Overview Tab Content -->
+
+      <!-- Time Tracking Tab Content -->
+      <div id="tab-content-time-tracking" class="tab-content hidden space-y-6">
+        <!-- Role-Based Header -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h2 id="time-tracking-title" class="text-xl font-semibold text-nfgblue dark:text-blue-400">My Time Sheet</h2>
+            <p class="text-sm text-gray-500 mt-1">Track your work hours and view time entries</p>
+          </div>
+          
+          <div class="flex gap-2">
+            <button id="export-time-sheet-btn" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700 text-sm flex items-center gap-2">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              <span>Export</span>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Staff View: Time Sheets -->
+        <div id="time-sheets-view" class="hidden">
+          <!-- Summary Cards -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+              <p class="text-sm text-gray-500 dark:text-gray-400">Total Hours</p>
+              <p id="time-total-hours" class="text-2xl font-bold text-nfgblue dark:text-blue-400 mt-1">0h</p>
+            </div>
+            <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+              <p class="text-sm text-gray-500 dark:text-gray-400">Overtime Hours</p>
+              <p id="time-overtime-hours" class="text-2xl font-bold text-orange-600 mt-1">0h</p>
+            </div>
+            <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+              <p class="text-sm text-gray-500 dark:text-gray-400">Pending Approval</p>
+              <p id="time-pending-count" class="text-2xl font-bold text-yellow-600 mt-1">0</p>
+            </div>
+            <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+              <p class="text-sm text-gray-500 dark:text-gray-400">Average/Day</p>
+              <p id="time-avg-hours" class="text-2xl font-bold text-green-600 mt-1">0h</p>
+            </div>
+          </div>
+          
+          <!-- Time Entries Table -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg overflow-hidden">
+            <div class="p-4 border-b border-nfgray">
+              <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">My Time Entries</h3>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="bg-nfglight dark:bg-gray-700">
+                  <tr>
+                    <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Date</th>
+                    <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Job</th>
+                    <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Clock In</th>
+                    <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Clock Out</th>
+                    <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Duration</th>
+                    <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Overtime</th>
+                    <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="time-entries-table" class="divide-y divide-nfgray">
+                  <tr>
+                    <td colspan="7" class="px-4 py-8 text-center text-gray-500">Loading...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Admin View: Time Approval + Reports -->
+        <div id="time-admin-view" class="hidden">
+          <!-- Sub-tabs for Admin -->
+          <div class="border-b border-nfgray dark:border-gray-700 mb-6">
+            <nav class="flex gap-2 -mb-px">
+              <button 
+                id="subtab-approval" 
+                class="subtab-btn px-4 py-2 text-sm font-medium border-b-2 border-nfgblue text-nfgblue dark:text-blue-400 transition-colors"
+                data-subtab="approval"
+              >
+                Time Approval
+              </button>
+              <button 
+                id="subtab-reports" 
+                class="subtab-btn px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-nfgblue dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
+                data-subtab="reports"
+              >
+                Time Reports
+              </button>
+            </nav>
+          </div>
+          
+          <!-- Approval Sub-tab -->
+          <div id="subtab-content-approval" class="subtab-content space-y-4">
+            <!-- Filters -->
+            <div class="flex flex-wrap gap-2 items-center">
+              <select id="approval-filter-staff" class="px-3 py-2 rounded-xl border border-nfgray focus:ring-2 focus:ring-nfgblue outline-none text-sm dark:bg-gray-800">
+                <option value="">All Staff</option>
+                <!-- Populated with staff list -->
+              </select>
+              <select id="approval-filter-status" class="px-3 py-2 rounded-xl border border-nfgray focus:ring-2 focus:ring-nfgblue outline-none text-sm dark:bg-gray-800">
+                <option value="pending" selected>Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+                <option value="">All</option>
+              </select>
+              <button id="bulk-approve-btn" class="px-4 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700 text-sm flex items-center gap-2">
+                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                <span>Bulk Approve Selected</span>
+              </button>
+            </div>
+            
+            <!-- Pending Time Entries Table -->
+            <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg overflow-hidden">
+              <div class="p-4 border-b border-nfgray">
+                <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Pending Time Entries</h3>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="bg-nfglight dark:bg-gray-700">
+                    <tr>
+                      <th class="px-4 py-3 text-left">
+                        <input type="checkbox" id="select-all-time-entries" class="rounded">
+                      </th>
+                      <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Staff</th>
+                      <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Date</th>
+                      <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Job</th>
+                      <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Clock In</th>
+                      <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Clock Out</th>
+                      <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Duration</th>
+                      <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Overtime</th>
+                      <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="pending-time-entries-table" class="divide-y divide-nfgray">
+                    <tr>
+                      <td colspan="9" class="px-4 py-8 text-center text-gray-500">Loading...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Reports Sub-tab -->
+          <div id="subtab-content-reports" class="subtab-content hidden space-y-6">
+            <!-- Time Summary Metrics -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+                <p class="text-sm text-gray-500 dark:text-gray-400">Total Hours</p>
+                <p id="admin-total-hours" class="text-2xl font-bold text-nfgblue dark:text-blue-400 mt-1">0h</p>
+              </div>
+              <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+                <p class="text-sm text-gray-500 dark:text-gray-400">Overtime Hours</p>
+                <p id="admin-overtime-hours" class="text-2xl font-bold text-orange-600 mt-1">0h</p>
+              </div>
+              <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+                <p class="text-sm text-gray-500 dark:text-gray-400">Pending Approval</p>
+                <p id="admin-pending-count" class="text-2xl font-bold text-yellow-600 mt-1">0</p>
+              </div>
+              <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+                <p class="text-sm text-gray-500 dark:text-gray-400">Active Staff</p>
+                <p id="admin-active-staff" class="text-2xl font-bold text-green-600 mt-1">0</p>
+              </div>
+            </div>
+            
+            <!-- Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <!-- Hours by Staff Chart -->
+              <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-6 shadow-nfg">
+                <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-4">Hours by Staff</h3>
+                <div style="height: 300px; position: relative;">
+                  <canvas id="hours-by-staff-chart"></canvas>
+                </div>
+              </div>
+              
+              <!-- Daily Hours Trend Chart -->
+              <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-6 shadow-nfg">
+                <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-4">Daily Hours Trend</h3>
+                <div style="height: 300px; position: relative;">
+                  <canvas id="daily-hours-trend-chart"></canvas>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Staff Time Summary Table -->
+            <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg overflow-hidden">
+              <div class="p-4 border-b border-nfgray">
+                <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Staff Time Summary</h3>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="bg-nfglight dark:bg-gray-700">
+                    <tr>
+                      <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Staff</th>
+                      <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Total Hours</th>
+                      <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Regular Hours</th>
+                      <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Overtime Hours</th>
+                      <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Jobs</th>
+                      <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Avg/Day</th>
+                    </tr>
+                  </thead>
+                  <tbody id="staff-time-summary-table" class="divide-y divide-nfgray">
+                    <tr>
+                      <td colspan="6" class="px-4 py-8 text-center text-gray-500">Loading...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- END Time Tracking Tab Content -->
     </main>
   </div>
 
@@ -460,6 +698,8 @@
     let jobsOverTimeChart = null;
     let staffHoursChart = null;
     let workerPerformanceChart = null;
+    let hoursByStaffChart = null;
+    let dailyHoursTrendChart = null;
 
     // Get current user and their profile
     async function getCurrentUser() {
@@ -1401,6 +1641,858 @@
       window.print();
     }
 
+    // ========== TAB SYSTEM ==========
+    
+    // Initialize tabs
+    function initTabs() {
+      const tabButtons = document.querySelectorAll('.tab-btn');
+      const tabContents = document.querySelectorAll('.tab-content');
+      
+      tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          const targetTab = button.dataset.tab;
+          
+          // Update button styles
+          tabButtons.forEach(btn => {
+            btn.classList.remove('border-nfgblue', 'text-nfgblue', 'dark:text-blue-400');
+            btn.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+          });
+          
+          button.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+          button.classList.add('border-nfgblue', 'text-nfgblue', 'dark:text-blue-400');
+          
+          // Show/hide tab content
+          tabContents.forEach(content => {
+            content.classList.add('hidden');
+          });
+          
+          const targetContent = document.getElementById(`tab-content-${targetTab}`);
+          if (targetContent) {
+            targetContent.classList.remove('hidden');
+          }
+          
+          // Load tab-specific data if needed
+          if (targetTab === 'time-tracking') {
+            loadTimeTrackingData();
+          }
+          
+          // Recreate icons after tab switch
+          setTimeout(() => {
+            if (window.lucide) lucide.createIcons();
+          }, 100);
+        });
+      });
+      
+      // Initialize sub-tabs for admin view
+      const subtabButtons = document.querySelectorAll('.subtab-btn');
+      subtabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          const targetSubtab = button.dataset.subtab;
+          
+          // Update button styles
+          subtabButtons.forEach(btn => {
+            btn.classList.remove('border-nfgblue', 'text-nfgblue', 'dark:text-blue-400');
+            btn.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+          });
+          
+          button.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+          button.classList.add('border-nfgblue', 'text-nfgblue', 'dark:text-blue-400');
+          
+          // Show/hide sub-tab content
+          document.querySelectorAll('.subtab-content').forEach(content => {
+            content.classList.add('hidden');
+          });
+          
+          const targetContent = document.getElementById(`subtab-content-${targetSubtab}`);
+          if (targetContent) {
+            targetContent.classList.remove('hidden');
+          }
+          
+          // Load sub-tab data
+          if (targetSubtab === 'approval') {
+            loadPendingTimeEntries();
+          } else if (targetSubtab === 'reports') {
+            loadTimeReports();
+          }
+          
+          setTimeout(() => {
+            if (window.lucide) lucide.createIcons();
+          }, 100);
+        });
+      });
+    }
+
+    // ========== TIME TRACKING FUNCTIONS ==========
+    
+    // Get date range helper
+    function getDateRange(period) {
+      const now = new Date();
+      let startDate, endDate;
+      
+      if (period === 'custom') {
+        startDate = document.getElementById('date-from')?.value;
+        endDate = document.getElementById('date-to')?.value;
+      } else if (period === 'all') {
+        startDate = '2000-01-01';
+        endDate = now.toISOString().split('T')[0];
+      } else {
+        const days = parseInt(period);
+        startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - days);
+        startDate = startDate.toISOString().split('T')[0];
+        endDate = now.toISOString().split('T')[0];
+      }
+      
+      return { startDate, endDate };
+    }
+    
+    // Format duration helper
+    function formatDuration(seconds) {
+      if (!seconds) return '0:00:00';
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+    
+    // Load time tracking data based on user role
+    async function loadTimeTrackingData() {
+      if (!currentUser || !currentUserProfile) return;
+      
+      const isStaff = currentUserProfile.role === 'staff';
+      
+      if (isStaff) {
+        // Show staff view
+        document.getElementById('time-sheets-view')?.classList.remove('hidden');
+        document.getElementById('time-admin-view')?.classList.add('hidden');
+        document.getElementById('time-tracking-title').textContent = 'My Time Sheet';
+        await loadMyTimeSheet();
+      } else {
+        // Show admin view
+        document.getElementById('time-sheets-view')?.classList.add('hidden');
+        document.getElementById('time-admin-view')?.classList.remove('hidden');
+        document.getElementById('time-tracking-title').textContent = 'Time Tracking & Approval';
+        await loadStaffList();
+        await loadPendingTimeEntries();
+        await loadTimeReports();
+      }
+    }
+    
+    // Staff: Load my time sheet
+    async function loadMyTimeSheet() {
+      try {
+        const timePeriod = document.getElementById('time-period')?.value || '30';
+        const { startDate, endDate } = getDateRange(timePeriod);
+        
+        // Fetch time entries
+        const { data: timeEntries, error } = await supabase
+          .from('staff_time_logs')
+          .select('*, jobs(title, sites(name))')
+          .eq('user_id', currentUser.id)
+          .gte('clock_in', startDate + 'T00:00:00')
+          .lte('clock_in', endDate + 'T23:59:59')
+          .order('clock_in', { ascending: false });
+        
+        if (error) {
+          console.error('Error loading time sheet:', error);
+          // If table doesn't exist, show empty state
+          if (error.code === 'PGRST204' || error.message?.includes('does not exist')) {
+            document.getElementById('time-entries-table').innerHTML = `
+              <tr>
+                <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                  Time tracking not yet set up. Please run the database migration.
+                </td>
+              </tr>
+            `;
+            return;
+          }
+          toast.error('Failed to load time sheet: ' + error.message);
+          return;
+        }
+        
+        const entries = timeEntries || [];
+        
+        // Calculate summary metrics
+        const totalSeconds = entries.reduce((sum, entry) => sum + (entry.total_duration || 0), 0);
+        const overtimeEntries = entries.filter(e => e.is_overtime);
+        const overtimeSeconds = overtimeEntries.reduce((sum, entry) => {
+          const regularSeconds = 8 * 3600; // 8 hours
+          return sum + Math.max(0, (entry.total_duration || 0) - regularSeconds);
+        }, 0);
+        
+        const totalHours = (totalSeconds / 3600).toFixed(1);
+        const overtimeHours = (overtimeSeconds / 3600).toFixed(1);
+        const pendingCount = entries.filter(e => e.status === 'pending').length;
+        
+        // Update summary cards
+        document.getElementById('time-total-hours').textContent = `${totalHours}h`;
+        document.getElementById('time-overtime-hours').textContent = `${overtimeHours}h`;
+        document.getElementById('time-pending-count').textContent = pendingCount;
+        
+        // Calculate average hours per day
+        const days = Math.ceil((new Date(endDate + 'T23:59:59') - new Date(startDate + 'T00:00:00')) / (1000 * 60 * 60 * 24)) || 1;
+        const avgHours = (totalSeconds / 3600 / days).toFixed(1);
+        document.getElementById('time-avg-hours').textContent = `${avgHours}h`;
+        
+        // Render time entries table
+        renderTimeEntriesTable(entries, 'time-entries-table', true);
+      } catch (error) {
+        console.error('Error in loadMyTimeSheet:', error);
+        toast.error('Failed to load time sheet');
+      }
+    }
+    
+    // Render time entries table
+    function renderTimeEntriesTable(entries, tableId, isStaff = false) {
+      const tbody = document.getElementById(tableId);
+      if (!tbody) return;
+      
+      if (entries.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+              No time entries found for this period
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      tbody.innerHTML = entries.map(entry => {
+        const date = new Date(entry.clock_in).toLocaleDateString();
+        const clockIn = new Date(entry.clock_in).toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        });
+        const clockOut = entry.clock_out 
+          ? new Date(entry.clock_out).toLocaleTimeString('en-US', { 
+              hour: 'numeric', 
+              minute: '2-digit',
+              hour12: true 
+            })
+          : 'In Progress';
+        
+        const duration = entry.total_duration 
+          ? formatDuration(entry.total_duration)
+          : 'Calculating...';
+        
+        const overtimeBadge = entry.is_overtime 
+          ? '<span class="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300">Yes</span>'
+          : '<span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">No</span>';
+        
+        const statusColors = {
+          'pending': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
+          'approved': 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+          'rejected': 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+        };
+        
+        const statusBadge = `<span class="px-2 py-1 rounded-full text-xs font-medium ${statusColors[entry.status] || statusColors.pending}">${entry.status}</span>`;
+        
+        return `
+          <tr class="hover:bg-nfglight dark:hover:bg-gray-700">
+            <td class="px-4 py-3">${date}</td>
+            <td class="px-4 py-3">
+              ${entry.jobs?.title || 'General Work'}
+              ${entry.jobs?.sites?.name ? `<br><span class="text-xs text-gray-500">${entry.jobs.sites.name}</span>` : ''}
+            </td>
+            <td class="px-4 py-3">${clockIn}</td>
+            <td class="px-4 py-3">${clockOut}</td>
+            <td class="px-4 py-3 font-medium">${duration}</td>
+            <td class="px-4 py-3">${overtimeBadge}</td>
+            <td class="px-4 py-3">${statusBadge}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+    
+    // Admin: Load staff list for filter
+    async function loadStaffList() {
+      try {
+        const { data: staff, error } = await supabase
+          .from('user_profiles')
+          .select('id, full_name, email')
+          .eq('role', 'staff')
+          .order('full_name');
+        
+        if (error) {
+          console.error('Error loading staff list:', error);
+          return;
+        }
+        
+        const select = document.getElementById('approval-filter-staff');
+        if (!select) return;
+        
+        // Clear existing options except "All Staff"
+        select.innerHTML = '<option value="">All Staff</option>';
+        
+        staff.forEach(member => {
+          const option = document.createElement('option');
+          option.value = member.id;
+          option.textContent = member.full_name || member.email;
+          select.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error in loadStaffList:', error);
+      }
+    }
+    
+    // Admin: Load pending time entries
+    async function loadPendingTimeEntries() {
+      try {
+        const staffFilter = document.getElementById('approval-filter-staff')?.value || '';
+        const statusFilter = document.getElementById('approval-filter-status')?.value || 'pending';
+        
+        let query = supabase
+          .from('staff_time_logs')
+          .select('*, user_profiles(full_name, email), jobs(title, sites(name))');
+        
+        if (statusFilter) {
+          query = query.eq('status', statusFilter);
+        }
+        
+        if (staffFilter) {
+          query = query.eq('user_id', staffFilter);
+        }
+        
+        const { data: entries, error } = await query.order('clock_in', { ascending: false });
+        
+        if (error) {
+          console.error('Error loading pending entries:', error);
+          if (error.code === 'PGRST204' || error.message?.includes('does not exist')) {
+            document.getElementById('pending-time-entries-table').innerHTML = `
+              <tr>
+                <td colspan="9" class="px-4 py-8 text-center text-gray-500">
+                  Time tracking not yet set up. Please run the database migration.
+                </td>
+              </tr>
+            `;
+            return;
+          }
+          toast.error('Failed to load pending entries: ' + error.message);
+          return;
+        }
+        
+        renderPendingTimeEntriesTable(entries || []);
+      } catch (error) {
+        console.error('Error in loadPendingTimeEntries:', error);
+        toast.error('Failed to load pending entries');
+      }
+    }
+    
+    // Render pending time entries for admin approval
+    function renderPendingTimeEntriesTable(entries) {
+      const tbody = document.getElementById('pending-time-entries-table');
+      if (!tbody) return;
+      
+      if (entries.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" class="px-4 py-8 text-center text-gray-500">
+              No pending time entries
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      tbody.innerHTML = entries.map(entry => {
+        const staffName = entry.user_profiles?.full_name || entry.user_profiles?.email || 'Unknown';
+        const date = new Date(entry.clock_in).toLocaleDateString();
+        const clockIn = new Date(entry.clock_in).toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        });
+        const clockOut = entry.clock_out 
+          ? new Date(entry.clock_out).toLocaleTimeString('en-US', { 
+              hour: 'numeric', 
+              minute: '2-digit',
+              hour12: true 
+            })
+          : 'In Progress';
+        
+        const duration = entry.total_duration 
+          ? formatDuration(entry.total_duration)
+          : 'Calculating...';
+        
+        const overtimeBadge = entry.is_overtime 
+          ? '<span class="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300">Yes</span>'
+          : '<span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">No</span>';
+        
+        return `
+          <tr class="hover:bg-nfglight dark:hover:bg-gray-700">
+            <td class="px-4 py-3">
+              <input type="checkbox" class="time-entry-checkbox rounded" data-entry-id="${entry.id}">
+            </td>
+            <td class="px-4 py-3 font-medium">${staffName}</td>
+            <td class="px-4 py-3">${date}</td>
+            <td class="px-4 py-3">
+              ${entry.jobs?.title || 'General Work'}
+            </td>
+            <td class="px-4 py-3">${clockIn}</td>
+            <td class="px-4 py-3">${clockOut}</td>
+            <td class="px-4 py-3 font-medium">${duration}</td>
+            <td class="px-4 py-3">${overtimeBadge}</td>
+            <td class="px-4 py-3">
+              ${entry.status === 'pending' ? `
+                <div class="flex gap-2">
+                  <button 
+                    onclick="approveTimeEntry('${entry.id}')" 
+                    class="px-3 py-1 rounded-lg bg-green-600 text-white hover:bg-green-700 text-xs"
+                  >
+                    Approve
+                  </button>
+                  <button 
+                    onclick="rejectTimeEntry('${entry.id}')" 
+                    class="px-3 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 text-xs"
+                  >
+                    Reject
+                  </button>
+                </div>
+              ` : `
+                <span class="px-2 py-1 rounded-full text-xs font-medium ${
+                  entry.status === 'approved' 
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' 
+                    : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+                }">${entry.status}</span>
+              `}
+            </td>
+          </tr>
+        `;
+      }).join('');
+      
+      // Attach checkbox listeners
+      attachCheckboxListeners();
+    }
+    
+    // Attach checkbox listeners for bulk approval
+    function attachCheckboxListeners() {
+      const selectAll = document.getElementById('select-all-time-entries');
+      const checkboxes = document.querySelectorAll('.time-entry-checkbox');
+      
+      if (selectAll) {
+        selectAll.addEventListener('change', (e) => {
+          checkboxes.forEach(cb => {
+            cb.checked = e.target.checked;
+          });
+        });
+      }
+    }
+    
+    // Approve time entry (global function for onclick)
+    window.approveTimeEntry = async function(entryId) {
+      const confirmed = await showConfirm('Approve this time entry?', 'Approve Time Entry');
+      if (!confirmed) return;
+      
+      const { error } = await supabase
+        .from('staff_time_logs')
+        .update({
+          status: 'approved',
+          approved_by: currentUser.id,
+          approved_at: new Date().toISOString()
+        })
+        .eq('id', entryId);
+      
+      if (error) {
+        console.error('Error approving entry:', error);
+        toast.error('Failed to approve time entry');
+        return;
+      }
+      
+      toast.success('Time entry approved');
+      await loadPendingTimeEntries();
+      await loadTimeReports();
+      if (currentUserProfile?.role === 'staff') {
+        await loadMyTimeSheet();
+      }
+    };
+    
+    // Reject time entry (global function for onclick)
+    window.rejectTimeEntry = async function(entryId) {
+      const reason = await showPrompt('Rejection reason (optional):', 'Reject Time Entry', '');
+      
+      const { error } = await supabase
+        .from('staff_time_logs')
+        .update({
+          status: 'rejected',
+          approved_by: currentUser.id,
+          approved_at: new Date().toISOString(),
+          notes: reason || 'Rejected by admin'
+        })
+        .eq('id', entryId);
+      
+      if (error) {
+        console.error('Error rejecting entry:', error);
+        toast.error('Failed to reject time entry');
+        return;
+      }
+      
+      toast.success('Time entry rejected');
+      await loadPendingTimeEntries();
+      await loadTimeReports();
+    };
+    
+    // Bulk approve selected entries
+    async function bulkApproveTimeEntries() {
+      const checkboxes = document.querySelectorAll('.time-entry-checkbox:checked');
+      const entryIds = Array.from(checkboxes).map(cb => cb.dataset.entryId);
+      
+      if (entryIds.length === 0) {
+        toast.error('Please select at least one time entry');
+        return;
+      }
+      
+      const confirmed = await showConfirm(
+        `Approve ${entryIds.length} selected time ${entryIds.length === 1 ? 'entry' : 'entries'}?`,
+        'Bulk Approve'
+      );
+      if (!confirmed) return;
+      
+      const { error } = await supabase
+        .from('staff_time_logs')
+        .update({
+          status: 'approved',
+          approved_by: currentUser.id,
+          approved_at: new Date().toISOString()
+        })
+        .in('id', entryIds);
+      
+      if (error) {
+        console.error('Error bulk approving entries:', error);
+        toast.error('Failed to approve time entries');
+        return;
+      }
+      
+      toast.success(`${entryIds.length} time ${entryIds.length === 1 ? 'entry' : 'entries'} approved`);
+      await loadPendingTimeEntries();
+      await loadTimeReports();
+    }
+    
+    // Admin: Load time reports
+    async function loadTimeReports() {
+      try {
+        const timePeriod = document.getElementById('time-period')?.value || '30';
+        const { startDate, endDate } = getDateRange(timePeriod);
+        
+        // Fetch all time entries
+        const { data: timeEntries, error } = await supabase
+          .from('staff_time_logs')
+          .select('*, user_profiles(full_name, email), jobs(title, sites(name))')
+          .gte('clock_in', startDate + 'T00:00:00')
+          .lte('clock_in', endDate + 'T23:59:59')
+          .eq('status', 'approved'); // Only approved entries for reports
+        
+        if (error) {
+          console.error('Error loading time reports:', error);
+          if (error.code === 'PGRST204' || error.message?.includes('does not exist')) {
+            // Table doesn't exist yet
+            return;
+          }
+          toast.error('Failed to load time reports: ' + error.message);
+          return;
+        }
+        
+        const entries = timeEntries || [];
+        
+        // Calculate metrics
+        const totalSeconds = entries.reduce((sum, e) => sum + (e.total_duration || 0), 0);
+        const overtimeEntries = entries.filter(e => e.is_overtime);
+        const overtimeSeconds = overtimeEntries.reduce((sum, e) => {
+          const regularSeconds = 8 * 3600;
+          return sum + Math.max(0, (e.total_duration || 0) - regularSeconds);
+        }, 0);
+        
+        // Count pending entries
+        const { data: pendingEntries } = await supabase
+          .from('staff_time_logs')
+          .select('id')
+          .eq('status', 'pending');
+        
+        const activeStaff = [...new Set(entries.map(e => e.user_id))].length;
+        
+        // Update metrics
+        document.getElementById('admin-total-hours').textContent = `${(totalSeconds / 3600).toFixed(1)}h`;
+        document.getElementById('admin-overtime-hours').textContent = `${(overtimeSeconds / 3600).toFixed(1)}h`;
+        document.getElementById('admin-pending-count').textContent = pendingEntries?.length || 0;
+        document.getElementById('admin-active-staff').textContent = activeStaff;
+        
+        // Create charts
+        createHoursByStaffChart(entries);
+        createDailyHoursTrendChart(entries);
+        
+        // Render staff summary table
+        renderStaffTimeSummaryTable(entries, startDate, endDate);
+      } catch (error) {
+        console.error('Error in loadTimeReports:', error);
+        toast.error('Failed to load time reports');
+      }
+    }
+    
+    // Create hours by staff chart
+    function createHoursByStaffChart(entries) {
+      const ctx = document.getElementById('hours-by-staff-chart');
+      if (!ctx) return;
+      
+      // Group by staff
+      const staffHours = {};
+      entries.forEach(entry => {
+        const staffId = entry.user_id;
+        const staffName = entry.user_profiles?.full_name || entry.user_profiles?.email || 'Unknown';
+        if (!staffHours[staffId]) {
+          staffHours[staffId] = { name: staffName, hours: 0 };
+        }
+        staffHours[staffId].hours += (entry.total_duration || 0) / 3600;
+      });
+      
+      const sortedStaff = Object.values(staffHours)
+        .sort((a, b) => b.hours - a.hours)
+        .slice(0, 10);
+      
+      if (hoursByStaffChart) {
+        hoursByStaffChart.destroy();
+      }
+      
+      const themeColors = {
+        text: document.documentElement.classList.contains('dark') ? '#E5E7EB' : '#1F2937',
+        tooltipBg: document.documentElement.classList.contains('dark') ? '#1F2937' : '#FFFFFF',
+        tooltipBorder: document.documentElement.classList.contains('dark') ? '#374151' : '#E5E7EB'
+      };
+      
+      hoursByStaffChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: sortedStaff.map(s => s.name),
+          datasets: [{
+            label: 'Hours',
+            data: sortedStaff.map(s => s.hours.toFixed(1)),
+            backgroundColor: '#0D47A1',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: themeColors.tooltipBg,
+              borderColor: themeColors.tooltipBorder,
+              borderWidth: 1,
+              titleColor: themeColors.text,
+              bodyColor: themeColors.text
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { color: themeColors.text },
+              grid: { color: document.documentElement.classList.contains('dark') ? '#374151' : '#E5E7EB' }
+            },
+            x: {
+              ticks: { color: themeColors.text },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+    
+    // Create daily hours trend chart
+    function createDailyHoursTrendChart(entries) {
+      const ctx = document.getElementById('daily-hours-trend-chart');
+      if (!ctx) return;
+      
+      // Group by date
+      const dailyHours = {};
+      entries.forEach(entry => {
+        const date = new Date(entry.clock_in).toISOString().split('T')[0];
+        if (!dailyHours[date]) {
+          dailyHours[date] = 0;
+        }
+        dailyHours[date] += (entry.total_duration || 0) / 3600;
+      });
+      
+      // Sort dates
+      const sortedDates = Object.keys(dailyHours).sort();
+      const hours = sortedDates.map(date => dailyHours[date]);
+      
+      if (dailyHoursTrendChart) {
+        dailyHoursTrendChart.destroy();
+      }
+      
+      const themeColors = {
+        text: document.documentElement.classList.contains('dark') ? '#E5E7EB' : '#1F2937',
+        tooltipBg: document.documentElement.classList.contains('dark') ? '#1F2937' : '#FFFFFF',
+        tooltipBorder: document.documentElement.classList.contains('dark') ? '#374151' : '#E5E7EB'
+      };
+      
+      dailyHoursTrendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: sortedDates.map(date => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
+          datasets: [{
+            label: 'Hours',
+            data: hours,
+            borderColor: '#0D47A1',
+            backgroundColor: 'rgba(13, 71, 161, 0.1)',
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: themeColors.tooltipBg,
+              borderColor: themeColors.tooltipBorder,
+              borderWidth: 1,
+              titleColor: themeColors.text,
+              bodyColor: themeColors.text
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { color: themeColors.text },
+              grid: { color: document.documentElement.classList.contains('dark') ? '#374151' : '#E5E7EB' }
+            },
+            x: {
+              ticks: { color: themeColors.text },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+    
+    // Render staff time summary table
+    function renderStaffTimeSummaryTable(entries, startDate, endDate) {
+      const tbody = document.getElementById('staff-time-summary-table');
+      if (!tbody) return;
+      
+      // Group by staff
+      const staffStats = {};
+      entries.forEach(entry => {
+        const staffId = entry.user_id;
+        const staffName = entry.user_profiles?.full_name || entry.user_profiles?.email || 'Unknown';
+        if (!staffStats[staffId]) {
+          staffStats[staffId] = {
+            name: staffName,
+            totalSeconds: 0,
+            regularSeconds: 0,
+            overtimeSeconds: 0,
+            jobCount: 0,
+            uniqueJobs: new Set()
+          };
+        }
+        const seconds = entry.total_duration || 0;
+        staffStats[staffId].totalSeconds += seconds;
+        staffStats[staffId].uniqueJobs.add(entry.job_id);
+        
+        if (entry.is_overtime) {
+          const regularSeconds = 8 * 3600;
+          const overtimeSecs = Math.max(0, seconds - regularSeconds);
+          staffStats[staffId].overtimeSeconds += overtimeSecs;
+          staffStats[staffId].regularSeconds += regularSeconds;
+        } else {
+          staffStats[staffId].regularSeconds += seconds;
+        }
+      });
+      
+      const staffArray = Object.values(staffStats).map(stats => ({
+        ...stats,
+        jobCount: stats.uniqueJobs.size
+      }));
+      
+      if (staffArray.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+              No time data available
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      const days = Math.ceil((new Date(endDate + 'T23:59:59') - new Date(startDate + 'T00:00:00')) / (1000 * 60 * 60 * 24)) || 1;
+      
+      tbody.innerHTML = staffArray.map(stats => {
+        const totalHours = (stats.totalSeconds / 3600).toFixed(1);
+        const regularHours = (stats.regularSeconds / 3600).toFixed(1);
+        const overtimeHours = (stats.overtimeSeconds / 3600).toFixed(1);
+        const avgHours = (stats.totalSeconds / 3600 / days).toFixed(1);
+        
+        return `
+          <tr class="hover:bg-nfglight dark:hover:bg-gray-700">
+            <td class="px-4 py-3 font-medium">${stats.name}</td>
+            <td class="px-4 py-3">${totalHours}h</td>
+            <td class="px-4 py-3">${regularHours}h</td>
+            <td class="px-4 py-3 text-orange-600">${overtimeHours}h</td>
+            <td class="px-4 py-3">${stats.jobCount}</td>
+            <td class="px-4 py-3">${avgHours}h</td>
+          </tr>
+        `;
+      }).join('');
+    }
+    
+    // Export time sheet to CSV
+    async function exportTimeSheet() {
+      try {
+        const timePeriod = document.getElementById('time-period')?.value || '30';
+        const { startDate, endDate } = getDateRange(timePeriod);
+        
+        const { data: entries, error } = await supabase
+          .from('staff_time_logs')
+          .select('*, jobs(title, sites(name))')
+          .eq('user_id', currentUser.id)
+          .gte('clock_in', startDate + 'T00:00:00')
+          .lte('clock_in', endDate + 'T23:59:59')
+          .order('clock_in', { ascending: false });
+        
+        if (error) {
+          toast.error('Failed to export time sheet: ' + error.message);
+          return;
+        }
+        
+        // Create CSV
+        const headers = ['Date', 'Job', 'Site', 'Clock In', 'Clock Out', 'Duration', 'Overtime', 'Status'];
+        const rows = entries.map(entry => {
+          const date = new Date(entry.clock_in).toLocaleDateString();
+          const clockIn = new Date(entry.clock_in).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+          const clockOut = entry.clock_out ? new Date(entry.clock_out).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : 'In Progress';
+          const duration = entry.total_duration ? formatDuration(entry.total_duration) : '0:00:00';
+          return [
+            date,
+            entry.jobs?.title || 'General Work',
+            entry.jobs?.sites?.name || '',
+            clockIn,
+            clockOut,
+            duration,
+            entry.is_overtime ? 'Yes' : 'No',
+            entry.status
+          ];
+        });
+        
+        const csv = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `time-sheet-${startDate}-to-${endDate}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        
+        toast.success('Time sheet exported successfully');
+      } catch (error) {
+        console.error('Error exporting time sheet:', error);
+        toast.error('Failed to export time sheet');
+      }
+    }
+
     // Initialize
     async function init() {
       console.log('[Reports] 🚀 Initializing Reports page...');
@@ -1460,6 +2552,15 @@
       document.getElementById('refresh-btn')?.addEventListener('click', refreshReports);
       document.getElementById('export-csv-btn')?.addEventListener('click', exportToCSV);
       document.getElementById('print-btn')?.addEventListener('click', printReport);
+      
+      // Time tracking event listeners
+      document.getElementById('export-time-sheet-btn')?.addEventListener('click', exportTimeSheet);
+      document.getElementById('bulk-approve-btn')?.addEventListener('click', bulkApproveTimeEntries);
+      document.getElementById('approval-filter-staff')?.addEventListener('change', loadPendingTimeEntries);
+      document.getElementById('approval-filter-status')?.addEventListener('change', loadPendingTimeEntries);
+      
+      // Initialize tabs
+      initTabs();
       
       // Allow Enter key to apply date range
       document.getElementById('date-from')?.addEventListener('keypress', (e) => {

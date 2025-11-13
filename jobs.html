@@ -1920,26 +1920,47 @@
 
     // Begin Work button (for staff)
     document.getElementById('begin-work-btn')?.addEventListener('click', async () => {
-      // Get current job to check scheduled date
-      const jobs = await getJobs();
-      const job = jobs.find(j => j.id === currentJobId);
+      const now = new Date().toISOString();
       
-      if (!job) {
-        toast.error('Job not found', 'Error');
+      // Update jobs table
+      const { error: jobError } = await supabase
+        .from('jobs')
+        .update({ 
+          status: 'in-progress',
+          work_started_at: now
+        })
+        .eq('id', currentJobId);
+
+      if (jobError) {
+        console.error('Error starting work:', jobError);
+        toast.error('Failed to start work. Please try again.');
         return;
       }
+
+      // Create time log entry
+      const { data: timeLog, error: timeLogError } = await supabase
+        .from('staff_time_logs')
+        .insert({
+          user_id: currentUser.id,
+          job_id: currentJobId,
+          clock_in: now,
+          status: 'pending'
+        })
+        .select()
+        .single();
       
-      // Check if staff is clocked in (only for staff users)
-      if (currentUserProfile && currentUserProfile.role === 'staff') {
-        try {
-          const { data: activeClockIn, error: clockError } = await supabase
-            .from('time_entries')
-            .select('*')
-            .eq('user_id', currentUser.id)
-            .is('clock_out', null)
-            .order('clock_in', { ascending: false })
-            .limit(1)
-            .maybeSingle();
+      if (timeLogError) {
+        console.warn('⚠️ Could not create time log:', timeLogError);
+        // Continue anyway - time log is not critical for timer functionality
+      } else {
+        console.log('✅ Time log created:', timeLog);
+      }
+      
+      console.log('✅ Work started!');
+      toast.success('Work started! Timer is running.');
+      // Refresh the job view to show timer
+      await viewJob(currentJobId);
+    });
 
           if (clockError && !clockError.message.includes('does not exist')) {
             console.error('Error checking clock status:', clockError);
@@ -2036,30 +2057,84 @@
           updateData.status = 'completed';
         }
         
-        const { error } = await supabase
+        // Check for overtime (8 hours = 28800 seconds)
+        const OVERTIME_THRESHOLD = 8 * 3600; // 8 hours in seconds
+        const isOvertime = totalDuration > OVERTIME_THRESHOLD;
+        
+        // Update jobs table
+        const { error: jobError } = await supabase
           .from('jobs')
           .update(updateData)
           .eq('id', currentJobId);
 
-        if (error) {
-          console.error('Error ending work:', error);
+        if (jobError) {
+          console.error('Error ending work:', jobError);
           toast.error('Failed to end work. Please try again.', 'End Work Error');
-        } else {
-          stopTimer();
-          console.log('✅ Work ended! Duration:', formatDuration(totalDuration));
-          if (allTasksComplete) {
-            // Handle recurring job creation if applicable
-            const updatedJob = { ...job, status: 'completed' };
-            const recurrenceResult = await handleJobCompletion(updatedJob);
-            
-            toast.success(`${recurrenceResult.message}\nTotal time: ${formatDuration(totalDuration)}`, 'Job Completed! 🎉');
-            document.getElementById('jobDetailModal').classList.add('hidden');
-            document.getElementById('jobDetailModal').classList.remove('flex');
-            await renderJobs();
+          return;
+        }
+
+        // Update or create time log entry
+        const { data: existingLog } = await supabase
+          .from('staff_time_logs')
+          .select('id')
+          .eq('user_id', currentUser.id)
+          .eq('job_id', currentJobId)
+          .is('clock_out', null)
+          .order('clock_in', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (existingLog) {
+          // Update existing log
+          const { error: timeLogError } = await supabase
+            .from('staff_time_logs')
+            .update({
+              clock_out: now,
+              total_duration: totalDuration,
+              is_overtime: isOvertime
+            })
+            .eq('id', existingLog.id);
+          
+          if (timeLogError) {
+            console.warn('⚠️ Could not update time log:', timeLogError);
           } else {
-            toast.info(`Work stopped. Total time: ${formatDuration(totalDuration)}`, 'Work Ended');
-            await viewJob(currentJobId);
+            console.log('✅ Time log updated:', existingLog.id);
           }
+        } else {
+          // Create new log (fallback if Begin Work didn't create one)
+          const { error: timeLogError } = await supabase
+            .from('staff_time_logs')
+            .insert({
+              user_id: currentUser.id,
+              job_id: currentJobId,
+              clock_in: job.work_started_at,
+              clock_out: now,
+              total_duration: totalDuration,
+              is_overtime: isOvertime,
+              status: 'pending'
+            });
+          
+          if (timeLogError) {
+            console.warn('⚠️ Could not create time log:', timeLogError);
+          } else {
+            console.log('✅ Time log created (fallback)');
+          }
+        }
+        
+        stopTimer();
+        console.log('✅ Work ended! Duration:', formatDuration(totalDuration));
+        if (allTasksComplete) {
+          // Handle recurring job creation if applicable
+          const updatedJob = { ...job, status: 'completed' };
+          const recurrenceResult = await handleJobCompletion(updatedJob);
+          
+          toast.success(`${recurrenceResult.message}\nTotal time: ${formatDuration(totalDuration)}`, 'Job Completed! 🎉');
+          document.getElementById('jobDetailModal').classList.add('hidden');
+          document.getElementById('jobDetailModal').classList.remove('flex');
+          await renderJobs();
+        } else {
+          toast.info(`Work stopped. Total time: ${formatDuration(totalDuration)}`, 'Work Ended');
+          await viewJob(currentJobId);
         }
       }
     });
