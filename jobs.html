@@ -586,15 +586,39 @@
           </p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium mb-1.5">Scheduled Date</label>
-            <input type="date" name="scheduled_date" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Scheduled Date</label>
+          <input type="date" name="scheduled_date" id="job-scheduled-date" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+        </div>
+
+        <!-- Time Selection (shown after date is selected) -->
+        <div id="job-time-section" class="hidden">
+          <label class="block text-sm font-medium mb-1.5">Scheduled Time</label>
+          <div class="flex items-center gap-4">
+            <input 
+              type="time" 
+              name="scheduled_time" 
+              id="job-scheduled-time" 
+              class="flex-1 border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
+            />
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input 
+                type="checkbox" 
+                id="job-all-day" 
+                class="w-4 h-4 text-nfgblue border-nfgray rounded focus:ring-nfgblue"
+                checked
+              />
+              <span class="text-sm text-gray-600 dark:text-gray-400">All Day</span>
+            </label>
           </div>
-          <div>
-            <label class="block text-sm font-medium mb-1.5">Estimated Hours</label>
-            <input type="number" name="estimated_hours" min="0" step="0.5" placeholder="4" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
-          </div>
+          <p class="text-xs text-gray-500 mt-1.5">
+            Select a specific time or leave as "All Day" for the entire day
+          </p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Estimated Hours</label>
+          <input type="number" name="estimated_hours" min="0" step="0.5" placeholder="4" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
         </div>
 
         <div>
@@ -2045,9 +2069,53 @@
     });
     
     // Create job
+    // Date selection - show time input when date is selected
+    document.getElementById('job-scheduled-date')?.addEventListener('change', (e) => {
+      const timeSection = document.getElementById('job-time-section');
+      if (e.target.value) {
+        timeSection?.classList.remove('hidden');
+        // Set default time to 9:00 AM if not already set
+        const timeInput = document.getElementById('job-scheduled-time');
+        if (timeInput && !timeInput.value) {
+          timeInput.value = '09:00';
+        }
+      } else {
+        timeSection?.classList.add('hidden');
+      }
+    });
+
+    // All-day checkbox - toggle time input disabled state
+    document.getElementById('job-all-day')?.addEventListener('change', (e) => {
+      const timeInput = document.getElementById('job-scheduled-time');
+      if (timeInput) {
+        timeInput.disabled = e.target.checked;
+        if (e.target.checked) {
+          timeInput.value = ''; // Clear time when all-day is checked
+        } else {
+          timeInput.value = timeInput.value || '09:00'; // Set default if empty
+        }
+      }
+    });
+
     document.getElementById('create-job-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const formData = new FormData(e.target);
+      
+      const scheduledDate = formData.get('scheduled_date');
+      const scheduledTime = formData.get('scheduled_time');
+      const isAllDay = document.getElementById('job-all-day')?.checked || false;
+      
+      // Combine date + time into datetime string
+      let scheduledDatetime = null;
+      if (scheduledDate) {
+        if (isAllDay || !scheduledTime) {
+          // All-day event: store as date at 9:00 AM (will be handled by is_all_day flag)
+          scheduledDatetime = `${scheduledDate}T09:00:00`;
+        } else {
+          // Timed event: combine date + time
+          scheduledDatetime = `${scheduledDate}T${scheduledTime}:00`;
+        }
+      }
       
       const jobData = {
         title: formData.get('title'),
@@ -2055,7 +2123,9 @@
         job_type: formData.get('job_type'),
         frequency: formData.get('frequency'),
         status: 'pending',
-        scheduled_date: formData.get('scheduled_date') || null,
+        scheduled_date: scheduledDate || null, // Keep for backward compatibility
+        scheduled_datetime: scheduledDatetime, // New datetime field
+        is_all_day: isAllDay, // Track if all-day event
         estimated_hours: formData.get('estimated_hours') || null,
         description: formData.get('description') || null,
         user_id: currentUser.id,

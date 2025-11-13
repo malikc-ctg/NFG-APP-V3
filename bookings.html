@@ -822,6 +822,30 @@
           />
         </div>
 
+        <!-- Time Selection (shown after date is selected) -->
+        <div id="booking-time-section" class="hidden">
+          <label class="block text-sm font-medium mb-1.5">Scheduled Time *</label>
+          <div class="flex items-center gap-4">
+            <input 
+              id="booking-time" 
+              type="time" 
+              class="flex-1 border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
+            />
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input 
+                type="checkbox" 
+                id="booking-all-day" 
+                class="w-4 h-4 text-nfgblue border-nfgray rounded focus:ring-nfgblue"
+                checked
+              />
+              <span class="text-sm text-gray-600 dark:text-gray-400">All Day</span>
+            </label>
+          </div>
+          <p class="text-xs text-gray-500 mt-1.5">
+            Select a specific time or leave as "All Day" for the entire day
+          </p>
+        </div>
+
         <!-- Frequency Selection -->
         <div>
           <label class="block text-sm font-medium mb-1.5">Frequency *</label>
@@ -1349,7 +1373,7 @@
             .from('jobs')
             .select('*, sites(name, address)')
             .eq('assigned_worker_id', currentUser.id)
-            .order('scheduled_date', { ascending: false });
+            .order('scheduled_datetime', { ascending: false });
           
           if (error) {
             console.error('❌ Error loading jobs for staff:', error);
@@ -1401,7 +1425,7 @@
             .from('jobs')
             .select('*, sites(name, address)')
             .eq('created_by', currentUser.id)
-            .order('scheduled_date', { ascending: false });
+            .order('scheduled_datetime', { ascending: false });
           
           if (error) {
             console.error('❌ Error loading jobs for admin/client:', error);
@@ -1738,6 +1762,8 @@
         const title = document.getElementById('booking-title').value.trim();
         const siteId = document.getElementById('booking-site').value;
         const scheduledDate = document.getElementById('booking-date').value;
+        const scheduledTime = document.getElementById('booking-time').value;
+        const isAllDay = document.getElementById('booking-all-day').checked;
         const description = document.getElementById('booking-description').value.trim();
         const isEmergency = document.getElementById('booking-emergency').checked;
         const frequency = document.getElementById('booking-frequency').value;
@@ -1746,6 +1772,17 @@
         if (!title || !siteId || !scheduledDate) {
           alert('Please fill in all required fields.');
           return;
+        }
+
+        // Combine date + time into datetime string
+        // If all-day or no time selected, use date only (set to 9:00 AM for datetime, but mark as all-day)
+        let scheduledDatetime = null;
+        if (isAllDay || !scheduledTime) {
+          // All-day event: store as date at 00:00:00 UTC (or 9:00 AM local, will be handled by is_all_day flag)
+          scheduledDatetime = `${scheduledDate}T09:00:00`;
+        } else {
+          // Timed event: combine date + time
+          scheduledDatetime = `${scheduledDate}T${scheduledTime}:00`;
         }
 
         // Get site details (including assigned worker)
@@ -1768,7 +1805,9 @@
           title: title,
           job_type: isEmergency ? 'emergency' : 'cleaning', // Emergency or cleaning
           description: description || 'Job created from booking',
-          scheduled_date: scheduledDate,
+          scheduled_date: scheduledDate, // Keep for backward compatibility
+          scheduled_datetime: scheduledDatetime, // New datetime field
+          is_all_day: isAllDay, // Track if all-day event
           status: 'pending',
           frequency: frequency,
           created_by: currentUser.id  // CRITICAL: Set the owner!
@@ -1797,7 +1836,9 @@
           job_id: job.id, // Link to the job
           title,
           description,
-          scheduled_date: scheduledDate,
+          scheduled_date: scheduledDate, // Keep for backward compatibility
+          scheduled_datetime: scheduledDatetime, // New datetime field
+          is_all_day: isAllDay, // Track if all-day event
           status: 'pending',
           frequency: frequency,
           created_by: currentUser.id  // CRITICAL: Set the owner!
@@ -1938,17 +1979,26 @@
         return [item]; // Single event
       }
       
-      // Check if scheduled_date exists
-      if (!item.scheduled_date) {
+      // Check if scheduled_date or scheduled_datetime exists
+      const hasDate = item.scheduled_date || item.scheduled_datetime;
+      if (!hasDate) {
         return [item]; // No date, can't expand
       }
       
       const occurrences = [];
-      const startDate = new Date(item.scheduled_date);
+      
+      // Use scheduled_datetime if available, otherwise scheduled_date
+      let startDateTime = null;
+      if (item.scheduled_datetime) {
+        startDateTime = new Date(item.scheduled_datetime);
+      } else if (item.scheduled_date) {
+        // If only date is available, create a date at 9:00 AM
+        startDateTime = new Date(`${item.scheduled_date}T09:00:00`);
+      }
       
       // Validate date
-      if (isNaN(startDate.getTime())) {
-        console.warn('Invalid scheduled_date for recurring event:', item);
+      if (!startDateTime || isNaN(startDateTime.getTime())) {
+        console.warn('Invalid scheduled_date/datetime for recurring event:', item);
         return [item];
       }
       
@@ -1956,25 +2006,46 @@
       const endDate = new Date();
       endDate.setFullYear(endDate.getFullYear() + 1); // Show 1 year ahead
       
-      let currentDate = new Date(startDate);
+      // Preserve original time if datetime exists
+      const originalTime = item.scheduled_datetime 
+        ? startDateTime.toTimeString().slice(0, 8) // Get HH:MM:SS
+        : '09:00:00'; // Default to 9:00 AM if only date
+      
+      let currentDateTime = new Date(startDateTime);
       let count = 0;
       const maxOccurrences = 52; // Limit to prevent too many events
+      const isAllDay = item.is_all_day !== false && !item.scheduled_datetime;
       
-      while (currentDate <= endDate && count < maxOccurrences) {
+      while (currentDateTime <= endDate && count < maxOccurrences) {
+        // Format date for scheduled_date (YYYY-MM-DD)
+        const dateStr = currentDateTime.toISOString().split('T')[0];
+        
+        // Format datetime for scheduled_datetime (preserve time)
+        let datetimeStr = null;
+        if (!isAllDay && item.scheduled_datetime) {
+          // Preserve the original time
+          datetimeStr = `${dateStr}T${originalTime}`;
+        } else {
+          // All-day event: use 9:00 AM as placeholder
+          datetimeStr = `${dateStr}T09:00:00`;
+        }
+        
         occurrences.push({
           ...item,
-          scheduled_date: currentDate.toISOString().split('T')[0],
+          scheduled_date: dateStr,
+          scheduled_datetime: datetimeStr,
           isRecurringInstance: count > 0, // First one is original
-          originalId: item.id
+          originalId: item.id,
+          is_all_day: isAllDay // Preserve all-day flag
         });
         
         // Calculate next occurrence
         if (pattern === 'weekly') {
-          currentDate.setDate(currentDate.getDate() + 7);
+          currentDateTime.setDate(currentDateTime.getDate() + 7);
         } else if (pattern === 'biweekly') {
-          currentDate.setDate(currentDate.getDate() + 14);
+          currentDateTime.setDate(currentDateTime.getDate() + 14);
         } else if (pattern === 'monthly') {
-          currentDate.setMonth(currentDate.getMonth() + 1);
+          currentDateTime.setMonth(currentDateTime.getMonth() + 1);
         } else {
           // Unknown pattern, break
           break;
@@ -2028,8 +2099,8 @@
         .filter(job => {
           // Staff: Only show assigned jobs
           // Show all jobs regardless of status (filter removed)
-          // Only show jobs with scheduled_date
-          return job.scheduled_date;
+          // Only show jobs with scheduled_date or scheduled_datetime
+          return job.scheduled_date || job.scheduled_datetime;
         })
         .map(job => {
           const siteName = job.sites?.name || 'Unknown';
@@ -2043,11 +2114,43 @@
           // Get icon for job type
           const icon = getJobIcon(job.job_type || 'cleaning', job.status);
           
+          // Determine if all-day event and get start time
+          // Prefer scheduled_datetime if available, fallback to scheduled_date
+          const isAllDay = job.is_all_day !== false && !job.scheduled_datetime;
+          let startDate = '';
+          
+          if (job.scheduled_datetime) {
+            // Use datetime if available
+            startDate = job.scheduled_datetime;
+          } else if (job.scheduled_date) {
+            // Fallback to date only (backward compatibility)
+            startDate = job.scheduled_date;
+          } else {
+            // Skip if neither exists
+            return null;
+          }
+          
+          // Format title with time if not all-day
+          let displayTitle = `${title} • ${siteName}`;
+          if (!isAllDay && job.scheduled_datetime) {
+            try {
+              const eventDate = new Date(startDate);
+              const timeStr = eventDate.toLocaleTimeString('en-US', { 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: true 
+              });
+              displayTitle = `${timeStr} • ${title} • ${siteName}`;
+            } catch (e) {
+              // If date parsing fails, use original title
+            }
+          }
+          
           return {
-            id: `job-${job.id}${job.isRecurringInstance ? '-' + job.scheduled_date : ''}`,
-            title: `${title} • ${siteName}`, // Modern separator
-            start: job.scheduled_date,
-            allDay: true,
+            id: `job-${job.id}${job.isRecurringInstance ? '-' + (job.scheduled_datetime || job.scheduled_date) : ''}`,
+            title: displayTitle,
+            start: startDate,
+            allDay: isAllDay,
             backgroundColor: statusColor,
             borderColor: isEmergency ? '#EF4444' : statusColor,
             borderWidth: isEmergency ? 2 : 0, // No border for normal, red border for emergency
@@ -2067,10 +2170,12 @@
               isEmergency: isEmergency,
               isRecurring: job.frequency === 'recurring',
               siteName: siteName,
-              icon: icon
+              icon: icon,
+              isAllDay: isAllDay
             }
           };
-        });
+        })
+        .filter(job => job !== null); // Remove null entries
     }
 
     function formatBookingsForCalendar(bookingsList) {
@@ -2085,8 +2190,8 @@
       return allBookings
         .filter(booking => {
           // Show all bookings (filter removed)
-          // Only show bookings with scheduled_date
-          return booking.scheduled_date;
+          // Only show bookings with scheduled_date or scheduled_datetime
+          return booking.scheduled_date || booking.scheduled_datetime;
         })
         .map(booking => {
           const siteName = booking.sites?.name || 'Unknown';
@@ -2098,11 +2203,43 @@
           const isEmergency = booking.is_emergency || false;
           const icon = getBookingIcon(booking.status);
           
+          // Determine if all-day event and get start time
+          // Prefer scheduled_datetime if available, fallback to scheduled_date
+          const isAllDay = booking.is_all_day !== false && !booking.scheduled_datetime;
+          let startDate = '';
+          
+          if (booking.scheduled_datetime) {
+            // Use datetime if available
+            startDate = booking.scheduled_datetime;
+          } else if (booking.scheduled_date) {
+            // Fallback to date only (backward compatibility)
+            startDate = booking.scheduled_date;
+          } else {
+            // Skip if neither exists
+            return null;
+          }
+          
+          // Format title with time if not all-day
+          let displayTitle = `${title} • ${siteName}`;
+          if (!isAllDay && booking.scheduled_datetime) {
+            try {
+              const eventDate = new Date(startDate);
+              const timeStr = eventDate.toLocaleTimeString('en-US', { 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: true 
+              });
+              displayTitle = `${timeStr} • ${title} • ${siteName}`;
+            } catch (e) {
+              // If date parsing fails, use original title
+            }
+          }
+          
           return {
-            id: `booking-${booking.id}${booking.isRecurringInstance ? '-' + booking.scheduled_date : ''}`,
-            title: `${title} • ${siteName}`, // Modern separator
-            start: booking.scheduled_date,
-            allDay: true,
+            id: `booking-${booking.id}${booking.isRecurringInstance ? '-' + (booking.scheduled_datetime || booking.scheduled_date) : ''}`,
+            title: displayTitle,
+            start: startDate,
+            allDay: isAllDay,
             backgroundColor: statusColor,
             borderColor: isEmergency ? '#EF4444' : statusColor,
             borderWidth: isEmergency ? 2 : 0,
@@ -2122,10 +2259,12 @@
               isEmergency: isEmergency,
               isRecurring: booking.frequency === 'recurring',
               siteName: siteName,
-              icon: icon
+              icon: icon,
+              isAllDay: isAllDay
             }
           };
-        });
+        })
+        .filter(booking => booking !== null); // Remove null entries
     }
 
     // ========== CALENDAR INITIALIZATION ==========
@@ -2671,6 +2810,34 @@
 
     document.getElementById('create-booking-submit')?.addEventListener('click', createBooking);
     document.getElementById('cancel-booking-btn')?.addEventListener('click', cancelBooking);
+
+    // Date selection - show time input when date is selected
+    document.getElementById('booking-date')?.addEventListener('change', (e) => {
+      const timeSection = document.getElementById('booking-time-section');
+      if (e.target.value) {
+        timeSection?.classList.remove('hidden');
+        // Set default time to 9:00 AM if not already set
+        const timeInput = document.getElementById('booking-time');
+        if (timeInput && !timeInput.value) {
+          timeInput.value = '09:00';
+        }
+      } else {
+        timeSection?.classList.add('hidden');
+      }
+    });
+
+    // All-day checkbox - toggle time input disabled state
+    document.getElementById('booking-all-day')?.addEventListener('change', (e) => {
+      const timeInput = document.getElementById('booking-time');
+      if (timeInput) {
+        timeInput.disabled = e.target.checked;
+        if (e.target.checked) {
+          timeInput.value = ''; // Clear time when all-day is checked
+        } else {
+          timeInput.value = timeInput.value || '09:00'; // Set default if empty
+        }
+      }
+    });
 
     // Frequency selection - show/hide recurrence pattern
     document.getElementById('booking-frequency')?.addEventListener('change', (e) => {
