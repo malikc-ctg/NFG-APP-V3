@@ -1344,43 +1344,64 @@
         let bookingsData = null;
         let bookingsError = null;
         
-        // First try with created_by
-        let query = supabase
-          .from('bookings')
-          .select('*')
-          .eq('created_by', currentUser.id)
-          .order('scheduled_date', { ascending: false });
+        // Try different combinations: created_by/client_id and with/without ordering
+        let queries = [
+          // Try 1: created_by with scheduled_date ordering
+          () => supabase.from('bookings').select('*').eq('created_by', currentUser.id).order('scheduled_date', { ascending: false }),
+          // Try 2: client_id with scheduled_date ordering
+          () => supabase.from('bookings').select('*').eq('client_id', currentUser.id).order('scheduled_date', { ascending: false }),
+          // Try 3: created_by without ordering
+          () => supabase.from('bookings').select('*').eq('created_by', currentUser.id),
+          // Try 4: client_id without ordering
+          () => supabase.from('bookings').select('*').eq('client_id', currentUser.id),
+          // Try 5: Just get all bookings (no filter)
+          () => supabase.from('bookings').select('*')
+        ];
         
-        const result = await query;
-        bookingsData = result.data;
-        bookingsError = result.error;
-        
-        // If error is about missing column, try client_id instead
-        if (bookingsError && (bookingsError.code === 'PGRST204' || bookingsError.message?.includes('created_by') || bookingsError.message?.includes('column'))) {
-          console.warn('⚠️ created_by column not found, trying client_id instead');
-          const retryQuery = supabase
-            .from('bookings')
-            .select('*')
-            .eq('client_id', currentUser.id)
-            .order('scheduled_date', { ascending: false });
-          
-          const retryResult = await retryQuery;
-          if (!retryResult.error) {
-            bookingsData = retryResult.data;
-            bookingsError = null;
-            console.log('✅ Loaded bookings using client_id');
-          } else {
-            bookingsError = retryResult.error;
-            console.error('❌ Error loading bookings with client_id:', retryResult.error);
+        bookingsError = null;
+        for (let i = 0; i < queries.length; i++) {
+          try {
+            const result = await queries[i]();
+            if (!result.error) {
+              bookingsData = result.data;
+              bookingsError = null;
+              console.log(`✅ Loaded bookings using query ${i + 1}`);
+              
+              // If we used query 5 (no filter), filter client-side
+              if (i === 4) {
+                bookingsData = bookingsData.filter(b => 
+                  (b.created_by === currentUser.id || b.client_id === currentUser.id)
+                );
+                console.log(`✅ Filtered to ${bookingsData.length} bookings for current user`);
+              }
+              
+              // Sort by scheduled_date if available
+              if (bookingsData && bookingsData.length > 0 && bookingsData[0].scheduled_date) {
+                bookingsData.sort((a, b) => {
+                  const dateA = new Date(a.scheduled_date);
+                  const dateB = new Date(b.scheduled_date);
+                  return dateB - dateA; // Descending
+                });
+              }
+              
+              break;
+            } else {
+              bookingsError = result.error;
+              console.warn(`⚠️ Query ${i + 1} failed:`, result.error.message);
+            }
+          } catch (err) {
+            bookingsError = err;
+            console.warn(`⚠️ Query ${i + 1} exception:`, err.message);
           }
         }
         
-        if (bookingsError) {
-          console.error('❌ Error loading bookings:', bookingsError);
-          console.error('❌ Error code:', bookingsError.code);
-          console.error('❌ Error message:', bookingsError.message);
+        if (bookingsError || !bookingsData) {
+          console.error('❌ All booking queries failed');
+          console.error('❌ Last error:', bookingsError);
+          console.error('❌ Error code:', bookingsError?.code);
+          console.error('❌ Error message:', bookingsError?.message);
           console.error('❌ Error details:', JSON.stringify(bookingsError, null, 2));
-          throw bookingsError;
+          throw bookingsError || new Error('Failed to load bookings');
         }
         
         bookings = bookingsData || [];
