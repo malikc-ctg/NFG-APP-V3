@@ -2257,6 +2257,10 @@
         siteName = 'Unknown Site';
       }
 
+      // Get scheduled datetime from job data if available
+      const scheduledDatetime = job?.scheduled_datetime || null;
+      const isAllDay = job?.is_all_day || false;
+
       const { error } = await supabase
         .from('jobs')
         .update({ assigned_worker_id: workerId })
@@ -2269,16 +2273,6 @@
       } else {
         // Create notification for the assigned worker
         try {
-          // Fetch job data to get scheduled datetime
-          const { data: jobData, error: jobFetchError } = await supabase
-            .from('jobs')
-            .select('scheduled_datetime, is_all_day')
-            .eq('id', currentJobId)
-            .single();
-          
-          const scheduledDatetime = jobData?.scheduled_datetime || null;
-          const isAllDay = jobData?.is_all_day || false;
-          
           const { notifyJobAssigned } = await import('./js/notification-triggers.js');
           await notifyJobAssigned(
             currentJobId, 
