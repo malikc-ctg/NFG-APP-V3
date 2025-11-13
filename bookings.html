@@ -878,6 +878,9 @@
                 calendar.setOption('height', availableHeight > 600 ? availableHeight : 600);
                 calendar.updateSize();
               }
+              // Setup buttons and update styles after calendar is initialized
+              setupCalendarViewButtons();
+              updateCalendarViewButtonStyles();
             }, 200);
           } else {
             // Recalculate height and update
@@ -889,6 +892,9 @@
             calendar.setOption('height', availableHeight > 600 ? availableHeight : 600);
             calendar.updateSize();
             updateCalendar();
+            // Setup buttons and update styles
+            setupCalendarViewButtons();
+            updateCalendarViewButtonStyles();
           }
         }, 100);
         
@@ -1905,6 +1911,8 @@
             calendar.updateSize();
           }
         }
+        // Ensure button styles are correct after calendar renders
+        updateCalendarViewButtonStyles();
       }, 200);
       
       // Handle window resize to update calendar height
