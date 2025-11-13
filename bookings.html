@@ -843,6 +843,26 @@
         // Set current view to calendar
         currentView = 'calendar';
         
+        // Update calendar view button styles for staff (week is default)
+        const weekBtn = document.getElementById('calendar-view-week');
+        const dayBtn = document.getElementById('calendar-view-day');
+        const monthBtn = document.getElementById('calendar-view-month');
+        
+        // Set week button as active (default view)
+        if (weekBtn) {
+          weekBtn.classList.remove('border', 'border-nfgray', 'hover:bg-nfglight', 'dark:hover:bg-gray-600', 'dark:bg-gray-700');
+          weekBtn.classList.add('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
+        }
+        // Ensure day and month buttons are inactive
+        if (dayBtn) {
+          dayBtn.classList.remove('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
+          dayBtn.classList.add('border', 'border-nfgray', 'hover:bg-nfglight', 'dark:hover:bg-gray-600', 'dark:bg-gray-700');
+        }
+        if (monthBtn) {
+          monthBtn.classList.remove('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
+          monthBtn.classList.add('border', 'border-nfgray', 'hover:bg-nfglight', 'dark:hover:bg-gray-600', 'dark:bg-gray-700');
+        }
+        
         // Initialize calendar immediately for staff with proper height
         setTimeout(() => {
           if (!calendar) {
@@ -2031,22 +2051,36 @@
     function changeCalendarView(viewType) {
       currentCalendarView = viewType;
       
-      if (!calendar) return;
+      if (!calendar) {
+        // If calendar doesn't exist yet, update button styles anyway
+        updateCalendarViewButtonStyles();
+        return;
+      }
       
       calendar.changeView(viewType);
       updateCalendarDateRange(calendar.view);
       
-      // Update button styles
-      document.querySelectorAll('.calendar-view-btn').forEach(btn => {
-        btn.classList.remove('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
-        btn.classList.add('border', 'border-nfgray', 'hover:bg-nfglight');
-      });
+      // Update calendar height when view changes (month view might need different height)
+      setTimeout(() => {
+        if (calendar) {
+          const calendarContainerEl = document.getElementById('calendar-container');
+          const scrollableContentEl = calendarContainerEl?.closest('.scrollable-content');
+          const availableHeight = scrollableContentEl 
+            ? scrollableContentEl.offsetHeight - 100
+            : window.innerHeight - 300;
+          
+          // Month view can use more height, week/day views use calculated height
+          const calendarHeight = viewType === 'dayGridMonth' 
+            ? availableHeight > 700 ? availableHeight : 700
+            : availableHeight > 600 ? availableHeight : 600;
+          
+          calendar.setOption('height', calendarHeight);
+          calendar.updateSize();
+        }
+      }, 100);
       
-      const activeBtn = document.getElementById(`calendar-view-${viewType === 'timeGridDay' ? 'day' : viewType === 'timeGridWeek' ? 'week' : 'month'}`);
-      if (activeBtn) {
-        activeBtn.classList.add('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
-        activeBtn.classList.remove('border', 'border-nfgray', 'hover:bg-nfglight');
-      }
+      // Update button styles
+      updateCalendarViewButtonStyles();
     }
 
     function openCreateBookingModal(prefilledDate = null) {
