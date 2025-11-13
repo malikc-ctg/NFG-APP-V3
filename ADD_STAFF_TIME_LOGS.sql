@@ -33,7 +33,6 @@ CREATE INDEX IF NOT EXISTS idx_staff_time_logs_user_clock ON staff_time_logs(use
 
 -- Grant permissions
 GRANT ALL ON staff_time_logs TO authenticated;
-GRANT USAGE, SELECT ON SEQUENCE IF EXISTS staff_time_logs_id_seq TO authenticated;
 
 -- Add updated_at trigger
 CREATE OR REPLACE FUNCTION update_updated_at_column()
