@@ -5,6 +5,9 @@ import { showNotification, showConfirm, showPrompt, toast, notify } from './noti
 
 // Current filter state
 let currentFilter = 'all'
+// Store sites for filtering
+let cachedSites = []
+let cachedRenderOptions = {}
 
 // Render sites to the grid
 export async function renderSites(sites, options = {}) {
@@ -14,6 +17,10 @@ export async function renderSites(sites, options = {}) {
     console.error('[UI] ❌ sites-grid element not found!')
     return
   }
+  
+  // Cache sites and options for filtering
+  cachedSites = sites || []
+  cachedRenderOptions = options || {}
   
   // Show skeleton loading if this is initial load
   if (options.showSkeleton && sites.length === 0) {
@@ -62,8 +69,9 @@ function filterSites(sites, filter) {
 }
 
 // Apply filter and update UI
-function applyFilter(filterValue) {
+async function applyFilter(filterValue) {
   currentFilter = filterValue
+  console.log('[UI] Applying filter:', filterValue)
   
   // Update filter label
   const filterLabel = document.getElementById('filter-label')
@@ -71,7 +79,8 @@ function applyFilter(filterValue) {
     if (filterValue === 'all') {
       filterLabel.textContent = 'All Sites'
     } else {
-      filterLabel.textContent = filterValue
+      // Capitalize first letter
+      filterLabel.textContent = filterValue.charAt(0).toUpperCase() + filterValue.slice(1) + ' Sites'
     }
   }
   
@@ -81,9 +90,16 @@ function applyFilter(filterValue) {
     dropdown.classList.add('hidden')
   }
   
-  // Re-render sites with new filter
-  const sites = JSON.parse(localStorage.getItem('nfg_sites') || '[]')
-  renderSites(sites)
+  // Re-render sites with new filter using cached sites
+  if (cachedSites.length > 0) {
+    await renderSites(cachedSites, cachedRenderOptions)
+  } else {
+    // Fallback: try to get sites from dashboard if available
+    if (typeof window.fetchSites === 'function') {
+      const sites = await window.fetchSites()
+      await renderSites(sites, cachedRenderOptions)
+    }
+  }
 }
 
 // Create empty state when no sites exist
@@ -327,11 +343,12 @@ export function initializeUI() {
   // Handle custom site filter dropdown
   const filterRadios = document.querySelectorAll('input[name="site-filter"]')
   filterRadios.forEach(radio => {
-    radio.addEventListener('change', (e) => {
+    radio.addEventListener('change', async (e) => {
       const filterId = e.target.id
       const filterValue = filterId.replace('filter-', '')
       console.log(`[UI] Filter changed to: ${filterValue}`)
-      // TODO: Filter sites based on selection
+      // Apply filter and re-render sites
+      await applyFilter(filterValue)
     })
   })
   
