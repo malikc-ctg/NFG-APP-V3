@@ -1340,12 +1340,40 @@
       try {
         console.log('🔍 Loading bookings for user:', currentUser.id);
         
-        // Fetch bookings without joins first (avoid relationship errors)
-        const { data: bookingsData, error: bookingsError } = await supabase
+        // Try created_by first, fallback to client_id if created_by doesn't exist
+        let bookingsData = null;
+        let bookingsError = null;
+        
+        // First try with created_by
+        let query = supabase
           .from('bookings')
           .select('*')
           .eq('created_by', currentUser.id)
           .order('scheduled_date', { ascending: false });
+        
+        const result = await query;
+        bookingsData = result.data;
+        bookingsError = result.error;
+        
+        // If error is about missing column, try client_id instead
+        if (bookingsError && (bookingsError.code === 'PGRST204' || bookingsError.message?.includes('created_by') || bookingsError.message?.includes('column'))) {
+          console.warn('⚠️ created_by column not found, trying client_id instead');
+          const retryQuery = supabase
+            .from('bookings')
+            .select('*')
+            .eq('client_id', currentUser.id)
+            .order('scheduled_date', { ascending: false });
+          
+          const retryResult = await retryQuery;
+          if (!retryResult.error) {
+            bookingsData = retryResult.data;
+            bookingsError = null;
+            console.log('✅ Loaded bookings using client_id');
+          } else {
+            bookingsError = retryResult.error;
+            console.error('❌ Error loading bookings with client_id:', retryResult.error);
+          }
+        }
         
         if (bookingsError) {
           console.error('❌ Error loading bookings:', bookingsError);
