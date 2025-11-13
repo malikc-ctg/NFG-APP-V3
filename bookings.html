@@ -1922,7 +1922,14 @@
           
           // Notify assigned worker about new job (if job was auto-assigned)
           if (job.assigned_worker_id && site) {
-            await notifyJobAssigned(job.id, job.assigned_worker_id, job.title, site.name);
+            await notifyJobAssigned(
+              job.id, 
+              job.assigned_worker_id, 
+              job.title, 
+              site.name,
+              job.scheduled_datetime || null,
+              job.is_all_day || false
+            );
             console.log('✅ Job assignment notification sent to worker');
           }
           

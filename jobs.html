@@ -2269,8 +2269,25 @@
       } else {
         // Create notification for the assigned worker
         try {
+          // Fetch job data to get scheduled datetime
+          const { data: jobData, error: jobFetchError } = await supabase
+            .from('jobs')
+            .select('scheduled_datetime, is_all_day')
+            .eq('id', currentJobId)
+            .single();
+          
+          const scheduledDatetime = jobData?.scheduled_datetime || null;
+          const isAllDay = jobData?.is_all_day || false;
+          
           const { notifyJobAssigned } = await import('./js/notification-triggers.js');
-          await notifyJobAssigned(currentJobId, workerId, jobTitle, siteName);
+          await notifyJobAssigned(
+            currentJobId, 
+            workerId, 
+            jobTitle, 
+            siteName,
+            scheduledDatetime,
+            isAllDay
+          );
           console.log('✅ Job assignment notification created');
         } catch (notifError) {
           console.warn('⚠️ Failed to create job assignment notification:', notifError);

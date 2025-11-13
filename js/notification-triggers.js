@@ -8,16 +8,64 @@ import { supabase } from './supabase.js';
 
 /**
  * Create notification when job is assigned to a worker
+ * @param {string} jobId - The job ID
+ * @param {string} workerId - The worker/user ID to notify
+ * @param {string} jobTitle - The job title
+ * @param {string} siteName - The site name
+ * @param {string} scheduledDatetime - Optional: The scheduled datetime (ISO string)
+ * @param {boolean} isAllDay - Optional: Whether the job is all-day
  */
-export async function notifyJobAssigned(jobId, workerId, jobTitle, siteName) {
+export async function notifyJobAssigned(jobId, workerId, jobTitle, siteName, scheduledDatetime = null, isAllDay = false) {
   try {
+    // Format scheduled time for notification message
+    let timeInfo = '';
+    if (scheduledDatetime) {
+      try {
+        const scheduledDate = new Date(scheduledDatetime);
+        if (isAllDay) {
+          timeInfo = ` on ${scheduledDate.toLocaleDateString('en-US', { 
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })}`;
+        } else {
+          timeInfo = ` on ${scheduledDate.toLocaleString('en-US', { 
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          })}`;
+        }
+      } catch (e) {
+        // If date parsing fails, try to use just the date part
+        try {
+          const datePart = scheduledDatetime.split('T')[0];
+          const date = new Date(datePart);
+          timeInfo = ` on ${date.toLocaleDateString('en-US', { 
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })}`;
+        } catch (e2) {
+          console.warn('Failed to format date for notification:', e2);
+        }
+      }
+    }
+    
+    const message = `You've been assigned to "${jobTitle}" at ${siteName}${timeInfo}`;
+    
     const notification = await createNotification(
       workerId,
       'job_assigned',
       'New Job Assigned',
-      `You've been assigned to "${jobTitle}" at ${siteName}`,
+      message,
       `jobs.html#job-${jobId}`,
-      { job_id: jobId, site_name: siteName }
+      { job_id: jobId, site_name: siteName, scheduled_datetime: scheduledDatetime }
     );
     
     return notification;
