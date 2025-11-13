@@ -1341,7 +1341,7 @@
         console.log('🔍 Loading bookings for user:', currentUser.id);
         const { data, error } = await supabase
           .from('bookings')
-          .select('*, sites(name, address)')
+          .select('*, sites(name, address), jobs(estimated_hours)')
           .eq('created_by', currentUser.id)
           .order('scheduled_datetime', { ascending: false });
 
