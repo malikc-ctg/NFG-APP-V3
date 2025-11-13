@@ -2319,20 +2319,46 @@
             const bookingEvents = formatBookingsForCalendar(bookings);
             const allEvents = [...jobEvents, ...bookingEvents];
             
-            // Deduplicate events based on ID + start date (handles recurring instances on same date)
+            // Deduplicate events based on database ID + start date + type
+            // This catches duplicates even if they have different calendar event IDs
             const uniqueEventsMap = new Map();
+            const duplicates = [];
+            
             allEvents.forEach(event => {
-              // Use ID + start date as unique key to handle recurring instances on same date
-              const uniqueKey = `${event.id}-${event.start}`;
+              // Use database ID (from extendedProps) + start date + type as unique key
+              // This ensures we catch actual duplicate jobs/bookings, not just same calendar event IDs
+              const dbId = event.extendedProps?.id || 'unknown';
+              const eventType = event.extendedProps?.type || 'unknown';
+              const uniqueKey = `${eventType}-${dbId}-${event.start}`;
+              
               if (!uniqueEventsMap.has(uniqueKey)) {
                 uniqueEventsMap.set(uniqueKey, event);
               } else {
-                console.warn('⚠️ Duplicate event detected and removed:', event.id, event.start, event.title);
+                // Found a duplicate - log it
+                const existing = uniqueEventsMap.get(uniqueKey);
+                duplicates.push({
+                  calendarId: event.id,
+                  dbId: dbId,
+                  start: event.start,
+                  title: event.title,
+                  existingCalendarId: existing.id
+                });
+                console.warn('⚠️ Duplicate event detected and removed:', {
+                  calendarId: event.id,
+                  dbId: dbId,
+                  start: event.start,
+                  title: event.title,
+                  type: eventType,
+                  existingCalendarId: existing.id
+                });
               }
             });
             
             const uniqueEvents = Array.from(uniqueEventsMap.values());
             console.log(`📅 Calendar: ${uniqueEvents.length} unique events (${allEvents.length} before deduplication)`);
+            if (duplicates.length > 0) {
+              console.log(`⚠️ Removed ${duplicates.length} duplicate event(s):`, duplicates);
+            }
             successCallback(uniqueEvents);
           } catch (error) {
             console.error('Error loading calendar events:', error);
