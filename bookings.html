@@ -1340,91 +1340,82 @@
       try {
         console.log('🔍 Loading bookings for user:', currentUser.id);
         
-        // Use scheduled_date for ordering (backward compatible)
-        // Note: Removed jobs(estimated_hours) join to avoid relationship errors
-        // Will fetch estimated_hours separately if needed
-        let { data, error } = await supabase
+        // Fetch bookings without joins first (avoid relationship errors)
+        const { data: bookingsData, error: bookingsError } = await supabase
           .from('bookings')
-          .select('*, sites(name, address)')
+          .select('*')
           .eq('created_by', currentUser.id)
           .order('scheduled_date', { ascending: false });
         
-        if (error) {
-          console.error('❌ Error loading bookings:', error);
-          console.error('❌ Error code:', error.code);
-          console.error('❌ Error message:', error.message);
-          console.error('❌ Error details:', JSON.stringify(error, null, 2));
-          
-          // If it's a relationship error, try without sites join
-          if (error.code === 'PGRST200' || error.message?.includes('relationship')) {
-            console.warn('⚠️ Relationship error detected, trying without sites join');
-            const retryQuery = supabase
-              .from('bookings')
-              .select('*')
-              .eq('created_by', currentUser.id)
-              .order('scheduled_date', { ascending: false });
-            
-            const retryResult = await retryQuery;
-            if (!retryResult.error) {
-              // Manually fetch sites for each booking
-              const bookingIds = retryResult.data.map(b => b.site_id).filter(Boolean);
-              if (bookingIds.length > 0) {
-                const { data: sitesData } = await supabase
-                  .from('sites')
-                  .select('id, name, address')
-                  .in('id', bookingIds);
-                
-                const sitesMap = {};
-                (sitesData || []).forEach(site => {
-                  sitesMap[site.id] = site;
-                });
-                
-                // Attach sites to bookings
-                retryResult.data.forEach(booking => {
-                  booking.sites = sitesMap[booking.site_id] || null;
-                });
-              }
-              
-              data = retryResult.data;
-              error = null;
-            } else {
-              throw retryResult.error;
-            }
-          } else {
-            throw error;
-          }
+        if (bookingsError) {
+          console.error('❌ Error loading bookings:', bookingsError);
+          console.error('❌ Error code:', bookingsError.code);
+          console.error('❌ Error message:', bookingsError.message);
+          console.error('❌ Error details:', JSON.stringify(bookingsError, null, 2));
+          throw bookingsError;
         }
         
-        bookings = data || [];
+        bookings = bookingsData || [];
+        console.log(`✅ Loaded ${bookings.length} bookings`);
+        
+        // Fetch sites separately and attach to bookings
+        const siteIds = [...new Set(bookings.map(b => b.site_id).filter(Boolean))];
+        if (siteIds.length > 0) {
+          const { data: sitesData, error: sitesError } = await supabase
+            .from('sites')
+            .select('id, name, address')
+            .in('id', siteIds);
+          
+          if (!sitesError && sitesData) {
+            const sitesMap = {};
+            sitesData.forEach(site => {
+              sitesMap[site.id] = site;
+            });
+            
+            // Attach sites to bookings
+            bookings.forEach(booking => {
+              booking.sites = sitesMap[booking.site_id] || null;
+            });
+            console.log(`✅ Attached ${sitesData.length} sites to bookings`);
+          } else if (sitesError) {
+            console.warn('⚠️ Error loading sites:', sitesError);
+          }
+        }
         
         // Fetch estimated_hours from linked jobs if job_id exists
         const bookingsWithJobIds = bookings.filter(b => b.job_id);
         if (bookingsWithJobIds.length > 0) {
           const jobIds = bookingsWithJobIds.map(b => b.job_id);
-          const { data: jobsData } = await supabase
+          const { data: jobsData, error: jobsError } = await supabase
             .from('jobs')
             .select('id, estimated_hours')
             .in('id', jobIds);
           
-          const jobsMap = {};
-          (jobsData || []).forEach(job => {
-            jobsMap[job.id] = job;
-          });
-          
-          // Attach estimated_hours to bookings
-          bookings.forEach(booking => {
-            if (booking.job_id && jobsMap[booking.job_id]) {
-              booking.jobs = { estimated_hours: jobsMap[booking.job_id].estimated_hours };
-            }
-          });
+          if (!jobsError && jobsData) {
+            const jobsMap = {};
+            jobsData.forEach(job => {
+              jobsMap[job.id] = job;
+            });
+            
+            // Attach estimated_hours to bookings
+            bookings.forEach(booking => {
+              if (booking.job_id && jobsMap[booking.job_id]) {
+                booking.jobs = { estimated_hours: jobsMap[booking.job_id].estimated_hours };
+              }
+            });
+            console.log(`✅ Attached estimated_hours from ${jobsData.length} jobs`);
+          } else if (jobsError) {
+            console.warn('⚠️ Error loading job estimated_hours:', jobsError);
+          }
         }
+        
         await renderBookings();
         if (currentView === 'calendar') {
           updateCalendar();
         }
       } catch (error) {
         console.error('Error loading bookings:', error);
-        alert('Failed to load bookings. Please refresh the page.');
+        toast.error('Failed to load bookings: ' + (error.message || 'Unknown error'), 'Loading Error');
       }
     }
 
