@@ -1336,35 +1336,62 @@
     async function loadJobs() {
       try {
         console.log('🔍 Loading jobs for user:', currentUser.id);
-        console.log('🔍 User profile:', currentUserProfile);
+        console.log('🔍 User profile role:', currentUserProfile?.role);
         
-        // For staff, show all jobs (for calendar view visibility)
+        // For staff, only show assigned jobs
         if (currentUserProfile && currentUserProfile.role === 'staff') {
-          console.log('🔍 Loading ALL jobs for staff user');
+          console.log('🔍 Loading assigned jobs for staff user:', currentUser.id);
+          
+          // Query jobs assigned to this staff member
+          // assigned_worker_id references user_profiles(id), which equals auth.users(id)
           const { data, error } = await supabase
             .from('jobs')
             .select('*, sites(name, address), user_profiles(full_name)')
+            .eq('assigned_worker_id', currentUser.id)
             .order('scheduled_date', { ascending: false });
           
           if (error) {
             console.error('❌ Error loading jobs for staff:', error);
+            console.error('❌ Error code:', error.code);
+            console.error('❌ Error message:', error.message);
+            console.error('❌ Error details:', JSON.stringify(error, null, 2));
             throw error;
           }
           
           jobs = data || [];
-          console.log(`✅ Loaded ${jobs.length} jobs for staff user`);
+          console.log(`✅ Loaded ${jobs.length} assigned jobs for staff user`);
           
           // Log job details for debugging
           if (jobs.length > 0) {
-            console.log('📋 Sample jobs:', jobs.slice(0, 3).map(j => ({
+            console.log('📋 Jobs found:', jobs.map(j => ({
               id: j.id,
               title: j.title,
               assigned_worker_id: j.assigned_worker_id,
               scheduled_date: j.scheduled_date,
-              status: j.status
+              status: j.status,
+              site_name: j.sites?.name
             })));
           } else {
-            console.warn('⚠️ No jobs found for staff user');
+            console.warn('⚠️ No jobs found assigned to staff user:', currentUser.id);
+            console.warn('⚠️ Debugging info:');
+            console.warn('   - User ID:', currentUser.id);
+            console.warn('   - Profile ID:', currentUserProfile?.id);
+            console.warn('   - Profile Role:', currentUserProfile?.role);
+            
+            // Try to check if any jobs exist at all (for debugging)
+            const { data: allJobs, error: checkError } = await supabase
+              .from('jobs')
+              .select('id, title, assigned_worker_id, scheduled_date')
+              .limit(5);
+            
+            if (!checkError && allJobs) {
+              console.warn('📊 Sample jobs in database:', allJobs);
+              const jobsWithAssignments = allJobs.filter(j => j.assigned_worker_id);
+              console.warn(`📊 Jobs with assignments: ${jobsWithAssignments.length}`);
+              if (jobsWithAssignments.length > 0) {
+                console.warn('📊 Assigned worker IDs:', jobsWithAssignments.map(j => j.assigned_worker_id));
+              }
+            }
           }
         } else {
           // For admin/client, show all their jobs
