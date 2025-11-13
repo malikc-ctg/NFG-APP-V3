@@ -2049,11 +2049,14 @@
     }
 
     function changeCalendarView(viewType) {
+      console.log('[Calendar] changeCalendarView called with:', viewType);
       currentCalendarView = viewType;
       
+      // Update button styles FIRST, before calendar operations
+      updateCalendarViewButtonStyles();
+      
       if (!calendar) {
-        // If calendar doesn't exist yet, update button styles anyway
-        updateCalendarViewButtonStyles();
+        // If calendar doesn't exist yet, button styles are already updated
         return;
       }
       
@@ -2078,13 +2081,12 @@
           calendar.updateSize();
         }
       }, 100);
-      
-      // Update button styles
-      updateCalendarViewButtonStyles();
     }
     
     // Helper function to update calendar view button styles
     function updateCalendarViewButtonStyles() {
+      console.log('[Calendar] Updating button styles for view:', currentCalendarView);
+      
       // Map currentCalendarView to button ID suffix
       let buttonIdSuffix = '';
       if (currentCalendarView === 'timeGridDay') {
@@ -2095,21 +2097,35 @@
         buttonIdSuffix = 'month';
       }
       
-      // Update all calendar view buttons - remove active styles
-      document.querySelectorAll('.calendar-view-btn').forEach(btn => {
-        // Remove active (blue) styles
-        btn.classList.remove('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
-        // Add inactive (border) styles
-        btn.classList.add('border', 'border-nfgray', 'hover:bg-nfglight', 'dark:hover:bg-gray-600', 'dark:bg-gray-700');
+      console.log('[Calendar] Button ID suffix:', buttonIdSuffix);
+      
+      // Get all calendar view buttons
+      const weekBtn = document.getElementById('calendar-view-week');
+      const dayBtn = document.getElementById('calendar-view-day');
+      const monthBtn = document.getElementById('calendar-view-month');
+      
+      // Reset all buttons to inactive state
+      [weekBtn, dayBtn, monthBtn].forEach(btn => {
+        if (btn) {
+          // Remove active (blue) styles
+          btn.classList.remove('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
+          // Add inactive (border) styles
+          btn.classList.add('border', 'border-nfgray', 'hover:bg-nfglight', 'dark:hover:bg-gray-600', 'dark:bg-gray-700');
+        }
       });
       
       // Set active button styles
       const activeBtn = document.getElementById(`calendar-view-${buttonIdSuffix}`);
+      console.log('[Calendar] Active button element:', activeBtn);
+      
       if (activeBtn) {
         // Remove inactive styles
         activeBtn.classList.remove('border', 'border-nfgray', 'hover:bg-nfglight', 'dark:hover:bg-gray-600', 'dark:bg-gray-700');
         // Add active styles
         activeBtn.classList.add('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
+        console.log('[Calendar] Active button classes:', activeBtn.className);
+      } else {
+        console.error('[Calendar] Active button not found! ID:', `calendar-view-${buttonIdSuffix}`);
       }
     }
 
@@ -2173,15 +2189,24 @@
     });
 
     // Calendar view type toggle
-    document.getElementById('calendar-view-week')?.addEventListener('click', () => {
+    document.getElementById('calendar-view-week')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('[Calendar] Week button clicked');
       changeCalendarView('timeGridWeek');
     });
     
-    document.getElementById('calendar-view-day')?.addEventListener('click', () => {
+    document.getElementById('calendar-view-day')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('[Calendar] Day button clicked');
       changeCalendarView('timeGridDay');
     });
     
-    document.getElementById('calendar-view-month')?.addEventListener('click', () => {
+    document.getElementById('calendar-view-month')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('[Calendar] Month button clicked');
       changeCalendarView('dayGridMonth');
     });
 
