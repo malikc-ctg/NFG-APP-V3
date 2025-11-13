@@ -1983,15 +1983,20 @@
           return;
         }
 
-        // Combine date + time into datetime string
-        // If all-day or no time selected, use date only (set to 9:00 AM for datetime, but mark as all-day)
+        // Combine date + time into datetime string with proper timezone handling
         let scheduledDatetime = null;
-        if (isAllDay || !scheduledTime) {
-          // All-day event: store as date at 00:00:00 UTC (or 9:00 AM local, will be handled by is_all_day flag)
-          scheduledDatetime = `${scheduledDate}T09:00:00`;
-        } else {
-          // Timed event: combine date + time
-          scheduledDatetime = `${scheduledDate}T${scheduledTime}:00`;
+        if (scheduledDate) {
+          if (isAllDay || !scheduledTime) {
+            // All-day event: store as date at midnight in user's local timezone
+            // Create a Date object at midnight local time, then convert to ISO string
+            const date = new Date(scheduledDate + 'T00:00:00');
+            scheduledDatetime = date.toISOString();
+          } else {
+            // Timed event: combine date + time in user's local timezone
+            // Create a Date object with local date/time, then convert to ISO string (UTC)
+            const date = new Date(scheduledDate + 'T' + scheduledTime + ':00');
+            scheduledDatetime = date.toISOString();
+          }
         }
 
         // Get site details (including assigned worker)
