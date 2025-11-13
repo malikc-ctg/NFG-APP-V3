@@ -2542,7 +2542,13 @@
       }
       
       calendar.changeView(viewType);
-      updateCalendarDateRange(calendar.view);
+      
+      // Update date range after view changes (with delay to ensure view is ready)
+      setTimeout(() => {
+        if (calendar && calendar.view) {
+          updateCalendarDateRange(calendar.view);
+        }
+      }, 100);
       
       // Update calendar height when view changes (month view might need different height)
       setTimeout(() => {
@@ -2687,21 +2693,33 @@
     document.getElementById('calendar-prev')?.addEventListener('click', () => {
       if (calendar) {
         calendar.prev();
-        updateCalendarDateRange(calendar.view);
+        setTimeout(() => {
+          if (calendar && calendar.view) {
+            updateCalendarDateRange(calendar.view);
+          }
+        }, 100);
       }
     });
     
     document.getElementById('calendar-next')?.addEventListener('click', () => {
       if (calendar) {
         calendar.next();
-        updateCalendarDateRange(calendar.view);
+        setTimeout(() => {
+          if (calendar && calendar.view) {
+            updateCalendarDateRange(calendar.view);
+          }
+        }, 100);
       }
     });
     
     document.getElementById('calendar-today')?.addEventListener('click', () => {
       if (calendar) {
         calendar.today();
-        updateCalendarDateRange(calendar.view);
+        setTimeout(() => {
+          if (calendar && calendar.view) {
+            updateCalendarDateRange(calendar.view);
+          }
+        }, 100);
       }
     });
 
