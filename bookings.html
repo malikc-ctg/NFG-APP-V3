@@ -2085,40 +2085,36 @@
     
     // Helper function to update calendar view button styles
     function updateCalendarViewButtonStyles() {
-      // Use requestAnimationFrame to ensure DOM is ready
-      requestAnimationFrame(() => {
-        // Map currentCalendarView to button ID suffix
-        let buttonIdSuffix = '';
-        if (currentCalendarView === 'timeGridDay') {
-          buttonIdSuffix = 'day';
-        } else if (currentCalendarView === 'timeGridWeek') {
-          buttonIdSuffix = 'week';
-        } else if (currentCalendarView === 'dayGridMonth') {
-          buttonIdSuffix = 'month';
-        }
-        
-        // Get all calendar view buttons directly by ID
-        const weekBtn = document.getElementById('calendar-view-week');
-        const dayBtn = document.getElementById('calendar-view-day');
-        const monthBtn = document.getElementById('calendar-view-month');
-        
-        // Reset ALL buttons to inactive state first
-        if (weekBtn) {
-          weekBtn.className = 'calendar-view-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700 font-medium';
-        }
-        if (dayBtn) {
-          dayBtn.className = 'calendar-view-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700 font-medium';
-        }
-        if (monthBtn) {
-          monthBtn.className = 'calendar-view-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700 font-medium';
-        }
-        
-        // Set active button styles by replacing className completely
-        const activeBtn = document.getElementById(`calendar-view-${buttonIdSuffix}`);
-        if (activeBtn) {
-          activeBtn.className = 'calendar-view-btn px-4 py-2 rounded-lg bg-nfgblue dark:bg-blue-900 text-white font-medium';
-        }
-      });
+      // Map currentCalendarView to button ID suffix
+      let buttonIdSuffix = '';
+      if (currentCalendarView === 'timeGridDay') {
+        buttonIdSuffix = 'day';
+      } else if (currentCalendarView === 'timeGridWeek') {
+        buttonIdSuffix = 'week';
+      } else if (currentCalendarView === 'dayGridMonth') {
+        buttonIdSuffix = 'month';
+      }
+      
+      // Get all calendar view buttons directly by ID
+      const weekBtn = document.getElementById('calendar-view-week');
+      const dayBtn = document.getElementById('calendar-view-day');
+      const monthBtn = document.getElementById('calendar-view-month');
+      
+      // Inactive button classes
+      const inactiveClasses = 'calendar-view-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700 font-medium';
+      // Active button classes
+      const activeClasses = 'calendar-view-btn px-4 py-2 rounded-lg bg-nfgblue dark:bg-blue-900 text-white font-medium';
+      
+      // Reset ALL buttons to inactive state first
+      if (weekBtn) {
+        weekBtn.className = weekBtn.id === `calendar-view-${buttonIdSuffix}` ? activeClasses : inactiveClasses;
+      }
+      if (dayBtn) {
+        dayBtn.className = dayBtn.id === `calendar-view-${buttonIdSuffix}` ? activeClasses : inactiveClasses;
+      }
+      if (monthBtn) {
+        monthBtn.className = monthBtn.id === `calendar-view-${buttonIdSuffix}` ? activeClasses : inactiveClasses;
+      }
     }
 
     function openCreateBookingModal(prefilledDate = null) {
@@ -2180,27 +2176,59 @@
       });
     });
 
-    // Calendar view type toggle
-    document.getElementById('calendar-view-week')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      console.log('[Calendar] Week button clicked');
-      changeCalendarView('timeGridWeek');
+    // Calendar view type toggle - use event delegation to ensure it works
+    function setupCalendarViewButtons() {
+      const weekBtn = document.getElementById('calendar-view-week');
+      const dayBtn = document.getElementById('calendar-view-day');
+      const monthBtn = document.getElementById('calendar-view-month');
+      
+      // Remove existing listeners by cloning and replacing
+      if (weekBtn) {
+        const newWeekBtn = weekBtn.cloneNode(true);
+        weekBtn.parentNode?.replaceChild(newWeekBtn, weekBtn);
+        newWeekBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          changeCalendarView('timeGridWeek');
+        });
+      }
+      
+      if (dayBtn) {
+        const newDayBtn = dayBtn.cloneNode(true);
+        dayBtn.parentNode?.replaceChild(newDayBtn, dayBtn);
+        newDayBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          changeCalendarView('timeGridDay');
+        });
+      }
+      
+      if (monthBtn) {
+        const newMonthBtn = monthBtn.cloneNode(true);
+        monthBtn.parentNode?.replaceChild(newMonthBtn, monthBtn);
+        newMonthBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          changeCalendarView('dayGridMonth');
+        });
+      }
+    }
+    
+    // Setup calendar view buttons
+    setupCalendarViewButtons();
+    
+    // Also setup when calendar controls become visible
+    const observer = new MutationObserver(() => {
+      const calendarControls = document.getElementById('calendar-controls');
+      if (calendarControls && !calendarControls.classList.contains('hidden')) {
+        setupCalendarViewButtons();
+      }
     });
     
-    document.getElementById('calendar-view-day')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      console.log('[Calendar] Day button clicked');
-      changeCalendarView('timeGridDay');
-    });
-    
-    document.getElementById('calendar-view-month')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      console.log('[Calendar] Month button clicked');
-      changeCalendarView('dayGridMonth');
-    });
+    const calendarControlsContainer = document.getElementById('calendar-controls');
+    if (calendarControlsContainer) {
+      observer.observe(calendarControlsContainer, { attributes: true, attributeFilter: ['class'] });
+    }
 
     // Calendar navigation
     document.getElementById('calendar-prev')?.addEventListener('click', () => {
