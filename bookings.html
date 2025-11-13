@@ -1336,35 +1336,61 @@
     async function loadJobs() {
       try {
         console.log('🔍 Loading jobs for user:', currentUser.id);
+        console.log('🔍 User profile:', currentUserProfile);
         
-        // For staff, only show assigned jobs
+        // For staff, show all jobs (for calendar view visibility)
         if (currentUserProfile && currentUserProfile.role === 'staff') {
+          console.log('🔍 Loading ALL jobs for staff user');
           const { data, error } = await supabase
             .from('jobs')
             .select('*, sites(name, address), user_profiles(full_name)')
-            .eq('assigned_worker_id', currentUser.id)
             .order('scheduled_date', { ascending: false });
           
-          if (error) throw error;
+          if (error) {
+            console.error('❌ Error loading jobs for staff:', error);
+            throw error;
+          }
+          
           jobs = data || [];
+          console.log(`✅ Loaded ${jobs.length} jobs for staff user`);
+          
+          // Log job details for debugging
+          if (jobs.length > 0) {
+            console.log('📋 Sample jobs:', jobs.slice(0, 3).map(j => ({
+              id: j.id,
+              title: j.title,
+              assigned_worker_id: j.assigned_worker_id,
+              scheduled_date: j.scheduled_date,
+              status: j.status
+            })));
+          } else {
+            console.warn('⚠️ No jobs found for staff user');
+          }
         } else {
           // For admin/client, show all their jobs
+          console.log('🔍 Loading jobs for admin/client');
           const { data, error } = await supabase
             .from('jobs')
             .select('*, sites(name, address), user_profiles(full_name)')
             .eq('created_by', currentUser.id)
             .order('scheduled_date', { ascending: false });
           
-          if (error) throw error;
+          if (error) {
+            console.error('❌ Error loading jobs for admin/client:', error);
+            throw error;
+          }
+          
           jobs = data || [];
+          console.log(`✅ Loaded ${jobs.length} jobs for admin/client`);
         }
         
         if (currentView === 'calendar') {
           updateCalendar();
         }
       } catch (error) {
-        console.error('Error loading jobs:', error);
-        // Don't show error alert for jobs, just log it
+        console.error('❌ Error loading jobs:', error);
+        // Show error to user for debugging
+        toast.error('Failed to load jobs: ' + error.message, 'Jobs Error');
       }
     }
 
