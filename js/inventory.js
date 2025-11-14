@@ -15,6 +15,9 @@ let purchaseOrdersList = [];
 let inventoryItemsCache = [];
 let suppliersViewInitialized = false;
 let poItemRowId = 0;
+let supplierPerformance = {};
+let usageTrends = {};
+const USAGE_TREND_WINDOW_DAYS = 60;
 function sanitizeText(value) {
   if (!value) return '';
   return String(value).replace(/[&<>"']/g, (char) => {
@@ -74,6 +77,47 @@ async function fetchInventoryItems() {
   }
   
   return data || [];
+}
+
+async function fetchUsageTrends(windowDays = USAGE_TREND_WINDOW_DAYS) {
+  try {
+    const since = new Date();
+    since.setDate(since.getDate() - windowDays);
+    
+    const { data, error } = await supabase
+      .from('inventory_transactions')
+      .select('item_id, transaction_type, quantity_change, created_at')
+      .gte('created_at', since.toISOString())
+      .in('transaction_type', ['use', 'adjustment']);
+    
+    if (error) throw error;
+    
+    const map = {};
+    (data || []).forEach(entry => {
+      if (!entry.item_id) return;
+      if (!map[entry.item_id]) {
+        map[entry.item_id] = { totalUsage: 0 };
+      }
+      const delta = entry.quantity_change || 0;
+      if (entry.transaction_type === 'use') {
+        map[entry.item_id].totalUsage += Math.abs(delta);
+      } else if (entry.transaction_type === 'adjustment' && delta < 0) {
+        map[entry.item_id].totalUsage += Math.abs(delta);
+      }
+    });
+    
+    usageTrends = {};
+    Object.entries(map).forEach(([itemId, stats]) => {
+      usageTrends[itemId] = {
+        avgDailyUsage: (stats.totalUsage || 0) / windowDays,
+        windowDays
+      };
+    });
+    
+    updatePOItemSuggestions();
+  } catch (error) {
+    console.error('Failed to load usage trends:', error);
+  }
 }
 
 // Fetch site inventory (with stock levels per site)
@@ -741,6 +785,51 @@ function exportHistoryViewData() {
 
 // ===== Supplier Management & Purchase Orders =====
 
+function getSupplierPerformance(supplierId) {
+  return supplierPerformance[supplierId] || null;
+}
+
+function getSupplierLeadTimeDays(supplierId) {
+  if (!supplierId) return 14;
+  const stats = getSupplierPerformance(supplierId);
+  if (stats?.avgLeadTimeDays && Number.isFinite(stats.avgLeadTimeDays)) {
+    return Math.max(1, Math.round(stats.avgLeadTimeDays));
+  }
+  return 14;
+}
+
+function getSuggestedQuantityForItem(itemId, leadTimeDays) {
+  if (!itemId || !usageTrends[itemId]) return null;
+  const avgDaily = usageTrends[itemId].avgDailyUsage || 0;
+  if (!avgDaily) return null;
+  const suggestion = Math.ceil(avgDaily * (leadTimeDays || 14));
+  return suggestion > 0 ? suggestion : null;
+}
+
+function updatePOItemSuggestions() {
+  const table = document.getElementById('po-items-table');
+  if (!table) return;
+  const supplierId = parseInt(document.getElementById('po-supplier')?.value, 10);
+  const leadTimeDays = getSupplierLeadTimeDays(supplierId);
+  const rows = table.querySelectorAll('tr[data-row-id]');
+  rows.forEach(row => {
+    const suggestionEl = row.querySelector('.po-item-suggestion');
+    const applyBtn = row.querySelector('.po-apply-suggestion');
+    if (!suggestionEl) return;
+    const itemId = parseInt(row.querySelector('.po-item-select')?.value, 10);
+    const suggestion = getSuggestedQuantityForItem(itemId, leadTimeDays);
+    if (suggestion) {
+      suggestionEl.innerHTML = `Suggested: <span class="font-semibold text-nfgblue">${suggestion}</span> (based on ${USAGE_TREND_WINDOW_DAYS}d usage)`;
+      suggestionEl.dataset.suggestedValue = String(suggestion);
+      applyBtn?.classList.remove('hidden');
+    } else {
+      suggestionEl.textContent = 'Suggested: N/A';
+      suggestionEl.dataset.suggestedValue = '';
+      applyBtn?.classList.add('hidden');
+    }
+  });
+}
+
 async function initSuppliersView() {
   if (suppliersViewInitialized) return;
   await Promise.all([loadSuppliers(), loadPurchaseOrders()]);
@@ -777,6 +866,7 @@ async function loadSuppliers(showToast = false) {
     if (error) throw error;
     
     suppliersList = data || [];
+    calculateSupplierPerformance();
     renderSuppliersList();
     populateSupplierFilters();
     
@@ -803,6 +893,18 @@ function renderSuppliersList() {
       ? '<span class="inline-flex items-center px-2 py-1 rounded-lg bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-xs font-medium">Active</span>'
       : '<span class="inline-flex items-center px-2 py-1 rounded-lg bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 text-xs font-medium">Inactive</span>';
     
+    const perf = getSupplierPerformance(supplier.id);
+    const perfHtml = perf
+      ? `
+        <div class="grid grid-cols-2 gap-2 mt-3 text-[11px] text-gray-600 dark:text-gray-400">
+          <div>Avg Lead: <span class="font-semibold text-nfgblue dark:text-blue-300">${perf.avgLeadTimeDays ? perf.avgLeadTimeDays.toFixed(1) + 'd' : '—'}</span></div>
+          <div>Fill Rate: <span class="font-semibold text-nfgblue dark:text-blue-300">${perf.fillRatePercent ? perf.fillRatePercent.toFixed(0) + '%' : '—'}</span></div>
+          <div>On-Time: <span class="font-semibold text-nfgblue dark:text-blue-300">${perf.onTimePercent ? perf.onTimePercent.toFixed(0) + '%' : '—'}</span></div>
+          <div>Last Delivery: <span class="font-semibold text-nfgblue dark:text-blue-300">${perf.lastDeliveryDate ? perf.lastDeliveryDate.toLocaleDateString() : '—'}</span></div>
+        </div>
+      `
+      : '<p class="text-xs text-gray-400 mt-2">No completed deliveries yet</p>';
+    
     return `
       <div class="py-3 first:pt-0 last:pb-0">
         <div class="flex items-start justify-between">
@@ -814,6 +916,7 @@ function renderSuppliersList() {
               ${supplier.email ? `<span class="text-xs text-gray-500 dark:text-gray-400">${sanitizeText(supplier.email)}</span>` : ''}
               ${supplier.phone ? `<span class="text-xs text-gray-500 dark:text-gray-400">${sanitizeText(supplier.phone)}</span>` : ''}
             </div>
+            ${perfHtml}
           </div>
           <div class="flex items-center gap-2">
             <button class="px-2 py-1 text-xs rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700" onclick="window.editSupplier(${supplier.id})">
@@ -847,6 +950,63 @@ function populateSupplierFilters() {
   if (poSupplierSelect) {
     poSupplierSelect.innerHTML = '<option value="">Select supplier</option>' + options;
   }
+}
+
+function calculateSupplierPerformance() {
+  const performanceMap = {};
+  
+  purchaseOrdersList.forEach(po => {
+    if (!po.supplier_id) return;
+    if (!performanceMap[po.supplier_id]) {
+      performanceMap[po.supplier_id] = {
+        totalOrders: 0,
+        receivedOrders: 0,
+        onTimeOrders: 0,
+        leadTimeDaysTotal: 0,
+        fillOrderedTotal: 0,
+        fillReceivedTotal: 0,
+        lastDeliveryDate: null
+      };
+    }
+    
+    const stats = performanceMap[po.supplier_id];
+    stats.totalOrders += 1;
+    
+    const items = po.purchase_order_items || [];
+    const ordered = items.reduce((sum, item) => sum + (item.quantity_ordered || 0), 0);
+    const received = items.reduce((sum, item) => sum + (item.quantity_received || 0), 0);
+    stats.fillOrderedTotal += ordered;
+    stats.fillReceivedTotal += received;
+    
+    if (po.status === 'received' && po.received_date) {
+      stats.receivedOrders += 1;
+      const createdAt = new Date(po.created_at);
+      const receivedAt = new Date(po.received_date);
+      const leadDays = Math.max(0, (receivedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+      stats.leadTimeDaysTotal += leadDays;
+      if (po.expected_date) {
+        const expected = new Date(po.expected_date);
+        if (receivedAt.getTime() <= expected.getTime()) {
+          stats.onTimeOrders += 1;
+        }
+      }
+      if (!stats.lastDeliveryDate || receivedAt.getTime() > stats.lastDeliveryDate) {
+        stats.lastDeliveryDate = receivedAt.getTime();
+      }
+    }
+  });
+  
+  supplierPerformance = {};
+  Object.entries(performanceMap).forEach(([supplierId, stats]) => {
+    supplierPerformance[supplierId] = {
+      totalOrders: stats.totalOrders,
+      receivedOrders: stats.receivedOrders,
+      avgLeadTimeDays: stats.receivedOrders ? stats.leadTimeDaysTotal / stats.receivedOrders : null,
+      onTimePercent: stats.receivedOrders ? (stats.onTimeOrders / stats.receivedOrders) * 100 : null,
+      fillRatePercent: stats.fillOrderedTotal ? (stats.fillReceivedTotal / stats.fillOrderedTotal) * 100 : null,
+      lastDeliveryDate: stats.lastDeliveryDate ? new Date(stats.lastDeliveryDate) : null
+    };
+  });
 }
 
 function openSupplierModal(supplierId = null) {
@@ -938,8 +1098,16 @@ async function loadPurchaseOrders(showToast = false) {
       .from('purchase_orders')
       .select(`
         *,
-        suppliers:suppliers(name, contact_name),
-        sites:sites(name)
+        suppliers:suppliers(name, contact_name, email),
+        sites:sites(name),
+        purchase_order_items:purchase_order_items(
+          id,
+          item_id,
+          quantity_ordered,
+          quantity_received,
+          cost_per_unit,
+          inventory_items:inventory_items(name, unit)
+        )
       `)
       .order('created_at', { ascending: false });
     
@@ -948,6 +1116,8 @@ async function loadPurchaseOrders(showToast = false) {
     purchaseOrdersList = data || [];
     updatePurchaseOrderStats();
     renderPurchaseOrdersTable();
+    calculateSupplierPerformance();
+    renderSuppliersList();
     
     if (showToast) {
       toast.success('Purchase orders refreshed', 'Success');
@@ -1001,6 +1171,9 @@ function renderPurchaseOrdersTable() {
     const badge = getPOStatusBadge(po.status);
     
     const actions = [];
+    if (po.suppliers?.email) {
+      actions.push(`<button class="px-2 py-1 text-xs rounded-lg border border-nfgblue text-nfgblue hover:bg-nfglight dark:text-blue-400" onclick="window.emailPurchaseOrder(${po.id})">${po.emailed_at ? 'Resend Email' : 'Email PO'}</button>`);
+    }
     if (po.status !== 'received' && po.status !== 'cancelled') {
       actions.push(`<button class="px-2 py-1 text-xs rounded-lg bg-green-50 text-green-700 hover:bg-green-100" onclick="window.markPurchaseOrderReceived(${po.id})">Mark Received</button>`);
       actions.push(`<button class="px-2 py-1 text-xs rounded-lg bg-red-50 text-red-600 hover:bg-red-100" onclick="window.cancelPurchaseOrder(${po.id})">Cancel</button>`);
@@ -1083,7 +1256,11 @@ async function addPOItemRow(defaults = {}) {
         </select>
       </td>
       <td class="px-3 py-2 text-center">
-        <input type="number" min="1" value="${defaults.quantity || 1}" class="po-item-qty w-20 border border-nfgray rounded-lg px-2 py-1 text-center focus:ring-2 focus:ring-nfgblue outline-none" />
+        <div class="flex flex-col items-center gap-1">
+          <input type="number" min="1" value="${defaults.quantity || 1}" class="po-item-qty w-20 border border-nfgray rounded-lg px-2 py-1 text-center focus:ring-2 focus:ring-nfgblue outline-none" />
+          <div class="po-item-suggestion text-xs text-gray-500">Suggested: N/A</div>
+          <button type="button" class="po-apply-suggestion hidden text-[11px] text-nfgblue hover:underline">Use suggestion</button>
+        </div>
       </td>
       <td class="px-3 py-2 text-center">
         <input type="number" min="0" step="0.01" value="${defaults.cost_per_unit || ''}" class="po-item-cost w-24 border border-nfgray rounded-lg px-2 py-1 text-center focus:ring-2 focus:ring-nfgblue outline-none" />
@@ -1106,9 +1283,21 @@ async function addPOItemRow(defaults = {}) {
     updatePOTotalValue();
     ensurePOItemsPlaceholder();
   });
+  newRow.querySelector('.po-item-select')?.addEventListener('change', () => updatePOItemSuggestions());
+  newRow.querySelector('.po-apply-suggestion')?.addEventListener('click', (event) => {
+    const row = event.currentTarget.closest('tr[data-row-id]');
+    if (!row) return;
+    const suggestionEl = row.querySelector('.po-item-suggestion');
+    const value = parseInt(suggestionEl?.dataset.suggestedValue || '', 10);
+    if (value && row.querySelector('.po-item-qty')) {
+      row.querySelector('.po-item-qty').value = value;
+      updatePOTotalValue();
+    }
+  });
   
   if (window.lucide) window.lucide.createIcons();
   updatePOTotalValue();
+  updatePOItemSuggestions();
 }
 
 function ensurePOItemsPlaceholder() {
@@ -1136,6 +1325,7 @@ function updatePOTotalValue() {
   });
   
   document.getElementById('po-total-value').textContent = formatCurrency(total);
+  updatePOItemSuggestions();
 }
 
 function resetPOItemsTable() {
@@ -1144,6 +1334,7 @@ function resetPOItemsTable() {
     table.innerHTML = '<tr data-placeholder="true"><td colspan="5" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No items added yet</td></tr>';
   }
   document.getElementById('po-total-value').textContent = formatCurrency(0);
+  updatePOItemSuggestions();
 }
 
 function collectPOItemsFromForm() {
@@ -1248,14 +1439,17 @@ async function markPurchaseOrderReceived(poId) {
   if (!confirmed) return;
   
   try {
-    const { data: items, error } = await supabase
-      .from('purchase_order_items')
-      .select('*')
-      .eq('purchase_order_id', poId);
+    let items = po.purchase_order_items;
+    if (!items || !items.length) {
+      const { data, error } = await supabase
+        .from('purchase_order_items')
+        .select('*')
+        .eq('purchase_order_id', poId);
+      if (error) throw error;
+      items = data || [];
+    }
     
-    if (error) throw error;
-    
-    for (const item of items || []) {
+    for (const item of items) {
       const { data: existing, error: fetchError } = await supabase
         .from('site_inventory')
         .select('quantity')
@@ -1312,6 +1506,122 @@ async function markPurchaseOrderReceived(poId) {
     console.error('Failed to mark purchase order received:', error);
     toast.error('Failed to receive purchase order', 'Error');
   }
+}
+
+async function emailPurchaseOrder(poId) {
+  const po = purchaseOrdersList.find(p => p.id === poId);
+  if (!po) {
+    toast.error('Purchase order not found');
+    return;
+  }
+  const supplierEmail = po.suppliers?.email;
+  if (!supplierEmail) {
+    toast.error('Supplier email is missing');
+    return;
+  }
+  if (!po.purchase_order_items || !po.purchase_order_items.length) {
+    toast.error('Add line items before emailing this purchase order');
+    return;
+  }
+  
+  try {
+    toast.info('Generating purchase order PDF…');
+    const pdfBuffer = await generatePurchaseOrderPdf(po);
+    const pdfBase64 = arrayBufferToBase64(pdfBuffer);
+    
+    const payload = {
+      po: {
+        po_number: po.po_number,
+        status: po.status,
+        expected_date: po.expected_date,
+        notes: po.notes,
+        suppliers: po.suppliers,
+        sites: po.sites,
+        purchase_order_items: po.purchase_order_items
+      },
+      supplierEmail,
+      pdfBase64
+    };
+    
+    const { error } = await supabase.functions.invoke('send-purchase-order-email', { body: payload });
+    if (error) throw error;
+    
+    await supabase
+      .from('purchase_orders')
+      .update({ emailed_at: new Date().toISOString() })
+      .eq('id', poId);
+    
+    toast.success('Purchase order emailed to supplier');
+    await loadPurchaseOrders();
+  } catch (error) {
+    console.error('Failed to email purchase order:', error);
+    toast.error(error.message || 'Failed to email purchase order');
+  }
+}
+
+async function ensureJsPdf() {
+  if (!window.jspdf) {
+    await import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+  }
+  return window.jspdf.jsPDF;
+}
+
+async function generatePurchaseOrderPdf(po) {
+  const JsPdfConstructor = await ensureJsPdf();
+  const doc = new JsPdfConstructor();
+  
+  doc.setFontSize(18);
+  doc.text('Northern Facilities Group', 14, 20);
+  doc.setFontSize(12);
+  doc.text(`Purchase Order: ${po.po_number}`, 14, 30);
+  doc.text(`Supplier: ${po.suppliers?.name || '—'}`, 14, 38);
+  doc.text(`Site: ${po.sites?.name || '—'}`, 14, 46);
+  if (po.expected_date) {
+    doc.text(`Expected Date: ${new Date(po.expected_date).toLocaleDateString()}`, 14, 54);
+  }
+  
+  let y = 70;
+  doc.setFont(undefined, 'bold');
+  doc.text('Item', 14, y);
+  doc.text('Qty', 110, y);
+  doc.text('Cost/Unit', 150, y);
+  doc.setFont(undefined, 'normal');
+  y += 6;
+  
+  (po.purchase_order_items || []).forEach(item => {
+    if (y > 270) {
+      doc.addPage();
+      y = 20;
+    }
+    doc.text(item.inventory_items?.name || 'Unknown Item', 14, y);
+    doc.text(String(item.quantity_ordered || 0), 110, y, { align: 'right' });
+    doc.text(`$${Number(item.cost_per_unit || 0).toFixed(2)}`, 170, y, { align: 'right' });
+    y += 6;
+  });
+  
+  if (po.notes) {
+    if (y > 260) {
+      doc.addPage();
+      y = 20;
+    }
+    doc.setFont(undefined, 'bold');
+    doc.text('Notes', 14, y);
+    doc.setFont(undefined, 'normal');
+    y += 6;
+    doc.text(doc.splitTextToSize(po.notes, 180), 14, y);
+  }
+  
+  return doc.output('arraybuffer');
+}
+
+function arrayBufferToBase64(buffer) {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i += 1) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
 }
 
 async function cancelPurchaseOrder(poId) {
@@ -1760,6 +2070,7 @@ document.getElementById('new-po-btn')?.addEventListener('click', () => openPurch
 document.getElementById('po-refresh-btn')?.addEventListener('click', () => loadPurchaseOrders(true));
 document.getElementById('po-status-filter')?.addEventListener('change', renderPurchaseOrdersTable);
 document.getElementById('po-supplier-filter')?.addEventListener('change', renderPurchaseOrdersTable);
+document.getElementById('po-supplier')?.addEventListener('change', updatePOItemSuggestions);
 document.getElementById('add-po-item-row')?.addEventListener('click', () => addPOItemRow());
 document.getElementById('supplier-form')?.addEventListener('submit', saveSupplier);
 document.getElementById('po-form')?.addEventListener('submit', submitPurchaseOrder);
@@ -1894,11 +2205,13 @@ async function init() {
     if (bookingsNav) bookingsNav.style.display = 'none';
     if (reportsNav) reportsNav.style.display = 'none';
     document.querySelector('.inventory-view-tab[data-view="suppliers"]')?.classList.add('hidden');
+    document.getElementById('suppliers-inline-actions')?.classList.add('hidden');
   }
   
   await loadSiteFilter();
   await renderInventory();
   initInventoryViewTabs();
+  fetchUsageTrends().catch((error) => console.warn('Usage trend preload failed:', error));
   
   // Initialize custom dropdowns after DOM is ready
   if (window.initCustomDropdowns) {

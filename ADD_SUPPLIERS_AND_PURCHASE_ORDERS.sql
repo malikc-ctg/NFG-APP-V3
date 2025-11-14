@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS purchase_orders (
   total_items INTEGER DEFAULT 0,
   total_cost NUMERIC(14,2) DEFAULT 0,
   notes TEXT,
+  emailed_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -110,16 +111,26 @@ SELECT
   po.total_items,
   po.total_cost,
   po.notes,
+  po.emailed_at,
   po.created_at,
   po.updated_at,
   s.id AS supplier_id,
   s.name AS supplier_name,
   s.contact_name AS supplier_contact,
   st.id AS site_id,
-  st.name AS site_name
+  st.name AS site_name,
+  metrics.total_quantity_ordered,
+  metrics.total_quantity_received
 FROM purchase_orders po
 LEFT JOIN suppliers s ON po.supplier_id = s.id
 LEFT JOIN sites st ON po.site_id = st.id
+LEFT JOIN LATERAL (
+  SELECT 
+    COALESCE(SUM(poi.quantity_ordered), 0) AS total_quantity_ordered,
+    COALESCE(SUM(poi.quantity_received), 0) AS total_quantity_received
+  FROM purchase_order_items poi
+  WHERE poi.purchase_order_id = po.id
+) metrics ON TRUE
 ORDER BY po.created_at DESC;
 
 -- ============================================
