@@ -1536,18 +1536,26 @@
     // Select all visible sites
     function selectAllSites() {
       const visibleSites = getVisibleSites();
-      visibleSites.forEach(site => selectedSites.add(site.id));
-      updateSiteCheckboxes();
-      updateBulkSitesToolbar();
-      updateSelectAllSitesCheckbox();
+      visibleSites.forEach(site => {
+        selectedSites.add(site.id);
+      });
+      // Force update after a tiny delay to ensure DOM is ready
+      setTimeout(() => {
+        updateSiteCheckboxes();
+        updateBulkSitesToolbar();
+        updateSelectAllSitesCheckbox();
+      }, 0);
     }
 
     // Deselect all sites
     function deselectAllSites() {
       selectedSites.clear();
-      updateSiteCheckboxes();
-      updateBulkSitesToolbar();
-      updateSelectAllSitesCheckbox();
+      // Force update after a tiny delay to ensure DOM is ready
+      setTimeout(() => {
+        updateSiteCheckboxes();
+        updateBulkSitesToolbar();
+        updateSelectAllSitesCheckbox();
+      }, 0);
     }
 
     // Attach checkbox listeners (make globally available)
@@ -1562,9 +1570,15 @@
 
     // Toggle site selection
     function toggleSiteSelection(siteId) {
-      if (selectedSites.has(siteId)) {
-        selectedSites.delete(siteId);
+      // Convert siteId to string for consistent comparison
+      const siteIdStr = String(siteId);
+      // Find existing ID in Set using loose comparison
+      const existingId = Array.from(selectedSites).find(id => id == siteId);
+      
+      if (existingId !== undefined) {
+        selectedSites.delete(existingId);
       } else {
+        // Use the original siteId from the Set or use the string version
         selectedSites.add(siteId);
       }
       updateBulkSitesToolbar();
@@ -1587,7 +1601,10 @@
     // Update checkbox states
     function updateSiteCheckboxes() {
       document.querySelectorAll('.site-checkbox').forEach(checkbox => {
-        checkbox.checked = selectedSites.has(checkbox.dataset.siteId);
+        const siteId = checkbox.dataset.siteId;
+        // Use loose equality to handle both string and UUID types
+        const isSelected = Array.from(selectedSites).some(id => id == siteId);
+        checkbox.checked = isSelected;
         
         const card = checkbox.closest('.bg-white, .dark\\:bg-gray-800');
         if (card) {
