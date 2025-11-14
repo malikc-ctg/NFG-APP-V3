@@ -17,6 +17,7 @@ const NOTIFICATION_TYPE_ICONS = {
   booking_cancelled: 'x-circle',
   site_assigned: 'building',
   site_unassigned: 'building-x',
+  inventory_low_stock: 'package-alert',
   mention: 'message-circle',
   system: 'bell'
 };
