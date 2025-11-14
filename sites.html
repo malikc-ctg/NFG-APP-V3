@@ -436,8 +436,9 @@
     import { renderSites, setSubmitLoading, showFormError, closeAddSiteModal, initializeUI } from './js/ui.js'
     import { showNotification, showConfirm, showPrompt, toast, notify } from './js/notifications.js'
     
-    // Make supabase globally available for bulk operations script
+    // Make supabase and renderSites globally available for bulk operations script
     window.supabase = supabase;
+    window.renderSites = renderSites;
 
     // Logout functionality
     async function handleLogout() {
@@ -1742,7 +1743,9 @@
         const sites = await fetchSitesFunc();
         allSites = sites;
         window.allSites = allSites;
-        await renderSites(sites, { currentUserProfile });
+        // Use global renderSites if available
+        const renderSitesFunc = window.renderSites || renderSites;
+        await renderSitesFunc(sites, { currentUserProfile });
       } catch (err) {
         console.error('Error bulk assigning worker:', err);
         toast.error('An error occurred while assigning worker');
@@ -1777,7 +1780,8 @@
         const sites = await fetchSitesFunc();
         allSites = sites;
         window.allSites = allSites;
-        await renderSites(sites, { currentUserProfile });
+        const renderSitesFunc = window.renderSites || renderSites;
+        await renderSitesFunc(sites, { currentUserProfile });
       } catch (err) {
         console.error('Error bulk updating sites:', err);
         toast.error('An error occurred while updating sites');
@@ -1816,7 +1820,8 @@
         const sites = await fetchSitesFunc();
         allSites = sites;
         window.allSites = allSites;
-        await renderSites(sites, { currentUserProfile });
+        const renderSitesFunc = window.renderSites || renderSites;
+        await renderSitesFunc(sites, { currentUserProfile });
       } catch (err) {
         console.error('Error archiving sites:', err);
         toast.error('An error occurred while archiving sites');
