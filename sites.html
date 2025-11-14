@@ -851,11 +851,11 @@
 
           // Refresh sites display
           const sites = await fetchSites();
-          allSites = sites; // Store all sites for selection tracking
-        window.allSites = allSites; // Make available globally
-        window.selectedSites = selectedSites; // Make available globally
-        window.currentUserProfile = currentUserProfile; // Make available globally
-        await renderSites(sites, { currentUserProfile });
+          allSites = sites;
+          window.allSites = allSites;
+          window.selectedSites = selectedSites;
+          window.currentUserProfile = currentUserProfile;
+          await renderSites(sites, { currentUserProfile });
 
           toast.success('Site has been updated successfully!', 'Site Updated');
         } catch (error) {
