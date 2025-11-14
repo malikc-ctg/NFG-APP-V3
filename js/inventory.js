@@ -700,11 +700,30 @@ document.querySelectorAll('.inventory-filter-tab').forEach(tab => {
   });
 });
 
-// Site filter
-document.getElementById('site-filter')?.addEventListener('change', (e) => {
-  currentSiteFilter = e.target.value;
-  window.currentSiteFilter = currentSiteFilter; // Update global reference
-  renderInventory();
+// Site filter - use event delegation to handle custom dropdown changes
+document.addEventListener('change', (e) => {
+  if (e.target.id === 'site-filter' || e.target.closest('#site-filter') || 
+      (e.target.closest('.nfg-select-wrapper') && e.target.closest('.nfg-select-wrapper').querySelector('select')?.id === 'site-filter')) {
+    const select = document.getElementById('site-filter');
+    let value;
+    
+    // Get value from custom dropdown or regular select
+    if (select.dataset.customDropdown === 'true') {
+      const wrapper = select.closest('.nfg-select-wrapper');
+      if (wrapper) {
+        const hiddenInput = wrapper.querySelector('input[type="hidden"]');
+        value = hiddenInput?.value || select.value;
+      } else {
+        value = select.value;
+      }
+    } else {
+      value = select.value;
+    }
+    
+    currentSiteFilter = value;
+    window.currentSiteFilter = currentSiteFilter; // Update global reference
+    renderInventory();
+  }
 });
 
 // Load site filter dropdown
@@ -712,23 +731,51 @@ async function loadSiteFilter() {
   const select = document.getElementById('site-filter');
   const sitesList = await fetchSites();
   
+  // Store current value if custom dropdown is already initialized
+  let currentValue = 'all';
+  if (select.dataset.customDropdown === 'true') {
+    const wrapper = select.closest('.nfg-select-wrapper');
+    const hiddenInput = wrapper?.querySelector('input[type="hidden"]');
+    currentValue = hiddenInput?.value || select.value;
+    
+    // Remove existing wrapper if any
+    if (wrapper) {
+      select.dataset.initialized = 'false';
+      wrapper.replaceWith(select);
+    }
+  } else {
+    currentValue = select.value;
+  }
+  
   select.innerHTML = '<option value="all">All Sites</option>' + 
     sitesList.map(site => `<option value="${site.id}">${site.name}</option>`).join('');
   
+  // Restore previous value
+  select.value = currentValue;
+  
   // Reinitialize custom dropdown after updating options
-  if (select.dataset.customDropdown === 'true' && window.initCustomDropdowns) {
-    // Remove existing wrapper if any
-    const existingWrapper = select.closest('.nfg-select-wrapper');
-    if (existingWrapper) {
-      select.dataset.initialized = 'false';
-      existingWrapper.replaceWith(select);
-    }
-    // Reinitialize
-    if (window.NFGDropdown) {
-      new window.NFGDropdown(select);
-      select.dataset.initialized = 'true';
-    } else if (window.initCustomDropdowns) {
-      window.initCustomDropdowns();
+  if (select.dataset.customDropdown === 'true' && window.NFGDropdown) {
+    new window.NFGDropdown(select);
+    select.dataset.initialized = 'true';
+    
+    // Set value after initialization
+    if (window.NFGDropdown && currentValue) {
+      // Find the dropdown instance and set value
+      setTimeout(() => {
+        const newWrapper = select.closest('.nfg-select-wrapper');
+        const newHiddenInput = newWrapper?.querySelector('input[type="hidden"]');
+        if (newHiddenInput && currentValue !== 'all') {
+          newHiddenInput.value = currentValue;
+          select.value = currentValue;
+          // Update displayed text
+          const selectedText = newWrapper?.querySelector('.nfg-selected-text');
+          const selectedOption = select.querySelector(`option[value="${currentValue}"]`);
+          if (selectedText && selectedOption) {
+            selectedText.textContent = selectedOption.textContent;
+            selectedText.classList.remove('placeholder');
+          }
+        }
+      }, 0);
     }
   }
 }
@@ -781,6 +828,11 @@ async function init() {
   
   await loadSiteFilter();
   await renderInventory();
+  
+  // Initialize custom dropdowns after DOM is ready
+  if (window.initCustomDropdowns) {
+    window.initCustomDropdowns();
+  }
   
   console.log('[Inventory] Initialization complete');
 }

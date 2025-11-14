@@ -236,6 +236,10 @@ function initCustomDropdowns() {
 // }
 
 // Export for module use
+// Make NFGDropdown and initCustomDropdowns globally available
+window.NFGDropdown = NFGDropdown;
+window.initCustomDropdowns = initCustomDropdowns;
+
 export { NFGDropdown, initCustomDropdowns };
 
 

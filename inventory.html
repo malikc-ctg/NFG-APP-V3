@@ -1074,20 +1074,33 @@
         document.getElementById('quantity-amount').value = '';
         
         // Reinitialize custom dropdown when modal opens
-        if (quantityTypeSelect.dataset.customDropdown === 'true' && window.initCustomDropdowns) {
+        if (quantityTypeSelect.dataset.customDropdown === 'true' && window.NFGDropdown) {
           // Remove existing wrapper if any
           const existingWrapper = quantityTypeSelect.closest('.nfg-select-wrapper');
           if (existingWrapper) {
             quantityTypeSelect.dataset.initialized = 'false';
             existingWrapper.replaceWith(quantityTypeSelect);
           }
-          // Reinitialize
-          if (window.NFGDropdown) {
-            new window.NFGDropdown(quantityTypeSelect);
-            quantityTypeSelect.dataset.initialized = 'true';
-          } else if (window.initCustomDropdowns) {
-            window.initCustomDropdowns();
-          }
+          // Reinitialize with default value 'set'
+          new window.NFGDropdown(quantityTypeSelect);
+          quantityTypeSelect.dataset.initialized = 'true';
+          
+          // Set default value after initialization
+          setTimeout(() => {
+            const wrapper = quantityTypeSelect.closest('.nfg-select-wrapper');
+            const hiddenInput = wrapper?.querySelector('input[type="hidden"]');
+            if (hiddenInput) {
+              hiddenInput.value = 'set';
+              quantityTypeSelect.value = 'set';
+              // Update displayed text
+              const selectedText = wrapper?.querySelector('.nfg-selected-text');
+              const selectedOption = quantityTypeSelect.querySelector('option[value="set"]');
+              if (selectedText && selectedOption) {
+                selectedText.textContent = selectedOption.textContent;
+                selectedText.classList.remove('placeholder');
+              }
+            }
+          }, 0);
         }
         
         modal.classList.remove('hidden');
