@@ -10,6 +10,23 @@ let inventory = [];
 let sites = [];
 let selectedInventory = new Set(); // Track selected inventory item IDs (site_id + item_id combination)
 let allInventory = []; // Store all inventory items for selection tracking
+let suppliersList = [];
+let purchaseOrdersList = [];
+let inventoryItemsCache = [];
+let suppliersViewInitialized = false;
+let poItemRowId = 0;
+function sanitizeText(value) {
+  if (!value) return '';
+  return String(value).replace(/[&<>"']/g, (char) => {
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+    return map[char] || char;
+  });
+}
+
+function formatCurrency(amount) {
+  const value = Number(amount) || 0;
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+}
 
 // Get current user
 async function getCurrentUser() {
@@ -431,6 +448,8 @@ function initInventoryViewTabs() {
   const inventoryView = document.getElementById('inventory-view');
   const historyView = document.getElementById('history-view');
   const desktopHistoryActions = document.getElementById('history-inline-actions');
+  const suppliersView = document.getElementById('suppliers-view');
+  const suppliersActions = document.getElementById('suppliers-inline-actions');
   
   if (!tabs.length || !inventoryView || !historyView) return;
   
@@ -441,6 +460,12 @@ function initInventoryViewTabs() {
     tab.addEventListener('click', async () => {
       if (tab.classList.contains('active-view-tab')) return;
       
+      const view = tab.dataset.view;
+      if (view === 'suppliers' && currentUserProfile && currentUserProfile.role === 'staff') {
+        toast.error('Supplier management is not available for staff accounts');
+        return;
+      }
+      
       tabs.forEach(t => {
         t.classList.remove('active-view-tab', 'text-white', 'bg-nfgblue', 'shadow-nfg');
         t.classList.add('text-gray-600', 'dark:text-gray-300');
@@ -449,19 +474,32 @@ function initInventoryViewTabs() {
       tab.classList.add('active-view-tab', 'text-white', 'bg-nfgblue', 'shadow-nfg');
       tab.classList.remove('text-gray-600', 'dark:text-gray-300');
       
-      const view = tab.dataset.view;
       if (view === 'history') {
         inventoryView.classList.add('hidden');
         historyView.classList.remove('hidden');
+        suppliersView?.classList.add('hidden');
         desktopHistoryActions?.classList.remove('hidden');
+        suppliersActions?.classList.add('hidden');
         
         if (!historyViewInitialized) {
           await initHistoryView();
         }
+      } else if (view === 'suppliers') {
+        inventoryView.classList.add('hidden');
+        historyView.classList.add('hidden');
+        suppliersView?.classList.remove('hidden');
+        desktopHistoryActions?.classList.add('hidden');
+        suppliersActions?.classList.remove('hidden');
+        
+        if (!suppliersViewInitialized) {
+          await initSuppliersView();
+        }
       } else {
         historyView.classList.add('hidden');
+        suppliersView?.classList.add('hidden');
         inventoryView.classList.remove('hidden');
         desktopHistoryActions?.classList.add('hidden');
+        suppliersActions?.classList.add('hidden');
       }
     });
   });
@@ -699,6 +737,604 @@ function exportHistoryViewData() {
   document.body.removeChild(link);
   
   toast.success('Inventory history exported', 'Success');
+}
+
+// ===== Supplier Management & Purchase Orders =====
+
+async function initSuppliersView() {
+  if (suppliersViewInitialized) return;
+  await Promise.all([loadSuppliers(), loadPurchaseOrders()]);
+  await populatePOSiteOptions();
+  suppliersViewInitialized = true;
+}
+
+async function populatePOSiteOptions() {
+  const siteSelect = document.getElementById('po-site');
+  if (!siteSelect) return;
+  
+  if (!sites.length) {
+    await fetchSites();
+  }
+  
+  siteSelect.innerHTML = '<option value="">Select site</option>' + 
+    sites.map(site => `<option value="${site.id}">${sanitizeText(site.name)}</option>`).join('');
+}
+
+async function ensureInventoryItemsCache() {
+  if (!inventoryItemsCache.length) {
+    inventoryItemsCache = await fetchInventoryItems();
+  }
+  return inventoryItemsCache;
+}
+
+async function loadSuppliers(showToast = false) {
+  try {
+    const { data, error } = await supabase
+      .from('suppliers')
+      .select('*')
+      .order('name');
+    
+    if (error) throw error;
+    
+    suppliersList = data || [];
+    renderSuppliersList();
+    populateSupplierFilters();
+    
+    if (showToast) {
+      toast.success('Suppliers refreshed', 'Success');
+    }
+  } catch (error) {
+    console.error('Failed to load suppliers:', error);
+    toast.error('Failed to load suppliers', 'Error');
+  }
+}
+
+function renderSuppliersList() {
+  const container = document.getElementById('suppliers-list');
+  if (!container) return;
+  
+  if (!suppliersList.length) {
+    container.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 py-8">No suppliers yet. Click "Add Supplier" to get started.</p>';
+    return;
+  }
+  
+  container.innerHTML = suppliersList.map(supplier => {
+    const statusBadge = supplier.is_active
+      ? '<span class="inline-flex items-center px-2 py-1 rounded-lg bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-xs font-medium">Active</span>'
+      : '<span class="inline-flex items-center px-2 py-1 rounded-lg bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 text-xs font-medium">Inactive</span>';
+    
+    return `
+      <div class="py-3 first:pt-0 last:pb-0">
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="font-semibold text-nfgblue dark:text-blue-400">${sanitizeText(supplier.name)}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">${sanitizeText(supplier.contact_name || supplier.email || supplier.phone || '')}</p>
+            <div class="flex flex-wrap gap-2 mt-2">
+              ${statusBadge}
+              ${supplier.email ? `<span class="text-xs text-gray-500 dark:text-gray-400">${sanitizeText(supplier.email)}</span>` : ''}
+              ${supplier.phone ? `<span class="text-xs text-gray-500 dark:text-gray-400">${sanitizeText(supplier.phone)}</span>` : ''}
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="px-2 py-1 text-xs rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700" onclick="window.editSupplier(${supplier.id})">
+              Edit
+            </button>
+            <button class="px-2 py-1 text-xs rounded-lg border border-nfgblue text-nfgblue hover:bg-nfglight dark:text-blue-400" onclick="window.createPOForSupplier(${supplier.id})">
+              New PO
+            </button>
+          </div>
+        </div>
+        ${supplier.notes ? `<p class="mt-2 text-xs text-gray-600 dark:text-gray-300">${sanitizeText(supplier.notes)}</p>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function populateSupplierFilters() {
+  const supplierFilter = document.getElementById('po-supplier-filter');
+  const poSupplierSelect = document.getElementById('po-supplier');
+  
+  const options = suppliersList
+    .map(supplier => `<option value="${supplier.id}">${sanitizeText(supplier.name)}</option>`)
+    .join('');
+  
+  if (supplierFilter) {
+    const currentValue = supplierFilter.value;
+    supplierFilter.innerHTML = '<option value="all">All Suppliers</option>' + options;
+    supplierFilter.value = currentValue || 'all';
+  }
+  
+  if (poSupplierSelect) {
+    poSupplierSelect.innerHTML = '<option value="">Select supplier</option>' + options;
+  }
+}
+
+function openSupplierModal(supplierId = null) {
+  const modal = document.getElementById('supplierModal');
+  const form = document.getElementById('supplier-form');
+  if (!modal || !form) return;
+  
+  form.reset();
+  document.getElementById('supplier-form-error')?.classList.add('hidden');
+  document.getElementById('supplier-id').value = supplierId || '';
+  document.getElementById('supplier-active').checked = true;
+  document.getElementById('supplier-modal-title').textContent = supplierId ? 'Edit Supplier' : 'Add Supplier';
+  
+  if (supplierId) {
+    const supplier = suppliersList.find(s => s.id === supplierId);
+    if (supplier) {
+      document.getElementById('supplier-name').value = supplier.name || '';
+      document.getElementById('supplier-contact').value = supplier.contact_name || '';
+      document.getElementById('supplier-email').value = supplier.email || '';
+      document.getElementById('supplier-phone').value = supplier.phone || '';
+      document.getElementById('supplier-preferred-contact').value = supplier.preferred_contact || '';
+      document.getElementById('supplier-notes').value = supplier.notes || '';
+      document.getElementById('supplier-active').checked = supplier.is_active !== false;
+    }
+  }
+  
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  if (window.lucide) window.lucide.createIcons();
+}
+
+async function saveSupplier(e) {
+  e.preventDefault();
+  const errorEl = document.getElementById('supplier-form-error');
+  if (errorEl) errorEl.classList.add('hidden');
+  
+  const supplierId = document.getElementById('supplier-id').value;
+  const payload = {
+    name: document.getElementById('supplier-name').value.trim(),
+    contact_name: document.getElementById('supplier-contact').value.trim() || null,
+    email: document.getElementById('supplier-email').value.trim() || null,
+    phone: document.getElementById('supplier-phone').value.trim() || null,
+    preferred_contact: document.getElementById('supplier-preferred-contact').value || null,
+    notes: document.getElementById('supplier-notes').value.trim() || null,
+    is_active: document.getElementById('supplier-active').checked
+  };
+  
+  if (!payload.name) {
+    if (errorEl) {
+      errorEl.textContent = 'Supplier name is required';
+      errorEl.classList.remove('hidden');
+    }
+    return;
+  }
+  
+  try {
+    if (supplierId) {
+      payload.updated_at = new Date().toISOString();
+      const { error } = await supabase
+        .from('suppliers')
+        .update(payload)
+        .eq('id', supplierId);
+      if (error) throw error;
+      toast.success('Supplier updated', 'Success');
+    } else {
+      const { error } = await supabase
+        .from('suppliers')
+        .insert(payload);
+      if (error) throw error;
+      toast.success('Supplier added', 'Success');
+    }
+    
+    document.getElementById('supplierModal').classList.add('hidden');
+    document.getElementById('supplierModal').classList.remove('flex');
+    e.target.reset();
+    await loadSuppliers();
+  } catch (error) {
+    console.error('Failed to save supplier:', error);
+    if (errorEl) {
+      errorEl.textContent = error.message || 'Failed to save supplier';
+      errorEl.classList.remove('hidden');
+    }
+  }
+}
+
+async function loadPurchaseOrders(showToast = false) {
+  try {
+    const { data, error } = await supabase
+      .from('purchase_orders')
+      .select(`
+        *,
+        suppliers:suppliers(name, contact_name),
+        sites:sites(name)
+      `)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    purchaseOrdersList = data || [];
+    updatePurchaseOrderStats();
+    renderPurchaseOrdersTable();
+    
+    if (showToast) {
+      toast.success('Purchase orders refreshed', 'Success');
+    }
+  } catch (error) {
+    console.error('Failed to load purchase orders:', error);
+    toast.error('Failed to load purchase orders', 'Error');
+  }
+}
+
+function updatePurchaseOrderStats() {
+  const pending = purchaseOrdersList.filter(po => ['draft', 'pending', 'ordered'].includes(po.status)).length;
+  const received = purchaseOrdersList.filter(po => po.status === 'received').length;
+  const openItems = purchaseOrdersList
+    .filter(po => ['pending', 'ordered'].includes(po.status))
+    .reduce((sum, po) => sum + (po.total_items || 0), 0);
+  
+  document.getElementById('suppliers-active-count').textContent = suppliersList.filter(s => s.is_active !== false).length;
+  document.getElementById('po-pending-count').textContent = pending;
+  document.getElementById('po-received-count').textContent = received;
+  document.getElementById('po-open-items-count').textContent = openItems;
+}
+
+function renderPurchaseOrdersTable() {
+  const tableBody = document.getElementById('po-table-body');
+  if (!tableBody) return;
+  
+  if (!purchaseOrdersList.length) {
+    tableBody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No purchase orders yet</td></tr>';
+    return;
+  }
+  
+  const statusFilter = document.getElementById('po-status-filter')?.value || 'all';
+  const supplierFilter = document.getElementById('po-supplier-filter')?.value || 'all';
+  
+  const filtered = purchaseOrdersList.filter(po => {
+    const statusMatch = statusFilter === 'all' || po.status === statusFilter;
+    const supplierMatch = supplierFilter === 'all' || String(po.supplier_id) === supplierFilter;
+    return statusMatch && supplierMatch;
+  });
+  
+  if (!filtered.length) {
+    tableBody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No purchase orders match the current filters</td></tr>';
+    return;
+  }
+  
+  tableBody.innerHTML = filtered.map(po => {
+    const supplierName = po.suppliers?.name || '—';
+    const siteName = po.sites?.name || '—';
+    const expected = po.expected_date ? new Date(po.expected_date).toLocaleDateString() : '—';
+    const badge = getPOStatusBadge(po.status);
+    
+    const actions = [];
+    if (po.status !== 'received' && po.status !== 'cancelled') {
+      actions.push(`<button class="px-2 py-1 text-xs rounded-lg bg-green-50 text-green-700 hover:bg-green-100" onclick="window.markPurchaseOrderReceived(${po.id})">Mark Received</button>`);
+      actions.push(`<button class="px-2 py-1 text-xs rounded-lg bg-red-50 text-red-600 hover:bg-red-100" onclick="window.cancelPurchaseOrder(${po.id})">Cancel</button>`);
+    } else {
+      actions.push(`<span class="text-xs text-gray-500">No actions</span>`);
+    }
+    
+    return `
+      <tr class="border-b border-nfgray dark:border-gray-700 last:border-0">
+        <td class="px-3 py-3 font-semibold text-nfgblue dark:text-blue-400">${sanitizeText(po.po_number)}</td>
+        <td class="px-3 py-3 text-sm text-gray-600 dark:text-gray-300">${sanitizeText(supplierName)}</td>
+        <td class="px-3 py-3 text-sm text-gray-600 dark:text-gray-300">${sanitizeText(siteName)}</td>
+        <td class="px-3 py-3 text-sm text-gray-600 dark:text-gray-300">${expected}</td>
+        <td class="px-3 py-3 text-center text-sm text-gray-600 dark:text-gray-300">${po.total_items || 0}</td>
+        <td class="px-3 py-3 text-center">
+          <span class="inline-flex items-center justify-center px-2 py-1 text-xs font-medium rounded-lg ${badge.className}">
+            ${badge.label}
+          </span>
+        </td>
+        <td class="px-3 py-3 text-center flex flex-col md:flex-row gap-2 justify-center">${actions.join('')}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function getPOStatusBadge(status) {
+  const map = {
+    draft: { label: 'Draft', className: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300' },
+    pending: { label: 'Pending', className: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
+    ordered: { label: 'Ordered', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+    received: { label: 'Received', className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+    cancelled: { label: 'Cancelled', className: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' }
+  };
+  return map[status] || map.pending;
+}
+
+function openPurchaseOrderModal(prefSupplierId = null) {
+  const modal = document.getElementById('poModal');
+  if (!modal) return;
+  
+  document.getElementById('po-form').reset();
+  resetPOItemsTable();
+  document.getElementById('po-total-value').textContent = formatCurrency(0);
+  document.getElementById('po-form-error')?.classList.add('hidden');
+  
+  populateSupplierFilters(); // ensure options up to date
+  populatePOSiteOptions();
+  
+  if (prefSupplierId) {
+    document.getElementById('po-supplier').value = prefSupplierId;
+  }
+  
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  if (window.lucide) window.lucide.createIcons();
+}
+
+async function addPOItemRow(defaults = {}) {
+  const table = document.getElementById('po-items-table');
+  if (!table) return;
+  
+  const items = await ensureInventoryItemsCache();
+  if (!items.length) {
+    toast.error('Please add inventory items before creating purchase orders');
+    return;
+  }
+  
+  const placeholder = table.querySelector('tr[data-placeholder]');
+  if (placeholder) placeholder.remove();
+  
+  poItemRowId += 1;
+  const rowId = `po-item-${poItemRowId}`;
+  const options = items.map(item => `<option value="${item.id}" ${item.id === defaults.item_id ? 'selected' : ''}>${sanitizeText(item.name)}</option>`).join('');
+  
+  table.insertAdjacentHTML('beforeend', `
+    <tr data-row-id="${rowId}">
+      <td class="px-3 py-2">
+        <select class="po-item-select w-full border border-nfgray rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-nfgblue outline-none">
+          ${options}
+        </select>
+      </td>
+      <td class="px-3 py-2 text-center">
+        <input type="number" min="1" value="${defaults.quantity || 1}" class="po-item-qty w-20 border border-nfgray rounded-lg px-2 py-1 text-center focus:ring-2 focus:ring-nfgblue outline-none" />
+      </td>
+      <td class="px-3 py-2 text-center">
+        <input type="number" min="0" step="0.01" value="${defaults.cost_per_unit || ''}" class="po-item-cost w-24 border border-nfgray rounded-lg px-2 py-1 text-center focus:ring-2 focus:ring-nfgblue outline-none" />
+      </td>
+      <td class="px-3 py-2 text-center text-sm font-semibold po-item-total">$0.00</td>
+      <td class="px-3 py-2 text-center">
+        <button type="button" class="remove-po-item-row p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600" data-row-id="${rowId}">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+      </td>
+    </tr>
+  `);
+  
+  const newRow = table.querySelector(`[data-row-id="${rowId}"]`);
+  newRow.querySelector('.po-item-qty')?.addEventListener('input', updatePOTotalValue);
+  newRow.querySelector('.po-item-cost')?.addEventListener('input', updatePOTotalValue);
+  newRow.querySelector('.remove-po-item-row')?.addEventListener('click', (event) => {
+    const row = event.currentTarget.closest('tr[data-row-id]');
+    row?.remove();
+    updatePOTotalValue();
+    ensurePOItemsPlaceholder();
+  });
+  
+  if (window.lucide) window.lucide.createIcons();
+  updatePOTotalValue();
+}
+
+function ensurePOItemsPlaceholder() {
+  const table = document.getElementById('po-items-table');
+  if (!table) return;
+  if (!table.querySelector('tr[data-row-id]')) {
+    table.innerHTML = '<tr data-placeholder="true"><td colspan="5" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No items added yet</td></tr>';
+  }
+}
+
+function updatePOTotalValue() {
+  const table = document.getElementById('po-items-table');
+  if (!table) return;
+  
+  const rows = table.querySelectorAll('tr[data-row-id]');
+  let total = 0;
+  
+  rows.forEach(row => {
+    const qty = parseInt(row.querySelector('.po-item-qty')?.value, 10) || 0;
+    const cost = parseFloat(row.querySelector('.po-item-cost')?.value) || 0;
+    const rowTotal = qty * cost;
+    total += rowTotal;
+    const totalCell = row.querySelector('.po-item-total');
+    if (totalCell) totalCell.textContent = formatCurrency(rowTotal);
+  });
+  
+  document.getElementById('po-total-value').textContent = formatCurrency(total);
+}
+
+function resetPOItemsTable() {
+  const table = document.getElementById('po-items-table');
+  if (table) {
+    table.innerHTML = '<tr data-placeholder="true"><td colspan="5" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No items added yet</td></tr>';
+  }
+  document.getElementById('po-total-value').textContent = formatCurrency(0);
+}
+
+function collectPOItemsFromForm() {
+  const table = document.getElementById('po-items-table');
+  if (!table) return [];
+  const rows = table.querySelectorAll('tr[data-row-id]');
+  return Array.from(rows).map(row => ({
+    item_id: parseInt(row.querySelector('.po-item-select')?.value, 10),
+    quantity: parseInt(row.querySelector('.po-item-qty')?.value, 10) || 0,
+    cost_per_unit: parseFloat(row.querySelector('.po-item-cost')?.value) || 0
+  })).filter(item => item.item_id && item.quantity > 0);
+}
+
+async function submitPurchaseOrder(e) {
+  e.preventDefault();
+  const errorEl = document.getElementById('po-form-error');
+  if (errorEl) errorEl.classList.add('hidden');
+  
+  const supplierId = parseInt(document.getElementById('po-supplier').value, 10);
+  const siteId = parseInt(document.getElementById('po-site').value, 10);
+  const expectedDate = document.getElementById('po-expected-date').value || null;
+  const notes = document.getElementById('po-notes').value.trim() || null;
+  
+  if (!supplierId || !siteId) {
+    if (errorEl) {
+      errorEl.textContent = 'Supplier and site are required';
+      errorEl.classList.remove('hidden');
+    }
+    return;
+  }
+  
+  const items = collectPOItemsFromForm();
+  if (!items.length) {
+    if (errorEl) {
+      errorEl.textContent = 'Add at least one item to the purchase order';
+      errorEl.classList.remove('hidden');
+    }
+    return;
+  }
+  
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalCost = items.reduce((sum, item) => sum + (item.quantity * item.cost_per_unit), 0);
+  const poNumber = `PO-${Date.now()}`;
+  
+  try {
+    const { data: poData, error } = await supabase
+      .from('purchase_orders')
+      .insert({
+        po_number: poNumber,
+        supplier_id: supplierId,
+        site_id: siteId,
+        expected_date: expectedDate,
+        notes,
+        status: 'pending',
+        ordered_by: currentUser?.id || null,
+        total_items: totalItems,
+        total_cost: totalCost
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    const itemsPayload = items.map(item => ({
+      purchase_order_id: poData.id,
+      item_id: item.item_id,
+      quantity_ordered: item.quantity,
+      cost_per_unit: item.cost_per_unit,
+      notes: null
+    }));
+    
+    const { error: itemsError } = await supabase
+      .from('purchase_order_items')
+      .insert(itemsPayload);
+    
+    if (itemsError) throw itemsError;
+    
+    document.getElementById('poModal').classList.add('hidden');
+    document.getElementById('poModal').classList.remove('flex');
+    e.target.reset();
+    resetPOItemsTable();
+    toast.success('Purchase order created', 'Success');
+    await loadPurchaseOrders();
+  } catch (error) {
+    console.error('Failed to create purchase order:', error);
+    if (errorEl) {
+      errorEl.textContent = error.message || 'Failed to create purchase order';
+      errorEl.classList.remove('hidden');
+    }
+  }
+}
+
+async function markPurchaseOrderReceived(poId) {
+  const po = purchaseOrdersList.find(p => p.id === poId);
+  if (!po) return;
+  if (!po.site_id) {
+    toast.error('Assign a site to this purchase order before receiving items');
+    return;
+  }
+  
+  const confirmed = await showConfirm('Mark this purchase order as received and restock items?', 'Receive Purchase Order');
+  if (!confirmed) return;
+  
+  try {
+    const { data: items, error } = await supabase
+      .from('purchase_order_items')
+      .select('*')
+      .eq('purchase_order_id', poId);
+    
+    if (error) throw error;
+    
+    for (const item of items || []) {
+      const { data: existing, error: fetchError } = await supabase
+        .from('site_inventory')
+        .select('quantity')
+        .eq('site_id', po.site_id)
+        .eq('item_id', item.item_id)
+        .maybeSingle();
+      
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
+      }
+      
+      const currentQty = existing?.quantity || 0;
+      const newQty = currentQty + (item.quantity_ordered || 0);
+      const now = new Date().toISOString();
+      
+      await supabase
+        .from('site_inventory')
+        .upsert({
+          site_id: po.site_id,
+          item_id: item.item_id,
+          quantity: newQty,
+          updated_at: now,
+          last_restocked_at: now
+        }, { onConflict: 'site_id,item_id' });
+      
+      await supabase
+        .from('inventory_transactions')
+        .insert({
+          item_id: item.item_id,
+          site_id: po.site_id,
+          transaction_type: 'restock',
+          quantity_change: item.quantity_ordered,
+          quantity_before: currentQty,
+          quantity_after: newQty,
+          user_id: currentUser?.id || null,
+          notes: `Received via ${po.po_number}`
+        });
+      
+      await supabase
+        .from('purchase_order_items')
+        .update({ quantity_received: item.quantity_ordered, updated_at: now })
+        .eq('id', item.id);
+    }
+    
+    await supabase
+      .from('purchase_orders')
+      .update({ status: 'received', received_date: new Date().toISOString().slice(0, 10) })
+      .eq('id', poId);
+    
+    toast.success('Purchase order marked as received', 'Success');
+    await loadPurchaseOrders();
+    await renderInventory();
+  } catch (error) {
+    console.error('Failed to mark purchase order received:', error);
+    toast.error('Failed to receive purchase order', 'Error');
+  }
+}
+
+async function cancelPurchaseOrder(poId) {
+  const po = purchaseOrdersList.find(p => p.id === poId);
+  if (!po || po.status === 'received' || po.status === 'cancelled') return;
+  
+  const confirmed = await showConfirm('Cancel this purchase order?', 'Cancel Purchase Order');
+  if (!confirmed) return;
+  
+  try {
+    const { error } = await supabase
+      .from('purchase_orders')
+      .update({ status: 'cancelled' })
+      .eq('id', poId);
+    
+    if (error) throw error;
+    
+    toast.success('Purchase order cancelled', 'Success');
+    await loadPurchaseOrders();
+  } catch (error) {
+    console.error('Failed to cancel purchase order:', error);
+    toast.error('Failed to cancel purchase order', 'Error');
+  }
 }
 
 async function fetchInventoryTransactions(options = {}) {
@@ -1118,6 +1754,21 @@ document.querySelectorAll('.inventory-filter-tab').forEach(tab => {
   });
 });
 
+document.getElementById('add-supplier-btn')?.addEventListener('click', () => openSupplierModal());
+document.getElementById('refresh-suppliers-btn')?.addEventListener('click', () => loadSuppliers(true));
+document.getElementById('new-po-btn')?.addEventListener('click', () => openPurchaseOrderModal());
+document.getElementById('po-refresh-btn')?.addEventListener('click', () => loadPurchaseOrders(true));
+document.getElementById('po-status-filter')?.addEventListener('change', renderPurchaseOrdersTable);
+document.getElementById('po-supplier-filter')?.addEventListener('change', renderPurchaseOrdersTable);
+document.getElementById('add-po-item-row')?.addEventListener('click', () => addPOItemRow());
+document.getElementById('supplier-form')?.addEventListener('submit', saveSupplier);
+document.getElementById('po-form')?.addEventListener('submit', submitPurchaseOrder);
+
+window.editSupplier = (supplierId) => openSupplierModal(supplierId);
+window.createPOForSupplier = (supplierId) => openPurchaseOrderModal(supplierId);
+window.markPurchaseOrderReceived = (poId) => markPurchaseOrderReceived(poId);
+window.cancelPurchaseOrder = (poId) => cancelPurchaseOrder(poId);
+
 // Site filter - use event delegation to handle custom dropdown changes
 document.addEventListener('change', (e) => {
   if (e.target.id === 'site-filter' || e.target.closest('#site-filter') || 
@@ -1242,6 +1893,7 @@ async function init() {
     const reportsNav = document.getElementById('nav-reports');
     if (bookingsNav) bookingsNav.style.display = 'none';
     if (reportsNav) reportsNav.style.display = 'none';
+    document.querySelector('.inventory-view-tab[data-view="suppliers"]')?.classList.add('hidden');
   }
   
   await loadSiteFilter();

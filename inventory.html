@@ -92,6 +92,143 @@
     <div class="loader-text-subtitle">Please wait</div>
   </div>
 
+  <!-- Supplier Modal -->
+  <div id="supplierModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-[70]">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-lg">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between">
+        <h4 id="supplier-modal-title" class="text-nfgblue dark:text-blue-400 font-semibold">Add Supplier</h4>
+        <button data-action="close-modal" data-target="supplierModal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="supplier-form" class="p-4 space-y-4">
+        <input type="hidden" id="supplier-id" />
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Supplier Name <span class="text-red-500">*</span></label>
+            <input type="text" id="supplier-name" required class="w-full border border-nfgray rounded-xl px-3 py-2 focus:ring-2 focus:ring-nfgblue outline-none" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Contact Person</label>
+            <input type="text" id="supplier-contact" class="w-full border border-nfgray rounded-xl px-3 py-2 focus:ring-2 focus:ring-nfgblue outline-none" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Email</label>
+            <input type="email" id="supplier-email" class="w-full border border-nfgray rounded-xl px-3 py-2 focus:ring-2 focus:ring-nfgblue outline-none" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Phone</label>
+            <input type="text" id="supplier-phone" class="w-full border border-nfgray rounded-xl px-3 py-2 focus:ring-2 focus:ring-nfgblue outline-none" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Preferred Contact</label>
+            <select id="supplier-preferred-contact" class="w-full border border-nfgray rounded-xl px-3 py-2 focus:ring-2 focus:ring-nfgblue outline-none">
+              <option value="">None</option>
+              <option value="email">Email</option>
+              <option value="phone">Phone</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="checkbox" id="supplier-active" class="w-4 h-4 text-nfgblue border-nfgray rounded focus:ring-nfgblue" checked />
+            <label for="supplier-active" class="text-sm font-medium text-gray-600 dark:text-gray-400">Active supplier</label>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Notes</label>
+          <textarea id="supplier-notes" rows="3" class="w-full border border-nfgray rounded-xl px-3 py-2 focus:ring-2 focus:ring-nfgblue outline-none"></textarea>
+        </div>
+        <div id="supplier-form-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2"></div>
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-nfgray dark:border-gray-700">
+          <button type="button" data-action="close-modal" data-target="supplierModal" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600">
+            Cancel
+          </button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
+            Save Supplier
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Purchase Order Modal -->
+  <div id="poModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-[70]">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-3xl">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between">
+        <h4 class="text-nfgblue dark:text-blue-400 font-semibold">New Purchase Order</h4>
+        <button data-action="close-modal" data-target="poModal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="po-form" class="p-4 space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Supplier <span class="text-red-500">*</span></label>
+            <select id="po-supplier" required class="w-full border border-nfgray rounded-xl px-3 py-2 focus:ring-2 focus:ring-nfgblue outline-none">
+              <option value="">Select supplier</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Site <span class="text-red-500">*</span></label>
+            <select id="po-site" required class="w-full border border-nfgray rounded-xl px-3 py-2 focus:ring-2 focus:ring-nfgblue outline-none">
+              <option value="">Select site</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Expected Date</label>
+            <input type="date" id="po-expected-date" class="w-full border border-nfgray rounded-xl px-3 py-2 focus:ring-2 focus:ring-nfgblue outline-none" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Notes</label>
+            <textarea id="po-notes" rows="2" class="w-full border border-nfgray rounded-xl px-3 py-2 focus:ring-2 focus:ring-nfgblue outline-none"></textarea>
+          </div>
+        </div>
+
+        <div class="border border-nfgray rounded-xl overflow-hidden">
+          <div class="flex items-center justify-between px-3 py-2 border-b border-nfgray bg-nfglight/40 dark:bg-gray-700/40">
+            <h5 class="font-medium text-nfgblue dark:text-blue-400">Items</h5>
+            <button type="button" id="add-po-item-row" class="inline-flex items-center gap-1 px-3 py-1 rounded-lg border border-nfgray hover:bg-nfglight text-sm">
+              <i data-lucide="plus" class="w-4 h-4"></i> Add Item
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-nfglight/40 border-b border-nfgray">
+                <tr>
+                  <th class="px-3 py-2 text-left font-medium text-nfgblue dark:text-blue-400">Item</th>
+                  <th class="px-3 py-2 text-center font-medium text-nfgblue dark:text-blue-400">Quantity</th>
+                  <th class="px-3 py-2 text-center font-medium text-nfgblue dark:text-blue-400">Cost / Unit</th>
+                  <th class="px-3 py-2 text-center font-medium text-nfgblue dark:text-blue-400">Total</th>
+                  <th class="px-3 py-2 text-center font-medium text-nfgblue dark:text-blue-400"></th>
+                </tr>
+              </thead>
+              <tbody id="po-items-table">
+                <tr data-placeholder="true">
+                  <td colspan="5" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No items added yet</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Estimated Total</p>
+            <p id="po-total-value" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">$0.00</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" data-action="close-modal" data-target="poModal" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600">
+              Cancel
+            </button>
+            <button type="submit" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
+              Create Purchase Order
+            </button>
+          </div>
+        </div>
+        <div id="po-form-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2"></div>
+      </form>
+    </div>
+  </div>
+
   
   <!-- ========== SIDEBAR ========== -->
   <aside id="sidebar" class="w-64 shrink-0 bg-white dark:bg-gray-800 border-r border-nfgray hidden md:flex md:flex-col transition-all">
@@ -264,6 +401,9 @@
           <button class="inventory-view-tab flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-nfgblue hover:bg-white/70 transition" data-view="history">
             History
           </button>
+          <button class="inventory-view-tab flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-nfgblue hover:bg-white/70 transition" data-view="suppliers">
+            Suppliers &amp; Orders
+          </button>
         </div>
         <div id="history-inline-actions" class="hidden sm:flex items-center gap-2">
           <button id="history-refresh-btn" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 text-sm font-medium transition">
@@ -271,6 +411,14 @@
           </button>
           <button id="history-export-btn" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark text-sm font-medium transition">
             Export CSV
+          </button>
+        </div>
+        <div id="suppliers-inline-actions" class="hidden sm:flex items-center gap-2">
+          <button id="add-supplier-btn" class="px-4 py-2 rounded-xl border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight text-sm font-medium transition">
+            Add Supplier
+          </button>
+          <button id="new-po-btn" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark text-sm font-medium transition">
+            New Purchase Order
           </button>
         </div>
       </div>
@@ -422,6 +570,82 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Suppliers & Purchase Orders View -->
+      <div id="suppliers-view" class="hidden space-y-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Active Suppliers</p>
+            <p id="suppliers-active-count" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">0</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Pending Orders</p>
+            <p id="po-pending-count" class="text-2xl font-semibold text-orange-500">0</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Received Orders</p>
+            <p id="po-received-count" class="text-2xl font-semibold text-green-600">0</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Open Items</p>
+            <p id="po-open-items-count" class="text-2xl font-semibold text-purple-600">0</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4 flex flex-col">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Suppliers</h3>
+              <button id="refresh-suppliers-btn" class="px-3 py-1.5 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 text-sm">Refresh</button>
+            </div>
+            <div id="suppliers-list" class="divide-y divide-nfgray dark:divide-gray-700 overflow-y-auto max-h-[480px]">
+              <p class="text-center text-gray-500 dark:text-gray-400 py-8">No suppliers yet</p>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4 lg:col-span-2">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
+              <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Purchase Orders</h3>
+              <div class="flex flex-wrap items-center gap-2">
+                <select id="po-status-filter" class="border border-nfgray rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none">
+                  <option value="all">All Statuses</option>
+                  <option value="draft">Draft</option>
+                  <option value="pending">Pending</option>
+                  <option value="ordered">Ordered</option>
+                  <option value="received">Received</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+                <select id="po-supplier-filter" class="border border-nfgray rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none">
+                  <option value="all">All Suppliers</option>
+                </select>
+                <button id="po-refresh-btn" class="px-3 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 text-sm">
+                  Refresh
+                </button>
+              </div>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="bg-nfglight/50 border-b border-nfgray dark:border-gray-700">
+                  <tr>
+                    <th class="px-3 py-2 text-left font-medium text-nfgblue dark:text-blue-400">PO #</th>
+                    <th class="px-3 py-2 text-left font-medium text-nfgblue dark:text-blue-400">Supplier</th>
+                    <th class="px-3 py-2 text-left font-medium text-nfgblue dark:text-blue-400">Site</th>
+                    <th class="px-3 py-2 text-left font-medium text-nfgblue dark:text-blue-400">Expected</th>
+                    <th class="px-3 py-2 text-center font-medium text-nfgblue dark:text-blue-400">Items</th>
+                    <th class="px-3 py-2 text-center font-medium text-nfgblue dark:text-blue-400">Status</th>
+                    <th class="px-3 py-2 text-center font-medium text-nfgblue dark:text-blue-400">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="po-table-body">
+                  <tr>
+                    <td colspan="7" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No purchase orders yet</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
