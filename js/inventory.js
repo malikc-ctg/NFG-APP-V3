@@ -714,6 +714,23 @@ async function loadSiteFilter() {
   
   select.innerHTML = '<option value="all">All Sites</option>' + 
     sitesList.map(site => `<option value="${site.id}">${site.name}</option>`).join('');
+  
+  // Reinitialize custom dropdown after updating options
+  if (select.dataset.customDropdown === 'true' && window.initCustomDropdowns) {
+    // Remove existing wrapper if any
+    const existingWrapper = select.closest('.nfg-select-wrapper');
+    if (existingWrapper) {
+      select.dataset.initialized = 'false';
+      existingWrapper.replaceWith(select);
+    }
+    // Reinitialize
+    if (window.NFGDropdown) {
+      new window.NFGDropdown(select);
+      select.dataset.initialized = 'true';
+    } else if (window.initCustomDropdowns) {
+      window.initCustomDropdowns();
+    }
+  }
 }
 
 // Logout

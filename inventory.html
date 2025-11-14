@@ -149,7 +149,7 @@
           <!-- Notification Bell (will be injected by notification-center.js) -->
           
           <!-- Site Filter -->
-          <select id="site-filter" class="px-2 sm:px-3 py-1.5 rounded-lg sm:rounded-xl border border-nfgray bg-white dark:bg-gray-800 text-xs sm:text-sm flex-shrink-0">
+          <select id="site-filter" data-custom-dropdown="true" data-placeholder="All Sites" class="px-2 sm:px-3 py-1.5 rounded-lg sm:rounded-xl border border-nfgray bg-white dark:bg-gray-800 text-xs sm:text-sm flex-shrink-0">
             <option value="all">All Sites</option>
           </select>
           
@@ -166,9 +166,9 @@
     <!-- CONTENT -->
     <main class="p-4 md:p-6 space-y-6">
       <div class="flex items-center justify-between gap-4 pb-2">
-        <div>
-          <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Inventory Management</h2>
-          <p class="text-sm text-gray-500 mt-1">Track supplies and equipment across all sites</p>
+      <div>
+        <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Inventory Management</h2>
+        <p class="text-sm text-gray-500 mt-1">Track supplies and equipment across all sites</p>
         </div>
         <!-- Select All Checkbox (only for non-staff) -->
         <div id="select-all-inventory-container" class="hidden flex items-center gap-2 px-3 py-2 whitespace-nowrap flex-shrink-0">
@@ -336,7 +336,7 @@
       <div class="p-4 space-y-4">
         <div>
           <label class="block text-sm font-medium mb-2">Update Type</label>
-          <select id="quantity-update-type" class="w-full border border-nfgray rounded-xl p-2.5 bg-white dark:bg-gray-700">
+          <select id="quantity-update-type" data-custom-dropdown="true" data-placeholder="Select update type" class="w-full border border-nfgray rounded-xl p-2.5 bg-white dark:bg-gray-700">
             <option value="set">Set to specific amount</option>
             <option value="adjust">Adjust by amount (+/-)</option>
           </select>
@@ -1067,15 +1067,44 @@
         const modal = document.getElementById('bulk-quantity-modal');
         const cancelBtn = modal.querySelector('[data-cancel-quantity]');
         const confirmBtn = document.getElementById('confirm-quantity-update');
+        const quantityTypeSelect = document.getElementById('quantity-update-type');
         
         // Reset form
-        document.getElementById('quantity-update-type').value = 'set';
+        quantityTypeSelect.value = 'set';
         document.getElementById('quantity-amount').value = '';
+        
+        // Reinitialize custom dropdown when modal opens
+        if (quantityTypeSelect.dataset.customDropdown === 'true' && window.initCustomDropdowns) {
+          // Remove existing wrapper if any
+          const existingWrapper = quantityTypeSelect.closest('.nfg-select-wrapper');
+          if (existingWrapper) {
+            quantityTypeSelect.dataset.initialized = 'false';
+            existingWrapper.replaceWith(quantityTypeSelect);
+          }
+          // Reinitialize
+          if (window.NFGDropdown) {
+            new window.NFGDropdown(quantityTypeSelect);
+            quantityTypeSelect.dataset.initialized = 'true';
+          } else if (window.initCustomDropdowns) {
+            window.initCustomDropdowns();
+          }
+        }
         
         modal.classList.remove('hidden');
         
         const handleConfirm = () => {
-          const updateType = document.getElementById('quantity-update-type').value;
+          // Get value from custom dropdown or regular select
+          const quantityTypeSelect = document.getElementById('quantity-update-type');
+          let updateType;
+          if (quantityTypeSelect.dataset.customDropdown === 'true') {
+            // Get value from custom dropdown hidden input
+            const wrapper = quantityTypeSelect.closest('.nfg-select-wrapper');
+            const hiddenInput = wrapper?.querySelector('input[type="hidden"]');
+            updateType = hiddenInput?.value || quantityTypeSelect.value;
+          } else {
+            updateType = quantityTypeSelect.value;
+          }
+          
           const amount = document.getElementById('quantity-amount').value;
           
           if (!amount) {
@@ -1167,7 +1196,7 @@
     
     // renderInventory is already made globally available in inventory.js module
   </script>
-
+  
   <!-- Hide loader when page is ready -->
   <script>
     window.addEventListener('load', () => {
