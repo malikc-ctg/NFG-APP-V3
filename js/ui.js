@@ -49,8 +49,7 @@ export async function renderSites(sites, options = {}) {
     const hasAnySites = sites.length > 0
     grid.innerHTML = createEmptyState(hasAnySites)
   } else {
-    const canBulkOperate = currentUserProfile && (currentUserProfile.role === 'admin' || currentUserProfile.role === 'client' || currentUserProfile.role === 'super_admin');
-    grid.innerHTML = filteredSites.map(site => createSiteCard(site, { showBulkCheckbox: canBulkOperate, currentUserProfile })).join('')
+    grid.innerHTML = filteredSites.map(site => createSiteCard(site, { currentUserProfile })).join('')
     console.log('[UI] ✅ Sites rendered! Check for View Site buttons with data-action="view-site"')
     
     // Initialize Lucide icons
