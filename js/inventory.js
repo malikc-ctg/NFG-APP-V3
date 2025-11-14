@@ -8,6 +8,8 @@ let currentSiteFilter = 'all';
 let categories = [];
 let inventory = [];
 let sites = [];
+let selectedInventory = new Set(); // Track selected inventory item IDs (site_id + item_id combination)
+let allInventory = []; // Store all inventory items for selection tracking
 
 // Get current user
 async function getCurrentUser() {
@@ -103,6 +105,9 @@ async function renderInventory() {
   
   try {
     const siteInventory = await fetchSiteInventory();
+    allInventory = siteInventory; // Store all inventory for selection tracking
+    window.allInventory = allInventory;
+    window.selectedInventory = selectedInventory;
     tableBody.dataset.loaded = 'true';
     
     // Update summary cards
@@ -125,7 +130,7 @@ async function renderInventory() {
     if (filtered.length === 0) {
       tableBody.innerHTML = `
         <tr>
-          <td colspan="5" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+          <td colspan="6" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
             <i data-lucide="package-x" class="w-12 h-12 mx-auto text-gray-300 mb-2"></i>
             <p>No inventory items found</p>
           </td>
@@ -174,8 +179,27 @@ async function renderInventory() {
         'ok': 'Item is in stock and quantity is sufficient'
       };
       
+      // Create unique key for inventory item (site_id + item_id)
+      const itemKey = `${item.site_id}_${item.item_id}`;
+      const isSelected = selectedInventory.has(itemKey);
+      const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
+      const canBulkOperate = !isStaff && currentUserProfile && (currentUserProfile.role === 'admin' || currentUserProfile.role === 'client' || currentUserProfile.role === 'super_admin');
+      
       return `
-        <tr class="${rowClass}">
+        <tr class="${rowClass} ${isSelected ? 'bg-nfglight/30 dark:bg-blue-900/20' : ''}">
+          <td class="px-4 py-3">
+            ${canBulkOperate ? `
+              <input 
+                type="checkbox" 
+                class="inventory-checkbox w-4 h-4 text-nfgblue border-nfgray rounded focus:ring-nfgblue cursor-pointer" 
+                data-item-key="${itemKey}"
+                data-site-id="${item.site_id}"
+                data-item-id="${item.item_id}"
+                ${isSelected ? 'checked' : ''}
+                aria-label="Select item ${item.item_name}"
+              />
+            ` : ''}
+          </td>
           <td class="px-4 py-3">
             <div class="flex items-center gap-2">
               <i data-lucide="${item.category_icon || 'package'}" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
@@ -214,12 +238,33 @@ async function renderInventory() {
       `;
     }).join('');
     
+    // Show/hide Select All checkbox based on role
+    const selectAllContainer = document.getElementById('select-all-inventory-container');
+    const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
+    if (selectAllContainer) {
+      if (isStaff) {
+        selectAllContainer.classList.add('hidden');
+      } else {
+        selectAllContainer.classList.remove('hidden');
+      }
+    }
+    
     if (window.lucide) lucide.createIcons();
+    
+    // Attach checkbox listeners after rendering
+    if (typeof window !== 'undefined' && window.attachInventoryCheckboxListeners) {
+      window.attachInventoryCheckboxListeners();
+    }
+    
+    // Update select all checkbox state
+    if (typeof window !== 'undefined' && window.updateSelectAllInventoryCheckbox) {
+      window.updateSelectAllInventoryCheckbox();
+    }
   } catch (error) {
     console.error('Error rendering inventory:', error);
     tableBody.innerHTML = `
       <tr>
-        <td colspan="5" class="px-4 py-8 text-center text-red-500">
+        <td colspan="6" class="px-4 py-8 text-center text-red-500">
           Error loading inventory. Please refresh the page.
         </td>
       </tr>
@@ -641,6 +686,7 @@ document.getElementById('item-form')?.addEventListener('submit', async (e) => {
 document.querySelectorAll('.inventory-filter-tab').forEach(tab => {
   tab.addEventListener('click', () => {
     currentFilter = tab.dataset.category;
+    window.currentFilter = currentFilter; // Update global reference
     
     // Update active tab
     document.querySelectorAll('.inventory-filter-tab').forEach(t => {
@@ -657,6 +703,7 @@ document.querySelectorAll('.inventory-filter-tab').forEach(tab => {
 // Site filter
 document.getElementById('site-filter')?.addEventListener('change', (e) => {
   currentSiteFilter = e.target.value;
+  window.currentSiteFilter = currentSiteFilter; // Update global reference
   renderInventory();
 });
 
@@ -674,6 +721,28 @@ document.getElementById('logout-btn')?.addEventListener('click', async () => {
   await supabase.auth.signOut();
   window.location.href = './index.html';
 });
+
+// Make functions and variables globally available for bulk operations script
+window.renderInventory = renderInventory;
+window.selectedInventory = selectedInventory;
+window.allInventory = allInventory;
+window.currentFilter = currentFilter;
+window.currentSiteFilter = currentSiteFilter;
+window.supabase = supabase;
+window.toast = toast;
+window.showConfirm = showConfirm;
+
+// Make currentUserProfile globally available
+window.currentUserProfile = currentUserProfile;
+
+// Update global references when they change (wrap getCurrentUser)
+const originalGetCurrentUser = getCurrentUser;
+getCurrentUser = async function() {
+  const user = await originalGetCurrentUser();
+  window.currentUserProfile = currentUserProfile;
+  window.currentUser = currentUser;
+  return user;
+};
 
 // Initialize
 async function init() {

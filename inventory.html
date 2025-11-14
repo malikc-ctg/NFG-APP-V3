@@ -165,9 +165,23 @@
 
     <!-- CONTENT -->
     <main class="p-4 md:p-6 space-y-6">
-      <div>
-        <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Inventory Management</h2>
-        <p class="text-sm text-gray-500 mt-1">Track supplies and equipment across all sites</p>
+      <div class="flex items-center justify-between gap-4 pb-2">
+        <div>
+          <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Inventory Management</h2>
+          <p class="text-sm text-gray-500 mt-1">Track supplies and equipment across all sites</p>
+        </div>
+        <!-- Select All Checkbox (only for non-staff) -->
+        <div id="select-all-inventory-container" class="hidden flex items-center gap-2 px-3 py-2 whitespace-nowrap flex-shrink-0">
+          <input 
+            type="checkbox" 
+            id="select-all-inventory" 
+            class="w-4 h-4 text-nfgblue border-nfgray rounded focus:ring-nfgblue cursor-pointer"
+            aria-label="Select all inventory items"
+          />
+          <label for="select-all-inventory" class="text-sm font-medium text-nfgblue dark:text-blue-400 cursor-pointer">
+            Select All
+          </label>
+        </div>
       </div>
 
       <!-- Low Stock Alerts Banner -->
@@ -269,6 +283,9 @@
           <table class="w-full">
             <thead class="bg-nfglight/50 border-b border-nfgray dark:border-gray-700">
               <tr>
+                <th class="px-4 py-3 text-left text-sm font-medium text-nfgblue dark:text-blue-400 w-10">
+                  <!-- Checkbox column -->
+                </th>
                 <th class="px-4 py-3 text-left text-sm font-medium text-nfgblue dark:text-blue-400">Item</th>
                 <th class="px-4 py-3 text-left text-sm font-medium text-nfgblue dark:text-blue-400 hidden md:table-cell">Category</th>
                 <th class="px-4 py-3 text-center text-sm font-medium text-nfgblue dark:text-blue-400">Quantity</th>
@@ -278,13 +295,89 @@
             </thead>
             <tbody id="inventory-table-body" class="divide-y divide-nfgray">
               <tr>
-                <td colspan="5" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Loading inventory...</td>
+                <td colspan="6" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Loading inventory...</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
     </main>
+  </div>
+
+  <!-- Bulk Actions Toolbar for Inventory -->
+  <div id="bulk-inventory-toolbar" class="hidden fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-lg p-4 z-50 max-w-4xl w-full mx-4">
+    <div class="flex items-center justify-between gap-4 flex-nowrap">
+      <span id="selected-inventory-count" class="text-sm font-medium text-nfgblue dark:text-blue-400 whitespace-nowrap flex-shrink-0">
+        0 selected
+      </span>
+      <div class="flex gap-2 flex-nowrap items-center">
+        <button id="bulk-update-quantity-inventory" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 text-sm font-medium transition whitespace-nowrap flex-shrink-0">
+          Update Quantity
+        </button>
+        <button id="bulk-update-category-inventory" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 text-sm font-medium transition whitespace-nowrap flex-shrink-0">
+          Update Category
+        </button>
+        <button id="bulk-export-inventory" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark text-sm font-medium transition whitespace-nowrap flex-shrink-0">
+          Export CSV
+        </button>
+        <button id="bulk-cancel-inventory" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 text-sm font-medium transition whitespace-nowrap flex-shrink-0">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Quantity Update Modal -->
+  <div id="bulk-quantity-modal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-[60]">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-md">
+      <div class="p-4 border-b border-nfgray">
+        <h4 class="text-nfgblue dark:text-blue-400 font-semibold">Update Quantity</h4>
+      </div>
+      <div class="p-4 space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-2">Update Type</label>
+          <select id="quantity-update-type" class="w-full border border-nfgray rounded-xl p-2.5 bg-white dark:bg-gray-700">
+            <option value="set">Set to specific amount</option>
+            <option value="adjust">Adjust by amount (+/-)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">Amount</label>
+          <input 
+            type="number" 
+            id="quantity-amount" 
+            class="w-full border border-nfgray rounded-xl p-2.5 bg-white dark:bg-gray-700"
+            placeholder="Enter amount"
+            required
+          />
+        </div>
+      </div>
+      <div class="p-4 border-t border-nfgray flex justify-end gap-2">
+        <button data-cancel-quantity class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 font-medium transition">
+          Cancel
+        </button>
+        <button id="confirm-quantity-update" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark font-medium transition">
+          Update
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Category Update Modal -->
+  <div id="bulk-category-modal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-[60]">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-md">
+      <div class="p-4 border-b border-nfgray">
+        <h4 class="text-nfgblue dark:text-blue-400 font-semibold">Select Category</h4>
+      </div>
+      <div class="p-4 max-h-96 overflow-y-auto space-y-2" id="bulk-category-list">
+        <p class="text-gray-500 dark:text-gray-400 text-center py-4">Loading categories...</p>
+      </div>
+      <div class="p-4 border-t border-nfgray flex justify-end">
+        <button data-cancel-category class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 font-medium transition">
+          Cancel
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- Add/Edit Item Modal -->
@@ -584,6 +677,497 @@
   <!-- Notification Center -->
   <script type="module" src="./js/notification-center.js"></script>
   
+  <!-- Bulk Inventory Operations JavaScript -->
+  <script>
+    // Get inventory and selection tracking from module scope
+    const getInventoryData = () => {
+      return {
+        selectedInventory: window.selectedInventory || new Set(),
+        allInventory: window.allInventory || [],
+        currentUserProfile: window.currentUserProfile || null,
+        currentFilter: window.currentFilter || 'all'
+      };
+    };
+
+    // Initialize bulk operations
+    function initBulkInventoryOperations() {
+      // Select All checkbox
+      const selectAllCheckbox = document.getElementById('select-all-inventory');
+      if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', (e) => {
+          const { selectedInventory } = getInventoryData();
+          if (e.target.checked) {
+            selectAllInventory();
+          } else {
+            deselectAllInventory();
+          }
+        });
+      }
+
+      // Cancel selection
+      document.getElementById('bulk-cancel-inventory')?.addEventListener('click', () => {
+        deselectAllInventory();
+        if (window.renderInventory) {
+          window.renderInventory();
+        }
+      });
+
+      // Bulk update quantity
+      document.getElementById('bulk-update-quantity-inventory')?.addEventListener('click', async () => {
+        const { selectedInventory } = getInventoryData();
+        if (selectedInventory.size === 0) {
+          toast.error('Please select at least one item');
+          return;
+        }
+        
+        const result = await showBulkQuantityModal();
+        if (!result) return;
+        
+        const confirmed = await showConfirm(
+          `${result.type === 'set' ? 'Set quantity to' : 'Adjust quantity by'} ${result.amount} for ${selectedInventory.size} item(s)?`,
+          'Bulk Update Quantity'
+        );
+        if (!confirmed) return;
+        
+        await bulkUpdateQuantities(result.type, result.amount);
+      });
+
+      // Bulk update category
+      document.getElementById('bulk-update-category-inventory')?.addEventListener('click', async () => {
+        const { selectedInventory } = getInventoryData();
+        if (selectedInventory.size === 0) {
+          toast.error('Please select at least one item');
+          return;
+        }
+        
+        const categoryId = await showBulkCategoryModal();
+        if (!categoryId) return;
+        
+        const confirmed = await showConfirm(
+          `Update category for ${selectedInventory.size} item(s)?`,
+          'Bulk Update Category'
+        );
+        if (!confirmed) return;
+        
+        await bulkUpdateCategory(categoryId);
+      });
+
+      // Bulk export to CSV
+      document.getElementById('bulk-export-inventory')?.addEventListener('click', async () => {
+        const { selectedInventory } = getInventoryData();
+        if (selectedInventory.size === 0) {
+          toast.error('Please select at least one item');
+          return;
+        }
+        
+        await bulkExportInventory();
+      });
+    }
+
+    // Get visible inventory (based on current filter)
+    function getVisibleInventory() {
+      const { allInventory, currentFilter } = getInventoryData();
+      let filtered = allInventory || [];
+      
+      // Apply category filter
+      if (currentFilter !== 'all') {
+        filtered = filtered.filter(item => item.category_name === currentFilter);
+      }
+      
+      // Apply site filter if exists
+      const siteFilter = window.currentSiteFilter || 'all';
+      if (siteFilter !== 'all') {
+        filtered = filtered.filter(item => item.site_id == siteFilter);
+      }
+      
+      return filtered;
+    }
+
+    // Select all visible inventory
+    function selectAllInventory() {
+      const visibleItems = getVisibleInventory();
+      const { selectedInventory } = getInventoryData();
+      
+      visibleItems.forEach(item => {
+        const itemKey = `${item.site_id}_${item.item_id}`;
+        selectedInventory.add(itemKey);
+      });
+      
+      window.selectedInventory = selectedInventory;
+      updateInventoryCheckboxes();
+      updateBulkInventoryToolbar();
+      updateSelectAllInventoryCheckbox();
+    }
+
+    // Deselect all inventory
+    function deselectAllInventory() {
+      const { selectedInventory } = getInventoryData();
+      selectedInventory.clear();
+      window.selectedInventory = selectedInventory;
+      updateInventoryCheckboxes();
+      updateBulkInventoryToolbar();
+      updateSelectAllInventoryCheckbox();
+    }
+
+    // Attach checkbox listeners (make globally available)
+    window.attachInventoryCheckboxListeners = function() {
+      document.querySelectorAll('.inventory-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+          const itemKey = e.target.dataset.itemKey;
+          toggleInventorySelection(itemKey);
+        });
+      });
+    };
+
+    // Toggle inventory selection
+    function toggleInventorySelection(itemKey) {
+      const { selectedInventory } = getInventoryData();
+      
+      if (selectedInventory.has(itemKey)) {
+        selectedInventory.delete(itemKey);
+      } else {
+        selectedInventory.add(itemKey);
+      }
+      
+      window.selectedInventory = selectedInventory;
+      updateBulkInventoryToolbar();
+      updateSelectAllInventoryCheckbox();
+      updateInventoryCheckboxes();
+    }
+
+    // Update select all checkbox (make globally available)
+    window.updateSelectAllInventoryCheckbox = function() {
+      const selectAllCheckbox = document.getElementById('select-all-inventory');
+      if (!selectAllCheckbox) return;
+      
+      const { selectedInventory } = getInventoryData();
+      const visibleItems = getVisibleInventory();
+      const allVisibleSelected = visibleItems.length > 0 && visibleItems.every(item => {
+        const itemKey = `${item.site_id}_${item.item_id}`;
+        return selectedInventory.has(itemKey);
+      });
+      
+      selectAllCheckbox.checked = allVisibleSelected;
+      selectAllCheckbox.indeterminate = !allVisibleSelected && visibleItems.some(item => {
+        const itemKey = `${item.site_id}_${item.item_id}`;
+        return selectedInventory.has(itemKey);
+      });
+    };
+
+    // Update checkbox states
+    function updateInventoryCheckboxes() {
+      const { selectedInventory } = getInventoryData();
+      
+      document.querySelectorAll('.inventory-checkbox').forEach(checkbox => {
+        const itemKey = checkbox.dataset.itemKey;
+        checkbox.checked = selectedInventory.has(itemKey);
+        
+        const row = checkbox.closest('tr');
+        if (row) {
+          if (checkbox.checked) {
+            row.classList.add('bg-nfglight/30', 'dark:bg-blue-900/20');
+          } else {
+            row.classList.remove('bg-nfglight/30', 'dark:bg-blue-900/20');
+          }
+        }
+      });
+    }
+
+    // Update bulk toolbar
+    function updateBulkInventoryToolbar() {
+      const toolbar = document.getElementById('bulk-inventory-toolbar');
+      const count = document.getElementById('selected-inventory-count');
+      
+      if (!toolbar || !count) return;
+      
+      const { selectedInventory, currentUserProfile } = getInventoryData();
+      const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
+      
+      if (selectedInventory.size > 0 && !isStaff) {
+        toolbar.classList.remove('hidden');
+        count.textContent = `${selectedInventory.size} ${selectedInventory.size === 1 ? 'item' : 'items'} selected`;
+      } else {
+        toolbar.classList.add('hidden');
+      }
+    }
+
+    // Bulk update quantities
+    async function bulkUpdateQuantities(updateType, amount) {
+      const { selectedInventory, allInventory } = getInventoryData();
+      const itemKeys = Array.from(selectedInventory);
+      
+      // Get supabase from global scope
+      const supabaseClient = window.supabase;
+      if (!supabaseClient) {
+        toast.error('Error: Supabase client not available');
+        return;
+      }
+      
+      try {
+        // Extract site_id and item_id from itemKeys
+        const updates = [];
+        for (const itemKey of itemKeys) {
+          const [siteId, itemId] = itemKey.split('_');
+          const item = allInventory.find(i => i.site_id == siteId && i.item_id == itemId);
+          
+          if (!item) continue;
+          
+          let newQuantity;
+          if (updateType === 'set') {
+            newQuantity = parseInt(amount, 10);
+          } else {
+            newQuantity = Math.max(0, (item.quantity || 0) + parseInt(amount, 10));
+          }
+          
+          // Update inventory_item_sites table (or inventory_with_categories view)
+          // First, get the current user
+          const { data: { user } } = await supabaseClient.auth.getUser();
+          if (!user) {
+            toast.error('Error: User not available');
+            return;
+          }
+          
+          // Update the quantity in inventory_item_sites table
+          const { error } = await supabaseClient
+            .from('inventory_item_sites')
+            .update({ quantity: newQuantity })
+            .eq('site_id', siteId)
+            .eq('item_id', itemId);
+          
+          if (error) {
+            console.error(`Error updating item ${itemId} at site ${siteId}:`, error);
+            continue;
+          }
+          
+          // Create transaction history entry
+          await supabaseClient
+            .from('inventory_transactions')
+            .insert({
+              site_id: parseInt(siteId, 10),
+              item_id: parseInt(itemId, 10),
+              transaction_type: 'adjustment',
+              quantity_change: updateType === 'set' ? newQuantity - (item.quantity || 0) : parseInt(amount, 10),
+              quantity_before: item.quantity || 0,
+              quantity_after: newQuantity,
+              created_by: user.id
+            });
+          
+          updates.push({ siteId, itemId, newQuantity });
+        }
+        
+        if (updates.length === 0) {
+          toast.error('Failed to update any items');
+          return;
+        }
+        
+        toast.success(`Updated quantities for ${updates.length} item(s) successfully`);
+        deselectAllInventory();
+        
+        // Refresh inventory
+        if (window.renderInventory) {
+          await window.renderInventory();
+        }
+      } catch (err) {
+        console.error('Error bulk updating quantities:', err);
+        toast.error('An error occurred while updating quantities');
+      }
+    }
+
+    // Bulk update category
+    async function bulkUpdateCategory(categoryId) {
+      const { selectedInventory, allInventory } = getInventoryData();
+      const itemKeys = Array.from(selectedInventory);
+      
+      // Get supabase from global scope
+      const supabaseClient = window.supabase;
+      if (!supabaseClient) {
+        toast.error('Error: Supabase client not available');
+        return;
+      }
+      
+      try {
+        // Extract item_ids from itemKeys (category applies to all sites for an item)
+        const itemIds = [...new Set(itemKeys.map(key => key.split('_')[1]))];
+        
+        const { error } = await supabaseClient
+          .from('inventory_items')
+          .update({ category_id: parseInt(categoryId, 10) })
+          .in('id', itemIds.map(id => parseInt(id, 10)));
+        
+        if (error) {
+          toast.error('Failed to update category: ' + error.message);
+          return;
+        }
+        
+        toast.success(`Category updated for ${itemIds.length} item(s) successfully`);
+        deselectAllInventory();
+        
+        // Refresh inventory
+        if (window.renderInventory) {
+          await window.renderInventory();
+        }
+      } catch (err) {
+        console.error('Error bulk updating category:', err);
+        toast.error('An error occurred while updating category');
+      }
+    }
+
+    // Bulk export to CSV
+    async function bulkExportInventory() {
+      const { selectedInventory, allInventory } = getInventoryData();
+      const itemKeys = Array.from(selectedInventory);
+      
+      try {
+        // Get selected items
+        const selectedItems = allInventory.filter(item => {
+          const itemKey = `${item.site_id}_${item.item_id}`;
+          return selectedInventory.has(itemKey);
+        });
+        
+        if (selectedItems.length === 0) {
+          toast.error('No items selected');
+          return;
+        }
+        
+        // Generate CSV
+        const headers = ['Item Name', 'Category', 'Site', 'Quantity', 'Unit', 'Low Stock Threshold', 'Status'];
+        const rows = selectedItems.map(item => [
+          item.item_name || '',
+          item.category_name || '',
+          item.site_name || '',
+          item.quantity || 0,
+          item.unit || '',
+          item.low_stock_threshold || 0,
+          item.stock_status || 'ok'
+        ]);
+        
+        const csv = [headers, ...rows]
+          .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+          .join('\n');
+        
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `inventory-export-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        
+        toast.success(`Exported ${selectedItems.length} item(s) to CSV`);
+        deselectAllInventory();
+      } catch (err) {
+        console.error('Error exporting inventory:', err);
+        toast.error('An error occurred while exporting inventory');
+      }
+    }
+
+    // Show bulk quantity modal
+    async function showBulkQuantityModal() {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('bulk-quantity-modal');
+        const cancelBtn = modal.querySelector('[data-cancel-quantity]');
+        const confirmBtn = document.getElementById('confirm-quantity-update');
+        
+        // Reset form
+        document.getElementById('quantity-update-type').value = 'set';
+        document.getElementById('quantity-amount').value = '';
+        
+        modal.classList.remove('hidden');
+        
+        const handleConfirm = () => {
+          const updateType = document.getElementById('quantity-update-type').value;
+          const amount = document.getElementById('quantity-amount').value;
+          
+          if (!amount) {
+            toast.error('Please enter an amount');
+            return;
+          }
+          
+          modal.classList.add('hidden');
+          resolve({ type: updateType, amount: parseInt(amount, 10) });
+        };
+        
+        const handleCancel = () => {
+          modal.classList.add('hidden');
+          resolve(null);
+        };
+        
+        confirmBtn.onclick = handleConfirm;
+        cancelBtn.onclick = handleCancel;
+      });
+    }
+
+    // Show bulk category modal
+    async function showBulkCategoryModal() {
+      return new Promise(async (resolve) => {
+        const modal = document.getElementById('bulk-category-modal');
+        const categoryList = document.getElementById('bulk-category-list');
+        const cancelBtn = modal.querySelector('[data-cancel-category]');
+        
+        // Get supabase from global scope
+        const supabaseClient = window.supabase;
+        if (!supabaseClient) {
+          categoryList.innerHTML = '<p class="text-red-500 text-center py-4">Error: Supabase client not available</p>';
+          return;
+        }
+        
+        categoryList.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center py-4">Loading categories...</p>';
+        modal.classList.remove('hidden');
+        
+        try {
+          const { data: cats, error } = await supabaseClient
+            .from('inventory_categories')
+            .select('id, name, icon')
+            .order('sort_order');
+          
+          if (error) {
+            categoryList.innerHTML = '<p class="text-red-500 text-center py-4">Failed to load categories</p>';
+            return;
+          }
+          
+          if (!cats || cats.length === 0) {
+            categoryList.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center py-4">No categories available</p>';
+            return;
+          }
+          
+          categoryList.innerHTML = cats.map(cat => `
+            <button 
+              data-category-id="${cat.id}" 
+              class="w-full px-4 py-3 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 text-left transition"
+            >
+              <span class="font-medium block">${cat.icon || ''} ${cat.name}</span>
+            </button>
+          `).join('');
+          
+          categoryList.querySelectorAll('[data-category-id]').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const categoryId = btn.dataset.categoryId;
+              modal.classList.add('hidden');
+              resolve(categoryId);
+            });
+          });
+        } catch (err) {
+          console.error('Error loading categories:', err);
+          categoryList.innerHTML = '<p class="text-red-500 text-center py-4">Failed to load categories</p>';
+        }
+        
+        cancelBtn.onclick = () => {
+          modal.classList.add('hidden');
+          resolve(null);
+        };
+      });
+    }
+
+    // Initialize bulk operations when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initBulkInventoryOperations);
+    } else {
+      initBulkInventoryOperations();
+    }
+    
+    // renderInventory is already made globally available in inventory.js module
+  </script>
+
   <!-- Hide loader when page is ready -->
   <script>
     window.addEventListener('load', () => {
