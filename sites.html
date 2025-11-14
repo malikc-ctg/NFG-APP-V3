@@ -618,6 +618,9 @@
         return []
       }
     }
+    
+    // Make fetchSites globally available for bulk operations script
+    window.fetchSites = fetchSites;
 
     // Create new site
     async function createSite(siteData) {
@@ -1734,7 +1737,9 @@
         
         toast.success(`Worker assigned to ${siteIds.length} site(s) successfully`);
         deselectAllSites();
-        const sites = await fetchSites();
+        // Use global fetchSites if available, otherwise it will be called from module scope
+        const fetchSitesFunc = window.fetchSites || fetchSites;
+        const sites = await fetchSitesFunc();
         allSites = sites;
         window.allSites = allSites;
         await renderSites(sites, { currentUserProfile });
@@ -1768,7 +1773,8 @@
         
         toast.success(`${siteIds.length} site(s) updated successfully`);
         deselectAllSites();
-        const sites = await fetchSites();
+        const fetchSitesFunc = window.fetchSites || fetchSites;
+        const sites = await fetchSitesFunc();
         allSites = sites;
         window.allSites = allSites;
         await renderSites(sites, { currentUserProfile });
@@ -1806,7 +1812,8 @@
         
         toast.success(`${siteIds.length} site(s) archived successfully`);
         deselectAllSites();
-        const sites = await fetchSites();
+        const fetchSitesFunc = window.fetchSites || fetchSites;
+        const sites = await fetchSitesFunc();
         allSites = sites;
         window.allSites = allSites;
         await renderSites(sites, { currentUserProfile });
