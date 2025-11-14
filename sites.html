@@ -158,97 +158,15 @@
 
     <!-- CONTENT -->
     <main class="p-4 md:p-6 space-y-6">
-      <!-- Sites Header with Select All -->
-      <div class="flex items-center justify-between gap-4 pb-2">
-        <div>
-          <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">All Sites</h2>
-          <p class="text-sm text-gray-500 mt-1">Manage your properties and locations</p>
-        </div>
-        <!-- Select All Checkbox (only for non-staff) -->
-        <div id="select-all-sites-container" class="hidden flex items-center gap-2 px-3 py-2 whitespace-nowrap flex-shrink-0">
-          <input 
-            type="checkbox" 
-            id="select-all-sites" 
-            class="w-4 h-4 text-nfgblue border-nfgray rounded focus:ring-nfgblue cursor-pointer"
-            aria-label="Select all sites"
-          />
-          <label for="select-all-sites" class="text-sm font-medium text-nfgblue dark:text-blue-400 cursor-pointer">
-            Select All
-          </label>
-        </div>
+      <!-- Sites Header -->
+      <div>
+        <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">All Sites</h2>
+        <p class="text-sm text-gray-500 mt-1">Manage your properties and locations</p>
       </div>
 
       <!-- Sites Grid -->
       <div id="sites-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
     </main>
-  </div>
-
-  <!-- Bulk Actions Toolbar for Sites -->
-  <div id="bulk-sites-toolbar" class="hidden fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-lg p-4 z-50 max-w-4xl w-full mx-4">
-    <div class="flex items-center justify-between gap-4 flex-nowrap">
-      <span id="selected-sites-count" class="text-sm font-medium text-nfgblue dark:text-blue-400 whitespace-nowrap flex-shrink-0">
-        0 selected
-      </span>
-      <div class="flex gap-2 flex-nowrap items-center">
-        <button id="bulk-assign-worker-sites" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 text-sm font-medium transition whitespace-nowrap flex-shrink-0">
-          Assign Worker
-        </button>
-        <button id="bulk-update-status-sites" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark text-sm font-medium transition whitespace-nowrap flex-shrink-0">
-          Update Status
-        </button>
-        <button id="bulk-archive-sites" class="px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm font-medium transition whitespace-nowrap flex-shrink-0">
-          Archive
-        </button>
-        <button id="bulk-cancel-sites" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 text-sm font-medium transition whitespace-nowrap flex-shrink-0">
-          Cancel
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Bulk Site Status Modal -->
-  <div id="bulk-site-status-modal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-[60]">
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-md">
-      <div class="p-4 border-b border-nfgray">
-        <h4 class="text-nfgblue dark:text-blue-400 font-semibold">Select New Status</h4>
-      </div>
-      <div class="p-4 space-y-2">
-        <button data-status="Active" class="w-full px-4 py-3 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 text-left transition">
-          <span class="font-medium block">Active</span>
-          <p class="text-sm text-gray-500 dark:text-gray-400">Site is operational</p>
-        </button>
-        <button data-status="Paused" class="w-full px-4 py-3 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 text-left transition">
-          <span class="font-medium block">Paused</span>
-          <p class="text-sm text-gray-500 dark:text-gray-400">Site operations are temporarily paused</p>
-        </button>
-        <button data-status="In Setup" class="w-full px-4 py-3 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 text-left transition">
-          <span class="font-medium block">In Setup</span>
-          <p class="text-sm text-gray-500 dark:text-gray-400">Site is being set up</p>
-        </button>
-      </div>
-      <div class="p-4 border-t border-nfgray flex justify-end">
-        <button data-cancel-site-status class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 font-medium transition">
-          Cancel
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Bulk Site Worker Modal -->
-  <div id="bulk-site-worker-modal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-[60]">
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-md">
-      <div class="p-4 border-b border-nfgray">
-        <h4 class="text-nfgblue dark:text-blue-400 font-semibold">Select Worker</h4>
-      </div>
-      <div class="p-4 max-h-96 overflow-y-auto space-y-2" id="bulk-site-worker-list">
-        <p class="text-gray-500 dark:text-gray-400 text-center py-4">Loading workers...</p>
-      </div>
-      <div class="p-4 border-t border-nfgray flex justify-end">
-        <button data-cancel-site-worker class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 font-medium transition">
-          Cancel
-        </button>
-      </div>
-    </div>
   </div>
 
   <!-- Add Site Modal (same as dashboard) -->
@@ -445,8 +363,6 @@
     // Global variables for user role
     let currentUser = null;
     let currentUserProfile = null;
-    let selectedSites = new Set(); // Track selected site IDs
-    let allSites = []; // Store all sites for selection tracking
 
     // Get current user and their profile
     async function getCurrentUser() {
@@ -671,8 +587,6 @@
         await createSite(siteData)
         
         const sites = await fetchSites()
-        allSites = sites;
-        window.selectedSites = selectedSites;
         await renderSites(sites, { currentUserProfile })
         
         closeAddSiteModal()
@@ -720,10 +634,6 @@
       }
       
       const sites = await fetchSites()
-      allSites = sites;
-      window.allSites = allSites;
-      window.selectedSites = selectedSites;
-      window.currentUserProfile = currentUserProfile;
       await renderSites(sites, { currentUserProfile })
       
       // Initialize UI event handlers (for View Site buttons and modals)
@@ -731,9 +641,6 @@
       
       // Initialize global variables
       window.currentEditSite = null;
-      
-      // Initialize bulk site operations
-      initBulkSiteOperations();
       
       // View Job History button handler
       document.getElementById('view-job-history-btn')?.addEventListener('click', async () => {
@@ -858,10 +765,6 @@
 
           // Refresh sites display
           const sites = await fetchSites();
-          allSites = sites;
-          window.allSites = allSites;
-          window.selectedSites = selectedSites;
-          window.currentUserProfile = currentUserProfile;
           await renderSites(sites, { currentUserProfile });
 
           toast.success('Site has been updated successfully!', 'Site Updated');
@@ -1448,353 +1351,6 @@
       </form>
     </div>
   </div>
-
-  <!-- Bulk Site Operations JavaScript -->
-  <script>
-    // Attach checkbox listeners (make globally available)
-    window.attachSiteCheckboxListeners = function() {
-      document.querySelectorAll('.site-checkbox').forEach(checkbox => {
-        checkbox.addEventListener('change', (e) => {
-          const siteId = e.target.dataset.siteId;
-          toggleSiteSelection(siteId);
-        });
-      });
-    };
-
-    // Toggle site selection
-    function toggleSiteSelection(siteId) {
-      if (selectedSites.has(siteId)) {
-        selectedSites.delete(siteId);
-      } else {
-        selectedSites.add(siteId);
-      }
-      updateBulkSitesToolbar();
-      updateSelectAllSitesCheckbox();
-    }
-
-    // Update select all checkbox (make globally available)
-    window.updateSelectAllSitesCheckbox = function() {
-      const selectAllCheckbox = document.getElementById('select-all-sites');
-      if (!selectAllCheckbox) return;
-      
-      const visibleSites = getVisibleSites();
-      const allVisibleSelected = visibleSites.length > 0 && visibleSites.every(site => selectedSites.has(site.id));
-      
-      selectAllCheckbox.checked = allVisibleSelected;
-      selectAllCheckbox.indeterminate = !allVisibleSelected && visibleSites.some(site => selectedSites.has(site.id));
-    };
-
-    // Get visible sites
-    function getVisibleSites() {
-      return allSites || [];
-    }
-
-    // Select all visible sites
-    function selectAllSites() {
-      const visibleSites = getVisibleSites();
-      visibleSites.forEach(site => selectedSites.add(site.id));
-      updateSiteCheckboxes();
-      updateBulkSitesToolbar();
-      updateSelectAllSitesCheckbox();
-    }
-
-    // Deselect all sites
-    function deselectAllSites() {
-      selectedSites.clear();
-      updateSiteCheckboxes();
-      updateBulkSitesToolbar();
-      updateSelectAllSitesCheckbox();
-    }
-
-    // Update checkbox states
-    function updateSiteCheckboxes() {
-      document.querySelectorAll('.site-checkbox').forEach(checkbox => {
-        checkbox.checked = selectedSites.has(checkbox.dataset.siteId);
-        
-        const card = checkbox.closest('.bg-white, .dark\\:bg-gray-800');
-        if (card) {
-          if (checkbox.checked) {
-            card.classList.remove('border-nfgray', 'dark:border-gray-700');
-            card.classList.add('border-nfgblue', 'ring-2', 'ring-nfgblue', 'bg-nfglight/30', 'dark:bg-blue-900/20');
-          } else {
-            card.classList.remove('border-nfgblue', 'ring-2', 'ring-nfgblue', 'bg-nfglight/30', 'dark:bg-blue-900/20');
-            card.classList.add('border-nfgray', 'dark:border-gray-700');
-          }
-        }
-      });
-    }
-
-    // Update bulk toolbar
-    function updateBulkSitesToolbar() {
-      const toolbar = document.getElementById('bulk-sites-toolbar');
-      const count = document.getElementById('selected-sites-count');
-      
-      if (!toolbar || !count) return;
-      
-      const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
-      
-      if (selectedSites.size > 0 && !isStaff) {
-        toolbar.classList.remove('hidden');
-        count.textContent = `${selectedSites.size} ${selectedSites.size === 1 ? 'site' : 'sites'} selected`;
-      } else {
-        toolbar.classList.add('hidden');
-      }
-    }
-
-    // Initialize bulk operations
-    function initBulkSiteOperations() {
-      // Select All checkbox
-      document.getElementById('select-all-sites')?.addEventListener('change', (e) => {
-        if (e.target.checked) {
-          selectAllSites();
-        } else {
-          deselectAllSites();
-        }
-      });
-
-      // Cancel selection
-      document.getElementById('bulk-cancel-sites')?.addEventListener('click', () => {
-        deselectAllSites();
-        renderSites(allSites, { currentUserProfile });
-      });
-
-      // Bulk assign worker
-      document.getElementById('bulk-assign-worker-sites')?.addEventListener('click', async () => {
-        if (selectedSites.size === 0) {
-          toast.error('Please select at least one site');
-          return;
-        }
-        
-        const workerId = await showBulkSiteWorkerModal();
-        if (!workerId) return;
-        
-        const confirmed = await showConfirm(
-          `Assign selected worker to ${selectedSites.size} site(s)?`,
-          'Bulk Assign Worker'
-        );
-        if (!confirmed) return;
-        
-        await bulkAssignWorkerToSites(workerId);
-      });
-
-      // Bulk update status
-      document.getElementById('bulk-update-status-sites')?.addEventListener('click', async () => {
-        if (selectedSites.size === 0) {
-          toast.error('Please select at least one site');
-          return;
-        }
-        
-        const status = await showBulkSiteStatusModal();
-        if (!status) return;
-        
-        const confirmed = await showConfirm(
-          `Update ${selectedSites.size} site(s) to "${status}"?`,
-          'Bulk Update Status'
-        );
-        if (!confirmed) return;
-        
-        await bulkUpdateSiteStatus(status);
-      });
-
-      // Bulk archive
-      document.getElementById('bulk-archive-sites')?.addEventListener('click', async () => {
-        if (selectedSites.size === 0) {
-          toast.error('Please select at least one site');
-          return;
-        }
-        
-        const confirmed = await showConfirm(
-          `Archive ${selectedSites.size} site(s)? They will be hidden but preserved for records.`,
-          'Bulk Archive Sites',
-          'warning'
-        );
-        if (!confirmed) return;
-        
-        await bulkArchiveSites();
-      });
-    }
-
-    // Bulk assign worker to sites
-    async function bulkAssignWorkerToSites(workerId) {
-      const siteIds = Array.from(selectedSites);
-      
-      try {
-        const assignments = siteIds.map(siteId => ({
-          worker_id: workerId,
-          site_id: siteId,
-          assigned_by: currentUser.id,
-          assigned_at: new Date().toISOString()
-        }));
-        
-        const { error } = await supabase
-          .from('worker_site_assignments')
-          .upsert(assignments, { onConflict: 'worker_id,site_id' });
-        
-        if (error) {
-          toast.error('Failed to assign worker: ' + error.message);
-          return;
-        }
-        
-        toast.success(`Worker assigned to ${siteIds.length} site(s) successfully`);
-        deselectAllSites();
-        const sites = await fetchSites();
-        allSites = sites;
-        await renderSites(sites, { currentUserProfile });
-      } catch (err) {
-        console.error('Error bulk assigning worker:', err);
-        toast.error('An error occurred while assigning worker');
-      }
-    }
-
-    // Bulk update site status
-    async function bulkUpdateSiteStatus(status) {
-      const siteIds = Array.from(selectedSites);
-      
-      try {
-        const { error } = await supabase
-          .from('sites')
-          .update({ status: status })
-          .in('id', siteIds);
-        
-        if (error) {
-          toast.error('Failed to update sites: ' + error.message);
-          return;
-        }
-        
-        toast.success(`${siteIds.length} site(s) updated successfully`);
-        deselectAllSites();
-        const sites = await fetchSites();
-        allSites = sites;
-        await renderSites(sites, { currentUserProfile });
-      } catch (err) {
-        console.error('Error bulk updating sites:', err);
-        toast.error('An error occurred while updating sites');
-      }
-    }
-
-    // Bulk archive sites
-    async function bulkArchiveSites() {
-      const siteIds = Array.from(selectedSites);
-      const now = new Date().toISOString();
-      
-      try {
-        const { error } = await supabase
-          .from('sites')
-          .update({ 
-            archived_at: now,
-            status: 'Paused'
-          })
-          .in('id', siteIds);
-        
-        if (error) {
-          toast.error('Failed to archive sites: ' + error.message);
-          return;
-        }
-        
-        toast.success(`${siteIds.length} site(s) archived successfully`);
-        deselectAllSites();
-        const sites = await fetchSites();
-        allSites = sites;
-        await renderSites(sites, { currentUserProfile });
-      } catch (err) {
-        console.error('Error archiving sites:', err);
-        toast.error('An error occurred while archiving sites');
-      }
-    }
-
-    // Show bulk status modal
-    async function showBulkSiteStatusModal() {
-      return new Promise((resolve) => {
-        const modal = document.getElementById('bulk-site-status-modal');
-        const statusButtons = modal.querySelectorAll('[data-status]');
-        const cancelBtn = modal.querySelector('[data-cancel-site-status]');
-        
-        // Remove existing listeners
-        statusButtons.forEach(btn => {
-          const newBtn = btn.cloneNode(true);
-          btn.parentNode.replaceChild(newBtn, btn);
-        });
-        const newCancelBtn = cancelBtn.cloneNode(true);
-        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-        
-        // Add new listeners
-        modal.querySelectorAll('[data-status]').forEach(btn => {
-          btn.addEventListener('click', () => {
-            const status = btn.dataset.status;
-            modal.classList.add('hidden');
-            resolve(status);
-          });
-        });
-        
-        modal.querySelector('[data-cancel-site-status]').addEventListener('click', () => {
-          modal.classList.add('hidden');
-          resolve(null);
-        });
-        
-        modal.classList.remove('hidden');
-      });
-    }
-
-    // Show bulk worker modal
-    async function showBulkSiteWorkerModal() {
-      return new Promise(async (resolve) => {
-        const modal = document.getElementById('bulk-site-worker-modal');
-        const workerList = document.getElementById('bulk-site-worker-list');
-        const cancelBtn = modal.querySelector('[data-cancel-site-worker]');
-        
-        workerList.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center py-4">Loading workers...</p>';
-        modal.classList.remove('hidden');
-        
-        try {
-          const { data: workers, error } = await supabase
-            .from('user_profiles')
-            .select('id, full_name, email')
-            .eq('role', 'staff')
-            .order('full_name');
-          
-          if (error) {
-            workerList.innerHTML = '<p class="text-red-500 text-center py-4">Failed to load workers</p>';
-            return;
-          }
-          
-          if (workers.length === 0) {
-            workerList.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center py-4">No workers available</p>';
-            return;
-          }
-          
-          workerList.innerHTML = workers.map(worker => `
-            <button 
-              data-worker-id="${worker.id}" 
-              class="w-full px-4 py-3 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 text-left transition"
-            >
-              <span class="font-medium block">${worker.full_name || worker.email}</span>
-              <p class="text-sm text-gray-500 dark:text-gray-400">${worker.email}</p>
-            </button>
-          `).join('');
-          
-          if (window.lucide) lucide.createIcons();
-          
-          workerList.querySelectorAll('[data-worker-id]').forEach(btn => {
-            btn.addEventListener('click', () => {
-              const workerId = btn.dataset.workerId;
-              modal.classList.add('hidden');
-              resolve(workerId);
-            });
-          });
-        } catch (err) {
-          console.error('Error loading workers:', err);
-          workerList.innerHTML = '<p class="text-red-500 text-center py-4">Failed to load workers</p>';
-        }
-        
-        const newCancelBtn = cancelBtn.cloneNode(true);
-        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-        newCancelBtn.addEventListener('click', () => {
-          modal.classList.add('hidden');
-          resolve(null);
-        });
-      });
-    }
-  </script>
 
   <!-- Hide loader when page is ready -->
   <script>

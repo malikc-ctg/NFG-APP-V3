@@ -44,47 +44,17 @@ export async function renderSites(sites, options = {}) {
     currentUserProfile = window.currentUserProfile;
   }
   
-  // Get selected sites from global state
-  let selectedSites = new Set();
-  if (typeof window !== 'undefined' && window.selectedSites) {
-    selectedSites = window.selectedSites;
-  }
-
-  // Show/hide Select All checkbox based on role
-  const selectAllContainer = document.getElementById('select-all-sites-container');
-  const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
-  if (selectAllContainer) {
-    if (isStaff) {
-      selectAllContainer.classList.add('hidden');
-    } else {
-      selectAllContainer.classList.remove('hidden');
-    }
-  }
-
   if (filteredSites.length === 0) {
     // Show different empty state based on whether we have sites or not
     const hasAnySites = sites.length > 0
     grid.innerHTML = createEmptyState(hasAnySites)
   } else {
-    grid.innerHTML = filteredSites.map(site => {
-      const isSelected = selectedSites.has(site.id);
-      return createSiteCard(site, { currentUserProfile, isSelected });
-    }).join('')
+    grid.innerHTML = filteredSites.map(site => createSiteCard(site, { currentUserProfile })).join('')
     console.log('[UI] ✅ Sites rendered! Check for View Site buttons with data-action="view-site"')
     
     // Initialize Lucide icons
     if (window.lucide) {
       lucide.createIcons();
-    }
-
-    // Attach checkbox listeners after rendering
-    if (typeof window !== 'undefined' && window.attachSiteCheckboxListeners) {
-      window.attachSiteCheckboxListeners();
-    }
-
-    // Update select all checkbox state
-    if (typeof window !== 'undefined' && window.updateSelectAllSitesCheckbox) {
-      window.updateSelectAllSitesCheckbox();
     }
   }
 }
@@ -181,7 +151,7 @@ function createEmptyState(hasAnySites = false) {
 
 // Create a site card HTML
 function createSiteCard(site, options = {}) {
-  const { currentUserProfile = null, isSelected = false } = options;
+  const { currentUserProfile = null } = options;
   const statusColors = {
     'Active': 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
     'Paused': 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
@@ -189,25 +159,13 @@ function createSiteCard(site, options = {}) {
   }
   
   const statusClass = statusColors[site.status] || 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-  const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
-  const canBulkOperate = !isStaff && currentUserProfile && (currentUserProfile.role === 'admin' || currentUserProfile.role === 'client' || currentUserProfile.role === 'super_admin');
   
   return `
-    <div class="bg-white dark:bg-gray-800 border ${isSelected ? 'border-nfgblue ring-2 ring-nfgblue' : 'border-nfgray dark:border-gray-700'} rounded-xl p-4 shadow-nfg hover:shadow-lg transition-shadow ${isSelected ? 'bg-nfglight/30 dark:bg-blue-900/20' : ''}">
+    <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg hover:shadow-lg transition-shadow">
       <!-- Header -->
       <div class="flex justify-between items-start mb-3">
-        <div class="flex items-start gap-3 flex-1 min-w-0">
-          ${canBulkOperate ? `
-            <input 
-              type="checkbox" 
-              class="site-checkbox w-4 h-4 text-nfgblue border-nfgray rounded focus:ring-nfgblue cursor-pointer mt-1 flex-shrink-0" 
-              data-site-id="${site.id}"
-              ${isSelected ? 'checked' : ''}
-              aria-label="Select site ${site.name}"
-            />
-          ` : ''}
-          <div class="flex-1 min-w-0">
-            <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">${site.name}</h3>
+        <div class="flex-1 min-w-0">
+          <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">${site.name}</h3>
           <div class="flex items-center gap-2 mt-1">
             <p class="text-gray-500 dark:text-gray-400 text-xs truncate">${site.address}</p>
             <button 
