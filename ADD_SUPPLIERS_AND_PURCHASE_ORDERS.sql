@@ -136,3 +136,21 @@ BEGIN
   RAISE NOTICE 'You can now insert suppliers & purchase orders via the UI.';
 END $$;
 
+-- ============================================
+-- Permissions (Supabase REST access)
+-- ============================================
+ALTER TABLE suppliers DISABLE ROW LEVEL SECURITY;
+ALTER TABLE inventory_item_suppliers DISABLE ROW LEVEL SECURITY;
+ALTER TABLE purchase_orders DISABLE ROW LEVEL SECURITY;
+ALTER TABLE purchase_order_items DISABLE ROW LEVEL SECURITY;
+
+GRANT ALL ON suppliers TO authenticated;
+GRANT ALL ON inventory_item_suppliers TO authenticated;
+GRANT ALL ON purchase_orders TO authenticated;
+GRANT ALL ON purchase_order_items TO authenticated;
+
+GRANT USAGE, SELECT ON SEQUENCE suppliers_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE inventory_item_suppliers_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE purchase_orders_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE purchase_order_items_id_seq TO authenticated;
+
