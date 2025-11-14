@@ -672,6 +672,7 @@
         
         const sites = await fetchSites()
         allSites = sites; // Store all sites for selection tracking
+        window.allSites = allSites; // Make available globally
         window.selectedSites = selectedSites; // Make available globally
         window.currentUserProfile = currentUserProfile; // Make available globally
         await renderSites(sites, { currentUserProfile })
@@ -856,6 +857,7 @@
           // Refresh sites display
           const sites = await fetchSites();
           allSites = sites; // Store all sites for selection tracking
+        window.allSites = allSites; // Make available globally
         window.selectedSites = selectedSites; // Make available globally
         window.currentUserProfile = currentUserProfile; // Make available globally
         await renderSites(sites, { currentUserProfile });
@@ -1488,8 +1490,8 @@
 
     // Get visible sites (based on current filter)
     function getVisibleSites() {
-      // Use cached sites from ui.js or allSites
-      const sites = allSites.length > 0 ? allSites : [];
+      // Use cached sites from ui.js or allSites (check both module scope and global)
+      const sites = (allSites && allSites.length > 0) ? allSites : (window.allSites && window.allSites.length > 0) ? window.allSites : [];
       // Note: Filtering is handled by ui.js, so we just return all sites here
       return sites;
     }
