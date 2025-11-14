@@ -459,6 +459,7 @@
     async function getCurrentUser() {
       const { data: { user } } = await supabase.auth.getUser();
       currentUser = user;
+      window.currentUser = currentUser; // Update global reference
       
       if (user) {
         // Get user profile to check role
@@ -470,10 +471,12 @@
         
         if (!error && profile) {
           currentUserProfile = profile;
+          window.currentUserProfile = currentUserProfile; // Update global reference
           console.log('User role:', profile.role);
         } else {
           // Default to staff if no profile found
           currentUserProfile = { role: 'staff' };
+          window.currentUserProfile = currentUserProfile; // Update global reference
         }
       }
       
