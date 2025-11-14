@@ -435,6 +435,9 @@
     import { supabase } from './js/supabase.js'
     import { renderSites, setSubmitLoading, showFormError, closeAddSiteModal, initializeUI } from './js/ui.js'
     import { showNotification, showConfirm, showPrompt, toast, notify } from './js/notifications.js'
+    
+    // Make supabase globally available for bulk operations script
+    window.supabase = supabase;
 
     // Logout functionality
     async function handleLogout() {
@@ -1640,6 +1643,13 @@
     async function bulkAssignWorkerToSites(workerId) {
       const siteIds = Array.from(selectedSites);
       
+      // Get supabase from global scope
+      const supabaseClient = window.supabase;
+      if (!supabaseClient) {
+        toast.error('Error: Supabase client not available');
+        return;
+      }
+      
       try {
         const assignments = siteIds.map(siteId => ({
           worker_id: workerId,
@@ -1648,7 +1658,7 @@
           assigned_at: new Date().toISOString()
         }));
         
-        const { error } = await supabase
+        const { error } = await supabaseClient
           .from('worker_site_assignments')
           .upsert(assignments, { onConflict: 'worker_id,site_id' });
         
@@ -1673,8 +1683,15 @@
     async function bulkUpdateSiteStatus(status) {
       const siteIds = Array.from(selectedSites);
       
+      // Get supabase from global scope
+      const supabaseClient = window.supabase;
+      if (!supabaseClient) {
+        toast.error('Error: Supabase client not available');
+        return;
+      }
+      
       try {
-        const { error } = await supabase
+        const { error } = await supabaseClient
           .from('sites')
           .update({ status: status })
           .in('id', siteIds);
@@ -1701,8 +1718,15 @@
       const siteIds = Array.from(selectedSites);
       const now = new Date().toISOString();
       
+      // Get supabase from global scope
+      const supabaseClient = window.supabase;
+      if (!supabaseClient) {
+        toast.error('Error: Supabase client not available');
+        return;
+      }
+      
       try {
-        const { error } = await supabase
+        const { error } = await supabaseClient
           .from('sites')
           .update({ 
             archived_at: now,
@@ -1770,8 +1794,15 @@
         workerList.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center py-4">Loading workers...</p>';
         modal.classList.remove('hidden');
         
+        // Get supabase from global scope
+        const supabaseClient = window.supabase;
+        if (!supabaseClient) {
+          workerList.innerHTML = '<p class="text-red-500 text-center py-4">Error: Supabase client not available</p>';
+          return;
+        }
+        
         try {
-          const { data: workers, error } = await supabase
+          const { data: workers, error } = await supabaseClient
             .from('user_profiles')
             .select('id, full_name, email')
             .eq('role', 'staff')
