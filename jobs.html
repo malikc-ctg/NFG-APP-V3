@@ -253,11 +253,12 @@
           <p class="text-sm text-gray-500 mt-1">Track active jobs and work orders</p>
         </div>
 
-        <!-- Status Tabs -->
-        <div class="flex gap-1 sm:gap-2 border-b border-nfgray overflow-x-hidden mt-6">
-          <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-nfgblue dark:text-blue-400 border-b-2 border-nfgblue whitespace-nowrap flex-shrink-0" data-status="all">
-            All Jobs
-          </button>
+        <!-- Status Tabs with Select All -->
+        <div class="flex items-center justify-between gap-4 border-b border-nfgray overflow-x-hidden mt-6 pb-2">
+          <div class="flex gap-1 sm:gap-2 flex-1 overflow-x-auto">
+            <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-nfgblue dark:text-blue-400 border-b-2 border-nfgblue whitespace-nowrap flex-shrink-0" data-status="all">
+              All Jobs
+            </button>
           <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-status="pending">
             Pending
           </button>
@@ -270,6 +271,19 @@
           <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-status="cancelled">
             Cancelled
           </button>
+          </div>
+          <!-- Select All Checkbox (only for non-staff) -->
+          <div id="select-all-container" class="hidden flex items-center gap-2 px-3 py-2 whitespace-nowrap flex-shrink-0">
+            <input 
+              type="checkbox" 
+              id="select-all-jobs" 
+              class="w-4 h-4 text-nfgblue border-nfgray rounded focus:ring-nfgblue cursor-pointer"
+              aria-label="Select all jobs"
+            />
+            <label for="select-all-jobs" class="text-sm font-medium text-nfgblue dark:text-blue-400 cursor-pointer">
+              Select All
+            </label>
+          </div>
         </div>
       </div>
 
@@ -279,6 +293,29 @@
         <div id="jobs-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
       </div>
     </main>
+  </div>
+
+  <!-- Bulk Actions Toolbar -->
+  <div id="bulk-actions-toolbar" class="hidden fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-lg p-4 z-50 max-w-md w-full mx-4">
+    <div class="flex items-center justify-between gap-4">
+      <span id="selected-count" class="text-sm font-medium text-nfgblue dark:text-blue-400">
+        0 selected
+      </span>
+      <div class="flex gap-2 flex-wrap">
+        <button id="bulk-update-status-btn" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark text-sm font-medium transition">
+          Update Status
+        </button>
+        <button id="bulk-assign-worker-btn" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 text-sm font-medium transition">
+          Assign Worker
+        </button>
+        <button id="bulk-archive-btn" class="px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm font-medium transition">
+          Archive
+        </button>
+        <button id="bulk-cancel-selection" class="px-3 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 text-sm font-medium transition">
+          Cancel
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- Job Details Modal -->
@@ -640,6 +677,55 @@
     </div>
   </div>
 
+  <!-- Bulk Status Selection Modal -->
+  <div id="bulk-status-modal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-[60]">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-md">
+      <div class="p-4 border-b border-nfgray">
+        <h4 class="text-nfgblue dark:text-blue-400 font-semibold">Select New Status</h4>
+      </div>
+      <div class="p-4 space-y-2">
+        <button data-status="pending" class="w-full px-4 py-3 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 text-left transition">
+          <span class="font-medium block">Pending</span>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Job is scheduled but not started</p>
+        </button>
+        <button data-status="in-progress" class="w-full px-4 py-3 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 text-left transition">
+          <span class="font-medium block">In Progress</span>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Work has started on this job</p>
+        </button>
+        <button data-status="completed" class="w-full px-4 py-3 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 text-left transition">
+          <span class="font-medium block">Completed</span>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Job is finished</p>
+        </button>
+        <button data-status="cancelled" class="w-full px-4 py-3 rounded-xl border border-red-200 hover:bg-red-50 dark:hover:bg-red-900/20 text-left transition">
+          <span class="font-medium text-red-600 dark:text-red-400 block">Cancelled</span>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Job was cancelled</p>
+        </button>
+      </div>
+      <div class="p-4 border-t border-nfgray flex justify-end">
+        <button data-cancel-status class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 font-medium transition">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Worker Selection Modal -->
+  <div id="bulk-worker-modal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-[60]">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-md">
+      <div class="p-4 border-b border-nfgray">
+        <h4 class="text-nfgblue dark:text-blue-400 font-semibold">Select Worker</h4>
+      </div>
+      <div class="p-4 max-h-96 overflow-y-auto space-y-2" id="bulk-worker-list">
+        <p class="text-gray-500 dark:text-gray-400 text-center py-4">Loading workers...</p>
+      </div>
+      <div class="p-4 border-t border-nfgray flex justify-end">
+        <button data-cancel-worker class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 font-medium transition">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Edit Job Modal -->
   <div id="editJobModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -926,6 +1012,8 @@
     let currentTaskId = null;
     let currentUser = null;
     let currentUserProfile = null;
+    let selectedJobs = new Set(); // Track selected job IDs
+    let allJobs = []; // Store all jobs for selection tracking
 
     // Get current user and their profile
     async function getCurrentUser() {
@@ -1030,6 +1118,7 @@
     async function renderJobs() {
       const grid = document.getElementById('jobs-grid');
       const jobs = await getJobs();
+      allJobs = jobs; // Store all jobs for selection tracking
       const sites = await getSites();
       
       const filtered = currentFilter === 'all' ? jobs : jobs.filter(j => j.status === currentFilter);
@@ -1055,22 +1144,47 @@
         return;
       }
 
+      // Show/hide Select All checkbox based on role
+      const selectAllContainer = document.getElementById('select-all-container');
+      const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
+      if (selectAllContainer) {
+        if (isStaff) {
+          selectAllContainer.classList.add('hidden');
+        } else {
+          selectAllContainer.classList.remove('hidden');
+        }
+      }
+
       grid.innerHTML = filtered.map(job => {
         // Use site from joined data if available, otherwise fall back to sites array
         const site = job.sites || sites.find(s => s.id == job.site_id);
         const statusColors = {
-          'pending': 'bg-yellow-100 text-yellow-700',
-          'in-progress': 'bg-blue-100 text-blue-700',
-          'completed': 'bg-green-100 text-green-700',
-          'cancelled': 'bg-red-100 text-red-700'
+          'pending': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+          'in-progress': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+          'completed': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+          'cancelled': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
         };
 
+        const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
+        const isSelected = selectedJobs.has(job.id);
+        
         return `
-          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg hover:shadow-lg transition-shadow">
+          <div class="bg-white dark:bg-gray-800 border ${isSelected ? 'border-nfgblue ring-2 ring-nfgblue' : 'border-nfgray'} rounded-xl p-4 shadow-nfg hover:shadow-lg transition-shadow ${isSelected ? 'bg-nfglight/30 dark:bg-blue-900/20' : ''}">
             <div class="flex justify-between items-start mb-3">
-              <div class="flex-1">
-                <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">${job.title}</h3>
-                <p class="text-gray-500 text-sm mt-1">${site ? site.name : 'Unknown Site'}</p>
+              <div class="flex items-start gap-3 flex-1">
+                ${!isStaff ? `
+                  <input 
+                    type="checkbox" 
+                    class="job-checkbox w-4 h-4 text-nfgblue border-nfgray rounded focus:ring-nfgblue cursor-pointer mt-1 flex-shrink-0" 
+                    data-job-id="${job.id}"
+                    ${isSelected ? 'checked' : ''}
+                    aria-label="Select job ${job.title}"
+                  />
+                ` : ''}
+                <div class="flex-1 min-w-0">
+                  <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">${job.title}</h3>
+                  <p class="text-gray-500 text-sm mt-1">${site ? site.name : 'Unknown Site'}</p>
+                </div>
               </div>
               <span class="px-2 py-1 rounded-lg text-xs font-medium ${statusColors[job.status]}">${job.status.replace('-', ' ')}</span>
             </div>
@@ -1102,6 +1216,104 @@
       }).join('');
 
       if (window.lucide) lucide.createIcons();
+      
+      // Attach checkbox event listeners
+      attachJobCheckboxListeners();
+      
+      // Update select all checkbox state
+      updateSelectAllCheckbox();
+    }
+
+    // Attach checkbox listeners for job selection
+    function attachJobCheckboxListeners() {
+      document.querySelectorAll('.job-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+          const jobId = e.target.dataset.jobId;
+          toggleJobSelection(jobId);
+        });
+      });
+    }
+
+    // Toggle job selection
+    function toggleJobSelection(jobId) {
+      if (selectedJobs.has(jobId)) {
+        selectedJobs.delete(jobId);
+      } else {
+        selectedJobs.add(jobId);
+      }
+      updateBulkActionsToolbar();
+      updateSelectAllCheckbox();
+    }
+
+    // Update select all checkbox state
+    function updateSelectAllCheckbox() {
+      const selectAllCheckbox = document.getElementById('select-all-jobs');
+      if (!selectAllCheckbox) return;
+      
+      const visibleJobs = getVisibleJobs();
+      const allVisibleSelected = visibleJobs.length > 0 && visibleJobs.every(job => selectedJobs.has(job.id));
+      
+      selectAllCheckbox.checked = allVisibleSelected;
+      selectAllCheckbox.indeterminate = !allVisibleSelected && visibleJobs.some(job => selectedJobs.has(job.id));
+    }
+
+    // Get visible jobs (based on current filter)
+    function getVisibleJobs() {
+      const filtered = currentFilter === 'all' ? allJobs : allJobs.filter(j => j.status === currentFilter);
+      return filtered;
+    }
+
+    // Select all visible jobs
+    function selectAllJobs() {
+      const visibleJobs = getVisibleJobs();
+      visibleJobs.forEach(job => selectedJobs.add(job.id));
+      updateCheckboxes();
+      updateBulkActionsToolbar();
+      updateSelectAllCheckbox();
+    }
+
+    // Deselect all jobs
+    function deselectAllJobs() {
+      selectedJobs.clear();
+      updateCheckboxes();
+      updateBulkActionsToolbar();
+      updateSelectAllCheckbox();
+    }
+
+    // Update checkbox states in DOM
+    function updateCheckboxes() {
+      document.querySelectorAll('.job-checkbox').forEach(checkbox => {
+        checkbox.checked = selectedJobs.has(checkbox.dataset.jobId);
+        
+        // Update card visual state
+        const card = checkbox.closest('.bg-white, .dark\\:bg-gray-800');
+        if (card) {
+          if (checkbox.checked) {
+            card.classList.remove('border-nfgray');
+            card.classList.add('border-nfgblue', 'ring-2', 'ring-nfgblue', 'bg-nfglight/30', 'dark:bg-blue-900/20');
+          } else {
+            card.classList.remove('border-nfgblue', 'ring-2', 'ring-nfgblue', 'bg-nfglight/30', 'dark:bg-blue-900/20');
+            card.classList.add('border-nfgray');
+          }
+        }
+      });
+    }
+
+    // Update bulk actions toolbar visibility and count
+    function updateBulkActionsToolbar() {
+      const toolbar = document.getElementById('bulk-actions-toolbar');
+      const count = document.getElementById('selected-count');
+      
+      if (!toolbar || !count) return;
+      
+      const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
+      
+      if (selectedJobs.size > 0 && !isStaff) {
+        toolbar.classList.remove('hidden');
+        count.textContent = `${selectedJobs.size} ${selectedJobs.size === 1 ? 'job' : 'jobs'} selected`;
+      } else {
+        toolbar.classList.add('hidden');
+      }
     }
 
     // View job details
@@ -2205,9 +2417,254 @@
         });
         tab.classList.remove('text-gray-500', 'border-transparent');
         tab.classList.add('text-nfgblue', 'border-nfgblue');
+        // Clear selection when filter changes
+        selectedJobs.clear();
+        updateBulkActionsToolbar();
         renderJobs();
       });
     });
+
+    // Select All checkbox
+    document.getElementById('select-all-jobs')?.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        selectAllJobs();
+      } else {
+        deselectAllJobs();
+      }
+    });
+
+    // Bulk actions handlers
+    document.getElementById('bulk-cancel-selection')?.addEventListener('click', () => {
+      deselectAllJobs();
+      renderJobs(); // Re-render to update visual state
+    });
+
+    // Bulk update status
+    document.getElementById('bulk-update-status-btn')?.addEventListener('click', async () => {
+      if (selectedJobs.size === 0) {
+        toast.error('Please select at least one job');
+        return;
+      }
+      
+      const status = await showBulkStatusModal();
+      if (!status) return; // User cancelled
+      
+      const confirmed = await showConfirm(
+        `Update ${selectedJobs.size} job(s) to "${status.replace('-', ' ')}"?`,
+        'Bulk Update Status'
+      );
+      if (!confirmed) return;
+      
+      await bulkUpdateJobStatus(status);
+    });
+
+    // Bulk assign worker
+    document.getElementById('bulk-assign-worker-btn')?.addEventListener('click', async () => {
+      if (selectedJobs.size === 0) {
+        toast.error('Please select at least one job');
+        return;
+      }
+      
+      const workerId = await showBulkWorkerModal();
+      if (!workerId) return; // User cancelled
+      
+      const confirmed = await showConfirm(
+        `Assign ${selectedJobs.size} job(s) to selected worker?`,
+        'Bulk Assign Worker'
+      );
+      if (!confirmed) return;
+      
+      await bulkAssignWorker(workerId);
+    });
+
+    // Bulk archive
+    document.getElementById('bulk-archive-btn')?.addEventListener('click', async () => {
+      if (selectedJobs.size === 0) {
+        toast.error('Please select at least one job');
+        return;
+      }
+      
+      const confirmed = await showConfirm(
+        `Archive ${selectedJobs.size} job(s)? They will be hidden from the main list but preserved for records.`,
+        'Bulk Archive Jobs',
+        'warning'
+      );
+      if (!confirmed) return;
+      
+      await bulkArchiveJobs();
+    });
+
+    // Bulk update job status
+    async function bulkUpdateJobStatus(status) {
+      const jobIds = Array.from(selectedJobs);
+      
+      try {
+        const { error } = await supabase
+          .from('jobs')
+          .update({ status: status })
+          .in('id', jobIds);
+        
+        if (error) {
+          toast.error('Failed to update jobs: ' + error.message);
+          return;
+        }
+        
+        toast.success(`${jobIds.length} job(s) updated successfully`);
+        deselectAllJobs();
+        await renderJobs(); // Refresh list
+      } catch (err) {
+        console.error('Error bulk updating jobs:', err);
+        toast.error('An error occurred while updating jobs');
+      }
+    }
+
+    // Bulk assign worker
+    async function bulkAssignWorker(workerId) {
+      const jobIds = Array.from(selectedJobs);
+      
+      try {
+        const { error } = await supabase
+          .from('jobs')
+          .update({ assigned_worker_id: workerId })
+          .in('id', jobIds);
+        
+        if (error) {
+          toast.error('Failed to assign jobs: ' + error.message);
+          return;
+        }
+        
+        toast.success(`${jobIds.length} job(s) assigned successfully`);
+        deselectAllJobs();
+        await renderJobs(); // Refresh list
+      } catch (err) {
+        console.error('Error bulk assigning jobs:', err);
+        toast.error('An error occurred while assigning jobs');
+      }
+    }
+
+    // Bulk archive jobs
+    async function bulkArchiveJobs() {
+      const jobIds = Array.from(selectedJobs);
+      const now = new Date().toISOString();
+      
+      try {
+        const { error } = await supabase
+          .from('jobs')
+          .update({ 
+            archived_at: now,
+            status: 'completed' // Optionally set status to completed
+          })
+          .in('id', jobIds);
+        
+        if (error) {
+          toast.error('Failed to archive jobs: ' + error.message);
+          return;
+        }
+        
+        toast.success(`${jobIds.length} job(s) archived successfully`);
+        deselectAllJobs();
+        await renderJobs(); // Refresh list
+      } catch (err) {
+        console.error('Error archiving jobs:', err);
+        toast.error('An error occurred while archiving jobs');
+      }
+    }
+
+    // Show bulk status selection modal
+    async function showBulkStatusModal() {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('bulk-status-modal');
+        const statusButtons = modal.querySelectorAll('[data-status]');
+        const cancelBtn = modal.querySelector('[data-cancel-status]');
+        
+        // Remove existing listeners
+        statusButtons.forEach(btn => {
+          const newBtn = btn.cloneNode(true);
+          btn.parentNode.replaceChild(newBtn, btn);
+        });
+        const newCancelBtn = cancelBtn.cloneNode(true);
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+        
+        // Add new listeners
+        modal.querySelectorAll('[data-status]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const status = btn.dataset.status;
+            modal.classList.add('hidden');
+            resolve(status);
+          });
+        });
+        
+        modal.querySelector('[data-cancel-status]').addEventListener('click', () => {
+          modal.classList.add('hidden');
+          resolve(null);
+        });
+        
+        modal.classList.remove('hidden');
+      });
+    }
+
+    // Show bulk worker selection modal
+    async function showBulkWorkerModal() {
+      return new Promise(async (resolve) => {
+        const modal = document.getElementById('bulk-worker-modal');
+        const workerList = document.getElementById('bulk-worker-list');
+        const cancelBtn = modal.querySelector('[data-cancel-worker]');
+        
+        // Fetch workers
+        workerList.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center py-4">Loading workers...</p>';
+        modal.classList.remove('hidden');
+        
+        try {
+          const { data: workers, error } = await supabase
+            .from('user_profiles')
+            .select('id, full_name, email')
+            .eq('role', 'staff')
+            .order('full_name');
+          
+          if (error) {
+            workerList.innerHTML = '<p class="text-red-500 text-center py-4">Failed to load workers</p>';
+            return;
+          }
+          
+          if (workers.length === 0) {
+            workerList.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center py-4">No workers available</p>';
+            return;
+          }
+          
+          workerList.innerHTML = workers.map(worker => `
+            <button 
+              data-worker-id="${worker.id}" 
+              class="w-full px-4 py-3 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 text-left transition"
+            >
+              <span class="font-medium block">${worker.full_name || worker.email}</span>
+              <p class="text-sm text-gray-500 dark:text-gray-400">${worker.email}</p>
+            </button>
+          `).join('');
+          
+          if (window.lucide) lucide.createIcons();
+          
+          // Add click listeners
+          workerList.querySelectorAll('[data-worker-id]').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const workerId = btn.dataset.workerId;
+              modal.classList.add('hidden');
+              resolve(workerId);
+            });
+          });
+        } catch (err) {
+          console.error('Error loading workers:', err);
+          workerList.innerHTML = '<p class="text-red-500 text-center py-4">Failed to load workers</p>';
+        }
+        
+        // Cancel handler
+        const newCancelBtn = cancelBtn.cloneNode(true);
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+        newCancelBtn.addEventListener('click', () => {
+          modal.classList.add('hidden');
+          resolve(null);
+        });
+      });
+    }
 
     // Load sites for dropdown
     async function loadSitesDropdown() {
