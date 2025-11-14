@@ -1449,6 +1449,361 @@
     </div>
   </div>
 
+  <!-- Bulk Site Operations JavaScript -->
+  <script>
+    // Initialize bulk operations
+    function initBulkSiteOperations() {
+      // Select All checkbox
+      const selectAllCheckbox = document.getElementById('select-all-sites');
+      if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', (e) => {
+          if (e.target.checked) {
+            selectAllSites();
+          } else {
+            deselectAllSites();
+          }
+        });
+      }
+
+      // Cancel selection
+      document.getElementById('bulk-cancel-sites')?.addEventListener('click', () => {
+        deselectAllSites();
+        renderSites(allSites, { currentUserProfile });
+      });
+
+      // Bulk assign worker
+      document.getElementById('bulk-assign-worker-sites')?.addEventListener('click', async () => {
+        if (selectedSites.size === 0) {
+          toast.error('Please select at least one site');
+          return;
+        }
+        
+        const workerId = await showBulkSiteWorkerModal();
+        if (!workerId) return;
+        
+        const confirmed = await showConfirm(
+          `Assign selected worker to ${selectedSites.size} site(s)?`,
+          'Bulk Assign Worker'
+        );
+        if (!confirmed) return;
+        
+        await bulkAssignWorkerToSites(workerId);
+      });
+
+      // Bulk update status
+      document.getElementById('bulk-update-status-sites')?.addEventListener('click', async () => {
+        if (selectedSites.size === 0) {
+          toast.error('Please select at least one site');
+          return;
+        }
+        
+        const status = await showBulkSiteStatusModal();
+        if (!status) return;
+        
+        const confirmed = await showConfirm(
+          `Update ${selectedSites.size} site(s) to "${status}"?`,
+          'Bulk Update Status'
+        );
+        if (!confirmed) return;
+        
+        await bulkUpdateSiteStatus(status);
+      });
+
+      // Bulk archive
+      document.getElementById('bulk-archive-sites')?.addEventListener('click', async () => {
+        if (selectedSites.size === 0) {
+          toast.error('Please select at least one site');
+          return;
+        }
+        
+        const confirmed = await showConfirm(
+          `Archive ${selectedSites.size} site(s)? They will be hidden but preserved for records.`,
+          'Bulk Archive Sites',
+          'warning'
+        );
+        if (!confirmed) return;
+        
+        await bulkArchiveSites();
+      });
+    }
+
+    // Get visible sites (based on current filter)
+    function getVisibleSites() {
+      // For now, return all sites. If filtering is added later, apply it here
+      return allSites || [];
+    }
+
+    // Select all visible sites
+    function selectAllSites() {
+      const visibleSites = getVisibleSites();
+      visibleSites.forEach(site => selectedSites.add(site.id));
+      updateSiteCheckboxes();
+      updateBulkSitesToolbar();
+      updateSelectAllSitesCheckbox();
+    }
+
+    // Deselect all sites
+    function deselectAllSites() {
+      selectedSites.clear();
+      updateSiteCheckboxes();
+      updateBulkSitesToolbar();
+      updateSelectAllSitesCheckbox();
+    }
+
+    // Attach checkbox listeners (make globally available)
+    window.attachSiteCheckboxListeners = function() {
+      document.querySelectorAll('.site-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+          const siteId = e.target.dataset.siteId;
+          toggleSiteSelection(siteId);
+        });
+      });
+    };
+
+    // Toggle site selection
+    function toggleSiteSelection(siteId) {
+      if (selectedSites.has(siteId)) {
+        selectedSites.delete(siteId);
+      } else {
+        selectedSites.add(siteId);
+      }
+      updateBulkSitesToolbar();
+      updateSelectAllSitesCheckbox();
+      updateSiteCheckboxes();
+    }
+
+    // Update select all checkbox (make globally available)
+    window.updateSelectAllSitesCheckbox = function() {
+      const selectAllCheckbox = document.getElementById('select-all-sites');
+      if (!selectAllCheckbox) return;
+      
+      const visibleSites = getVisibleSites();
+      const allVisibleSelected = visibleSites.length > 0 && visibleSites.every(site => selectedSites.has(site.id));
+      
+      selectAllCheckbox.checked = allVisibleSelected;
+      selectAllCheckbox.indeterminate = !allVisibleSelected && visibleSites.some(site => selectedSites.has(site.id));
+    };
+
+    // Update checkbox states
+    function updateSiteCheckboxes() {
+      document.querySelectorAll('.site-checkbox').forEach(checkbox => {
+        checkbox.checked = selectedSites.has(checkbox.dataset.siteId);
+        
+        const card = checkbox.closest('.bg-white, .dark\\:bg-gray-800');
+        if (card) {
+          if (checkbox.checked) {
+            card.classList.remove('border-nfgray', 'dark:border-gray-700');
+            card.classList.add('border-nfgblue', 'ring-2', 'ring-nfgblue', 'bg-nfglight/30', 'dark:bg-blue-900/20');
+          } else {
+            card.classList.remove('border-nfgblue', 'ring-2', 'ring-nfgblue', 'bg-nfglight/30', 'dark:bg-blue-900/20');
+            card.classList.add('border-nfgray', 'dark:border-gray-700');
+          }
+        }
+      });
+    }
+
+    // Update bulk toolbar
+    function updateBulkSitesToolbar() {
+      const toolbar = document.getElementById('bulk-sites-toolbar');
+      const count = document.getElementById('selected-sites-count');
+      
+      if (!toolbar || !count) return;
+      
+      const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
+      
+      if (selectedSites.size > 0 && !isStaff) {
+        toolbar.classList.remove('hidden');
+        count.textContent = `${selectedSites.size} ${selectedSites.size === 1 ? 'site' : 'sites'} selected`;
+      } else {
+        toolbar.classList.add('hidden');
+      }
+    }
+
+    // Bulk assign worker to sites
+    async function bulkAssignWorkerToSites(workerId) {
+      const siteIds = Array.from(selectedSites);
+      
+      try {
+        const assignments = siteIds.map(siteId => ({
+          worker_id: workerId,
+          site_id: siteId,
+          assigned_by: currentUser.id,
+          assigned_at: new Date().toISOString()
+        }));
+        
+        const { error } = await supabase
+          .from('worker_site_assignments')
+          .upsert(assignments, { onConflict: 'worker_id,site_id' });
+        
+        if (error) {
+          toast.error('Failed to assign worker: ' + error.message);
+          return;
+        }
+        
+        toast.success(`Worker assigned to ${siteIds.length} site(s) successfully`);
+        deselectAllSites();
+        const sites = await fetchSites();
+        allSites = sites;
+        window.allSites = allSites;
+        await renderSites(sites, { currentUserProfile });
+      } catch (err) {
+        console.error('Error bulk assigning worker:', err);
+        toast.error('An error occurred while assigning worker');
+      }
+    }
+
+    // Bulk update site status
+    async function bulkUpdateSiteStatus(status) {
+      const siteIds = Array.from(selectedSites);
+      
+      try {
+        const { error } = await supabase
+          .from('sites')
+          .update({ status: status })
+          .in('id', siteIds);
+        
+        if (error) {
+          toast.error('Failed to update sites: ' + error.message);
+          return;
+        }
+        
+        toast.success(`${siteIds.length} site(s) updated successfully`);
+        deselectAllSites();
+        const sites = await fetchSites();
+        allSites = sites;
+        window.allSites = allSites;
+        await renderSites(sites, { currentUserProfile });
+      } catch (err) {
+        console.error('Error bulk updating sites:', err);
+        toast.error('An error occurred while updating sites');
+      }
+    }
+
+    // Bulk archive sites
+    async function bulkArchiveSites() {
+      const siteIds = Array.from(selectedSites);
+      const now = new Date().toISOString();
+      
+      try {
+        const { error } = await supabase
+          .from('sites')
+          .update({ 
+            archived_at: now,
+            status: 'Paused'
+          })
+          .in('id', siteIds);
+        
+        if (error) {
+          toast.error('Failed to archive sites: ' + error.message);
+          return;
+        }
+        
+        toast.success(`${siteIds.length} site(s) archived successfully`);
+        deselectAllSites();
+        const sites = await fetchSites();
+        allSites = sites;
+        window.allSites = allSites;
+        await renderSites(sites, { currentUserProfile });
+      } catch (err) {
+        console.error('Error archiving sites:', err);
+        toast.error('An error occurred while archiving sites');
+      }
+    }
+
+    // Show bulk status modal
+    async function showBulkSiteStatusModal() {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('bulk-site-status-modal');
+        const statusButtons = modal.querySelectorAll('[data-status]');
+        const cancelBtn = modal.querySelector('[data-cancel-site-status]');
+        
+        // Remove existing listeners
+        statusButtons.forEach(btn => {
+          const newBtn = btn.cloneNode(true);
+          btn.parentNode.replaceChild(newBtn, btn);
+        });
+        const newCancelBtn = cancelBtn.cloneNode(true);
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+        
+        // Add new listeners
+        modal.querySelectorAll('[data-status]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const status = btn.dataset.status;
+            modal.classList.add('hidden');
+            resolve(status);
+          });
+        });
+        
+        modal.querySelector('[data-cancel-site-status]').addEventListener('click', () => {
+          modal.classList.add('hidden');
+          resolve(null);
+        });
+        
+        modal.classList.remove('hidden');
+      });
+    }
+
+    // Show bulk worker modal
+    async function showBulkSiteWorkerModal() {
+      return new Promise(async (resolve) => {
+        const modal = document.getElementById('bulk-site-worker-modal');
+        const workerList = document.getElementById('bulk-site-worker-list');
+        const cancelBtn = modal.querySelector('[data-cancel-site-worker]');
+        
+        workerList.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center py-4">Loading workers...</p>';
+        modal.classList.remove('hidden');
+        
+        try {
+          const { data: workers, error } = await supabase
+            .from('user_profiles')
+            .select('id, full_name, email')
+            .eq('role', 'staff')
+            .order('full_name');
+          
+          if (error) {
+            workerList.innerHTML = '<p class="text-red-500 text-center py-4">Failed to load workers</p>';
+            return;
+          }
+          
+          if (workers.length === 0) {
+            workerList.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center py-4">No workers available</p>';
+            return;
+          }
+          
+          workerList.innerHTML = workers.map(worker => `
+            <button 
+              data-worker-id="${worker.id}" 
+              class="w-full px-4 py-3 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 text-left transition"
+            >
+              <span class="font-medium block">${worker.full_name || worker.email}</span>
+              <p class="text-sm text-gray-500 dark:text-gray-400">${worker.email}</p>
+            </button>
+          `).join('');
+          
+          if (window.lucide) lucide.createIcons();
+          
+          workerList.querySelectorAll('[data-worker-id]').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const workerId = btn.dataset.workerId;
+              modal.classList.add('hidden');
+              resolve(workerId);
+            });
+          });
+        } catch (err) {
+          console.error('Error loading workers:', err);
+          workerList.innerHTML = '<p class="text-red-500 text-center py-4">Failed to load workers</p>';
+        }
+        
+        const newCancelBtn = cancelBtn.cloneNode(true);
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+        newCancelBtn.addEventListener('click', () => {
+          modal.classList.add('hidden');
+          resolve(null);
+        });
+      });
+    }
+  </script>
+
   <!-- Hide loader when page is ready -->
   <script>
     window.addEventListener('load', () => {
