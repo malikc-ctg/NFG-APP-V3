@@ -61,16 +61,71 @@ async function fetchInventoryItems() {
 
 // Fetch site inventory (with stock levels per site)
 async function fetchSiteInventory() {
-  const { data, error } = await supabase
+  const viewResult = await supabase
     .from('site_inventory_status')
     .select('*');
   
-  if (error) {
-    console.error('Error fetching site inventory:', error);
-    return [];
+  if (!viewResult.error && Array.isArray(viewResult.data)) {
+    return viewResult.data;
   }
   
-  return data || [];
+  console.warn('[Inventory] site_inventory_status view unavailable, falling back to joined query.', viewResult.error);
+  
+  try {
+    const { data, error } = await supabase
+      .from('site_inventory')
+      .select(`
+        id,
+        site_id,
+        item_id,
+        quantity,
+        location_notes,
+        last_restocked_at,
+        updated_at,
+        sites:sites(name),
+        inventory_items:inventory_items(
+          name,
+          unit,
+          low_stock_threshold,
+          inventory_categories:inventory_categories(name, icon)
+        )
+      `);
+    
+    if (error) throw error;
+    
+    return (data || []).map(record => {
+      const item = record.inventory_items || {};
+      const category = item.inventory_categories || {};
+      const threshold = item.low_stock_threshold ?? 0;
+      const status = record.quantity === 0
+        ? 'out'
+        : record.quantity < threshold
+          ? 'low'
+          : record.quantity < threshold * 2
+            ? 'warning'
+            : 'ok';
+      
+      return {
+        id: record.id,
+        site_id: record.site_id,
+        site_name: record.sites?.name || 'Unknown Site',
+        item_id: record.item_id,
+        item_name: item.name || 'Unknown Item',
+        unit: item.unit || '',
+        quantity: record.quantity || 0,
+        location_notes: record.location_notes,
+        last_restocked_at: record.last_restocked_at,
+        updated_at: record.updated_at,
+        low_stock_threshold: threshold,
+        category_name: category.name || 'Uncategorized',
+        category_icon: category.icon || 'package',
+        stock_status: status
+      };
+    });
+  } catch (error) {
+    console.error('Error fetching site inventory fallback:', error);
+    return [];
+  }
 }
 
 // Fetch sites
@@ -99,7 +154,7 @@ async function renderInventory() {
       const { createSkeletonTableRows, showSkeleton } = await import('./skeleton.js');
       showSkeleton(tableBody, createSkeletonTableRows(5, 5));
     } catch (error) {
-      console.error('Error loading skeleton:', error);
+      console.warn('[Inventory] Skeleton module missing, continuing without skeleton loader.', error);
     }
   }
   
@@ -507,41 +562,28 @@ async function loadHistoryActivity(showToast = false) {
   `;
   
   try {
-    let query = supabase
-      .from('recent_inventory_activity')
-      .select('*');
+    const siteFilter = historyFilters.site !== 'all' ? parseInt(historyFilters.site, 10) : null;
+    const transactions = await fetchInventoryTransactions({
+      type: historyFilters.type !== 'all' ? historyFilters.type : null,
+      siteId: Number.isNaN(siteFilter) ? null : siteFilter,
+      dateFrom: historyFilters.dateFrom || null,
+      dateTo: historyFilters.dateTo || null,
+      limit: 300
+    });
     
-    if (historyFilters.type && historyFilters.type !== 'all') {
-      query = query.eq('transaction_type', historyFilters.type);
-    }
+    const searchTerm = historyFilters.search.trim().toLowerCase();
+    historyViewData = searchTerm
+      ? transactions.filter(entry => {
+          const haystack = [
+            entry.item_name,
+            entry.site_name,
+            entry.user_name,
+            entry.notes || ''
+          ].join(' ').toLowerCase();
+          return haystack.includes(searchTerm);
+        })
+      : transactions;
     
-    if (historyFilters.site && historyFilters.site !== 'all') {
-      query = query.eq('site_id', historyFilters.site);
-    }
-    
-    if (historyFilters.dateFrom) {
-      query = query.gte('created_at', `${historyFilters.dateFrom}T00:00:00`);
-    }
-    
-    if (historyFilters.dateTo) {
-      query = query.lte('created_at', `${historyFilters.dateTo}T23:59:59`);
-    }
-    
-    if (historyFilters.search) {
-      const searchTerm = historyFilters.search.replace(/[%_]/g, '').trim();
-      if (searchTerm) {
-        const escaped = searchTerm.replace(/'/g, "''");
-        query = query.or(`item_name.ilike.%${escaped}%,site_name.ilike.%${escaped}%,user_name.ilike.%${escaped}%`);
-      }
-    }
-    
-    query = query.order('created_at', { ascending: false }).limit(200);
-    
-    const { data, error } = await query;
-    
-    if (error) throw error;
-    
-    historyViewData = data || [];
     renderHistoryTable();
     updateHistorySummaryCards();
     
@@ -659,6 +701,103 @@ function exportHistoryViewData() {
   toast.success('Inventory history exported', 'Success');
 }
 
+async function fetchInventoryTransactions(options = {}) {
+  let query = supabase
+    .from('inventory_transactions')
+    .select(`
+      id,
+      transaction_type,
+      quantity_change,
+      quantity_before,
+      quantity_after,
+      created_at,
+      notes,
+      site_id,
+      item_id,
+      user_id,
+      inventory_items:inventory_items(name, unit),
+      sites:sites(name)
+    `);
+  
+  if (options.itemId) {
+    query = query.eq('item_id', options.itemId);
+  }
+  
+  if (options.siteId) {
+    query = query.eq('site_id', options.siteId);
+  }
+  
+  if (options.type) {
+    query = query.eq('transaction_type', options.type);
+  }
+  
+  if (options.dateFrom) {
+    query = query.gte('created_at', `${options.dateFrom}T00:00:00`);
+  }
+  
+  if (options.dateTo) {
+    query = query.lte('created_at', `${options.dateTo}T23:59:59`);
+  }
+  
+  query = query.order('created_at', { ascending: false }).limit(options.limit || 100);
+  
+  const { data, error } = await query;
+  if (error) throw error;
+  
+  const enriched = await enrichTransactionsWithUserNames(data || []);
+  return enriched.map(transformTransactionRecord);
+}
+
+async function enrichTransactionsWithUserNames(entries) {
+  const userIds = [...new Set(entries.map(entry => entry.user_id).filter(Boolean))];
+  if (!userIds.length) return entries;
+  
+  try {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('id, full_name, email')
+      .in('id', userIds);
+    
+    if (error) throw error;
+    
+    const map = {};
+    (data || []).forEach(profile => {
+      map[profile.id] = profile;
+    });
+    
+    return entries.map(entry => ({
+      ...entry,
+      user_name: map[entry.user_id]?.full_name || null,
+      user_email: map[entry.user_id]?.email || null
+    }));
+  } catch (error) {
+    console.error('Failed to fetch user profiles for inventory history:', error);
+    return entries;
+  }
+}
+
+function transformTransactionRecord(record) {
+  const item = record.inventory_items || {};
+  const site = record.sites || {};
+  
+  return {
+    id: record.id,
+    transaction_type: record.transaction_type,
+    quantity_change: record.quantity_change,
+    quantity_before: record.quantity_before,
+    quantity_after: record.quantity_after,
+    created_at: record.created_at,
+    notes: record.notes,
+    site_id: record.site_id,
+    site_name: site.name || '—',
+    item_id: record.item_id,
+    item_name: item.name || 'Unknown Item',
+    unit: item.unit || '',
+    user_id: record.user_id,
+    user_name: record.user_name || (record.user_id ? 'Team Member' : 'System')
+  };
+}
+
 // Store current history data for filtering and export
 let currentHistoryData = [];
 let currentHistoryItemId = null;
@@ -692,40 +831,20 @@ window.viewHistory = async function(itemId, siteId, itemName, siteName) {
 // Load history transactions with filters
 async function loadHistoryTransactions() {
   try {
-    let query = supabase
-      .from('recent_inventory_activity')
-      .select('*')
-      .eq('item_id', currentHistoryItemId)
-      .eq('site_id', currentHistorySiteId);
-    
-    // Apply transaction type filter
     const typeFilter = document.getElementById('history-filter-type').value;
-    if (typeFilter !== 'all') {
-      query = query.eq('transaction_type', typeFilter);
-    }
-    
-    // Apply date filters
     const dateFrom = document.getElementById('history-filter-date-from').value;
     const dateTo = document.getElementById('history-filter-date-to').value;
     
-    if (dateFrom) {
-      query = query.gte('created_at', dateFrom + 'T00:00:00');
-    }
-    if (dateTo) {
-      query = query.lte('created_at', dateTo + 'T23:59:59');
-    }
+    const transactions = await fetchInventoryTransactions({
+      itemId: currentHistoryItemId,
+      siteId: currentHistorySiteId,
+      type: typeFilter !== 'all' ? typeFilter : null,
+      dateFrom: dateFrom || null,
+      dateTo: dateTo || null,
+      limit: 100
+    });
     
-    query = query.order('created_at', { ascending: false }).limit(100);
-    
-    const { data: transactions, error } = await query;
-    
-    if (error) {
-      console.error('Error fetching history:', error);
-      toast.error('Failed to load transaction history', 'Error');
-      return;
-    }
-    
-    currentHistoryData = transactions || [];
+    currentHistoryData = transactions;
     renderHistoryList(currentHistoryData);
   } catch (error) {
     console.error('Error loading history:', error);
@@ -772,7 +891,6 @@ function renderHistoryList(transactions) {
           </div>
         </div>
         ${t.user_name ? `<div class="text-xs text-gray-600 dark:text-gray-400 mb-1">User: ${t.user_name}</div>` : ''}
-        ${t.job_title ? `<div class="text-xs text-gray-600 dark:text-gray-400 mb-1">Job: ${t.job_title}</div>` : ''}
         ${t.notes ? `<div class="text-sm text-gray-700 dark:text-gray-300 mt-2 p-2 bg-white dark:bg-gray-800 rounded-lg border border-nfgray dark:border-gray-700">${t.notes}</div>` : ''}
       </div>
     `;
