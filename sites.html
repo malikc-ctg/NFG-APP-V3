@@ -450,6 +450,10 @@
     let currentUserProfile = null;
     let selectedSites = new Set(); // Track selected site IDs
     let allSites = []; // Store all sites for selection tracking
+    
+    // Make currentUser globally available for bulk operations script
+    window.currentUser = currentUser;
+    window.currentUserProfile = currentUserProfile;
 
     // Get current user and their profile
     async function getCurrentUser() {
@@ -1651,10 +1655,17 @@
       }
       
       try {
+        // Get currentUser from global scope
+        const user = window.currentUser;
+        if (!user) {
+          toast.error('Error: User not available');
+          return;
+        }
+        
         const assignments = siteIds.map(siteId => ({
           worker_id: workerId,
           site_id: siteId,
-          assigned_by: currentUser.id,
+          assigned_by: user.id,
           assigned_at: new Date().toISOString()
         }));
         
