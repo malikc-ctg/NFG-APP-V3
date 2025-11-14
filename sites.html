@@ -720,6 +720,10 @@
       }
       
       const sites = await fetchSites()
+      allSites = sites;
+      window.allSites = allSites;
+      window.selectedSites = selectedSites;
+      window.currentUserProfile = currentUserProfile;
       await renderSites(sites, { currentUserProfile })
       
       // Initialize UI event handlers (for View Site buttons and modals)
@@ -727,6 +731,9 @@
       
       // Initialize global variables
       window.currentEditSite = null;
+      
+      // Initialize bulk site operations
+      initBulkSiteOperations();
       
       // View Job History button handler
       document.getElementById('view-job-history-btn')?.addEventListener('click', async () => {
