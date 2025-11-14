@@ -208,13 +208,14 @@ function createSiteCard(site, options = {}) {
           ` : ''}
           <div class="flex-1 min-w-0">
             <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">${site.name}</h3>
-          <div class="flex items-center gap-2 mt-1">
-            <p class="text-gray-500 dark:text-gray-400 text-xs truncate">${site.address}</p>
-            <button 
-              onclick="copyAddress('${site.address.replace(/'/g, "\\'")}', event)" 
-              class="text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 transition p-1 rounded hover:bg-nfglight dark:hover:bg-gray-700 flex-shrink-0">
-              <i data-lucide="copy" class="w-3 h-3"></i>
-            </button>
+            <div class="flex items-center gap-2 mt-1">
+              <p class="text-gray-500 dark:text-gray-400 text-xs truncate">${site.address}</p>
+              <button 
+                onclick="copyAddress('${site.address.replace(/'/g, "\\'")}', event)" 
+                class="text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 transition p-1 rounded hover:bg-nfglight dark:hover:bg-gray-700 flex-shrink-0">
+                <i data-lucide="copy" class="w-3 h-3"></i>
+              </button>
+            </div>
           </div>
         </div>
         <span class="px-2 py-1 rounded-lg text-xs font-medium ${statusClass} ml-2 flex-shrink-0">${site.status}</span>
