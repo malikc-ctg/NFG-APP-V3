@@ -23,16 +23,16 @@ select[data-custom-dropdown="true"] {
 .nfg-selected {
   background-color: white;
   border: 1px solid #d1d5db;
-  padding: 8px 12px;
+  padding: 10px 14px;
   border-radius: 8px;
   position: relative;
   z-index: 10;
-  font-size: 14px;
+  font-size: 15px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   transition: all 200ms;
-  min-height: 38px;
+  min-height: 42px;
   color: #1e3a8a;
 }
 
@@ -78,9 +78,9 @@ select[data-custom-dropdown="true"] {
 
 .nfg-arrow {
   position: relative;
-  height: 10px;
-  width: 10px;
-  margin-left: 8px;
+  height: 12px;
+  width: 12px;
+  margin-left: 10px;
   fill: #6b7280;
   transition: transform 200ms;
   flex-shrink: 0;
@@ -137,11 +137,11 @@ select[data-custom-dropdown="true"] {
 
 .nfg-option {
   border-radius: 0;
-  padding: 8px 12px;
+  padding: 10px 14px;
   transition: background-color 100ms;
   background-color: transparent;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 15px;
   color: #374151;
   border: none;
   text-align: left;
