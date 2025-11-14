@@ -255,50 +255,174 @@
         </div>
       </div>
 
-      <!-- Category Tabs -->
-      <div class="flex gap-2 border-b border-nfgray overflow-x-auto">
-        <button class="inventory-filter-tab px-4 py-2 font-medium text-nfgblue dark:text-blue-400 border-b-2 border-nfgblue whitespace-nowrap" data-category="all">
-          All Items
-        </button>
-        <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-category="Cleaning Supplies">
-           Cleaning
-        </button>
-        <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-category="Chemicals">
-           Chemicals
-        </button>
-        <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-category="Tools">
-           Tools
-        </button>
-        <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-category="Paper Products">
-           Paper
-        </button>
-        <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-category="PPE">
-           PPE
-        </button>
+      <!-- View Toggle -->
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex bg-nfglight/60 dark:bg-gray-800 rounded-xl p-1 w-full sm:w-auto">
+          <button class="inventory-view-tab flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium text-white bg-nfgblue shadow-nfg transition" data-view="inventory">
+            Inventory
+          </button>
+          <button class="inventory-view-tab flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-nfgblue hover:bg-white/70 transition" data-view="history">
+            History
+          </button>
+        </div>
+        <div id="history-inline-actions" class="hidden sm:flex items-center gap-2">
+          <button id="history-refresh-btn" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 text-sm font-medium transition">
+            Refresh
+          </button>
+          <button id="history-export-btn" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark text-sm font-medium transition">
+            Export CSV
+          </button>
+        </div>
       </div>
 
-      <!-- Inventory Table -->
-      <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-nfglight/50 border-b border-nfgray dark:border-gray-700">
-              <tr>
-                <th class="px-4 py-3 text-left text-sm font-medium text-nfgblue dark:text-blue-400 w-10">
-                  <!-- Checkbox column -->
-                </th>
-                <th class="px-4 py-3 text-left text-sm font-medium text-nfgblue dark:text-blue-400">Item</th>
-                <th class="px-4 py-3 text-left text-sm font-medium text-nfgblue dark:text-blue-400 hidden md:table-cell">Category</th>
-                <th class="px-4 py-3 text-center text-sm font-medium text-nfgblue dark:text-blue-400">Quantity</th>
-                <th class="px-4 py-3 text-center text-sm font-medium text-nfgblue dark:text-blue-400">Status</th>
-                <th class="px-4 py-3 text-center text-sm font-medium text-nfgblue dark:text-blue-400">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="inventory-table-body" class="divide-y divide-nfgray">
-              <tr>
-                <td colspan="6" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Loading inventory...</td>
-              </tr>
-            </tbody>
-          </table>
+      <!-- Inventory View -->
+      <div id="inventory-view" class="space-y-6">
+        <!-- Category Tabs -->
+        <div class="flex gap-2 border-b border-nfgray overflow-x-auto">
+          <button class="inventory-filter-tab px-4 py-2 font-medium text-nfgblue dark:text-blue-400 border-b-2 border-nfgblue whitespace-nowrap" data-category="all">
+            All Items
+          </button>
+          <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-category="Cleaning Supplies">
+             Cleaning
+          </button>
+          <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-category="Chemicals">
+             Chemicals
+          </button>
+          <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-category="Tools">
+             Tools
+          </button>
+          <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-category="Paper Products">
+             Paper
+          </button>
+          <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-category="PPE">
+             PPE
+          </button>
+        </div>
+
+        <!-- Inventory Table -->
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-nfglight/50 border-b border-nfgray dark:border-gray-700">
+                <tr>
+                  <th class="px-4 py-3 text-left text-sm font-medium text-nfgblue dark:text-blue-400 w-10">
+                    <!-- Checkbox column -->
+                  </th>
+                  <th class="px-4 py-3 text-left text-sm font-medium text-nfgblue dark:text-blue-400">Item</th>
+                  <th class="px-4 py-3 text-left text-sm font-medium text-nfgblue dark:text-blue-400 hidden md:table-cell">Category</th>
+                  <th class="px-4 py-3 text-center text-sm font-medium text-nfgblue dark:text-blue-400">Quantity</th>
+                  <th class="px-4 py-3 text-center text-sm font-medium text-nfgblue dark:text-blue-400">Status</th>
+                  <th class="px-4 py-3 text-center text-sm font-medium text-nfgblue dark:text-blue-400">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-table-body" class="divide-y divide-nfgray">
+                <tr>
+                  <td colspan="6" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Loading inventory...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- History View -->
+      <div id="history-view" class="hidden space-y-4">
+        <!-- History Summary -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Total Transactions</p>
+            <p id="history-total-count" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">0</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Restocks</p>
+            <p id="history-restock-count" class="text-2xl font-semibold text-green-600 dark:text-green-400">0</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Usage</p>
+            <p id="history-use-count" class="text-2xl font-semibold text-red-600 dark:text-red-400">0</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Adjustments</p>
+            <p id="history-adjustment-count" class="text-2xl font-semibold text-blue-600 dark:text-blue-400">0</p>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-1 text-nfgblue dark:text-blue-400">Transaction Type</label>
+              <select id="history-type-filter" class="w-full border border-nfgray rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none">
+                <option value="all">All Types</option>
+                <option value="restock">Restock</option>
+                <option value="use">Usage</option>
+                <option value="adjustment">Adjustment</option>
+                <option value="transfer">Transfer</option>
+                <option value="return">Return</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1 text-nfgblue dark:text-blue-400">Site</label>
+              <select id="history-site-filter" class="w-full border border-nfgray rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none">
+                <option value="all">All Sites</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1 text-nfgblue dark:text-blue-400">Search</label>
+              <input type="text" id="history-search-input" placeholder="Search item, site, or user" class="w-full border border-nfgray rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none" />
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-1 text-nfgblue dark:text-blue-400">Date From</label>
+              <input type="date" id="history-date-from" class="w-full border border-nfgray rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1 text-nfgblue dark:text-blue-400">Date To</label>
+              <input type="date" id="history-date-to" class="w-full border border-nfgray rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none" />
+            </div>
+            <div class="flex items-end gap-2">
+              <button id="history-apply-filters" class="w-full bg-nfgblue text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-nfgdark transition">
+                Apply Filters
+              </button>
+              <button id="history-clear-filters" class="w-full border border-nfgray rounded-lg px-4 py-2 text-sm font-medium text-nfgblue hover:bg-nfglight transition">
+                Clear
+              </button>
+            </div>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-2 sm:justify-end">
+            <button id="history-refresh-btn-mobile" class="sm:hidden px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 text-sm font-medium transition">
+              Refresh
+            </button>
+            <button id="history-export-btn-mobile" class="sm:hidden px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark text-sm font-medium transition">
+              Export CSV
+            </button>
+          </div>
+        </div>
+
+        <!-- History Table -->
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-nfglight/50 border-b border-nfgray dark:border-gray-700">
+                <tr>
+                  <th class="px-4 py-3 text-left font-medium text-nfgblue dark:text-blue-400">Date</th>
+                  <th class="px-4 py-3 text-left font-medium text-nfgblue dark:text-blue-400">Item</th>
+                  <th class="px-4 py-3 text-left font-medium text-nfgblue dark:text-blue-400">Site</th>
+                  <th class="px-4 py-3 text-left font-medium text-nfgblue dark:text-blue-400">Type</th>
+                  <th class="px-4 py-3 text-center font-medium text-nfgblue dark:text-blue-400">Change</th>
+                  <th class="px-4 py-3 text-center font-medium text-nfgblue dark:text-blue-400">Before → After</th>
+                  <th class="px-4 py-3 text-left font-medium text-nfgblue dark:text-blue-400">By</th>
+                  <th class="px-4 py-3 text-left font-medium text-nfgblue dark:text-blue-400">Notes</th>
+                </tr>
+              </thead>
+              <tbody id="history-table-body">
+                <tr>
+                  <td colspan="8" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">History data will load once filters are applied</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </main>

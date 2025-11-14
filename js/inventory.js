@@ -359,6 +359,306 @@ window.manageStock = function(siteId, itemId, itemName, currentQty) {
   if (window.lucide) lucide.createIcons();
 };
 
+// Inventory history view state
+let historyViewInitialized = false;
+let historyViewData = [];
+let historyFilters = {
+  type: 'all',
+  site: 'all',
+  search: '',
+  dateFrom: '',
+  dateTo: ''
+};
+let historySearchTimeout = null;
+
+function initInventoryViewTabs() {
+  const tabs = document.querySelectorAll('.inventory-view-tab');
+  const inventoryView = document.getElementById('inventory-view');
+  const historyView = document.getElementById('history-view');
+  const desktopHistoryActions = document.getElementById('history-inline-actions');
+  
+  if (!tabs.length || !inventoryView || !historyView) return;
+  
+  const defaultTab = document.querySelector('.inventory-view-tab[data-view="inventory"]');
+  defaultTab?.classList.add('active-view-tab');
+  
+  tabs.forEach(tab => {
+    tab.addEventListener('click', async () => {
+      if (tab.classList.contains('active-view-tab')) return;
+      
+      tabs.forEach(t => {
+        t.classList.remove('active-view-tab', 'text-white', 'bg-nfgblue', 'shadow-nfg');
+        t.classList.add('text-gray-600', 'dark:text-gray-300');
+      });
+      
+      tab.classList.add('active-view-tab', 'text-white', 'bg-nfgblue', 'shadow-nfg');
+      tab.classList.remove('text-gray-600', 'dark:text-gray-300');
+      
+      const view = tab.dataset.view;
+      if (view === 'history') {
+        inventoryView.classList.add('hidden');
+        historyView.classList.remove('hidden');
+        desktopHistoryActions?.classList.remove('hidden');
+        
+        if (!historyViewInitialized) {
+          await initHistoryView();
+        }
+      } else {
+        historyView.classList.add('hidden');
+        inventoryView.classList.remove('hidden');
+        desktopHistoryActions?.classList.add('hidden');
+      }
+    });
+  });
+}
+
+async function initHistoryView() {
+  await populateHistorySiteFilter();
+  attachHistoryFilterListeners();
+  await loadHistoryActivity(true);
+  historyViewInitialized = true;
+}
+
+async function populateHistorySiteFilter() {
+  const select = document.getElementById('history-site-filter');
+  if (!select) return;
+  
+  select.innerHTML = '<option value="all">All Sites</option>';
+  
+  const sitesList = await fetchSites();
+  select.innerHTML += sitesList.map(site => `<option value="${site.id}">${site.name}</option>`).join('');
+}
+
+function attachHistoryFilterListeners() {
+  const typeSelect = document.getElementById('history-type-filter');
+  const siteSelect = document.getElementById('history-site-filter');
+  const searchInput = document.getElementById('history-search-input');
+  const dateFromInput = document.getElementById('history-date-from');
+  const dateToInput = document.getElementById('history-date-to');
+  const applyBtn = document.getElementById('history-apply-filters');
+  const clearBtn = document.getElementById('history-clear-filters');
+  const refreshBtns = [
+    document.getElementById('history-refresh-btn'),
+    document.getElementById('history-refresh-btn-mobile')
+  ].filter(Boolean);
+  const exportBtns = [
+    document.getElementById('history-export-btn'),
+    document.getElementById('history-export-btn-mobile')
+  ].filter(Boolean);
+  
+  typeSelect?.addEventListener('change', () => {
+    historyFilters.type = typeSelect.value;
+  });
+  
+  siteSelect?.addEventListener('change', () => {
+    historyFilters.site = siteSelect.value;
+  });
+  
+  searchInput?.addEventListener('input', () => {
+    if (historySearchTimeout) clearTimeout(historySearchTimeout);
+    historySearchTimeout = setTimeout(() => {
+      historyFilters.search = searchInput.value.trim();
+    }, 300);
+  });
+  
+  dateFromInput?.addEventListener('change', () => {
+    historyFilters.dateFrom = dateFromInput.value;
+  });
+  
+  dateToInput?.addEventListener('change', () => {
+    historyFilters.dateTo = dateToInput.value;
+  });
+  
+  applyBtn?.addEventListener('click', async () => {
+    historyFilters.search = searchInput?.value.trim() || '';
+    await loadHistoryActivity();
+  });
+  
+  clearBtn?.addEventListener('click', async () => {
+    if (typeSelect) typeSelect.value = 'all';
+    if (siteSelect) siteSelect.value = 'all';
+    if (searchInput) searchInput.value = '';
+    if (dateFromInput) dateFromInput.value = '';
+    if (dateToInput) dateToInput.value = '';
+    
+    historyFilters = {
+      type: 'all',
+      site: 'all',
+      search: '',
+      dateFrom: '',
+      dateTo: ''
+    };
+    
+    await loadHistoryActivity();
+  });
+  
+  refreshBtns.forEach(btn => btn.addEventListener('click', () => loadHistoryActivity(true)));
+  exportBtns.forEach(btn => btn.addEventListener('click', exportHistoryViewData));
+}
+
+async function loadHistoryActivity(showToast = false) {
+  const tableBody = document.getElementById('history-table-body');
+  if (!tableBody) return;
+  
+  tableBody.innerHTML = `
+    <tr>
+      <td colspan="8" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Loading history...</td>
+    </tr>
+  `;
+  
+  try {
+    let query = supabase
+      .from('recent_inventory_activity')
+      .select('*');
+    
+    if (historyFilters.type && historyFilters.type !== 'all') {
+      query = query.eq('transaction_type', historyFilters.type);
+    }
+    
+    if (historyFilters.site && historyFilters.site !== 'all') {
+      query = query.eq('site_id', historyFilters.site);
+    }
+    
+    if (historyFilters.dateFrom) {
+      query = query.gte('created_at', `${historyFilters.dateFrom}T00:00:00`);
+    }
+    
+    if (historyFilters.dateTo) {
+      query = query.lte('created_at', `${historyFilters.dateTo}T23:59:59`);
+    }
+    
+    if (historyFilters.search) {
+      const searchTerm = historyFilters.search.replace(/[%_]/g, '').trim();
+      if (searchTerm) {
+        const escaped = searchTerm.replace(/'/g, "''");
+        query = query.or(`item_name.ilike.%${escaped}%,site_name.ilike.%${escaped}%,user_name.ilike.%${escaped}%`);
+      }
+    }
+    
+    query = query.order('created_at', { ascending: false }).limit(200);
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    historyViewData = data || [];
+    renderHistoryTable();
+    updateHistorySummaryCards();
+    
+    if (showToast) {
+      toast.success('History refreshed', 'Success');
+    }
+  } catch (error) {
+    console.error('Error loading inventory history:', error);
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="8" class="px-4 py-8 text-center text-red-500">Failed to load history. Please try again.</td>
+      </tr>
+    `;
+    toast.error('Failed to load inventory history', 'Error');
+  }
+}
+
+function renderHistoryTable() {
+  const tableBody = document.getElementById('history-table-body');
+  if (!tableBody) return;
+  
+  if (!historyViewData.length) {
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="8" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No transactions found for the selected filters</td>
+      </tr>
+    `;
+    return;
+  }
+  
+  const typeConfig = {
+    'restock': { icon: 'plus', text: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-900/20', label: 'Restocked' },
+    'use': { icon: 'minus', text: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20', label: 'Used' },
+    'adjustment': { icon: 'settings', text: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20', label: 'Adjusted' },
+    'transfer': { icon: 'arrow-right-left', text: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/20', label: 'Transferred' },
+    'return': { icon: 'corner-up-left', text: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-900/20', label: 'Returned' }
+  };
+  
+  tableBody.innerHTML = historyViewData.map(entry => {
+    const config = typeConfig[entry.transaction_type] || typeConfig['adjustment'];
+    const date = new Date(entry.created_at).toLocaleString();
+    const changeText = entry.quantity_change > 0 ? `+${entry.quantity_change}` : entry.quantity_change;
+    const notes = entry.notes ? entry.notes : '—';
+    const user = entry.user_name || 'System';
+    
+    return `
+      <tr class="border-b border-nfgray dark:border-gray-700 last:border-0">
+        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">${date}</td>
+        <td class="px-4 py-3 text-sm text-nfgblue dark:text-blue-300">
+          <div class="font-medium">${entry.item_name}</div>
+          <div class="text-xs text-gray-500">${entry.unit || ''}</div>
+        </td>
+        <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">${entry.site_name || '—'}</td>
+        <td class="px-4 py-3 text-sm">
+          <span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${config.bg}">
+            <i data-lucide="${config.icon}" class="w-3.5 h-3.5 ${config.text}"></i>
+            <span class="${config.text}">${config.label}</span>
+          </span>
+        </td>
+        <td class="px-4 py-3 text-center font-semibold ${entry.quantity_change >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">
+          ${changeText}
+        </td>
+        <td class="px-4 py-3 text-center text-sm text-gray-600 dark:text-gray-300">${entry.quantity_before} → ${entry.quantity_after}</td>
+        <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">${user}</td>
+        <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">${notes}</td>
+      </tr>
+    `;
+  }).join('');
+  
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function updateHistorySummaryCards() {
+  const total = historyViewData.length;
+  const restock = historyViewData.filter(entry => entry.transaction_type === 'restock').length;
+  const use = historyViewData.filter(entry => entry.transaction_type === 'use').length;
+  const adjustment = historyViewData.filter(entry => entry.transaction_type === 'adjustment').length;
+  
+  document.getElementById('history-total-count').textContent = total;
+  document.getElementById('history-restock-count').textContent = restock;
+  document.getElementById('history-use-count').textContent = use;
+  document.getElementById('history-adjustment-count').textContent = adjustment;
+}
+
+function exportHistoryViewData() {
+  if (!historyViewData.length) {
+    toast.error('No history data to export', 'Error');
+    return;
+  }
+  
+  const headers = ['Date', 'Item', 'Site', 'Type', 'Change', 'Before', 'After', 'Performed By', 'Notes'];
+  const rows = historyViewData.map(entry => [
+    new Date(entry.created_at).toLocaleString(),
+    entry.item_name,
+    entry.site_name || '',
+    entry.transaction_type,
+    entry.quantity_change,
+    entry.quantity_before,
+    entry.quantity_after,
+    entry.user_name || 'System',
+    entry.notes || ''
+  ]);
+  
+  const csvContent = [headers.join(','), ...rows.map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(','))].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', `inventory-history-view-${new Date().toISOString().split('T')[0]}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  toast.success('Inventory history exported', 'Success');
+}
+
 // Store current history data for filtering and export
 let currentHistoryData = [];
 let currentHistoryItemId = null;
@@ -828,6 +1128,7 @@ async function init() {
   
   await loadSiteFilter();
   await renderInventory();
+  initInventoryViewTabs();
   
   // Initialize custom dropdowns after DOM is ready
   if (window.initCustomDropdowns) {
