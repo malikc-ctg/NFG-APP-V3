@@ -267,6 +267,7 @@ function renderNotifications(notifications) {
   
   list.innerHTML = notifications.map(notification => {
     const iconName = NOTIFICATION_TYPE_ICONS[notification.type] || 'bell';
+    const metaHtml = renderNotificationMetadata(notification);
     return `
     <div class="notification-item ${notification.read ? '' : 'unread'}" 
          data-notification-id="${notification.id}"
@@ -278,6 +279,7 @@ function renderNotifications(notifications) {
         <div class="notification-details">
           <h4 class="notification-title">${escapeHtml(notification.title)}</h4>
           <p class="notification-message">${escapeHtml(notification.message)}</p>
+          ${metaHtml}
           <p class="notification-time">${formatTime(notification.created_at)}</p>
         </div>
         ${!notification.read ? '<div class="notification-dot"></div>' : ''}
@@ -518,7 +520,11 @@ async function setupRealtimeUpdates() {
           
           // Show toast if center is closed
           if (!document.getElementById('notification-center')?.classList.contains('open')) {
-            toast.info(payload.new.message, payload.new.title);
+            if (payload.new.type === 'inventory_low_stock') {
+              toast.warning(payload.new.message, payload.new.title);
+            } else {
+              toast.info(payload.new.message, payload.new.title);
+            }
           }
         }
       )
@@ -604,6 +610,23 @@ export async function createNotification(userId, type, title, message, link = nu
     console.error('❌ Failed to create notification:', error);
     return null;
   }
+}
+
+function renderNotificationMetadata(notification) {
+  if (notification.type !== 'inventory_low_stock' || !notification.metadata) {
+    return '';
+  }
+  const meta = notification.metadata;
+  const rows = [
+    meta.item_name ? `<div class="notification-meta-row"><strong>Item:</strong> ${escapeHtml(meta.item_name)}</div>` : '',
+    meta.site_name ? `<div class="notification-meta-row"><strong>Site:</strong> ${escapeHtml(meta.site_name)}</div>` : '',
+    meta.quantity !== undefined ? `<div class="notification-meta-row"><strong>Qty:</strong> ${meta.quantity}</div>` : '',
+    meta.threshold !== undefined ? `<div class="notification-meta-row"><strong>Threshold:</strong> ${meta.threshold}</div>` : ''
+  ].filter(Boolean).join('');
+  
+  if (!rows) return '';
+  
+  return `<div class="notification-meta">${rows}</div>`;
 }
 
 /**
