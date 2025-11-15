@@ -18,6 +18,13 @@ let poItemRowId = 0;
 let supplierPerformance = {};
 let usageTrends = {};
 const USAGE_TREND_WINDOW_DAYS = 60;
+const PO_DOCUMENTS_BUCKET = 'purchase-order-docs';
+let currentPODetailId = null;
+let poPaymentsCache = [];
+let poDocumentsCache = [];
+let supplierPerformance = {};
+let usageTrends = {};
+const USAGE_TREND_WINDOW_DAYS = 60;
 function sanitizeText(value) {
   if (!value) return '';
   return String(value).replace(/[&<>"']/g, (char) => {
@@ -1134,11 +1141,19 @@ function updatePurchaseOrderStats() {
   const openItems = purchaseOrdersList
     .filter(po => ['pending', 'ordered'].includes(po.status))
     .reduce((sum, po) => sum + (po.total_items || 0), 0);
+  const outstandingAmount = purchaseOrdersList
+    .reduce((sum, po) => {
+      const totalPaid = po.total_paid || 0;
+      const balance = Math.max(0, (po.total_cost || 0) - totalPaid);
+      return sum + balance;
+    }, 0);
   
   document.getElementById('suppliers-active-count').textContent = suppliersList.filter(s => s.is_active !== false).length;
   document.getElementById('po-pending-count').textContent = pending;
   document.getElementById('po-received-count').textContent = received;
   document.getElementById('po-open-items-count').textContent = openItems;
+  const outstandingEl = document.getElementById('po-outstanding-amount');
+  if (outstandingEl) outstandingEl.textContent = formatCurrency(outstandingAmount);
 }
 
 function renderPurchaseOrdersTable() {
@@ -1169,8 +1184,12 @@ function renderPurchaseOrdersTable() {
     const siteName = po.sites?.name || '—';
     const expected = po.expected_date ? new Date(po.expected_date).toLocaleDateString() : '—';
     const badge = getPOStatusBadge(po.status);
+    const totalPaid = po.total_paid || 0;
+    const balance = Math.max(0, (po.total_cost || 0) - totalPaid);
+    const paymentStatus = getPaymentStatusBadge(po.payment_status, balance);
     
     const actions = [];
+    actions.push(`<button class="px-2 py-1 text-xs rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700" onclick="window.openPODetailModal(${po.id})">Details</button>`);
     if (po.suppliers?.email) {
       actions.push(`<button class="px-2 py-1 text-xs rounded-lg border border-nfgblue text-nfgblue hover:bg-nfglight dark:text-blue-400" onclick="window.emailPurchaseOrder(${po.id})">${po.emailed_at ? 'Resend Email' : 'Email PO'}</button>`);
     }
@@ -1192,7 +1211,9 @@ function renderPurchaseOrdersTable() {
           <span class="inline-flex items-center justify-center px-2 py-1 text-xs font-medium rounded-lg ${badge.className}">
             ${badge.label}
           </span>
+          <div class="mt-1 text-[11px] text-gray-500">${paymentStatus}</div>
         </td>
+        <td class="px-3 py-3 text-center text-sm font-semibold ${balance > 0 ? 'text-rose-600' : 'text-green-600'}">${formatCurrency(balance)}</td>
         <td class="px-3 py-3 text-center flex flex-col md:flex-row gap-2 justify-center">${actions.join('')}</td>
       </tr>
     `;
@@ -1208,6 +1229,21 @@ function getPOStatusBadge(status) {
     cancelled: { label: 'Cancelled', className: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' }
   };
   return map[status] || map.pending;
+}
+
+function getPaymentStatusBadge(status, balance) {
+  if (!status) {
+    return balance > 0 ? 'Unpaid' : 'Paid';
+  }
+  if (status === 'paid') return 'Paid';
+  if (status === 'partial') return `Partial (${formatCurrency(balance)} due)`;
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+function determinePaymentStatus(totalPaid, totalCost) {
+  if ((totalPaid || 0) <= 0) return 'unpaid';
+  if (totalPaid >= (totalCost || 0)) return 'paid';
+  return 'partial';
 }
 
 function openPurchaseOrderModal(prefSupplierId = null) {
@@ -1622,6 +1658,253 @@ function arrayBufferToBase64(buffer) {
     binary += String.fromCharCode(bytes[i]);
   }
   return btoa(binary);
+}
+
+async function updatePurchaseOrderPaymentStatus(poId) {
+  try {
+    const { data: poRecord, error: poError } = await supabase
+      .from('purchase_orders')
+      .select('total_cost')
+      .eq('id', poId)
+      .maybeSingle();
+    if (poError) throw poError;
+    
+    const { data: payments, error: payError } = await supabase
+      .from('purchase_order_payments')
+      .select('amount')
+      .eq('purchase_order_id', poId);
+    if (payError) throw payError;
+    
+    const totalPaid = (payments || []).reduce((sum, entry) => sum + (entry.amount || 0), 0);
+    const status = determinePaymentStatus(totalPaid, poRecord?.total_cost || 0);
+    
+    await supabase
+      .from('purchase_orders')
+      .update({ payment_status: status })
+      .eq('id', poId);
+  } catch (error) {
+    console.error('Failed to update payment status:', error);
+  }
+}
+
+// ===== Purchase Order Detail (Payments & Documents) =====
+
+function openPODetailModal(poId) {
+  const modal = document.getElementById('poDetailModal');
+  if (!modal) return;
+  currentPODetailId = poId;
+  const po = purchaseOrdersList.find(p => p.id === poId);
+  if (!po) {
+    toast.error('Purchase order not found');
+    return;
+  }
+  renderPODetailSummary(po);
+  togglePaymentForm(false);
+  toggleDocForm(false);
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  if (window.lucide) window.lucide.createIcons();
+  loadPurchaseOrderPayments(poId);
+  loadPurchaseOrderDocuments(poId);
+}
+
+function renderPODetailSummary(po) {
+  document.getElementById('po-detail-title').textContent = `${po.po_number} (${po.status})`;
+  document.getElementById('po-detail-supplier').textContent = po.suppliers?.name || '—';
+  document.getElementById('po-detail-site').textContent = `Site: ${po.sites?.name || '—'}`;
+  document.getElementById('po-detail-expected').textContent = `Expected: ${po.expected_date ? new Date(po.expected_date).toLocaleDateString() : '—'}`;
+  const totalPaid = po.total_paid || 0;
+  const balance = Math.max(0, (po.total_cost || 0) - totalPaid);
+  document.getElementById('po-detail-paid').textContent = formatCurrency(totalPaid);
+  document.getElementById('po-detail-balance').textContent = formatCurrency(balance);
+}
+
+async function loadPurchaseOrderPayments(poId) {
+  const listEl = document.getElementById('po-payments-list');
+  if (!listEl) return;
+  listEl.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 text-center py-6">Loading payments…</p>';
+  const { data, error } = await supabase
+    .from('purchase_order_payments')
+    .select('*')
+    .eq('purchase_order_id', poId)
+    .order('payment_date', { ascending: false });
+  if (error) {
+    console.error('Failed to load payments:', error);
+    listEl.innerHTML = '<p class="text-sm text-red-500 text-center py-6">Failed to load payments</p>';
+    return;
+  }
+  poPaymentsCache = data || [];
+  renderPurchaseOrderPayments();
+}
+
+function renderPurchaseOrderPayments() {
+  const listEl = document.getElementById('po-payments-list');
+  if (!listEl) return;
+  if (!poPaymentsCache.length) {
+    listEl.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 text-center py-6">No payments recorded</p>';
+    return;
+  }
+  listEl.innerHTML = poPaymentsCache.map(payment => `
+    <div class="border border-nfgray rounded-lg p-3">
+      <div class="flex items-center justify-between">
+        <p class="font-semibold text-nfgblue dark:text-blue-300">${formatCurrency(payment.amount)}</p>
+        <p class="text-xs text-gray-500">${new Date(payment.payment_date).toLocaleDateString()}</p>
+      </div>
+      <p class="text-xs text-gray-500 dark:text-gray-400">${payment.method || 'Method not set'}</p>
+      ${payment.notes ? `<p class="text-xs text-gray-600 dark:text-gray-300 mt-1">${sanitizeText(payment.notes)}</p>` : ''}
+    </div>
+  `).join('');
+}
+
+async function addPurchaseOrderPayment(e) {
+  e.preventDefault();
+  if (!currentPODetailId) return;
+  const amount = parseFloat(document.getElementById('po-payment-amount').value);
+  if (!amount || amount <= 0) {
+    toast.error('Enter a valid payment amount');
+    return;
+  }
+  const payload = {
+    purchase_order_id: currentPODetailId,
+    amount,
+    payment_date: document.getElementById('po-payment-date').value || new Date().toISOString().slice(0, 10),
+    method: document.getElementById('po-payment-method').value || null,
+    reference: document.getElementById('po-payment-reference').value || null,
+    notes: document.getElementById('po-payment-notes').value || null,
+    recorded_by: currentUser?.id || null
+  };
+  try {
+    const { error } = await supabase
+      .from('purchase_order_payments')
+      .insert(payload);
+    if (error) throw error;
+    toast.success('Payment recorded');
+    await updatePurchaseOrderPaymentStatus(currentPODetailId);
+    togglePaymentForm(false);
+    document.getElementById('po-payment-form').reset();
+    await loadPurchaseOrders();
+    const updated = purchaseOrdersList.find(po => po.id === currentPODetailId);
+    if (updated) renderPODetailSummary(updated);
+    await loadPurchaseOrderPayments(currentPODetailId);
+  } catch (err) {
+    console.error('Failed to add payment:', err);
+    toast.error(err.message || 'Failed to add payment');
+  }
+}
+
+function togglePaymentForm(show) {
+  const form = document.getElementById('po-payment-form');
+  if (!form) return;
+  if (show) {
+    form.classList.remove('hidden');
+  } else {
+    form.classList.add('hidden');
+    form.reset();
+  }
+}
+
+async function loadPurchaseOrderDocuments(poId) {
+  const listEl = document.getElementById('po-documents-list');
+  if (!listEl) return;
+  listEl.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 text-center py-6">Loading documents…</p>';
+  const { data, error } = await supabase
+    .from('purchase_order_documents')
+    .select('*')
+    .eq('purchase_order_id', poId)
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error('Failed to load documents:', error);
+    listEl.innerHTML = '<p class="text-sm text-red-500 text-center py-6">Failed to load documents</p>';
+    return;
+  }
+  poDocumentsCache = data || [];
+  renderPurchaseOrderDocuments();
+}
+
+function renderPurchaseOrderDocuments() {
+  const listEl = document.getElementById('po-documents-list');
+  if (!listEl) return;
+  if (!poDocumentsCache.length) {
+    listEl.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 text-center py-6">No documents uploaded</p>';
+    return;
+  }
+  listEl.innerHTML = poDocumentsCache.map(doc => `
+    <div class="border border-nfgray rounded-lg p-3 flex items-center justify-between">
+      <div>
+        <p class="font-semibold text-nfgblue dark:text-blue-300">${sanitizeText(doc.file_name)}</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400">${doc.doc_type || 'document'} · ${new Date(doc.created_at).toLocaleString()}</p>
+      </div>
+      <button class="px-3 py-1.5 text-xs rounded-lg border border-nfgblue text-nfgblue hover:bg-nfglight dark:text-blue-300" onclick="window.downloadPurchaseOrderDocument(${doc.id})">
+        Download
+      </button>
+    </div>
+  `).join('');
+}
+
+function toggleDocForm(show) {
+  const form = document.getElementById('po-doc-form');
+  if (!form) return;
+  if (show) {
+    form.classList.remove('hidden');
+  } else {
+    form.classList.add('hidden');
+    form.reset();
+  }
+}
+
+async function uploadPurchaseOrderDocument(e) {
+  e.preventDefault();
+  if (!currentPODetailId) return;
+  const fileInput = document.getElementById('po-doc-file');
+  const file = fileInput?.files?.[0];
+  if (!file) {
+    toast.error('Select a file to upload');
+    return;
+  }
+  const docType = document.getElementById('po-doc-type').value || null;
+  try {
+    const path = `${currentUser?.id || 'system'}/${currentPODetailId}/${Date.now()}-${file.name}`;
+    const { error: uploadError } = await supabase.storage
+      .from(PO_DOCUMENTS_BUCKET)
+      .upload(path, file, { upsert: false });
+    if (uploadError) throw uploadError;
+    
+    const { error: insertError } = await supabase
+      .from('purchase_order_documents')
+      .insert({
+        purchase_order_id: currentPODetailId,
+        file_name: file.name,
+        storage_path: path,
+        doc_type: docType,
+        uploaded_by: currentUser?.id || null
+      });
+    if (insertError) throw insertError;
+    
+    toast.success('Document uploaded');
+    toggleDocForm(false);
+    await loadPurchaseOrderDocuments(currentPODetailId);
+  } catch (error) {
+    console.error('Failed to upload document:', error);
+    toast.error(error.message || 'Failed to upload document');
+  }
+}
+
+async function downloadPurchaseOrderDocument(docId) {
+  const doc = poDocumentsCache.find(d => d.id === docId);
+  if (!doc) {
+    toast.error('Document not found');
+    return;
+  }
+  try {
+    const { data, error } = await supabase.storage
+      .from(PO_DOCUMENTS_BUCKET)
+      .createSignedUrl(doc.storage_path, 120);
+    if (error) throw error;
+    window.open(data.signedUrl, '_blank');
+  } catch (error) {
+    console.error('Failed to download document:', error);
+    toast.error('Failed to download document');
+  }
 }
 
 async function cancelPurchaseOrder(poId) {
@@ -2074,11 +2357,20 @@ document.getElementById('po-supplier')?.addEventListener('change', updatePOItemS
 document.getElementById('add-po-item-row')?.addEventListener('click', () => addPOItemRow());
 document.getElementById('supplier-form')?.addEventListener('submit', saveSupplier);
 document.getElementById('po-form')?.addEventListener('submit', submitPurchaseOrder);
+document.getElementById('add-po-payment-btn')?.addEventListener('click', () => togglePaymentForm(true));
+document.getElementById('cancel-po-payment')?.addEventListener('click', () => togglePaymentForm(false));
+document.getElementById('po-payment-form')?.addEventListener('submit', addPurchaseOrderPayment);
+document.getElementById('add-po-doc-btn')?.addEventListener('click', () => toggleDocForm(true));
+document.getElementById('cancel-po-doc')?.addEventListener('click', () => toggleDocForm(false));
+document.getElementById('po-doc-form')?.addEventListener('submit', uploadPurchaseOrderDocument);
 
 window.editSupplier = (supplierId) => openSupplierModal(supplierId);
 window.createPOForSupplier = (supplierId) => openPurchaseOrderModal(supplierId);
 window.markPurchaseOrderReceived = (poId) => markPurchaseOrderReceived(poId);
 window.cancelPurchaseOrder = (poId) => cancelPurchaseOrder(poId);
+window.emailPurchaseOrder = (poId) => emailPurchaseOrder(poId);
+window.openPODetailModal = (poId) => openPODetailModal(poId);
+window.downloadPurchaseOrderDocument = (docId) => downloadPurchaseOrderDocument(docId);
 
 // Site filter - use event delegation to handle custom dropdown changes
 document.addEventListener('change', (e) => {

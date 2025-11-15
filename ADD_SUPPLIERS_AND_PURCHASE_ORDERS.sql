@@ -76,6 +76,11 @@ CREATE TABLE IF NOT EXISTS purchase_orders (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+ALTER TABLE purchase_orders
+  ADD COLUMN IF NOT EXISTS emailed_at TIMESTAMPTZ;
+ALTER TABLE purchase_orders
+  ADD COLUMN IF NOT EXISTS payment_status VARCHAR(20) DEFAULT 'unpaid';
+
 CREATE INDEX IF NOT EXISTS idx_purchase_orders_supplier ON purchase_orders(supplier_id);
 CREATE INDEX IF NOT EXISTS idx_purchase_orders_site ON purchase_orders(site_id);
 CREATE INDEX IF NOT EXISTS idx_purchase_orders_status ON purchase_orders(status);
@@ -99,9 +104,43 @@ CREATE INDEX IF NOT EXISTS idx_po_items_po ON purchase_order_items(purchase_orde
 CREATE INDEX IF NOT EXISTS idx_po_items_item ON purchase_order_items(item_id);
 
 -- ============================================
+-- Purchase Order Payments (ledger)
+-- ============================================
+CREATE TABLE IF NOT EXISTS purchase_order_payments (
+  id BIGSERIAL PRIMARY KEY,
+  purchase_order_id BIGINT REFERENCES purchase_orders(id) ON DELETE CASCADE,
+  amount NUMERIC(14,2) NOT NULL,
+  method VARCHAR(50),
+  reference TEXT,
+  notes TEXT,
+  payment_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  recorded_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_po_payments_po ON purchase_order_payments(purchase_order_id);
+CREATE INDEX IF NOT EXISTS idx_po_payments_date ON purchase_order_payments(payment_date);
+
+-- ============================================
+-- Purchase Order Documents metadata
+-- ============================================
+CREATE TABLE IF NOT EXISTS purchase_order_documents (
+  id BIGSERIAL PRIMARY KEY,
+  purchase_order_id BIGINT REFERENCES purchase_orders(id) ON DELETE CASCADE,
+  file_name TEXT NOT NULL,
+  storage_path TEXT NOT NULL,
+  doc_type VARCHAR(50),
+  uploaded_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_po_docs_po ON purchase_order_documents(purchase_order_id);
+
+-- ============================================
 -- Helper view (optional)
 -- ============================================
-CREATE OR REPLACE VIEW purchase_orders_with_details AS
+DROP VIEW IF EXISTS purchase_orders_with_details CASCADE;
+CREATE VIEW purchase_orders_with_details AS
 SELECT 
   po.id,
   po.po_number,
@@ -112,6 +151,7 @@ SELECT
   po.total_cost,
   po.notes,
   po.emailed_at,
+  po.payment_status,
   po.created_at,
   po.updated_at,
   s.id AS supplier_id,
@@ -120,7 +160,8 @@ SELECT
   st.id AS site_id,
   st.name AS site_name,
   metrics.total_quantity_ordered,
-  metrics.total_quantity_received
+  metrics.total_quantity_received,
+  payments.total_paid
 FROM purchase_orders po
 LEFT JOIN suppliers s ON po.supplier_id = s.id
 LEFT JOIN sites st ON po.site_id = st.id
@@ -131,6 +172,11 @@ LEFT JOIN LATERAL (
   FROM purchase_order_items poi
   WHERE poi.purchase_order_id = po.id
 ) metrics ON TRUE
+LEFT JOIN LATERAL (
+  SELECT COALESCE(SUM(pop.amount), 0) AS total_paid
+  FROM purchase_order_payments pop
+  WHERE pop.purchase_order_id = po.id
+) payments ON TRUE
 ORDER BY po.created_at DESC;
 
 -- ============================================
@@ -154,14 +200,20 @@ ALTER TABLE suppliers DISABLE ROW LEVEL SECURITY;
 ALTER TABLE inventory_item_suppliers DISABLE ROW LEVEL SECURITY;
 ALTER TABLE purchase_orders DISABLE ROW LEVEL SECURITY;
 ALTER TABLE purchase_order_items DISABLE ROW LEVEL SECURITY;
+ALTER TABLE purchase_order_payments DISABLE ROW LEVEL SECURITY;
+ALTER TABLE purchase_order_documents DISABLE ROW LEVEL SECURITY;
 
 GRANT ALL ON suppliers TO authenticated;
 GRANT ALL ON inventory_item_suppliers TO authenticated;
 GRANT ALL ON purchase_orders TO authenticated;
 GRANT ALL ON purchase_order_items TO authenticated;
+GRANT ALL ON purchase_order_payments TO authenticated;
+GRANT ALL ON purchase_order_documents TO authenticated;
 
 GRANT USAGE, SELECT ON SEQUENCE suppliers_id_seq TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE inventory_item_suppliers_id_seq TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE purchase_orders_id_seq TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE purchase_order_items_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE purchase_order_payments_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE purchase_order_documents_id_seq TO authenticated;
 
