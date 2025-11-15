@@ -2501,7 +2501,14 @@ async function init() {
   }
   
   await loadSiteFilter();
-  await renderInventory();
+  
+  try {
+    await renderInventory();
+  } catch (error) {
+    console.error('[Inventory] Failed to render inventory:', error);
+    toast.error('Failed to load inventory data. Some features may be unavailable.');
+  }
+  
   initInventoryViewTabs();
   fetchUsageTrends().catch((error) => console.warn('Usage trend preload failed:', error));
   
