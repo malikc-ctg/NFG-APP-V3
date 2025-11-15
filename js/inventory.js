@@ -22,9 +22,6 @@ const PO_DOCUMENTS_BUCKET = 'purchase-order-docs';
 let currentPODetailId = null;
 let poPaymentsCache = [];
 let poDocumentsCache = [];
-let supplierPerformance = {};
-let usageTrends = {};
-const USAGE_TREND_WINDOW_DAYS = 60;
 function sanitizeText(value) {
   if (!value) return '';
   return String(value).replace(/[&<>"']/g, (char) => {
