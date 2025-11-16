@@ -3076,6 +3076,7 @@
       
       // Load dropdowns
       await loadInvoiceClients();
+      await loadInvoiceSites(); // Load all sites initially
       
       // Check for pending job data from sessionStorage
       const pendingJob = sessionStorage.getItem('pendingInvoiceJob');
@@ -3154,32 +3155,30 @@
       }
     }
     
-    // Load sites for selected client
-    async function loadInvoiceSites(clientId) {
+    // Load sites for selected client (or all sites if no client)
+    async function loadInvoiceSites(clientId = null) {
       try {
-        if (!clientId) {
-          const select = document.getElementById('invoice-site-select');
-          if (select) {
-            select.innerHTML = '<option value="">Select a site (optional)</option>';
-          }
-          return;
-        }
-        
-        const { data: sites, error } = await supabase
-          .from('sites')
-          .select('id, name')
-          .eq('client_id', clientId);
-        
-        if (error) {
-          console.error('[Billing] Error loading sites:', error);
-          return;
-        }
-        
         const select = document.getElementById('invoice-site-select');
         if (!select) return;
         
         // Clear existing options
         select.innerHTML = '<option value="">Select a site (optional)</option>';
+        
+        let query = supabase
+          .from('sites')
+          .select('id, name, client_id');
+        
+        // Filter by client if provided
+        if (clientId) {
+          query = query.eq('client_id', clientId);
+        }
+        
+        const { data: sites, error } = await query.order('name', { ascending: true });
+        
+        if (error) {
+          console.error('[Billing] Error loading sites:', error);
+          return;
+        }
         
         // Add sites
         (sites || []).forEach(site => {
@@ -3504,7 +3503,14 @@
     
     // Event listeners for invoice creation
     document.getElementById('invoice-client-select')?.addEventListener('change', async (e) => {
-      await loadInvoiceSites(e.target.value);
+      const clientId = e.target.value;
+      if (clientId) {
+        // Filter sites by client
+        await loadInvoiceSites(clientId);
+      } else {
+        // Load all sites if no client selected
+        await loadInvoiceSites();
+      }
       // Clear site, job, booking selections
       document.getElementById('invoice-site-select').value = '';
       document.getElementById('invoice-job-select').innerHTML = '<option value="">Select a job (optional)</option>';
@@ -3513,8 +3519,14 @@
     
     document.getElementById('invoice-site-select')?.addEventListener('change', async (e) => {
       const siteId = e.target.value;
-      await loadInvoiceJobs(siteId);
-      await loadInvoiceBookings(siteId);
+      if (siteId) {
+        await loadInvoiceJobs(siteId);
+        await loadInvoiceBookings(siteId);
+      } else {
+        // Clear jobs and bookings if no site selected
+        document.getElementById('invoice-job-select').innerHTML = '<option value="">Select a job (optional)</option>';
+        document.getElementById('invoice-booking-select').innerHTML = '<option value="">Select a booking (optional)</option>';
+      }
     });
     
     document.getElementById('invoice-tax-rate')?.addEventListener('input', updateInvoiceSummary);
