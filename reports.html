@@ -3466,7 +3466,26 @@
           select.appendChild(option);
         });
         
-        console.log('[Billing] Jobs loaded into dropdown');
+        console.log('[Billing] Jobs loaded into dropdown:', jobs?.length || 0, 'jobs');
+        
+        // Check if this select uses custom dropdown - if so, reinitialize it
+        if (select.hasAttribute('data-custom-dropdown')) {
+          console.log('[Billing] Reinitializing custom dropdown for jobs select...');
+          // Remove existing wrapper if it exists
+          const wrapper = select.previousElementSibling;
+          if (wrapper && wrapper.classList.contains('nfg-select-wrapper')) {
+            wrapper.remove();
+          }
+          // Reset select display
+          select.style.display = '';
+          // Reinitialize custom dropdown
+          if (window.NFGDropdown) {
+            new window.NFGDropdown(select);
+            console.log('[Billing] Custom dropdown reinitialized');
+          } else {
+            console.warn('[Billing] NFGDropdown not available, skipping reinit');
+          }
+        }
       } catch (error) {
         console.error('[Billing] Error loading jobs:', error);
       }
