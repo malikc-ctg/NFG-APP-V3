@@ -283,19 +283,17 @@
             class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
         </div>
 
-        <!-- Status and Square Footage Row -->
+        <!-- Deal Value and Square Footage Row -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium mb-1.5">Status <span class="text-red-500">*</span></label>
-            <select 
-              name="status" 
-              required 
-              data-custom-dropdown="true"
-              data-placeholder="Select status">
-              <option value="Active" selected>Active</option>
-              <option value="In Setup">In Setup</option>
-              <option value="Paused">Paused</option>
-            </select>
+            <label class="block text-sm font-medium mb-1.5">Deal Value ($)</label>
+            <input 
+              type="number"
+              name="deal_value" 
+              placeholder="e.g., 50000.00"
+              step="0.01"
+              min="0"
+              class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
           </div>
           <div>
             <label class="block text-sm font-medium mb-1.5">Square Footage</label>
@@ -634,12 +632,13 @@
         }
         
         // Create site in Supabase
-        const { data: newSite, error } = await supabase
+          const { data: newSite, error } = await supabase
           .from('sites')
           .insert({
             name: siteData.name,
             address: siteData.address,
-            status: siteData.status,
+              status: siteData.status || 'Active',
+              deal_value: siteData.deal_value,
             square_footage: siteData.square_footage,
             contact_phone: siteData.contact_phone,
             contact_email: siteData.contact_email,
@@ -672,7 +671,7 @@
       const siteData = {
         name: formData.get('name'),
         address: formData.get('address'),
-        status: formData.get('status'),
+        deal_value: formData.get('deal_value') ? parseFloat(formData.get('deal_value')) : null,
         square_footage: formData.get('square_footage') ? parseInt(formData.get('square_footage')) : null,
         contact_phone: formData.get('contact_phone') || null,
         contact_email: formData.get('contact_email') || null,
