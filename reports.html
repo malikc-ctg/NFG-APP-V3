@@ -810,6 +810,50 @@
           }
         });
       });
+      
+      // Modal close handler
+      document.addEventListener('click', (e) => {
+        const closeBtn = e.target.closest('[data-action="close-modal"]');
+        if (closeBtn) {
+          const targetId = closeBtn.dataset.target;
+          const modal = document.getElementById(targetId);
+          if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            // Reset form if it exists
+            const form = modal.querySelector('form');
+            if (form) form.reset();
+            // Clear any error messages
+            const errorEl = modal.querySelector('#invoice-form-error, #form-error');
+            if (errorEl) errorEl.classList.add('hidden');
+          }
+        }
+        
+        // Close modal when clicking backdrop (the overlay)
+        if (e.target.classList.contains('fixed') && 
+            e.target.classList.contains('inset-0') && 
+            e.target.id === 'create-invoice-modal') {
+          e.target.classList.add('hidden');
+          e.target.classList.remove('flex');
+          // Reset form
+          const form = e.target.querySelector('form');
+          if (form) form.reset();
+        }
+      });
+      
+      // Close modal on Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          const modals = document.querySelectorAll('.fixed.inset-0:not(.hidden)');
+          modals.forEach(modal => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            // Reset form if it exists
+            const form = modal.querySelector('form');
+            if (form) form.reset();
+          });
+        }
+      });
     });
   </script>
 
