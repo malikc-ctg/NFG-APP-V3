@@ -167,6 +167,18 @@
         <div class="flex-1 h-px bg-nfgray dark:bg-gray-700"></div>
       </div>
 
+      <!-- Social Sign Up -->
+      <div class="grid grid-cols-1 gap-3">
+        <button id="google-signup" type="button" class="w-full border border-nfgray dark:border-gray-700 rounded-xl py-2.5 text-sm font-medium flex items-center justify-center gap-2 hover:bg-nfglight/40 dark:hover:bg-gray-700/40 transition">
+          <img src="/assets/google.svg" alt="" class="w-5 h-5" />
+          <span>Sign up with Google</span>
+        </button>
+        <button id="microsoft-signup" type="button" class="w-full border border-nfgray dark:border-gray-700 rounded-xl py-2.5 text-sm font-medium flex items-center justify-center gap-2 hover:bg-nfglight/40 dark:hover:bg-gray-700/40 transition">
+          <img src="/assets/microsoft.svg" alt="" class="w-5 h-5" />
+          <span>Sign up with Microsoft</span>
+        </button>
+      </div>
+
       <!-- Login Link -->
       <div class="text-center">
         <p class="text-sm text-gray-600 dark:text-gray-400">
@@ -192,6 +204,31 @@
   <script type="module" src="./js/signup.js"></script>
   <script type="module" src="./js/notifications.js"></script>
   <script type="module" src="./js/loader.js"></script>
+  <script type="module">
+    import { supabase } from './js/supabase.js'
+    const googleBtn = document.getElementById('google-signup')
+    const msBtn = document.getElementById('microsoft-signup')
+    const errorBox = document.getElementById('error-message')
+    function showError(msg){ if (errorBox){ errorBox.textContent = msg; errorBox.classList.remove('hidden') } }
+    googleBtn?.addEventListener('click', async () => {
+      try{
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo: `${location.origin}/dashboard.html` }
+        })
+        if (error) throw error
+      }catch(e){ console.error(e); showError('Google sign-up failed. Please try again.') }
+    })
+    msBtn?.addEventListener('click', async () => {
+      try{
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'azure',
+          options: { redirectTo: `${location.origin}/dashboard.html` }
+        })
+        if (error) throw error
+      }catch(e){ console.error(e); showError('Microsoft sign-up failed. Please try again.') }
+    })
+  </script>
   <script>
     // Initialize Lucide icons
     if (window.lucide) {
