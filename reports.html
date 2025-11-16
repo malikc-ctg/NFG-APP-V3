@@ -3236,6 +3236,39 @@
       if (window.lucide) lucide.createIcons();
     }
     
+    // Function to attach site change listener (defined at module scope)
+    function attachSiteChangeListener() {
+      const siteSelect = document.getElementById('invoice-site-select');
+      if (!siteSelect) {
+        console.warn('[Billing] Site select element not found for listener attachment');
+        return;
+      }
+      
+      // Remove any existing listeners by checking if already attached
+      if (siteSelect.hasAttribute('data-billing-listener')) {
+        console.log('[Billing] Site listener already attached, skipping');
+        return;
+      }
+      
+      siteSelect.setAttribute('data-billing-listener', 'true');
+      
+      // Attach listener
+      siteSelect.addEventListener('change', async function(e) {
+        const siteId = e.target.value;
+        console.log('[Billing] 🔥 Site dropdown CHANGED:', siteId, 'Type:', typeof siteId);
+        if (siteId) {
+          console.log('[Billing] Loading jobs and bookings for site:', siteId);
+          await loadInvoiceJobs(siteId);
+          await loadInvoiceBookings(siteId);
+        } else {
+          document.getElementById('invoice-job-select').innerHTML = '<option value="">Select a job (optional)</option>';
+          document.getElementById('invoice-booking-select').innerHTML = '<option value="">Select a booking (optional)</option>';
+        }
+      });
+      
+      console.log('[Billing] ✅ Site dropdown listener attached');
+    }
+    
     // Load clients for invoice creation
     async function loadInvoiceClients() {
       try {
