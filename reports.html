@@ -3241,14 +3241,15 @@
         
         let query = supabase
           .from('sites')
-          .select('id, name, client_id');
+          .select('id, name, client_id')
+          .order('name', { ascending: true });
         
         // Filter by client if provided
         if (clientId) {
           query = query.eq('client_id', clientId);
         }
         
-        const { data: sites, error } = await query.order('name', { ascending: true });
+        const { data: sites, error } = await query;
         
         if (error) {
           console.error('[Billing] Error loading sites:', error);
