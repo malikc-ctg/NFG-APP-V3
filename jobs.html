@@ -2193,6 +2193,9 @@
             }
           }
           
+          // Refresh invoice section after status change
+          await checkJobInvoice(currentJobId);
+          
           // Update display
           document.getElementById('job-detail-status').textContent = newStatus.replace('-', ' ');
           await renderJobs();
