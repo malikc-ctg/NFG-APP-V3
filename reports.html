@@ -3244,33 +3244,36 @@
         return;
       }
       
-      // Remove any existing listeners by checking if already attached
-      if (siteSelect.hasAttribute('data-billing-listener')) {
-        console.log('[Billing] Site listener already attached, skipping');
-        return;
-      }
+      console.log('[Billing] Attaching site change listener, current value:', siteSelect.value);
       
-      siteSelect.setAttribute('data-billing-listener', 'true');
-      
-      // Remove old listeners by cloning the element (clean slate)
+      // ALWAYS remove old listeners by cloning the element (clean slate)
+      // Don't skip - we need to reattach after sites are loaded
       const newSelect = siteSelect.cloneNode(true);
       siteSelect.parentNode.replaceChild(newSelect, siteSelect);
       const freshSelect = document.getElementById('invoice-site-select');
       
+      if (!freshSelect) {
+        console.error('[Billing] Failed to get fresh select element after clone');
+        return;
+      }
+      
       // Attach listener with multiple approaches
-      // 1. Native change event (using event delegation on the fresh element)
+      // 1. Native change event (PRIMARY - this should fire when option is selected)
       freshSelect.addEventListener('change', async function(e) {
-        const siteId = e.target.value || this.value;
-        console.log('[Billing] 🔥🔥🔥 Site dropdown CHANGED (native):', siteId, 'Type:', typeof siteId, 'Element:', freshSelect);
-        if (siteId) {
-          console.log('[Billing] Loading jobs and bookings for site:', siteId);
+        const siteId = (e.target && e.target.value) || this.value || freshSelect.value;
+        console.log('[Billing] 🔥🔥🔥 Site dropdown CHANGED (native):', siteId, 'Type:', typeof siteId);
+        console.log('[Billing] Event target:', e.target, 'This:', this, 'FreshSelect:', freshSelect);
+        console.log('[Billing] FreshSelect value:', freshSelect.value);
+        if (siteId && siteId !== '') {
+          console.log('[Billing] ✅ Valid siteId found, loading jobs and bookings for site:', siteId);
           await loadInvoiceJobs(siteId);
           await loadInvoiceBookings(siteId);
         } else {
+          console.warn('[Billing] ⚠️ Empty siteId, clearing jobs and bookings');
           document.getElementById('invoice-job-select').innerHTML = '<option value="">Select a job (optional)</option>';
           document.getElementById('invoice-booking-select').innerHTML = '<option value="">Select a booking (optional)</option>';
         }
-      }, { capture: true }); // Use capture phase to catch event early
+      }, { capture: false }); // Don't use capture - change events bubble naturally
       
       // 2. Also listen on input event
       freshSelect.addEventListener('input', async function(e) {
@@ -3294,9 +3297,39 @@
         }
       }, true); // Use capture phase
       
-      // 4. Also try click event for debugging
+      // 4. Watch for value changes using MutationObserver (last resort)
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
+            const currentValue = freshSelect.value;
+            console.log('[Billing] 🔥 Site select value attribute changed to:', currentValue);
+            if (currentValue && currentValue !== '') {
+              loadInvoiceJobs(currentValue);
+              loadInvoiceBookings(currentValue);
+            }
+          }
+        });
+      });
+      
+      // Also watch for when options are clicked/selected
       freshSelect.addEventListener('click', function(e) {
         console.log('[Billing] Site dropdown clicked, current value:', freshSelect.value);
+        // After a brief delay, check if value changed (user selected an option)
+        setTimeout(() => {
+          if (freshSelect.value && freshSelect.value !== '') {
+            console.log('[Billing] 🔥 Site value changed after click:', freshSelect.value);
+            loadInvoiceJobs(freshSelect.value);
+            loadInvoiceBookings(freshSelect.value);
+          }
+        }, 100);
+      });
+      
+      // Watch the select element for value changes
+      observer.observe(freshSelect, { 
+        attributes: true, 
+        attributeFilter: ['value'],
+        childList: true, // Watch for option changes
+        subtree: true 
       });
       
       // 4. Manual test function attached to window for debugging
