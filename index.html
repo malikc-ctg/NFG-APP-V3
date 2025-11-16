@@ -54,6 +54,24 @@
       <p id="auth-error" class="text-red-600 text-center text-sm hidden"></p>
     </form>
 
+    <!-- Social Sign In -->
+    <div class="mt-6">
+      <div class="relative flex items-center justify-center my-4">
+        <div class="h-px bg-nfgray w-full"></div>
+        <span class="absolute bg-white px-3 text-xs text-gray-500">or continue with</span>
+      </div>
+      <div class="grid grid-cols-1 gap-3">
+        <button id="google-signin" type="button" class="w-full border border-nfgray rounded-xl py-2.5 text-sm font-medium flex items-center justify-center gap-2 hover:bg-nfglight/40 transition">
+          <img src="/assets/google.svg" alt="" class="w-5 h-5" />
+          <span>Google</span>
+        </button>
+        <button id="microsoft-signin" type="button" class="w-full border border-nfgray rounded-xl py-2.5 text-sm font-medium flex items-center justify-center gap-2 hover:bg-nfglight/40 transition">
+          <img src="/assets/microsoft.svg" alt="" class="w-5 h-5" />
+          <span>Microsoft</span>
+        </button>
+      </div>
+    </div>
+
     <div class="mt-6 border-t border-nfgray pt-4 text-center space-y-2">
       <p class="text-sm text-gray-600">
         Don't have an account? 
@@ -73,6 +91,8 @@
     const form = document.getElementById('login-form')
     const errorEl = document.getElementById('auth-error')
     const demoBtn = document.getElementById('signup-demo')
+    const googleBtn = document.getElementById('google-signin')
+    const msBtn = document.getElementById('microsoft-signin')
     
     console.log('🔐 Initializing login form...')
     console.log('📋 Form element:', form ? 'Found' : 'Not found')
@@ -120,6 +140,40 @@
       } finally {
         submitBtn.disabled = false
         submitBtn.textContent = 'Sign In'
+      }
+    })
+    
+    // Social Sign-in: Google
+    googleBtn?.addEventListener('click', async () => {
+      try {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo: `${window.location.origin}/dashboard.html` }
+        })
+        if (error) throw error
+      } catch (err) {
+        console.error('Google sign-in error:', err)
+        if (errorEl) {
+          errorEl.textContent = 'Google sign-in failed. Please try again.'
+          errorEl.classList.remove('hidden')
+        }
+      }
+    })
+    
+    // Social Sign-in: Microsoft (Azure)
+    msBtn?.addEventListener('click', async () => {
+      try {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'azure',
+          options: { redirectTo: `${window.location.origin}/dashboard.html` }
+        })
+        if (error) throw error
+      } catch (err) {
+        console.error('Microsoft sign-in error:', err)
+        if (errorEl) {
+          errorEl.textContent = 'Microsoft sign-in failed. Please try again.'
+          errorEl.classList.remove('hidden')
+        }
       }
     })
     
