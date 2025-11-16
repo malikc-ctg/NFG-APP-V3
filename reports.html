@@ -3063,13 +3063,8 @@
         clientSelect.setAttribute('data-listener-attached', 'true');
         clientSelect.addEventListener('change', async (e) => {
           const clientId = e.target.value;
-          if (clientId) {
-            // Filter sites by client
-            await loadInvoiceSites(clientId);
-          } else {
-            // Load all sites if no client selected
-            await loadInvoiceSites();
-          }
+          // Sites don't have client_id, so we just clear selections when client changes
+          // Sites will already be loaded from modal open
           // Clear site, job, booking selections
           document.getElementById('invoice-site-select').value = '';
           document.getElementById('invoice-job-select').innerHTML = '<option value="">Select a job (optional)</option>';
@@ -3225,7 +3220,7 @@
       }
     }
     
-    // Load sites for selected client (or all sites if no client)
+    // Load sites (sites table uses created_by, not client_id)
     async function loadInvoiceSites(clientId = null) {
       try {
         const select = document.getElementById('invoice-site-select');
@@ -3237,19 +3232,14 @@
         // Clear existing options
         select.innerHTML = '<option value="">Select a site (optional)</option>';
         
-        console.log('[Billing] Fetching sites', clientId ? `for client ${clientId}` : '(all sites)...');
+        console.log('[Billing] Fetching sites (all accessible sites)...');
         
-        let query = supabase
+        // Sites table uses created_by, not client_id, so we load all accessible sites
+        // RLS policies will handle filtering by user permissions
+        const { data: sites, error } = await supabase
           .from('sites')
-          .select('id, name, client_id')
+          .select('id, name')
           .order('name', { ascending: true });
-        
-        // Filter by client if provided
-        if (clientId) {
-          query = query.eq('client_id', clientId);
-        }
-        
-        const { data: sites, error } = await query;
         
         if (error) {
           console.error('[Billing] Error loading sites:', error);
