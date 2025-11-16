@@ -3252,11 +3252,16 @@
       
       siteSelect.setAttribute('data-billing-listener', 'true');
       
+      // Remove old listeners by cloning the element (clean slate)
+      const newSelect = siteSelect.cloneNode(true);
+      siteSelect.parentNode.replaceChild(newSelect, siteSelect);
+      const freshSelect = document.getElementById('invoice-site-select');
+      
       // Attach listener with multiple approaches
-      // 1. Native change event
-      siteSelect.addEventListener('change', async function(e) {
+      // 1. Native change event (using event delegation on the fresh element)
+      freshSelect.addEventListener('change', async function(e) {
         const siteId = e.target.value || this.value;
-        console.log('[Billing] 🔥 Site dropdown CHANGED (native):', siteId, 'Type:', typeof siteId);
+        console.log('[Billing] 🔥🔥🔥 Site dropdown CHANGED (native):', siteId, 'Type:', typeof siteId, 'Element:', freshSelect);
         if (siteId) {
           console.log('[Billing] Loading jobs and bookings for site:', siteId);
           await loadInvoiceJobs(siteId);
@@ -3265,21 +3270,33 @@
           document.getElementById('invoice-job-select').innerHTML = '<option value="">Select a job (optional)</option>';
           document.getElementById('invoice-booking-select').innerHTML = '<option value="">Select a booking (optional)</option>';
         }
-      });
+      }, { capture: true }); // Use capture phase to catch event early
       
-      // 2. Also listen on input event (some custom dropdowns trigger this)
-      siteSelect.addEventListener('input', async function(e) {
+      // 2. Also listen on input event
+      freshSelect.addEventListener('input', async function(e) {
         const siteId = e.target.value || this.value;
-        console.log('[Billing] 🔥 Site dropdown INPUT:', siteId);
+        console.log('[Billing] 🔥🔥🔥 Site dropdown INPUT:', siteId);
         if (siteId) {
           await loadInvoiceJobs(siteId);
           await loadInvoiceBookings(siteId);
         }
-      });
+      }, { capture: true });
       
-      // 3. Also try click event on the select (for compatibility)
-      siteSelect.addEventListener('click', function() {
-        console.log('[Billing] Site dropdown clicked');
+      // 3. Also use event delegation on document (catches all events)
+      document.addEventListener('change', async function(e) {
+        if (e.target && e.target.id === 'invoice-site-select') {
+          const siteId = e.target.value;
+          console.log('[Billing] 🔥🔥🔥 Site dropdown CHANGED (document delegation):', siteId);
+          if (siteId) {
+            await loadInvoiceJobs(siteId);
+            await loadInvoiceBookings(siteId);
+          }
+        }
+      }, true); // Use capture phase
+      
+      // 4. Also try click event for debugging
+      freshSelect.addEventListener('click', function(e) {
+        console.log('[Billing] Site dropdown clicked, current value:', freshSelect.value);
       });
       
       // 4. Manual test function attached to window for debugging
@@ -3366,7 +3383,10 @@
         console.log('[Billing] Sites loaded into dropdown');
         
         // Attach site change listener AFTER sites are loaded (in case element was replaced)
-        attachSiteChangeListener();
+        // Use setTimeout to ensure DOM is fully updated
+        setTimeout(() => {
+          attachSiteChangeListener();
+        }, 100);
       } catch (error) {
         console.error('[Billing] Error loading sites:', error);
       }
