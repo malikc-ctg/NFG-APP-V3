@@ -213,13 +213,21 @@
             <i data-lucide="clock" class="w-4 h-4 inline mr-2"></i>
             Time Tracking
           </button>
+          <button 
+            id="tab-billing" 
+            class="tab-btn px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-nfgblue hover:border-gray-300 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
+            data-tab="billing"
+          >
+            <i data-lucide="dollar-sign" class="w-4 h-4 inline mr-2"></i>
+            Billing
+          </button>
         </nav>
       </div>
 
       <!-- Overview Tab Content (existing content) -->
       <div id="tab-content-overview" class="tab-content space-y-6">
-        <!-- Metric Cards -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <!-- Metric Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <!-- Total Jobs -->
         <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
           <div class="flex items-center justify-between">
@@ -612,6 +620,130 @@
         </div>
       </div>
       <!-- END Time Tracking Tab Content -->
+
+      <!-- Billing Tab Content -->
+      <div id="tab-content-billing" class="tab-content hidden space-y-6">
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <!-- Total Revenue -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Total Revenue</p>
+                <p id="billing-total-revenue" class="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">$0</p>
+              </div>
+              <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <i data-lucide="dollar-sign" class="w-5 h-5 text-green-600 dark:text-green-400"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Outstanding Balance -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Outstanding</p>
+                <p id="billing-outstanding" class="text-2xl font-bold text-orange-600 dark:text-orange-400 mt-1">$0</p>
+              </div>
+              <div class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                <i data-lucide="alert-circle" class="w-5 h-5 text-orange-600 dark:text-orange-400"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Overdue Invoices -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Overdue</p>
+                <p id="billing-overdue-count" class="text-2xl font-bold text-red-600 dark:text-red-400 mt-1">0</p>
+              </div>
+              <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <i data-lucide="clock-alert" class="w-5 h-5 text-red-600 dark:text-red-400"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- This Month Revenue -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">This Month</p>
+                <p id="billing-month-revenue" class="text-2xl font-bold text-nfgblue dark:text-blue-400 mt-1">$0</p>
+              </div>
+              <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <i data-lucide="trending-up" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Revenue Chart -->
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-6 shadow-nfg">
+          <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-4">Revenue Trend</h3>
+          <div style="height: 300px; position: relative;">
+            <canvas id="revenue-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- Invoices Section -->
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg">
+          <div class="p-6 border-b border-nfgray dark:border-gray-700 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Invoices</h3>
+            <button id="create-invoice-btn" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark text-sm font-medium flex items-center gap-2">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              Create Invoice
+            </button>
+          </div>
+
+          <!-- Filters -->
+          <div class="p-4 border-b border-nfgray dark:border-gray-700 flex flex-wrap gap-3">
+            <select id="invoice-status-filter" class="px-3 py-2 rounded-xl border border-nfgray dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm">
+              <option value="">All Status</option>
+              <option value="draft">Draft</option>
+              <option value="sent">Sent</option>
+              <option value="paid">Paid</option>
+              <option value="overdue">Overdue</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <select id="invoice-client-filter" class="px-3 py-2 rounded-xl border border-nfgray dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm">
+              <option value="">All Clients</option>
+            </select>
+            <input type="date" id="invoice-date-from" class="px-3 py-2 rounded-xl border border-nfgray dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm">
+            <input type="date" id="invoice-date-to" class="px-3 py-2 rounded-xl border border-nfgray dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm">
+            <button id="apply-invoice-filters" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark text-sm">
+              Apply Filters
+            </button>
+            <button id="clear-invoice-filters" class="px-4 py-2 rounded-xl border border-nfgray dark:border-gray-600 hover:bg-nfglight dark:hover:bg-gray-700 text-sm">
+              Clear
+            </button>
+          </div>
+
+          <!-- Invoices Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-nfglight dark:bg-gray-700">
+                <tr>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Invoice #</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Client</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Site</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Job</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Amount</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Due Date</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="invoices-table-body" class="divide-y divide-nfgray dark:divide-gray-700">
+                <tr>
+                  <td colspan="8" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Loading invoices...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- END Billing Tab Content -->
     </main>
   </div>
 
@@ -1665,6 +1797,8 @@
           // Load tab-specific data if needed
           if (targetTab === 'time-tracking') {
             loadTimeTrackingData();
+          } else if (targetTab === 'billing') {
+            loadBillingData();
           }
           
           // Recreate icons after tab switch
@@ -2514,6 +2648,358 @@
       }
     }
 
+    // ========== BILLING FUNCTIONS ==========
+    
+    // Load billing data
+    async function loadBillingData() {
+      try {
+        console.log('[Billing] Loading billing data...');
+        await loadBillingSummary();
+        await loadInvoices();
+        await loadRevenueChart();
+        await loadClientFilter();
+      } catch (error) {
+        console.error('[Billing] Error loading billing data:', error);
+        toast.error('Failed to load billing data', 'Error');
+      }
+    }
+    
+    // Load billing summary metrics
+    async function loadBillingSummary() {
+      try {
+        const { data: invoices, error } = await supabase
+          .from('invoices')
+          .select('total_amount, paid_amount, status, issue_date, due_date');
+
+        if (error) {
+          console.error('[Billing] Error loading invoices for summary:', error);
+          // Table might not exist yet, show zeros
+          updateBillingSummaryUI({
+            totalRevenue: 0,
+            outstanding: 0,
+            overdueCount: 0,
+            monthRevenue: 0
+          });
+          return;
+        }
+
+        const totalRevenue = invoices
+          .filter(inv => inv.status === 'paid')
+          .reduce((sum, inv) => sum + parseFloat(inv.paid_amount || 0), 0);
+
+        const outstanding = invoices
+          .filter(inv => inv.status !== 'paid' && inv.status !== 'cancelled')
+          .reduce((sum, inv) => sum + (parseFloat(inv.total_amount || 0) - parseFloat(inv.paid_amount || 0)), 0);
+
+        const overdueCount = invoices.filter(inv => 
+          inv.status !== 'paid' && 
+          inv.status !== 'cancelled' &&
+          new Date(inv.due_date) < new Date()
+        ).length;
+
+        const thisMonth = new Date().getMonth();
+        const thisYear = new Date().getFullYear();
+        const monthRevenue = invoices
+          .filter(inv => {
+            const date = new Date(inv.issue_date);
+            return inv.status === 'paid' && 
+                   date.getMonth() === thisMonth && 
+                   date.getFullYear() === thisYear;
+          })
+          .reduce((sum, inv) => sum + parseFloat(inv.paid_amount || 0), 0);
+
+        updateBillingSummaryUI({
+          totalRevenue,
+          outstanding,
+          overdueCount,
+          monthRevenue
+        });
+
+      } catch (error) {
+        console.error('[Billing] Error loading billing summary:', error);
+        updateBillingSummaryUI({
+          totalRevenue: 0,
+          outstanding: 0,
+          overdueCount: 0,
+          monthRevenue: 0
+        });
+      }
+    }
+    
+    // Update billing summary UI
+    function updateBillingSummaryUI({ totalRevenue, outstanding, overdueCount, monthRevenue }) {
+      const formatCurrency = (amount) => {
+        return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      };
+
+      const totalRevenueEl = document.getElementById('billing-total-revenue');
+      const outstandingEl = document.getElementById('billing-outstanding');
+      const overdueCountEl = document.getElementById('billing-overdue-count');
+      const monthRevenueEl = document.getElementById('billing-month-revenue');
+
+      if (totalRevenueEl) totalRevenueEl.textContent = formatCurrency(totalRevenue);
+      if (outstandingEl) outstandingEl.textContent = formatCurrency(outstanding);
+      if (overdueCountEl) overdueCountEl.textContent = overdueCount.toString();
+      if (monthRevenueEl) monthRevenueEl.textContent = formatCurrency(monthRevenue);
+    }
+    
+    // Load invoices
+    async function loadInvoices() {
+      try {
+        const statusFilter = document.getElementById('invoice-status-filter')?.value || '';
+        const clientFilter = document.getElementById('invoice-client-filter')?.value || '';
+        const dateFrom = document.getElementById('invoice-date-from')?.value || '';
+        const dateTo = document.getElementById('invoice-date-to')?.value || '';
+
+        let query = supabase
+          .from('invoices')
+          .select(`
+            *,
+            user_profiles!invoices_client_id_fkey(full_name, email),
+            sites(name),
+            jobs(title)
+          `)
+          .order('created_at', { ascending: false });
+
+        if (statusFilter) query = query.eq('status', statusFilter);
+        if (clientFilter) query = query.eq('client_id', clientFilter);
+        if (dateFrom) query = query.gte('issue_date', dateFrom);
+        if (dateTo) query = query.lte('issue_date', dateTo);
+
+        const { data: invoices, error } = await query;
+
+        if (error) {
+          console.error('[Billing] Error loading invoices:', error);
+          // Check if table doesn't exist
+          if (error.code === 'PGRST204' || error.message?.includes('does not exist')) {
+            renderInvoicesTable([]);
+            toast.info('Invoices table not found. Please run the database migration.', 'Setup Required');
+          } else {
+            throw error;
+          }
+          return;
+        }
+
+        renderInvoicesTable(invoices || []);
+
+      } catch (error) {
+        console.error('[Billing] Error loading invoices:', error);
+        toast.error('Failed to load invoices', 'Error');
+        renderInvoicesTable([]);
+      }
+    }
+    
+    // Render invoices table
+    function renderInvoicesTable(invoices) {
+      const tbody = document.getElementById('invoices-table-body');
+      if (!tbody) return;
+
+      if (invoices.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No invoices found</td></tr>';
+        return;
+      }
+
+      const statusColors = {
+        'draft': 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+        'sent': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+        'paid': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+        'overdue': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+        'cancelled': 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+      };
+
+      tbody.innerHTML = invoices.map(invoice => {
+        const clientName = invoice.user_profiles?.full_name || invoice.user_profiles?.email || 'N/A';
+        const siteName = invoice.sites?.name || 'N/A';
+        const jobTitle = invoice.jobs?.title || 'N/A';
+        const amount = parseFloat(invoice.total_amount || 0);
+        const statusClass = statusColors[invoice.status] || statusColors.draft;
+
+        return `
+          <tr class="hover:bg-nfglight/30 dark:hover:bg-gray-700/30">
+            <td class="px-4 py-3 text-sm font-medium">${invoice.invoice_number || 'N/A'}</td>
+            <td class="px-4 py-3 text-sm">${clientName}</td>
+            <td class="px-4 py-3 text-sm">${siteName}</td>
+            <td class="px-4 py-3 text-sm">${jobTitle}</td>
+            <td class="px-4 py-3 text-sm font-medium">$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td class="px-4 py-3">
+              <span class="px-2 py-1 rounded-lg text-xs font-medium ${statusClass}">
+                ${invoice.status || 'draft'}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-sm">${new Date(invoice.due_date).toLocaleDateString()}</td>
+            <td class="px-4 py-3">
+              <div class="flex gap-2">
+                <button onclick="viewInvoice('${invoice.id}')" class="text-nfgblue dark:text-blue-400 hover:underline text-sm">View</button>
+                <button onclick="downloadInvoicePDF('${invoice.id}')" class="text-gray-600 dark:text-gray-400 hover:underline text-sm">PDF</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      // Recreate icons
+      if (window.lucide) lucide.createIcons();
+    }
+    
+    // Load client filter dropdown
+    async function loadClientFilter() {
+      try {
+        const { data: invoices } = await supabase
+          .from('invoices')
+          .select('client_id, user_profiles!invoices_client_id_fkey(full_name, email)')
+          .not('client_id', 'is', null);
+
+        if (!invoices || invoices.length === 0) return;
+
+        // Get unique clients
+        const clientMap = new Map();
+        invoices.forEach(inv => {
+          if (inv.client_id && inv.user_profiles) {
+            if (!clientMap.has(inv.client_id)) {
+              clientMap.set(inv.client_id, inv.user_profiles);
+            }
+          }
+        });
+
+        const clientFilter = document.getElementById('invoice-client-filter');
+        if (!clientFilter) return;
+
+        // Clear existing options (keep "All Clients")
+        const allClientsOption = clientFilter.querySelector('option[value=""]');
+        clientFilter.innerHTML = '';
+        if (allClientsOption) clientFilter.appendChild(allClientsOption);
+
+        // Add client options
+        clientMap.forEach((profile, clientId) => {
+          const option = document.createElement('option');
+          option.value = clientId;
+          option.textContent = profile.full_name || profile.email || 'Unknown Client';
+          clientFilter.appendChild(option);
+        });
+
+      } catch (error) {
+        console.error('[Billing] Error loading client filter:', error);
+      }
+    }
+    
+    // Load revenue chart
+    async function loadRevenueChart() {
+      try {
+        const { data: invoices, error } = await supabase
+          .from('invoices')
+          .select('issue_date, paid_amount, status')
+          .eq('status', 'paid')
+          .order('issue_date', { ascending: true });
+
+        if (error) {
+          console.error('[Billing] Error loading revenue data:', error);
+          return;
+        }
+
+        // Group by month
+        const monthlyRevenue = {};
+        invoices.forEach(invoice => {
+          const date = new Date(invoice.issue_date);
+          const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+          if (!monthlyRevenue[monthKey]) {
+            monthlyRevenue[monthKey] = 0;
+          }
+          monthlyRevenue[monthKey] += parseFloat(invoice.paid_amount || 0);
+        });
+
+        // Get last 12 months
+        const months = [];
+        const revenues = [];
+        const now = new Date();
+        for (let i = 11; i >= 0; i--) {
+          const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+          const monthName = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+          months.push(monthName);
+          revenues.push(monthlyRevenue[monthKey] || 0);
+        }
+
+        // Render chart
+        const canvas = document.getElementById('revenue-chart');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        const isDark = document.documentElement.classList.contains('dark');
+        
+        // Destroy existing chart if it exists
+        if (window.revenueChart) {
+          window.revenueChart.destroy();
+        }
+
+        window.revenueChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: months,
+            datasets: [{
+              label: 'Revenue',
+              data: revenues,
+              borderColor: '#0D47A1',
+              backgroundColor: 'rgba(13, 71, 161, 0.1)',
+              tension: 0.4,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: false
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    return '$' + context.parsed.y.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                  }
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  color: isDark ? '#9CA3AF' : '#6B7280',
+                  callback: function(value) {
+                    return '$' + value.toLocaleString('en-US');
+                  }
+                },
+                grid: {
+                  color: isDark ? '#374151' : '#E5E7EB'
+                }
+              },
+              x: {
+                ticks: {
+                  color: isDark ? '#9CA3AF' : '#6B7280'
+                },
+                grid: {
+                  display: false
+                }
+              }
+            }
+          }
+        });
+
+      } catch (error) {
+        console.error('[Billing] Error loading revenue chart:', error);
+      }
+    }
+    
+    // Placeholder functions for invoice actions
+    window.viewInvoice = function(invoiceId) {
+      toast.info('Invoice detail view coming soon', 'Coming Soon');
+      // TODO: Implement invoice detail modal
+    };
+    
+    window.downloadInvoicePDF = function(invoiceId) {
+      toast.info('PDF download coming soon', 'Coming Soon');
+      // TODO: Implement PDF generation
+    };
+
     // Initialize
     async function init() {
       console.log('[Reports] 🚀 Initializing Reports page...');
@@ -2569,8 +3055,8 @@
         
         if (timeTrackingContent) {
           timeTrackingContent.classList.remove('hidden');
-        }
-        
+      }
+
         // Load time tracking data immediately for staff
         setTimeout(() => {
           loadTimeTrackingData();
@@ -2579,8 +3065,8 @@
 
       // Load initial data (skip Overview data for staff)
       if (!currentUserProfile || currentUserProfile.role !== 'staff') {
-        console.log('[Reports] 📊 Loading initial reports data...');
-        await refreshReports();
+      console.log('[Reports] 📊 Loading initial reports data...');
+      await refreshReports();
       } else {
         console.log('[Reports] 👤 Staff user - skipping Overview data, loading Time Tracking only');
       }
@@ -2616,8 +3102,37 @@
       document.getElementById('approval-filter-staff')?.addEventListener('change', loadPendingTimeEntries);
       document.getElementById('approval-filter-status')?.addEventListener('change', loadPendingTimeEntries);
       
+      // Billing event listeners
+      document.getElementById('apply-invoice-filters')?.addEventListener('click', loadInvoices);
+      document.getElementById('clear-invoice-filters')?.addEventListener('click', () => {
+        document.getElementById('invoice-status-filter').value = '';
+        document.getElementById('invoice-client-filter').value = '';
+        document.getElementById('invoice-date-from').value = '';
+        document.getElementById('invoice-date-to').value = '';
+        loadInvoices();
+      });
+      document.getElementById('create-invoice-btn')?.addEventListener('click', () => {
+        toast.info('Invoice creation modal coming soon', 'Coming Soon');
+        // TODO: Implement invoice creation modal
+      });
+      
       // Initialize tabs
       initTabs();
+      
+      // Check URL parameter for tab (e.g., ?tab=billing)
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabParam = urlParams.get('tab');
+      if (tabParam === 'billing') {
+        const billingTab = document.getElementById('tab-billing');
+        if (billingTab) {
+          billingTab.click();
+        }
+      } else if (tabParam === 'time-tracking') {
+        const timeTab = document.getElementById('tab-time-tracking');
+        if (timeTab) {
+          timeTab.click();
+        }
+      }
       
       // Allow Enter key to apply date range
       document.getElementById('date-from')?.addEventListener('keypress', (e) => {
