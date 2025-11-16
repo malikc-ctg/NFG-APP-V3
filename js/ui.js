@@ -232,8 +232,8 @@ function createSiteCard(site, options = {}) {
           <p class="text-gray-500 dark:text-gray-400 text-xs">Upcoming</p>
         </div>
         <div class="text-center">
-          <p class="text-nfgblue dark:text-blue-400 text-xl font-semibold">${site.deal_value ? Number(site.deal_value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '0'}</p>
-          <p class="text-gray-500 dark:text-gray-400 text-xs">Deal Value</p>
+          <p class="text-nfgblue dark:text-blue-400 text-xl font-semibold">${site.rating || '—'}</p>
+          <p class="text-gray-500 dark:text-gray-400 text-xs">Rating</p>
         </div>
       </div>
       
