@@ -3273,25 +3273,48 @@
           return;
         }
         
-        console.log('[Billing] Fetching jobs for site:', siteId);
+        console.log('[Billing] Fetching jobs for site:', siteId, 'Type:', typeof siteId);
         
         // Convert siteId to number if it's a string (sites table uses BIGSERIAL)
         const siteIdNum = typeof siteId === 'string' ? parseInt(siteId, 10) : siteId;
         
+        if (isNaN(siteIdNum)) {
+          console.error('[Billing] Invalid site ID:', siteId);
+          return;
+        }
+        
+        console.log('[Billing] Converted site ID to number:', siteIdNum);
+        
         // Show all jobs, not just completed (users might want to invoice for pending/in-progress jobs)
         const { data: jobs, error } = await supabase
           .from('jobs')
-          .select('id, title, status')
+          .select('id, title, status, site_id, created_by')
           .eq('site_id', siteIdNum)
           .order('created_at', { ascending: false });
         
         if (error) {
           console.error('[Billing] Error loading jobs:', error);
+          console.error('[Billing] Error details:', JSON.stringify(error, null, 2));
           console.error('[Billing] Site ID used:', siteIdNum, 'Type:', typeof siteIdNum);
+          
+          // Show error in dropdown
+          const select = document.getElementById('invoice-job-select');
+          if (select) {
+            select.innerHTML = '<option value="">Error loading jobs</option>';
+          }
           return;
         }
         
-        console.log('[Billing] Found', jobs?.length || 0, 'jobs for site');
+        console.log('[Billing] Query successful. Found', jobs?.length || 0, 'jobs for site');
+        if (jobs && jobs.length > 0) {
+          console.log('[Billing] Sample job:', jobs[0]);
+        } else {
+          console.warn('[Billing] No jobs found for site:', siteIdNum);
+          console.warn('[Billing] This could be due to:');
+          console.warn('[Billing] 1. No jobs exist for this site');
+          console.warn('[Billing] 2. RLS policies blocking access to jobs');
+          console.warn('[Billing] 3. Site ID mismatch');
+        }
         
         const select = document.getElementById('invoice-job-select');
         if (!select) {
