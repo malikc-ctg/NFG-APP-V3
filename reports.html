@@ -3252,10 +3252,11 @@
       
       siteSelect.setAttribute('data-billing-listener', 'true');
       
-      // Attach listener
+      // Attach listener with multiple approaches
+      // 1. Native change event
       siteSelect.addEventListener('change', async function(e) {
-        const siteId = e.target.value;
-        console.log('[Billing] 🔥 Site dropdown CHANGED:', siteId, 'Type:', typeof siteId);
+        const siteId = e.target.value || this.value;
+        console.log('[Billing] 🔥 Site dropdown CHANGED (native):', siteId, 'Type:', typeof siteId);
         if (siteId) {
           console.log('[Billing] Loading jobs and bookings for site:', siteId);
           await loadInvoiceJobs(siteId);
@@ -3265,6 +3266,32 @@
           document.getElementById('invoice-booking-select').innerHTML = '<option value="">Select a booking (optional)</option>';
         }
       });
+      
+      // 2. Also listen on input event (some custom dropdowns trigger this)
+      siteSelect.addEventListener('input', async function(e) {
+        const siteId = e.target.value || this.value;
+        console.log('[Billing] 🔥 Site dropdown INPUT:', siteId);
+        if (siteId) {
+          await loadInvoiceJobs(siteId);
+          await loadInvoiceBookings(siteId);
+        }
+      });
+      
+      // 3. Also try click event on the select (for compatibility)
+      siteSelect.addEventListener('click', function() {
+        console.log('[Billing] Site dropdown clicked');
+      });
+      
+      // 4. Manual test function attached to window for debugging
+      window.testSiteSelect = function(siteId) {
+        console.log('[Billing] 🧪 TEST: Manually triggering job load for site:', siteId);
+        if (siteId) {
+          loadInvoiceJobs(siteId);
+          loadInvoiceBookings(siteId);
+        }
+      };
+      
+      console.log('[Billing] ✅ Site dropdown listener attached (change, input, click)');
       
       console.log('[Billing] ✅ Site dropdown listener attached');
     }
