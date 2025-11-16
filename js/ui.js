@@ -60,7 +60,7 @@ export async function renderSites(sites, options = {}) {
       selectAllContainer.classList.remove('hidden');
     }
   }
-
+  
   if (filteredSites.length === 0) {
     // Show different empty state based on whether we have sites or not
     const hasAnySites = sites.length > 0
@@ -206,15 +206,15 @@ function createSiteCard(site, options = {}) {
               aria-label="Select site ${site.name}"
             />
           ` : ''}
-          <div class="flex-1 min-w-0">
-            <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">${site.name}</h3>
-            <div class="flex items-center gap-2 mt-1">
-              <p class="text-gray-500 dark:text-gray-400 text-xs truncate">${site.address}</p>
-              <button 
-                onclick="copyAddress('${site.address.replace(/'/g, "\\'")}', event)" 
-                class="text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 transition p-1 rounded hover:bg-nfglight dark:hover:bg-gray-700 flex-shrink-0">
-                <i data-lucide="copy" class="w-3 h-3"></i>
-              </button>
+        <div class="flex-1 min-w-0">
+          <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">${site.name}</h3>
+          <div class="flex items-center gap-2 mt-1">
+            <p class="text-gray-500 dark:text-gray-400 text-xs truncate">${site.address}</p>
+            <button 
+              onclick="copyAddress('${site.address.replace(/'/g, "\\'")}', event)" 
+              class="text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 transition p-1 rounded hover:bg-nfglight dark:hover:bg-gray-700 flex-shrink-0">
+              <i data-lucide="copy" class="w-3 h-3"></i>
+            </button>
             </div>
           </div>
         </div>
@@ -776,7 +776,10 @@ export async function openSiteDetailModal(siteId) {
     }
     document.getElementById('site-detail-status').textContent = site.status || 'Unknown'
     document.getElementById('site-detail-sqft').textContent = site.square_footage ? `${site.square_footage.toLocaleString()} sq ft` : '—'
-    document.getElementById('site-detail-rating').textContent = site.rating || '0'
+    const dealValueEl = document.getElementById('site-detail-deal-value')
+    if (dealValueEl) {
+      dealValueEl.textContent = site.deal_value ? `$${Number(site.deal_value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'
+    }
     document.getElementById('site-detail-phone').textContent = site.contact_phone || '—'
     document.getElementById('site-detail-email').textContent = site.contact_email || '—'
     document.getElementById('site-detail-notes').textContent = site.notes || 'No notes available.'

@@ -160,9 +160,9 @@
     <main class="p-4 md:p-6 space-y-6">
       <!-- Sites Header with Select All -->
       <div class="flex items-center justify-between gap-4 pb-2">
-        <div>
-          <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">All Sites</h2>
-          <p class="text-sm text-gray-500 mt-1">Manage your properties and locations</p>
+      <div>
+        <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">All Sites</h2>
+        <p class="text-sm text-gray-500 mt-1">Manage your properties and locations</p>
         </div>
         <!-- Select All Checkbox (only for non-staff) -->
         <div id="select-all-sites-container" class="hidden flex items-center gap-2 px-3 py-2 whitespace-nowrap flex-shrink-0">
@@ -828,6 +828,7 @@
         document.getElementById('edit-site-address').value = window.currentEditSite.address || '';
         document.getElementById('edit-site-status').value = window.currentEditSite.status || 'Active';
         document.getElementById('edit-site-sqft').value = window.currentEditSite.square_footage || '';
+        document.getElementById('edit-site-deal-value').value = window.currentEditSite.deal_value || '';
         document.getElementById('edit-site-phone').value = window.currentEditSite.contact_phone || '';
         document.getElementById('edit-site-email').value = window.currentEditSite.contact_email || '';
         document.getElementById('edit-site-notes').value = window.currentEditSite.notes || '';
@@ -854,6 +855,7 @@
           address: formData.get('address'),
           status: formData.get('status'),
           square_footage: formData.get('square_footage') ? parseInt(formData.get('square_footage')) : null,
+          deal_value: formData.get('deal_value') ? parseFloat(formData.get('deal_value')) : null,
           contact_phone: formData.get('contact_phone') || null,
           contact_email: formData.get('contact_email') || null,
           notes: formData.get('notes') || null
@@ -1181,13 +1183,13 @@
             <p id="site-detail-sqft" class="text-xl font-semibold text-nfgblue dark:text-blue-400">—</p>
           </div>
 
-          <!-- Rating Card -->
+          <!-- Deal Value Card -->
           <div class="bg-nfglight/30 dark:bg-gray-700/30 border border-nfgblue/20 dark:border-blue-500/20 rounded-xl p-4">
             <div class="flex items-center gap-2 mb-2">
-              <i data-lucide="star" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
-              <span class="text-sm font-medium text-nftext dark:text-gray-200">Rating</span>
+              <i data-lucide="dollar-sign" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
+              <span class="text-sm font-medium text-nftext dark:text-gray-200">Deal Value</span>
             </div>
-            <p id="site-detail-rating" class="text-xl font-semibold text-nfgblue dark:text-blue-400">0</p>
+            <p id="site-detail-deal-value" class="text-xl font-semibold text-nfgblue dark:text-blue-400">—</p>
           </div>
         </div>
 
@@ -1404,6 +1406,19 @@
             id="edit-site-sqft"
             name="square_footage" 
             placeholder="e.g., 5000"
+            class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-400 focus:ring-2 focus:ring-nfgblue dark:focus:ring-blue-500 outline-none" />
+        </div>
+
+        <!-- Deal Value -->
+        <div>
+          <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Deal Value ($)</label>
+          <input 
+            type="number"
+            id="edit-site-deal-value"
+            name="deal_value" 
+            step="0.01"
+            min="0"
+            placeholder="e.g., 50000.00"
             class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-400 focus:ring-2 focus:ring-nfgblue dark:focus:ring-blue-500 outline-none" />
         </div>
 

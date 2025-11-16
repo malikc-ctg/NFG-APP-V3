@@ -685,13 +685,13 @@
             <p id="site-detail-sqft" class="text-xl font-semibold text-nfgblue dark:text-blue-400">—</p>
           </div>
 
-          <!-- Rating Card -->
+          <!-- Deal Value Card -->
           <div class="bg-nfglight/30 dark:bg-gray-700/30 border border-nfgblue/20 dark:border-blue-500/20 rounded-xl p-4">
             <div class="flex items-center gap-2 mb-2">
-              <i data-lucide="star" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
-              <span class="text-sm font-medium text-nftext dark:text-gray-200">Rating</span>
+              <i data-lucide="dollar-sign" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
+              <span class="text-sm font-medium text-nftext dark:text-gray-200">Deal Value</span>
             </div>
-            <p id="site-detail-rating" class="text-xl font-semibold text-nfgblue dark:text-blue-400">0</p>
+            <p id="site-detail-deal-value" class="text-xl font-semibold text-nfgblue dark:text-blue-400">—</p>
           </div>
         </div>
 
@@ -1246,8 +1246,8 @@
                   <p class="text-gray-500 text-xs">Upcoming</p>
                 </div>
                 <div class="text-center">
-                  <p class="text-nfgblue dark:text-blue-400 text-xl font-semibold">${site.rating || 0}</p>
-                  <p class="text-gray-500 text-xs">Rating</p>
+                  <p class="text-nfgblue dark:text-blue-400 text-xl font-semibold">${site.deal_value ? '$' + Number(site.deal_value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '—'}</p>
+                  <p class="text-gray-500 text-xs">Deal Value</p>
                 </div>
               </div>
               
