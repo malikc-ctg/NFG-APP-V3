@@ -3051,6 +3051,435 @@
       }
     }
     
+    // ========== INVOICE CREATION FUNCTIONS ==========
+    
+    let lineItemCounter = 0;
+    
+    // Open invoice creation modal
+    async function openCreateInvoiceModal() {
+      const modal = document.getElementById('create-invoice-modal');
+      if (!modal) return;
+      
+      // Reset form
+      document.getElementById('create-invoice-form')?.reset();
+      document.getElementById('invoice-line-items').innerHTML = '';
+      lineItemCounter = 0;
+      updateInvoiceSummary();
+      
+      // Set default dates
+      const today = new Date();
+      const dueDate = new Date(today);
+      dueDate.setDate(dueDate.getDate() + 30); // Default 30 days
+      
+      document.getElementById('invoice-issue-date').value = today.toISOString().split('T')[0];
+      document.getElementById('invoice-due-date').value = dueDate.toISOString().split('T')[0];
+      
+      // Load dropdowns
+      await loadInvoiceClients();
+      
+      // Check for pending job data from sessionStorage
+      const pendingJob = sessionStorage.getItem('pendingInvoiceJob');
+      if (pendingJob) {
+        try {
+          const jobData = JSON.parse(pendingJob);
+          // Pre-fill form with job data
+          document.getElementById('invoice-client-select').value = jobData.clientId || '';
+          if (jobData.clientId) {
+            await loadInvoiceSites(jobData.clientId);
+            if (jobData.siteId) {
+              document.getElementById('invoice-site-select').value = jobData.siteId;
+              await loadInvoiceJobs(jobData.siteId);
+              if (jobData.jobId) {
+                document.getElementById('invoice-job-select').value = jobData.jobId;
+              }
+            }
+          }
+          
+          // Add initial line item based on job
+          if (jobData.jobTitle) {
+            addLineItem({
+              description: jobData.jobTitle,
+              quantity: 1,
+              unitPrice: 0 // Will need to be filled manually
+            });
+          }
+          
+          // Clear sessionStorage after use
+          sessionStorage.removeItem('pendingInvoiceJob');
+        } catch (error) {
+          console.error('[Billing] Error parsing pending job data:', error);
+        }
+      } else {
+        // Add initial empty line item
+        addLineItem();
+      }
+      
+      // Show modal
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      if (window.lucide) lucide.createIcons();
+    }
+    
+    // Load clients for invoice creation
+    async function loadInvoiceClients() {
+      try {
+        const { data: profiles, error } = await supabase
+          .from('user_profiles')
+          .select('id, full_name, email, role')
+          .eq('role', 'client');
+        
+        if (error) {
+          console.error('[Billing] Error loading clients:', error);
+          return;
+        }
+        
+        const select = document.getElementById('invoice-client-select');
+        if (!select) return;
+        
+        // Clear existing options (keep first option)
+        const firstOption = select.querySelector('option[value=""]');
+        select.innerHTML = '';
+        if (firstOption) select.appendChild(firstOption);
+        
+        // Add clients
+        (profiles || []).forEach(profile => {
+          const option = document.createElement('option');
+          option.value = profile.id;
+          option.textContent = profile.full_name || profile.email || 'Unknown Client';
+          select.appendChild(option);
+        });
+      } catch (error) {
+        console.error('[Billing] Error loading clients:', error);
+      }
+    }
+    
+    // Load sites for selected client
+    async function loadInvoiceSites(clientId) {
+      try {
+        if (!clientId) {
+          const select = document.getElementById('invoice-site-select');
+          if (select) {
+            select.innerHTML = '<option value="">Select a site (optional)</option>';
+          }
+          return;
+        }
+        
+        const { data: sites, error } = await supabase
+          .from('sites')
+          .select('id, name')
+          .eq('client_id', clientId);
+        
+        if (error) {
+          console.error('[Billing] Error loading sites:', error);
+          return;
+        }
+        
+        const select = document.getElementById('invoice-site-select');
+        if (!select) return;
+        
+        // Clear existing options
+        select.innerHTML = '<option value="">Select a site (optional)</option>';
+        
+        // Add sites
+        (sites || []).forEach(site => {
+          const option = document.createElement('option');
+          option.value = site.id;
+          option.textContent = site.name;
+          select.appendChild(option);
+        });
+      } catch (error) {
+        console.error('[Billing] Error loading sites:', error);
+      }
+    }
+    
+    // Load jobs for selected site
+    async function loadInvoiceJobs(siteId) {
+      try {
+        if (!siteId) {
+          const select = document.getElementById('invoice-job-select');
+          if (select) {
+            select.innerHTML = '<option value="">Select a job (optional)</option>';
+          }
+          return;
+        }
+        
+        const { data: jobs, error } = await supabase
+          .from('jobs')
+          .select('id, title, status')
+          .eq('site_id', siteId)
+          .eq('status', 'completed');
+        
+        if (error) {
+          console.error('[Billing] Error loading jobs:', error);
+          return;
+        }
+        
+        const select = document.getElementById('invoice-job-select');
+        if (!select) return;
+        
+        // Clear existing options
+        select.innerHTML = '<option value="">Select a job (optional)</option>';
+        
+        // Add jobs
+        (jobs || []).forEach(job => {
+          const option = document.createElement('option');
+          option.value = job.id;
+          option.textContent = job.title;
+          select.appendChild(option);
+        });
+      } catch (error) {
+        console.error('[Billing] Error loading jobs:', error);
+      }
+    }
+    
+    // Add line item row
+    function addLineItem(defaults = {}) {
+      lineItemCounter++;
+      const container = document.getElementById('invoice-line-items');
+      if (!container) return;
+      
+      const itemId = `line-item-${lineItemCounter}`;
+      const itemHTML = `
+        <div class="line-item border border-nfgray dark:border-gray-600 rounded-xl p-3 bg-nfglight/30 dark:bg-gray-700/30" data-item-id="${itemId}">
+          <div class="grid grid-cols-12 gap-3 items-end">
+            <div class="col-span-12 md:col-span-5">
+              <label class="block text-xs font-medium mb-1 dark:text-gray-300">Description</label>
+              <input type="text" class="line-item-description w-full border border-nfgray dark:border-gray-600 rounded-lg p-2 dark:bg-gray-700 text-sm focus:ring-2 focus:ring-nfgblue outline-none" 
+                     placeholder="Item description" value="${defaults.description || ''}" required />
+            </div>
+            <div class="col-span-4 md:col-span-2">
+              <label class="block text-xs font-medium mb-1 dark:text-gray-300">Quantity</label>
+              <input type="number" class="line-item-quantity w-full border border-nfgray dark:border-gray-600 rounded-lg p-2 dark:bg-gray-700 text-sm focus:ring-2 focus:ring-nfgblue outline-none" 
+                     step="0.01" min="0" value="${defaults.quantity || 1}" required />
+            </div>
+            <div class="col-span-6 md:col-span-3">
+              <label class="block text-xs font-medium mb-1 dark:text-gray-300">Unit Price ($)</label>
+              <input type="number" class="line-item-price w-full border border-nfgray dark:border-gray-600 rounded-lg p-2 dark:bg-gray-700 text-sm focus:ring-2 focus:ring-nfgblue outline-none" 
+                     step="0.01" min="0" value="${defaults.unitPrice || 0}" required />
+            </div>
+            <div class="col-span-2 md:col-span-1">
+              <label class="block text-xs font-medium mb-1 dark:text-gray-300">Total</label>
+              <div class="line-item-total text-sm font-medium p-2 text-gray-600 dark:text-gray-400">$0.00</div>
+            </div>
+            <div class="col-span-12 md:col-span-1">
+              <button type="button" class="remove-line-item w-full px-2 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm" data-item-id="${itemId}">
+                <i data-lucide="trash-2" class="w-4 h-4 mx-auto"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      container.insertAdjacentHTML('beforeend', itemHTML);
+      
+      // Attach event listeners
+      const itemEl = container.querySelector(`[data-item-id="${itemId}"]`);
+      const quantityInput = itemEl.querySelector('.line-item-quantity');
+      const priceInput = itemEl.querySelector('.line-item-price');
+      const removeBtn = itemEl.querySelector('.remove-line-item');
+      
+      [quantityInput, priceInput].forEach(input => {
+        input.addEventListener('input', () => {
+          updateLineItemTotal(itemId);
+          updateInvoiceSummary();
+        });
+      });
+      
+      removeBtn.addEventListener('click', () => {
+        itemEl.remove();
+        updateInvoiceSummary();
+      });
+      
+      // Update initial total
+      updateLineItemTotal(itemId);
+      updateInvoiceSummary();
+      
+      // Reinitialize icons
+      if (window.lucide) lucide.createIcons();
+    }
+    
+    // Update line item total
+    function updateLineItemTotal(itemId) {
+      const itemEl = document.querySelector(`[data-item-id="${itemId}"]`);
+      if (!itemEl) return;
+      
+      const quantity = parseFloat(itemEl.querySelector('.line-item-quantity').value || 0);
+      const price = parseFloat(itemEl.querySelector('.line-item-price').value || 0);
+      const total = quantity * price;
+      
+      const totalEl = itemEl.querySelector('.line-item-total');
+      if (totalEl) {
+        totalEl.textContent = `$${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      }
+    }
+    
+    // Update invoice summary
+    function updateInvoiceSummary() {
+      const lineItems = document.querySelectorAll('.line-item');
+      let subtotal = 0;
+      
+      lineItems.forEach(item => {
+        const quantity = parseFloat(item.querySelector('.line-item-quantity').value || 0);
+        const price = parseFloat(item.querySelector('.line-item-price').value || 0);
+        subtotal += quantity * price;
+      });
+      
+      const taxRate = parseFloat(document.getElementById('invoice-tax-rate').value || 0) / 100;
+      const discountAmount = parseFloat(document.getElementById('invoice-discount').value || 0);
+      const taxAmount = subtotal * taxRate;
+      const total = subtotal + taxAmount - discountAmount;
+      
+      document.getElementById('invoice-subtotal').textContent = `$${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      document.getElementById('invoice-tax-amount').textContent = `$${taxAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      document.getElementById('invoice-discount-amount').textContent = `-$${discountAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      document.getElementById('invoice-total').textContent = `$${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    
+    // Submit invoice creation form
+    document.getElementById('create-invoice-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const errorDiv = document.getElementById('invoice-form-error');
+      errorDiv.classList.add('hidden');
+      
+      try {
+        // Validate line items
+        const lineItems = document.querySelectorAll('.line-item');
+        if (lineItems.length === 0) {
+          errorDiv.textContent = 'Please add at least one line item';
+          errorDiv.classList.remove('hidden');
+          return;
+        }
+        
+        // Collect form data
+        const clientId = document.getElementById('invoice-client-select').value;
+        const siteId = document.getElementById('invoice-site-select').value || null;
+        const jobId = document.getElementById('invoice-job-select').value || null;
+        const bookingId = document.getElementById('invoice-booking-select').value || null;
+        const issueDate = document.getElementById('invoice-issue-date').value;
+        const dueDate = document.getElementById('invoice-due-date').value;
+        const taxRate = parseFloat(document.getElementById('invoice-tax-rate').value || 0);
+        const discountAmount = parseFloat(document.getElementById('invoice-discount').value || 0);
+        const notes = document.getElementById('invoice-notes').value || null;
+        const terms = document.getElementById('invoice-terms').value || null;
+        
+        // Calculate totals
+        let subtotal = 0;
+        const lineItemsData = [];
+        
+        lineItems.forEach((item, index) => {
+          const description = item.querySelector('.line-item-description').value.trim();
+          const quantity = parseFloat(item.querySelector('.line-item-quantity').value || 0);
+          const unitPrice = parseFloat(item.querySelector('.line-item-price').value || 0);
+          const lineTotal = quantity * unitPrice;
+          
+          if (!description || quantity <= 0 || unitPrice < 0) {
+            throw new Error('Please fill in all line item fields correctly');
+          }
+          
+          subtotal += lineTotal;
+          
+          lineItemsData.push({
+            description,
+            quantity,
+            unit_price: unitPrice,
+            line_total: lineTotal,
+            sort_order: index
+          });
+        });
+        
+        const taxAmount = subtotal * (taxRate / 100);
+        const totalAmount = subtotal + taxAmount - discountAmount;
+        
+        // Create invoice
+        const { data: invoice, error: invoiceError } = await supabase
+          .from('invoices')
+          .insert({
+            client_id: clientId,
+            site_id: siteId,
+            job_id: jobId,
+            booking_id: bookingId,
+            issue_date: issueDate,
+            due_date: dueDate,
+            status: 'draft',
+            subtotal: subtotal,
+            tax_rate: taxRate,
+            tax_amount: taxAmount,
+            discount_amount: discountAmount,
+            total_amount: totalAmount,
+            balance_due: totalAmount,
+            notes: notes,
+            terms: terms,
+            created_by: currentUser.id
+          })
+          .select()
+          .single();
+        
+        if (invoiceError) {
+          console.error('[Billing] Error creating invoice:', invoiceError);
+          throw invoiceError;
+        }
+        
+        // Create line items
+        const lineItemsWithInvoiceId = lineItemsData.map(item => ({
+          ...item,
+          invoice_id: invoice.id
+        }));
+        
+        const { error: lineItemsError } = await supabase
+          .from('invoice_line_items')
+          .insert(lineItemsWithInvoiceId);
+        
+        if (lineItemsError) {
+          console.error('[Billing] Error creating line items:', lineItemsError);
+          // Delete invoice if line items fail
+          await supabase.from('invoices').delete().eq('id', invoice.id);
+          throw lineItemsError;
+        }
+        
+        // Success
+        toast.success(`Invoice ${invoice.invoice_number} created successfully`, 'Invoice Created');
+        
+        // Close modal
+        document.getElementById('create-invoice-modal').classList.add('hidden');
+        document.getElementById('create-invoice-modal').classList.remove('flex');
+        
+        // Refresh invoices list
+        await loadInvoices();
+        await loadBillingSummary();
+        
+        // Update URL without reloading
+        const url = new URL(window.location);
+        url.searchParams.delete('create_invoice');
+        window.history.replaceState({}, '', url);
+        
+      } catch (error) {
+        console.error('[Billing] Error creating invoice:', error);
+        errorDiv.textContent = error.message || 'Failed to create invoice. Please try again.';
+        errorDiv.classList.remove('hidden');
+      }
+    });
+    
+    // Event listeners for invoice creation
+    document.getElementById('invoice-client-select')?.addEventListener('change', async (e) => {
+      await loadInvoiceSites(e.target.value);
+      // Clear site, job, booking selections
+      document.getElementById('invoice-site-select').value = '';
+      document.getElementById('invoice-job-select').innerHTML = '<option value="">Select a job (optional)</option>';
+      document.getElementById('invoice-booking-select').innerHTML = '<option value="">Select a booking (optional)</option>';
+    });
+    
+    document.getElementById('invoice-site-select')?.addEventListener('change', async (e) => {
+      await loadInvoiceJobs(e.target.value);
+    });
+    
+    document.getElementById('invoice-tax-rate')?.addEventListener('input', updateInvoiceSummary);
+    document.getElementById('invoice-discount')?.addEventListener('input', updateInvoiceSummary);
+    
+    document.getElementById('add-line-item-btn')?.addEventListener('click', () => {
+      addLineItem();
+    });
+    
     // Placeholder functions for invoice actions
     window.viewInvoice = function(invoiceId) {
       toast.info('Invoice detail view coming soon', 'Coming Soon');
@@ -3174,8 +3603,7 @@
         loadInvoices();
       });
       document.getElementById('create-invoice-btn')?.addEventListener('click', () => {
-        toast.info('Invoice creation modal coming soon', 'Coming Soon');
-        // TODO: Implement invoice creation modal
+        openCreateInvoiceModal();
       });
       
       // Initialize tabs
@@ -3188,6 +3616,22 @@
         const billingTab = document.getElementById('tab-billing');
         if (billingTab) {
           billingTab.click();
+        }
+        
+        // Check if we should open invoice creation modal
+        const createInvoice = urlParams.get('create_invoice');
+        if (createInvoice === 'true') {
+          setTimeout(() => {
+            openCreateInvoiceModal();
+          }, 500); // Wait for tab to load
+        }
+        
+        // Check if we should view an invoice
+        const invoiceId = urlParams.get('invoice');
+        if (invoiceId) {
+          setTimeout(() => {
+            viewInvoice(invoiceId);
+          }, 500); // Wait for tab to load
         }
       } else if (tabParam === 'time-tracking') {
         const timeTab = document.getElementById('tab-time-tracking');
@@ -3230,6 +3674,138 @@
   <!-- Notification Center -->
   <script type="module" src="./js/notification-center.js"></script>
   
+  <!-- Invoice Creation Modal -->
+  <div id="create-invoice-modal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 z-10">
+        <h4 class="text-nfgblue dark:text-blue-400 font-semibold text-lg flex items-center gap-2">
+          <i data-lucide="file-plus" class="w-5 h-5"></i>
+          Create Invoice
+        </h4>
+        <button data-action="close-modal" data-target="create-invoice-modal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="create-invoice-form" class="p-6 space-y-6">
+        <!-- Client & Site Selection -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Client <span class="text-red-500">*</span></label>
+            <select id="invoice-client-select" required class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm">
+              <option value="">Select a client</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Site</label>
+            <select id="invoice-site-select" class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm">
+              <option value="">Select a site (optional)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Job/Booking Selection -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Job</label>
+            <select id="invoice-job-select" class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm">
+              <option value="">Select a job (optional)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Booking</label>
+            <select id="invoice-booking-select" class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm">
+              <option value="">Select a booking (optional)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Dates -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Issue Date <span class="text-red-500">*</span></label>
+            <input type="date" id="invoice-issue-date" required class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Due Date <span class="text-red-500">*</span></label>
+            <input type="date" id="invoice-due-date" required class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm" />
+          </div>
+        </div>
+
+        <!-- Line Items -->
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <label class="block text-sm font-medium dark:text-gray-200">Line Items <span class="text-red-500">*</span></label>
+            <button type="button" id="add-line-item-btn" class="text-sm px-3 py-1.5 rounded-xl border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight dark:hover:bg-gray-700">
+              <i data-lucide="plus" class="w-4 h-4 inline mr-1"></i>
+              Add Item
+            </button>
+          </div>
+          <div id="invoice-line-items" class="space-y-3">
+            <!-- Line items will be added here -->
+          </div>
+        </div>
+
+        <!-- Tax & Discount -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Tax Rate (%)</label>
+            <input type="number" id="invoice-tax-rate" step="0.01" min="0" max="100" value="0" class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Discount Amount ($)</label>
+            <input type="number" id="invoice-discount" step="0.01" min="0" value="0" class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm" />
+          </div>
+        </div>
+
+        <!-- Notes & Terms -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Notes</label>
+            <textarea id="invoice-notes" rows="3" class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm resize-none"></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Payment Terms</label>
+            <textarea id="invoice-terms" rows="3" placeholder="e.g., Net 30" class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm resize-none"></textarea>
+          </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="bg-nfglight/30 dark:bg-gray-700/30 border border-nfgray rounded-xl p-4">
+          <div class="space-y-2">
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-600 dark:text-gray-400">Subtotal:</span>
+              <span id="invoice-subtotal" class="font-medium">$0.00</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-600 dark:text-gray-400">Tax:</span>
+              <span id="invoice-tax-amount" class="font-medium">$0.00</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-600 dark:text-gray-400">Discount:</span>
+              <span id="invoice-discount-amount" class="font-medium">-$0.00</span>
+            </div>
+            <div class="flex justify-between text-lg font-semibold border-t border-nfgray pt-2 mt-2">
+              <span class="text-nfgblue dark:text-blue-400">Total:</span>
+              <span id="invoice-total" class="text-nfgblue dark:text-blue-400">$0.00</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="invoice-form-error" class="hidden text-sm text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-3 py-2"></div>
+
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-nfgray">
+          <button type="button" data-action="close-modal" data-target="create-invoice-modal" class="px-4 py-2 rounded-xl border border-nfgray dark:border-gray-600 hover:bg-nfglight dark:hover:bg-gray-700 font-medium">
+            Cancel
+          </button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark font-medium">
+            Create Invoice
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Hide loader when page is ready -->
   <script>
     window.addEventListener('load', () => {
