@@ -3055,10 +3055,78 @@
     
     let lineItemCounter = 0;
     
+    // Initialize invoice modal event listeners (called once)
+    function initInvoiceModalListeners() {
+      // Client change handler
+      const clientSelect = document.getElementById('invoice-client-select');
+      if (clientSelect && !clientSelect.hasAttribute('data-listener-attached')) {
+        clientSelect.setAttribute('data-listener-attached', 'true');
+        clientSelect.addEventListener('change', async (e) => {
+          const clientId = e.target.value;
+          if (clientId) {
+            // Filter sites by client
+            await loadInvoiceSites(clientId);
+          } else {
+            // Load all sites if no client selected
+            await loadInvoiceSites();
+          }
+          // Clear site, job, booking selections
+          document.getElementById('invoice-site-select').value = '';
+          document.getElementById('invoice-job-select').innerHTML = '<option value="">Select a job (optional)</option>';
+          document.getElementById('invoice-booking-select').innerHTML = '<option value="">Select a booking (optional)</option>';
+        });
+      }
+      
+      // Site change handler
+      const siteSelect = document.getElementById('invoice-site-select');
+      if (siteSelect && !siteSelect.hasAttribute('data-listener-attached')) {
+        siteSelect.setAttribute('data-listener-attached', 'true');
+        siteSelect.addEventListener('change', async (e) => {
+          const siteId = e.target.value;
+          if (siteId) {
+            await loadInvoiceJobs(siteId);
+            await loadInvoiceBookings(siteId);
+          } else {
+            // Clear jobs and bookings if no site selected
+            document.getElementById('invoice-job-select').innerHTML = '<option value="">Select a job (optional)</option>';
+            document.getElementById('invoice-booking-select').innerHTML = '<option value="">Select a booking (optional)</option>';
+          }
+        });
+      }
+      
+      // Tax rate and discount handlers
+      const taxRateInput = document.getElementById('invoice-tax-rate');
+      if (taxRateInput && !taxRateInput.hasAttribute('data-listener-attached')) {
+        taxRateInput.setAttribute('data-listener-attached', 'true');
+        taxRateInput.addEventListener('input', updateInvoiceSummary);
+      }
+      
+      const discountInput = document.getElementById('invoice-discount');
+      if (discountInput && !discountInput.hasAttribute('data-listener-attached')) {
+        discountInput.setAttribute('data-listener-attached', 'true');
+        discountInput.addEventListener('input', updateInvoiceSummary);
+      }
+      
+      // Add line item button
+      const addItemBtn = document.getElementById('add-line-item-btn');
+      if (addItemBtn && !addItemBtn.hasAttribute('data-listener-attached')) {
+        addItemBtn.setAttribute('data-listener-attached', 'true');
+        addItemBtn.addEventListener('click', () => {
+          addLineItem();
+        });
+      }
+    }
+    
     // Open invoice creation modal
     async function openCreateInvoiceModal() {
       const modal = document.getElementById('create-invoice-modal');
-      if (!modal) return;
+      if (!modal) {
+        console.error('[Billing] Modal not found!');
+        return;
+      }
+      
+      // Initialize event listeners (safe to call multiple times)
+      initInvoiceModalListeners();
       
       // Reset form
       document.getElementById('create-invoice-form')?.reset();
@@ -3075,8 +3143,10 @@
       document.getElementById('invoice-due-date').value = dueDate.toISOString().split('T')[0];
       
       // Load dropdowns
+      console.log('[Billing] Loading invoice dropdowns...');
       await loadInvoiceClients();
       await loadInvoiceSites(); // Load all sites initially
+      console.log('[Billing] Invoice dropdowns loaded');
       
       // Check for pending job data from sessionStorage
       const pendingJob = sessionStorage.getItem('pendingInvoiceJob');
@@ -3159,10 +3229,15 @@
     async function loadInvoiceSites(clientId = null) {
       try {
         const select = document.getElementById('invoice-site-select');
-        if (!select) return;
+        if (!select) {
+          console.error('[Billing] Site select element not found!');
+          return;
+        }
         
         // Clear existing options
         select.innerHTML = '<option value="">Select a site (optional)</option>';
+        
+        console.log('[Billing] Fetching sites', clientId ? `for client ${clientId}` : '(all sites)...');
         
         let query = supabase
           .from('sites')
@@ -3180,6 +3255,8 @@
           return;
         }
         
+        console.log('[Billing] Found', sites?.length || 0, 'sites');
+        
         // Add sites
         (sites || []).forEach(site => {
           const option = document.createElement('option');
@@ -3187,6 +3264,8 @@
           option.textContent = site.name;
           select.appendChild(option);
         });
+        
+        console.log('[Billing] Sites loaded into dropdown');
       } catch (error) {
         console.error('[Billing] Error loading sites:', error);
       }
@@ -3501,40 +3580,7 @@
       }
     });
     
-    // Event listeners for invoice creation
-    document.getElementById('invoice-client-select')?.addEventListener('change', async (e) => {
-      const clientId = e.target.value;
-      if (clientId) {
-        // Filter sites by client
-        await loadInvoiceSites(clientId);
-      } else {
-        // Load all sites if no client selected
-        await loadInvoiceSites();
-      }
-      // Clear site, job, booking selections
-      document.getElementById('invoice-site-select').value = '';
-      document.getElementById('invoice-job-select').innerHTML = '<option value="">Select a job (optional)</option>';
-      document.getElementById('invoice-booking-select').innerHTML = '<option value="">Select a booking (optional)</option>';
-    });
-    
-    document.getElementById('invoice-site-select')?.addEventListener('change', async (e) => {
-      const siteId = e.target.value;
-      if (siteId) {
-        await loadInvoiceJobs(siteId);
-        await loadInvoiceBookings(siteId);
-      } else {
-        // Clear jobs and bookings if no site selected
-        document.getElementById('invoice-job-select').innerHTML = '<option value="">Select a job (optional)</option>';
-        document.getElementById('invoice-booking-select').innerHTML = '<option value="">Select a booking (optional)</option>';
-      }
-    });
-    
-    document.getElementById('invoice-tax-rate')?.addEventListener('input', updateInvoiceSummary);
-    document.getElementById('invoice-discount')?.addEventListener('input', updateInvoiceSummary);
-    
-    document.getElementById('add-line-item-btn')?.addEventListener('click', () => {
-      addLineItem();
-    });
+    // Event listeners are now initialized in initInvoiceModalListeners() above
     
     // Placeholder functions for invoice actions
     window.viewInvoice = function(invoiceId) {
