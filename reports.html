@@ -3078,7 +3078,9 @@
         siteSelect.setAttribute('data-listener-attached', 'true');
         siteSelect.addEventListener('change', async (e) => {
           const siteId = e.target.value;
+          console.log('[Billing] Site selection changed:', siteId);
           if (siteId) {
+            console.log('[Billing] Loading jobs and bookings for site:', siteId);
             await loadInvoiceJobs(siteId);
             await loadInvoiceBookings(siteId);
           } else {
