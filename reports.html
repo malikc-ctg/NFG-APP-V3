@@ -3169,6 +3169,30 @@
       // Initialize event listeners (safe to call multiple times)
       initInvoiceModalListeners();
       
+      // Manually attach site change listener (backup in case initInvoiceModalListeners didn't work)
+      const siteSelect = document.getElementById('invoice-site-select');
+      if (siteSelect) {
+        // Remove any existing listeners by cloning and replacing
+        const newSiteSelect = siteSelect.cloneNode(true);
+        siteSelect.parentNode.replaceChild(newSiteSelect, siteSelect);
+        
+        // Reattach listener
+        newSiteSelect.addEventListener('change', async function(e) {
+          const siteId = e.target.value;
+          console.log('[Billing] Site dropdown changed (direct listener):', siteId);
+          if (siteId) {
+            console.log('[Billing] Loading jobs and bookings for site:', siteId);
+            await loadInvoiceJobs(siteId);
+            await loadInvoiceBookings(siteId);
+          } else {
+            document.getElementById('invoice-job-select').innerHTML = '<option value="">Select a job (optional)</option>';
+            document.getElementById('invoice-booking-select').innerHTML = '<option value="">Select a booking (optional)</option>';
+          }
+        });
+        
+        console.log('[Billing] Site dropdown listener attached directly');
+      }
+      
       // Reset form
       document.getElementById('create-invoice-form')?.reset();
       document.getElementById('invoice-line-items').innerHTML = '';
