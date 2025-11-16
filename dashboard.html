@@ -1246,7 +1246,7 @@
                   <p class="text-gray-500 text-xs">Upcoming</p>
                 </div>
                 <div class="text-center">
-                  <p class="text-nfgblue dark:text-blue-400 text-xl font-semibold">${site.deal_value ? '$' + Number(site.deal_value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '—'}</p>
+                  <p class="text-nfgblue dark:text-blue-400 text-xl font-semibold">${site.deal_value ? Number(site.deal_value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '0'}</p>
                   <p class="text-gray-500 text-xs">Deal Value</p>
                 </div>
               </div>
