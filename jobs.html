@@ -256,9 +256,9 @@
         <!-- Status Tabs with Select All -->
         <div class="flex items-center justify-between gap-4 border-b border-nfgray overflow-x-hidden mt-6 pb-2">
           <div class="flex gap-1 sm:gap-2 flex-1 overflow-x-auto">
-            <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-nfgblue dark:text-blue-400 border-b-2 border-nfgblue whitespace-nowrap flex-shrink-0" data-status="all">
-              All Jobs
-            </button>
+          <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-nfgblue dark:text-blue-400 border-b-2 border-nfgblue whitespace-nowrap flex-shrink-0" data-status="all">
+            All Jobs
+          </button>
           <button class="job-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-status="pending">
             Pending
           </button>
@@ -417,6 +417,31 @@
           </div>
           <div id="job-employees-list" class="space-y-2">
             <p class="text-gray-500 text-sm">No employees assigned yet.</p>
+          </div>
+        </div>
+
+        <!-- Invoice Section -->
+        <div id="job-invoice-section" class="hidden bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4">
+          <div class="flex items-center justify-between">
+            <div class="flex-1">
+              <h5 class="text-nfgblue dark:text-blue-400 font-semibold flex items-center gap-2 mb-2">
+                <i data-lucide="dollar-sign" class="w-4 h-4"></i>
+                Invoice
+              </h5>
+              <p id="job-invoice-status" class="text-sm text-gray-500 dark:text-gray-400">No invoice created</p>
+            </div>
+            <div id="job-invoice-actions" class="flex gap-2">
+              <!-- Show if no invoice and job is completed -->
+              <button id="generate-invoice-btn" class="hidden inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700 text-sm font-medium">
+                <i data-lucide="dollar-sign" class="w-4 h-4"></i>
+                Generate Invoice
+              </button>
+              <!-- Show if invoice exists -->
+              <a id="view-invoice-link" href="#" class="hidden inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark text-sm font-medium">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                View Invoice <span id="invoice-number-text" class="font-semibold"></span>
+              </a>
+            </div>
           </div>
         </div>
 
@@ -623,10 +648,10 @@
           </p>
         </div>
 
-        <div>
-          <label class="block text-sm font-medium mb-1.5">Scheduled Date</label>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Scheduled Date</label>
           <input type="date" name="scheduled_date" id="job-scheduled-date" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
-        </div>
+          </div>
 
         <!-- Time Selection (shown after date is selected) -->
         <div id="job-time-section" class="hidden">
@@ -653,9 +678,9 @@
           </p>
         </div>
 
-        <div>
-          <label class="block text-sm font-medium mb-1.5">Estimated Hours</label>
-          <input type="number" name="estimated_hours" min="0" step="0.5" placeholder="4" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Estimated Hours</label>
+            <input type="number" name="estimated_hours" min="0" step="0.5" placeholder="4" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
         </div>
 
         <div>
@@ -1167,7 +1192,7 @@
 
         const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
         const isSelected = selectedJobs.has(job.id);
-        
+
         return `
           <div class="bg-white dark:bg-gray-800 border ${isSelected ? 'border-nfgblue ring-2 ring-nfgblue' : 'border-nfgray'} rounded-xl p-4 shadow-nfg hover:shadow-lg transition-shadow ${isSelected ? 'bg-nfglight/30 dark:bg-blue-900/20' : ''}">
             <div class="flex justify-between items-start mb-3">
@@ -1182,8 +1207,8 @@
                   />
                 ` : ''}
                 <div class="flex-1 min-w-0">
-                  <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">${job.title}</h3>
-                  <p class="text-gray-500 text-sm mt-1">${site ? site.name : 'Unknown Site'}</p>
+                <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">${job.title}</h3>
+                <p class="text-gray-500 text-sm mt-1">${site ? site.name : 'Unknown Site'}</p>
                 </div>
               </div>
               <span class="px-2 py-1 rounded-lg text-xs font-medium ${statusColors[job.status]}">${job.status.replace('-', ' ')}</span>
@@ -1468,6 +1493,9 @@
         timerDisplay.classList.add('hidden');
       }
 
+      // Check for invoice
+      await checkJobInvoice(jobId);
+
       // Show modal
       const modal = document.getElementById('jobDetailModal');
       modal.classList.remove('hidden');
@@ -1475,6 +1503,170 @@
       if (window.lucide) lucide.createIcons();
       console.log('[Jobs] ✅ Job details modal opened');
     };
+    
+    // Check if job has invoice and update UI
+    async function checkJobInvoice(jobId) {
+      try {
+        const invoiceSection = document.getElementById('job-invoice-section');
+        const generateBtn = document.getElementById('generate-invoice-btn');
+        const viewLink = document.getElementById('view-invoice-link');
+        const invoiceStatus = document.getElementById('job-invoice-status');
+        const invoiceNumberText = document.getElementById('invoice-number-text');
+
+        if (!invoiceSection || !generateBtn || !viewLink || !invoiceStatus) {
+          console.error('[Jobs] Invoice section elements not found');
+          return;
+        }
+
+        // Check if invoice exists for this job
+        const { data: invoice, error } = await supabase
+          .from('invoices')
+          .select('id, invoice_number, status, total_amount, balance_due')
+          .eq('job_id', jobId)
+          .maybeSingle();
+
+        if (error) {
+          // Check if table doesn't exist
+          if (error.code === 'PGRST204' || error.message?.includes('does not exist')) {
+            // Table doesn't exist yet, hide invoice section
+            invoiceSection.classList.add('hidden');
+            return;
+          }
+          console.error('[Jobs] Error checking job invoice:', error);
+          invoiceSection.classList.add('hidden');
+          return;
+        }
+
+        // Get job to check status
+        const jobs = await getJobs();
+        const job = jobs.find(j => j.id == jobId);
+
+        if (!job) {
+          invoiceSection.classList.add('hidden');
+          return;
+        }
+
+        if (invoice) {
+          // Invoice exists - show view link
+          invoiceSection.classList.remove('hidden');
+          generateBtn.classList.add('hidden');
+          viewLink.classList.remove('hidden');
+          invoiceNumberText.textContent = invoice.invoice_number;
+          viewLink.href = `reports.html?tab=billing&invoice=${invoice.id}`;
+          
+          const statusText = invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1);
+          const amount = parseFloat(invoice.total_amount || 0);
+          const balance = parseFloat(invoice.balance_due || 0);
+          
+          if (invoice.status === 'paid') {
+            invoiceStatus.textContent = `Invoice ${invoice.invoice_number} - Paid ($${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`;
+          } else if (balance > 0) {
+            invoiceStatus.textContent = `Invoice ${invoice.invoice_number} - ${statusText} (Balance: $${balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`;
+          } else {
+            invoiceStatus.textContent = `Invoice ${invoice.invoice_number} - ${statusText}`;
+          }
+        } else if (job.status === 'completed') {
+          // No invoice but job is completed - show generate button
+          invoiceSection.classList.remove('hidden');
+          generateBtn.classList.remove('hidden');
+          viewLink.classList.add('hidden');
+          invoiceStatus.textContent = 'Ready to generate invoice';
+        } else {
+          // Job not completed - hide invoice section
+          invoiceSection.classList.add('hidden');
+        }
+
+      } catch (error) {
+        console.error('[Jobs] Error checking job invoice:', error);
+        // Hide invoice section on error
+        const invoiceSection = document.getElementById('job-invoice-section');
+        if (invoiceSection) {
+          invoiceSection.classList.add('hidden');
+        }
+      }
+    }
+    
+    // Generate invoice from job
+    async function generateInvoiceFromJob(jobId) {
+      try {
+        // Fetch job details (without relationships to avoid PostgREST errors)
+        const { data: job, error: jobError } = await supabase
+          .from('jobs')
+          .select('*')
+          .eq('id', jobId)
+          .single();
+
+        if (jobError || !job) {
+          toast.error('Failed to load job details', 'Error');
+          return;
+        }
+
+        // Fetch related data separately
+        let siteName = 'Unknown Site';
+        let clientName = 'Unknown Client';
+
+        if (job.site_id) {
+          const { data: site } = await supabase
+            .from('sites')
+            .select('id, name')
+            .eq('id', job.site_id)
+            .single();
+          if (site) siteName = site.name;
+        }
+
+        if (job.client_id) {
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('id, full_name, email')
+            .eq('id', job.client_id)
+            .single();
+          if (profile) {
+            clientName = profile.full_name || profile.email || 'Unknown Client';
+          }
+        }
+
+        // Check if invoice already exists
+        const { data: existingInvoice } = await supabase
+          .from('invoices')
+          .select('id, invoice_number')
+          .eq('job_id', jobId)
+          .maybeSingle();
+
+        if (existingInvoice) {
+          toast.warning('Invoice already exists for this job', 'Duplicate');
+          // Redirect to view invoice
+          window.location.href = `reports.html?tab=billing&invoice=${existingInvoice.id}`;
+          return;
+        }
+
+        // Check if job is completed
+        if (job.status !== 'completed') {
+          toast.error('Can only generate invoices for completed jobs', 'Invalid Status');
+          return;
+        }
+
+        // For now, redirect to reports page with job ID
+        // In Phase 4, we'll open a modal to create the invoice
+        // Store job data in sessionStorage for the invoice creation modal
+        sessionStorage.setItem('pendingInvoiceJob', JSON.stringify({
+          jobId: job.id,
+          clientId: job.client_id,
+          siteId: job.site_id,
+          jobTitle: job.title,
+          siteName: siteName,
+          clientName: clientName,
+          estimatedHours: job.estimated_hours || 0,
+          jobType: job.job_type || 'cleaning'
+        }));
+
+        // Redirect to reports billing tab
+        window.location.href = 'reports.html?tab=billing&create_invoice=true';
+
+      } catch (error) {
+        console.error('[Jobs] Error generating invoice from job:', error);
+        toast.error('Failed to generate invoice', 'Error');
+      }
+    }
 
     // Timer variables
     let timerInterval = null;
@@ -2168,10 +2360,10 @@
         console.log('✅ Time log created:', timeLog);
       }
       
-      console.log('✅ Work started!');
+        console.log('✅ Work started!');
       toast.success('Work started! Timer is running.');
-      // Refresh the job view to show timer
-      await viewJob(currentJobId);
+        // Refresh the job view to show timer
+        await viewJob(currentJobId);
     });
 
     // End Work button (for staff)
@@ -2247,7 +2439,7 @@
           
           if (timeLogError) {
             console.warn('⚠️ Could not update time log:', timeLogError);
-          } else {
+        } else {
             console.log('✅ Time log updated:', existingLog.id);
           }
         } else {
@@ -2271,20 +2463,20 @@
           }
         }
         
-        stopTimer();
-        console.log('✅ Work ended! Duration:', formatDuration(totalDuration));
-        if (allTasksComplete) {
-          // Handle recurring job creation if applicable
-          const updatedJob = { ...job, status: 'completed' };
-          const recurrenceResult = await handleJobCompletion(updatedJob);
-          
-          toast.success(`${recurrenceResult.message}\nTotal time: ${formatDuration(totalDuration)}`, 'Job Completed! 🎉');
-          document.getElementById('jobDetailModal').classList.add('hidden');
-          document.getElementById('jobDetailModal').classList.remove('flex');
-          await renderJobs();
-        } else {
-          toast.info(`Work stopped. Total time: ${formatDuration(totalDuration)}`, 'Work Ended');
-          await viewJob(currentJobId);
+          stopTimer();
+          console.log('✅ Work ended! Duration:', formatDuration(totalDuration));
+          if (allTasksComplete) {
+            // Handle recurring job creation if applicable
+            const updatedJob = { ...job, status: 'completed' };
+            const recurrenceResult = await handleJobCompletion(updatedJob);
+            
+            toast.success(`${recurrenceResult.message}\nTotal time: ${formatDuration(totalDuration)}`, 'Job Completed! 🎉');
+            document.getElementById('jobDetailModal').classList.add('hidden');
+            document.getElementById('jobDetailModal').classList.remove('flex');
+            await renderJobs();
+          } else {
+            toast.info(`Work stopped. Total time: ${formatDuration(totalDuration)}`, 'Work Ended');
+            await viewJob(currentJobId);
         }
       }
     });
@@ -2295,6 +2487,15 @@
       modal.classList.remove('hidden');
       modal.classList.add('flex');
       if (window.lucide) lucide.createIcons();
+    });
+
+    // Generate invoice button
+    document.getElementById('generate-invoice-btn')?.addEventListener('click', async () => {
+      if (currentJobId) {
+        await generateInvoiceFromJob(currentJobId);
+      } else {
+        toast.error('No job selected', 'Error');
+      }
     });
 
     // Show/hide recurrence pattern based on frequency selection
