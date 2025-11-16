@@ -77,6 +77,24 @@
         </button>
       </form>
       
+      <!-- Social Sign In -->
+      <div class="mt-6">
+        <div class="relative flex items-center justify-center my-4">
+          <div class="h-px bg-gray-200 w-full"></div>
+          <span class="absolute bg-white px-3 text-xs text-gray-500">or continue with</span>
+        </div>
+        <div class="grid grid-cols-1 gap-3">
+          <button id="google-signin" type="button" class="w-full border border-gray-300 rounded-xl py-2.5 text-sm font-medium flex items-center justify-center gap-2 hover:bg-gray-50">
+            <img src="/assets/google.svg" alt="" class="w-5 h-5" />
+            <span>Google</span>
+          </button>
+          <button id="microsoft-signin" type="button" class="w-full border border-gray-300 rounded-xl py-2.5 text-sm font-medium flex items-center justify-center gap-2 hover:bg-gray-50">
+            <img src="/assets/microsoft.svg" alt="" class="w-5 h-5" />
+            <span>Microsoft</span>
+          </button>
+        </div>
+      </div>
+      
       <!-- Help Links -->
       <div class="mt-6 text-center space-y-2">
         <a
@@ -235,6 +253,40 @@
           submitLoading.classList.add('hidden')
         }
       })
+      
+      // Social sign-in handlers
+      const googleBtn = document.getElementById('google-signin')
+      const msBtn = document.getElementById('microsoft-signin')
+      
+      if (googleBtn) {
+        googleBtn.addEventListener('click', async () => {
+          try {
+            const { error } = await supabase.auth.signInWithOAuth({
+              provider: 'google',
+              options: { redirectTo: `${window.location.origin}/dashboard.html` }
+            })
+            if (error) throw error
+          } catch (err) {
+            console.error('Google sign-in error:', err)
+            showToast?.('error', 'Google sign-in failed. Please try again.')
+          }
+        })
+      }
+      
+      if (msBtn) {
+        msBtn.addEventListener('click', async () => {
+          try {
+            const { error } = await supabase.auth.signInWithOAuth({
+              provider: 'azure',
+              options: { redirectTo: `${window.location.origin}/dashboard.html` }
+            })
+            if (error) throw error
+          } catch (err) {
+            console.error('Microsoft sign-in error:', err)
+            showToast?.('error', 'Microsoft sign-in failed. Please try again.')
+          }
+        })
+      }
       
       console.log('✅ Login page initialized successfully')
     }
