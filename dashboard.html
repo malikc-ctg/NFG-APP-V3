@@ -961,6 +961,83 @@
       }
     }
 
+    // Compute "recently worked on" sites for overview
+    let recentSites = [];
+    const RECENT_WINDOW_DAYS = 45;
+    const RECENT_SITES_LIMIT = 6;
+
+    async function getRecentWorkedSites(sites, windowDays = RECENT_WINDOW_DAYS, limit = RECENT_SITES_LIMIT) {
+      if (!sites || sites.length === 0) return [];
+      const siteIds = sites.map(s => s.id);
+      const since = new Date();
+      since.setDate(since.getDate() - windowDays);
+      const sinceIso = since.toISOString();
+
+      let activityBySite = {};
+      siteIds.forEach(id => { activityBySite[id] = null; });
+
+      try {
+        // Jobs activity
+        const { data: jobs } = await supabase
+          .from('jobs')
+          .select('site_id, created_at, updated_at, completed_at')
+          .in('site_id', siteIds)
+          .gte('created_at', sinceIso);
+        (jobs || []).forEach(j => {
+          const ts = new Date(
+            j.updated_at || j.completed_at || j.created_at
+          ).getTime();
+          if (!activityBySite[j.site_id] || ts > activityBySite[j.site_id]) {
+            activityBySite[j.site_id] = ts;
+          }
+        });
+      } catch (_) {}
+
+      try {
+        // Time logs activity (optional table)
+        const { data: logs } = await supabase
+          .from('staff_time_logs')
+          .select('job_id, clock_in, clock_out, updated_at, jobs:jobs(site_id)')
+          .gte('clock_in', sinceIso)
+          .limit(1000);
+        (logs || []).forEach(l => {
+          const siteId = l.jobs?.site_id;
+          if (!siteId) return;
+          const ts = new Date(l.updated_at || l.clock_out || l.clock_in).getTime();
+          if (!activityBySite[siteId] || ts > activityBySite[siteId]) {
+            activityBySite[siteId] = ts;
+          }
+        });
+      } catch (_) {}
+
+      try {
+        // Bookings activity (fallback)
+        const { data: bookings } = await supabase
+          .from('bookings')
+          .select('site_id, created_at, updated_at, scheduled_datetime')
+          .in('site_id', siteIds)
+          .gte('created_at', sinceIso);
+        (bookings || []).forEach(b => {
+          const ts = new Date(b.updated_at || b.scheduled_datetime || b.created_at).getTime();
+          if (!activityBySite[b.site_id] || ts > activityBySite[b.site_id]) {
+            activityBySite[b.site_id] = ts;
+          }
+        });
+      } catch (_) {}
+
+      // Build list with lastActivity and filter out sites with no recent activity
+      const withActivity = sites
+        .map(s => ({ ...s, lastActivityAt: activityBySite[s.id] }))
+        .filter(s => s.lastActivityAt);
+
+      // Fallback: if none have activity, show most recently created sites
+      const result = withActivity.length > 0
+        ? withActivity.sort((a,b) => b.lastActivityAt - a.lastActivityAt)
+        : [...sites].sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      return result.slice(0, limit);
+    }
+
     // Render Lucide icons
     document.addEventListener('DOMContentLoaded', async () => {
       if (window.lucide) lucide.createIcons();
@@ -991,8 +1068,9 @@
       // Load and render sites on overview page
       try {
         const sites = await fetchSites();
-        allSites = sites; // Store all sites for filtering
-        renderOverviewSites(filterSitesByStatus(sites, currentSiteFilter));
+        allSites = sites; // Store all sites
+        recentSites = await getRecentWorkedSites(sites);
+        renderOverviewSites(filterSitesByStatus(recentSites, currentSiteFilter));
       } catch (error) {
         console.error('Error loading sites on overview:', error);
       }
@@ -1037,7 +1115,8 @@
       // If navigating to sites page, render sites from Supabase
       if (pageName === 'sites') {
         const sites = await fetchSites();
-        allSites = sites; // Store all sites for filtering
+        allSites = sites; // Store all sites
+        recentSites = await getRecentWorkedSites(sites);
         renderSitesFullPage(filterSitesByStatus(sites, currentSiteFilter));
       }
 
@@ -1084,7 +1163,8 @@
       }
       
       // Filter and re-render sites
-      const filteredSites = filterSitesByStatus(allSites, filterValue);
+      const baseList = recentSites?.length ? recentSites : allSites;
+      const filteredSites = filterSitesByStatus(baseList, filterValue);
       
       // Check which page we're on
       const sitesPage = document.getElementById('page-sites');
@@ -1447,7 +1527,8 @@
         // Refresh sites display
         const sites = await fetchSites();
         allSites = sites; // Update stored sites
-        renderOverviewSites(filterSitesByStatus(sites, currentSiteFilter));
+        recentSites = await getRecentWorkedSites(sites);
+        renderOverviewSites(filterSitesByStatus(recentSites, currentSiteFilter));
         
         // Also update full sites page if it's visible
         const sitesPage = document.getElementById('page-sites');
@@ -1744,7 +1825,8 @@
         // Refresh sites
         const sites = await fetchSites();
         allSites = sites; // Update stored sites
-        renderOverviewSites(filterSitesByStatus(sites, currentSiteFilter));
+        recentSites = await getRecentWorkedSites(sites);
+        renderOverviewSites(filterSitesByStatus(recentSites, currentSiteFilter));
         
         // Also update full sites page if it's visible
         const sitesPage = document.getElementById('page-sites');
