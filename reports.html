@@ -3089,6 +3089,7 @@
             if (jobData.siteId) {
               document.getElementById('invoice-site-select').value = jobData.siteId;
               await loadInvoiceJobs(jobData.siteId);
+              await loadInvoiceBookings(jobData.siteId);
               if (jobData.jobId) {
                 document.getElementById('invoice-job-select').value = jobData.jobId;
               }
@@ -3229,6 +3230,47 @@
         });
       } catch (error) {
         console.error('[Billing] Error loading jobs:', error);
+      }
+    }
+    
+    // Load bookings for selected site
+    async function loadInvoiceBookings(siteId) {
+      try {
+        if (!siteId) {
+          const select = document.getElementById('invoice-booking-select');
+          if (select) {
+            select.innerHTML = '<option value="">Select a booking (optional)</option>';
+          }
+          return;
+        }
+        
+        const { data: bookings, error } = await supabase
+          .from('bookings')
+          .select('id, title, scheduled_date, status')
+          .eq('site_id', siteId)
+          .in('status', ['confirmed', 'completed']);
+        
+        if (error) {
+          console.error('[Billing] Error loading bookings:', error);
+          return;
+        }
+        
+        const select = document.getElementById('invoice-booking-select');
+        if (!select) return;
+        
+        // Clear existing options
+        select.innerHTML = '<option value="">Select a booking (optional)</option>';
+        
+        // Add bookings
+        (bookings || []).forEach(booking => {
+          const option = document.createElement('option');
+          option.value = booking.id;
+          const dateStr = booking.scheduled_date ? new Date(booking.scheduled_date).toLocaleDateString() : '';
+          option.textContent = `${booking.title || 'Booking'}${dateStr ? ' - ' + dateStr : ''}`;
+          select.appendChild(option);
+        });
+      } catch (error) {
+        console.error('[Billing] Error loading bookings:', error);
       }
     }
     
@@ -3470,7 +3512,9 @@
     });
     
     document.getElementById('invoice-site-select')?.addEventListener('change', async (e) => {
-      await loadInvoiceJobs(e.target.value);
+      const siteId = e.target.value;
+      await loadInvoiceJobs(siteId);
+      await loadInvoiceBookings(siteId);
     });
     
     document.getElementById('invoice-tax-rate')?.addEventListener('input', updateInvoiceSummary);
