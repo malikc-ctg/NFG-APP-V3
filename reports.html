@@ -3331,7 +3331,29 @@
         
         console.log('[Billing] Converted site ID to number:', siteIdNum);
         
-        // Show all jobs, not just completed (users might want to invoice for pending/in-progress jobs)
+        // First, let's test if we can query jobs at all (without site filter)
+        console.log('[Billing] Testing jobs query without filter...');
+        const { data: allJobs, error: testError } = await supabase
+          .from('jobs')
+          .select('id, title, status, site_id')
+          .limit(5);
+        
+        if (testError) {
+          console.error('[Billing] Cannot query jobs table:', testError);
+          const select = document.getElementById('invoice-job-select');
+          if (select) {
+            select.innerHTML = '<option value="">Error: Cannot access jobs</option>';
+          }
+          return;
+        }
+        
+        console.log('[Billing] Jobs table is accessible. Found', allJobs?.length || 0, 'total jobs (sample)');
+        if (allJobs && allJobs.length > 0) {
+          console.log('[Billing] Sample jobs:', allJobs.map(j => ({ id: j.id, title: j.title, site_id: j.site_id, site_id_type: typeof j.site_id })));
+        }
+        
+        // Now query jobs for the specific site
+        console.log('[Billing] Querying jobs for site_id:', siteIdNum);
         const { data: jobs, error } = await supabase
           .from('jobs')
           .select('id, title, status, site_id, created_by')
