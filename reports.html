@@ -3355,12 +3355,12 @@
         
         console.log('[Billing] Converted site ID to number:', siteIdNum);
         
-        // First, let's test if we can query jobs at all (without site filter)
-        console.log('[Billing] Testing jobs query without filter...');
+        // Test query to verify jobs table access and see all site_ids
+        console.log('[Billing] Testing jobs query to check site_id format...');
         const { data: allJobs, error: testError } = await supabase
           .from('jobs')
           .select('id, title, status, site_id')
-          .limit(5);
+          .limit(10);
         
         if (testError) {
           console.error('[Billing] Cannot query jobs table:', testError);
@@ -3373,16 +3373,41 @@
         
         console.log('[Billing] Jobs table is accessible. Found', allJobs?.length || 0, 'total jobs (sample)');
         if (allJobs && allJobs.length > 0) {
-          console.log('[Billing] Sample jobs:', allJobs.map(j => ({ id: j.id, title: j.title, site_id: j.site_id, site_id_type: typeof j.site_id })));
+          console.log('[Billing] Sample jobs with site_ids:', allJobs.map(j => ({ 
+            id: j.id, 
+            title: j.title, 
+            site_id: j.site_id, 
+            site_id_type: typeof j.site_id,
+            site_id_value: j.site_id
+          })));
+          
+          // Check if any jobs match our site_id
+          const matchingJobs = allJobs.filter(j => {
+            const jobSiteId = typeof j.site_id === 'string' ? parseInt(j.site_id, 10) : j.site_id;
+            return jobSiteId === siteIdNum;
+          });
+          console.log('[Billing] Jobs matching site_id', siteIdNum, ':', matchingJobs.length);
         }
         
-        // Now query jobs for the specific site
-        console.log('[Billing] Querying jobs for site_id:', siteIdNum);
-        const { data: jobs, error } = await supabase
+        // Try querying with both string and number to handle type issues
+        console.log('[Billing] Querying jobs for site_id (as number):', siteIdNum);
+        let { data: jobs, error } = await supabase
           .from('jobs')
           .select('id, title, status, site_id, created_by')
           .eq('site_id', siteIdNum)
           .order('created_at', { ascending: false });
+        
+        // If no results, try as string (in case database stores as string)
+        if ((!jobs || jobs.length === 0) && !error) {
+          console.log('[Billing] No results with number, trying as string:', String(siteIdNum));
+          const result = await supabase
+            .from('jobs')
+            .select('id, title, status, site_id, created_by')
+            .eq('site_id', String(siteIdNum))
+            .order('created_at', { ascending: false });
+          jobs = result.data;
+          error = result.error;
+        }
         
         if (error) {
           console.error('[Billing] Error loading jobs:', error);
