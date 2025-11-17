@@ -2957,15 +2957,24 @@
         sidebar.classList.remove('translate-x-full');
         overlay.classList.remove('hidden');
         
-        // Reset sidebar content
-        document.getElementById('sidebar-event-title').textContent = 'Loading...';
-        document.getElementById('sidebar-date').textContent = '';
-        document.getElementById('sidebar-time').textContent = '';
-        document.getElementById('sidebar-status-badge').innerHTML = '';
-        document.getElementById('sidebar-staff-list').innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">Loading staff...</p>';
-        document.getElementById('sidebar-site-info').innerHTML = '<p>Loading site...</p>';
-        document.getElementById('sidebar-client-section').classList.add('hidden');
-        document.getElementById('sidebar-additional-details').innerHTML = '';
+        // Reset sidebar content (all elements are within the sidebar now)
+        const sidebarTitle = sidebar.querySelector('#sidebar-event-title');
+        const sidebarDate = sidebar.querySelector('#sidebar-date');
+        const sidebarTime = sidebar.querySelector('#sidebar-time');
+        const sidebarStatusBadge = sidebar.querySelector('#sidebar-status-badge');
+        const sidebarStaffList = sidebar.querySelector('#sidebar-staff-list');
+        const sidebarSiteInfo = sidebar.querySelector('#sidebar-site-info');
+        const sidebarClientSection = sidebar.querySelector('#sidebar-client-section');
+        const sidebarAdditionalDetails = sidebar.querySelector('#sidebar-additional-details');
+        
+        if (sidebarTitle) sidebarTitle.textContent = 'Loading...';
+        if (sidebarDate) sidebarDate.textContent = '';
+        if (sidebarTime) sidebarTime.textContent = '';
+        if (sidebarStatusBadge) sidebarStatusBadge.innerHTML = '';
+        if (sidebarStaffList) sidebarStaffList.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">Loading staff...</p>';
+        if (sidebarSiteInfo) sidebarSiteInfo.innerHTML = '<p>Loading site...</p>';
+        if (sidebarClientSection) sidebarClientSection.classList.add('hidden');
+        if (sidebarAdditionalDetails) sidebarAdditionalDetails.innerHTML = '';
 
         // Store current event
         currentSidebarEvent = eventId;
@@ -3173,11 +3182,35 @@
 
     // Populate sidebar with event data
     function populateSidebar(eventData, eventType, staffMembers = []) {
+      const calendarContainer = document.getElementById('calendar-container');
+      if (!calendarContainer) {
+        console.error('Calendar container not found');
+        return;
+      }
+      
+      const sidebar = calendarContainer.querySelector('#calendar-event-sidebar');
+      if (!sidebar) {
+        console.error('Sidebar not found');
+        return;
+      }
+      
       const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
       const canEdit = !isStaff && (eventData.status === 'draft' || eventData.status === 'pending');
 
+      // Get all sidebar elements
+      const sidebarTitle = sidebar.querySelector('#sidebar-event-title');
+      const sidebarDate = sidebar.querySelector('#sidebar-date');
+      const sidebarTime = sidebar.querySelector('#sidebar-time');
+      const sidebarStatusBadge = sidebar.querySelector('#sidebar-status-badge');
+      const sidebarClientSection = sidebar.querySelector('#sidebar-client-section');
+      const sidebarChangeStatusBtn = sidebar.querySelector('#sidebar-change-status-btn');
+      const sidebarViewDetailsBtn = sidebar.querySelector('#sidebar-view-details-btn');
+      const sidebarEditBtn = sidebar.querySelector('#sidebar-edit-btn');
+      const sidebarDeleteBtn = sidebar.querySelector('#sidebar-delete-btn');
+      const sidebarRescheduleBtn = sidebar.querySelector('#sidebar-reschedule-btn');
+
       // Title
-      document.getElementById('sidebar-event-title').textContent = eventData.title || 'Untitled';
+      if (sidebarTitle) sidebarTitle.textContent = eventData.title || 'Untitled';
 
       // Date & Time
       let dateStr = '';
@@ -3224,81 +3257,100 @@
         timeStr = 'All Day';
       }
 
-      document.getElementById('sidebar-date').textContent = dateStr;
-      document.getElementById('sidebar-time').textContent = timeStr;
+      if (sidebarDate) sidebarDate.textContent = dateStr;
+      if (sidebarTime) sidebarTime.textContent = timeStr;
 
       // Status Badge
       const statusBadge = getStatusBadge(eventData.status, eventType);
-      document.getElementById('sidebar-status-badge').innerHTML = statusBadge;
+      if (sidebarStatusBadge) sidebarStatusBadge.innerHTML = statusBadge;
 
       // Assigned Staff
-      renderStaffList(staffMembers, eventType);
+      renderStaffList(staffMembers, eventType, sidebar);
 
       // Site Information
       if (eventData.sites) {
-        renderSiteInfo(eventData.sites);
+        renderSiteInfo(eventData.sites, sidebar);
       } else if (eventData.site_id && eventType === 'booking') {
         // For bookings, site might not be populated, fetch it
         supabase.from('sites').select('*').eq('id', eventData.site_id).single()
           .then(({ data: site }) => {
-            if (site) renderSiteInfo(site);
+            if (site) renderSiteInfo(site, sidebar);
           });
       }
 
       // Client Information (for bookings)
       if (eventType === 'booking' && eventData.client) {
-        renderClientInfo(eventData.client);
-        document.getElementById('sidebar-client-section').classList.remove('hidden');
+        renderClientInfo(eventData.client, sidebar);
+        if (sidebarClientSection) sidebarClientSection.classList.remove('hidden');
       } else {
-        document.getElementById('sidebar-client-section').classList.add('hidden');
+        if (sidebarClientSection) sidebarClientSection.classList.add('hidden');
       }
 
       // Additional Details
-      renderAdditionalDetails(eventData, eventType);
+      renderAdditionalDetails(eventData, eventType, sidebar);
 
       // Action Buttons
       if (eventType === 'job') {
-        document.getElementById('sidebar-change-status-btn').classList.remove('hidden');
-        document.getElementById('sidebar-view-details-btn').onclick = () => {
-          window.location.href = `jobs.html?job=${eventData.id}`;
-        };
+        if (sidebarChangeStatusBtn) sidebarChangeStatusBtn.classList.remove('hidden');
+        if (sidebarViewDetailsBtn) {
+          sidebarViewDetailsBtn.onclick = () => {
+            window.location.href = `jobs.html?job=${eventData.id}`;
+          };
+        }
       } else {
-        document.getElementById('sidebar-change-status-btn').classList.add('hidden');
-        document.getElementById('sidebar-view-details-btn').onclick = () => {
-          closeEventSidebar();
-          viewBooking(eventData.id);
-        };
+        if (sidebarChangeStatusBtn) sidebarChangeStatusBtn.classList.add('hidden');
+        if (sidebarViewDetailsBtn) {
+          sidebarViewDetailsBtn.onclick = () => {
+            closeEventSidebar();
+            viewBooking(eventData.id);
+          };
+        }
       }
 
       // Edit/Delete buttons
       if (canEdit) {
-        document.getElementById('sidebar-edit-btn').classList.remove('hidden');
-        document.getElementById('sidebar-delete-btn').classList.remove('hidden');
+        if (sidebarEditBtn) sidebarEditBtn.classList.remove('hidden');
+        if (sidebarDeleteBtn) sidebarDeleteBtn.classList.remove('hidden');
       } else {
-        document.getElementById('sidebar-edit-btn').classList.add('hidden');
-        document.getElementById('sidebar-delete-btn').classList.add('hidden');
+        if (sidebarEditBtn) sidebarEditBtn.classList.add('hidden');
+        if (sidebarDeleteBtn) sidebarDeleteBtn.classList.add('hidden');
       }
 
       // Reschedule button
-      document.getElementById('sidebar-reschedule-btn').onclick = () => {
-        // Quick reschedule - could open a modal or use inline editing
-        toast.info('Reschedule functionality coming soon', 'Info');
-      };
+      if (sidebarRescheduleBtn) {
+        sidebarRescheduleBtn.onclick = () => {
+          // Quick reschedule - could open a modal or use inline editing
+          toast.info('Reschedule functionality coming soon', 'Info');
+        };
+      }
     }
 
     // Render staff list
-    function renderStaffList(staffMembers, eventType) {
-      const staffListEl = document.getElementById('sidebar-staff-list');
+    function renderStaffList(staffMembers, eventType, sidebar) {
+      if (!sidebar) {
+        const calendarContainer = document.getElementById('calendar-container');
+        sidebar = calendarContainer?.querySelector('#calendar-event-sidebar');
+      }
+      
+      if (!sidebar) {
+        console.error('Sidebar not found');
+        return;
+      }
+      
+      const staffListEl = sidebar.querySelector('#sidebar-staff-list');
+      const addStaffBtn = sidebar.querySelector('#sidebar-add-staff-btn');
       const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
       
       if (!staffMembers || staffMembers.length === 0) {
-        staffListEl.innerHTML = `
-          <p class="text-sm text-gray-500 dark:text-gray-400">No staff assigned</p>
-        `;
+        if (staffListEl) {
+          staffListEl.innerHTML = `
+            <p class="text-sm text-gray-500 dark:text-gray-400">No staff assigned</p>
+          `;
+        }
         if (eventType === 'job' && !isStaff) {
-          document.getElementById('sidebar-add-staff-btn').classList.remove('hidden');
+          if (addStaffBtn) addStaffBtn.classList.remove('hidden');
         } else {
-          document.getElementById('sidebar-add-staff-btn').classList.add('hidden');
+          if (addStaffBtn) addStaffBtn.classList.add('hidden');
         }
         return;
       }
@@ -3321,21 +3373,31 @@
         `;
       }).join('');
 
-      staffListEl.innerHTML = staffHTML;
+      if (staffListEl) staffListEl.innerHTML = staffHTML;
       
       if (eventType === 'job' && !isStaff) {
-        document.getElementById('sidebar-add-staff-btn').classList.remove('hidden');
+        if (addStaffBtn) addStaffBtn.classList.remove('hidden');
       } else {
-        document.getElementById('sidebar-add-staff-btn').classList.add('hidden');
+        if (addStaffBtn) addStaffBtn.classList.add('hidden');
       }
     }
 
     // Render site information
-    function renderSiteInfo(site) {
-      const siteInfoEl = document.getElementById('sidebar-site-info');
+    function renderSiteInfo(site, sidebar) {
+      if (!sidebar) {
+        const calendarContainer = document.getElementById('calendar-container');
+        sidebar = calendarContainer?.querySelector('#calendar-event-sidebar');
+      }
+      
+      if (!sidebar) {
+        console.error('Sidebar not found');
+        return;
+      }
+      
+      const siteInfoEl = sidebar.querySelector('#sidebar-site-info');
       
       if (!site) {
-        siteInfoEl.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">No site information</p>';
+        if (siteInfoEl) siteInfoEl.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">No site information</p>';
         return;
       }
 
@@ -3359,16 +3421,26 @@
         </div>
       `;
 
-      siteInfoEl.innerHTML = siteHTML;
+      if (siteInfoEl) siteInfoEl.innerHTML = siteHTML;
       if (window.lucide) lucide.createIcons();
     }
 
     // Render client information
-    function renderClientInfo(client) {
-      const clientInfoEl = document.getElementById('sidebar-client-info');
+    function renderClientInfo(client, sidebar) {
+      if (!sidebar) {
+        const calendarContainer = document.getElementById('calendar-container');
+        sidebar = calendarContainer?.querySelector('#calendar-event-sidebar');
+      }
+      
+      if (!sidebar) {
+        console.error('Sidebar not found');
+        return;
+      }
+      
+      const clientInfoEl = sidebar.querySelector('#sidebar-client-info');
       
       if (!client) {
-        clientInfoEl.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">No client information</p>';
+        if (clientInfoEl) clientInfoEl.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">No client information</p>';
         return;
       }
 
@@ -3384,13 +3456,23 @@
         </div>
       `;
 
-      clientInfoEl.innerHTML = clientHTML;
+      if (clientInfoEl) clientInfoEl.innerHTML = clientHTML;
       if (window.lucide) lucide.createIcons();
     }
 
     // Render additional details
-    function renderAdditionalDetails(eventData, eventType) {
-      const detailsEl = document.getElementById('sidebar-additional-details');
+    function renderAdditionalDetails(eventData, eventType, sidebar) {
+      if (!sidebar) {
+        const calendarContainer = document.getElementById('calendar-container');
+        sidebar = calendarContainer?.querySelector('#calendar-event-sidebar');
+      }
+      
+      if (!sidebar) {
+        console.error('Sidebar not found');
+        return;
+      }
+      
+      const detailsEl = sidebar.querySelector('#sidebar-additional-details');
       let detailsHTML = '';
 
       if (eventType === 'job') {
@@ -3441,7 +3523,7 @@
         `;
       }
 
-      detailsEl.innerHTML = detailsHTML;
+      if (detailsEl) detailsEl.innerHTML = detailsHTML;
       if (window.lucide) lucide.createIcons();
     }
 
