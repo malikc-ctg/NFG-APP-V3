@@ -3006,7 +3006,16 @@
         const vendorName = document.getElementById('expense-vendor').value.trim() || null;
         const notes = document.getElementById('expense-notes').value.trim() || null;
         const receiptFileInput = document.getElementById('expense-receipt');
-        const receiptFile = receiptFileInput.files[0];
+        const receiptFile = receiptFileInput?.files?.[0];
+
+        console.log('[Expenses] Receipt file check:', {
+          hasFileInput: !!receiptFileInput,
+          fileCount: receiptFileInput?.files?.length || 0,
+          hasFile: !!receiptFile,
+          fileName: receiptFile?.name,
+          fileSize: receiptFile?.size,
+          fileType: receiptFile?.type
+        });
 
         // Validate required fields
         if (!description || !category || !amount || !expenseDate) {
@@ -3021,7 +3030,25 @@
         // Convert receipt to base64 if provided
         let receiptBase64 = null;
         if (receiptFile) {
-          receiptBase64 = await fileToBase64(receiptFile);
+          console.log('[Expenses] Converting receipt file to base64...', {
+            fileName: receiptFile.name,
+            fileSize: receiptFile.size,
+            fileType: receiptFile.type
+          });
+          try {
+            receiptBase64 = await fileToBase64(receiptFile);
+            console.log('[Expenses] Receipt converted to base64:', {
+              hasContent: !!receiptBase64?.content,
+              contentLength: receiptBase64?.content?.length || 0,
+              filename: receiptBase64?.filename,
+              mimeType: receiptBase64?.mimeType
+            });
+          } catch (convertError) {
+            console.error('[Expenses] Error converting file to base64:', convertError);
+            throw new Error('Failed to process receipt file. Please try again.');
+          }
+        } else {
+          console.log('[Expenses] No receipt file provided');
         }
 
         // Fetch job and site names for email
