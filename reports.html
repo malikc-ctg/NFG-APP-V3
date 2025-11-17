@@ -3418,11 +3418,8 @@
           return;
         }
 
-        // Show loading state
-        const content = document.getElementById('expense-detail-content');
-        if (content) {
-          content.innerHTML = '<div class="p-8 text-center text-gray-500 dark:text-gray-400">Loading expense details...</div>';
-        }
+        // Show loading state (don't replace content, just show modal)
+        // The modal structure stays intact so we can populate it
 
         // Fetch expense with related data
         let { data: expense, error: expenseError } = await supabase
