@@ -2951,6 +2951,13 @@
     // Send expense receipt email via Edge Function
     async function sendExpenseReceiptEmail(expenseId, expenseData, receiptFile, userEmail, userName) {
       try {
+        console.log('[Expenses] Invoking Edge Function:', {
+          functionName: 'send-expense-receipt-email',
+          expenseId,
+          userEmail,
+          receiptFileSize: receiptFile ? `${receiptFile.content?.length || 0} bytes` : 'none'
+        });
+
         const { data, error } = await supabase.functions.invoke('send-expense-receipt-email', {
           body: {
             expenseId,
@@ -2961,10 +2968,16 @@
           }
         });
         
-        if (error) throw error;
+        if (error) {
+          console.error('[Expenses] Edge Function error:', error);
+          throw error;
+        }
+
+        console.log('[Expenses] Edge Function response:', data);
         return data;
       } catch (error) {
         console.error('[Expenses] Error sending receipt email:', error);
+        console.error('[Expenses] Full error object:', JSON.stringify(error, null, 2));
         throw error;
       }
     }
@@ -3055,6 +3068,12 @@
         let emailSent = false;
         if (receiptBase64 && currentUserProfile?.email) {
           try {
+            console.log('[Expenses] Sending receipt email...', {
+              expenseId: expense.id,
+              userEmail: currentUserProfile.email,
+              hasReceipt: !!receiptBase64
+            });
+
             const expenseDataForEmail = {
               description,
               amount,
@@ -3066,7 +3085,7 @@
               site_name: siteName
             };
 
-            await sendExpenseReceiptEmail(
+            const emailResult = await sendExpenseReceiptEmail(
               expense.id,
               expenseDataForEmail,
               receiptBase64,
@@ -3074,18 +3093,36 @@
               currentUserProfile.full_name || currentUserProfile.email
             );
 
+            console.log('[Expenses] Email result:', emailResult);
+
             // Update expense with receipt_emailed_at timestamp
-            await supabase
+            const { error: updateError } = await supabase
               .from('expenses')
               .update({ receipt_emailed_at: new Date().toISOString() })
               .eq('id', expense.id);
 
+            if (updateError) {
+              console.error('[Expenses] Error updating receipt_emailed_at:', updateError);
+            }
+
             emailSent = true;
+            console.log('[Expenses] Receipt email sent successfully');
           } catch (emailError) {
             console.error('[Expenses] Error sending receipt email:', emailError);
+            console.error('[Expenses] Error details:', {
+              message: emailError.message,
+              stack: emailError.stack,
+              response: emailError.response
+            });
             // Don't throw - expense was created successfully, just email failed
             // We'll show a warning to the user
           }
+        } else {
+          console.log('[Expenses] Email not sent:', {
+            hasReceipt: !!receiptBase64,
+            hasEmail: !!currentUserProfile?.email,
+            userEmail: currentUserProfile?.email
+          });
         }
 
         // Success message
@@ -3117,21 +3154,296 @@
       }
     });
     
-    // Load expenses data (placeholder - will be implemented in Phase 7.4)
-    async function loadExpensesData() {
+    // Load expenses data
+    let allExpenses = [];
+    let currentExpenseFilters = {
+      category: '',
+      job: '',
+      site: '',
+      dateFrom: '',
+      dateTo: '',
+      search: ''
+    };
+
+    async function loadExpensesData(showToast = false) {
       try {
-        console.log('[Expenses] Loading expenses data...');
-        // TODO: Implement expense loading in Phase 7.4
-        // For now, just show a message
         const tbody = document.getElementById('expenses-table-body');
-        if (tbody) {
-          tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Expense loading will be implemented next...</td></tr>';
+        if (!tbody) return;
+
+        // Show loading state
+        tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Loading expenses...</td></tr>';
+
+        // Fetch expenses with related data
+        let query = supabase
+          .from('expenses')
+          .select('*, jobs(title), sites(name)')
+          .order('expense_date', { ascending: false })
+          .order('created_at', { ascending: false });
+
+        // Apply filters
+        if (currentExpenseFilters.category) {
+          query = query.eq('category', currentExpenseFilters.category);
+        }
+        if (currentExpenseFilters.job) {
+          query = query.eq('job_id', currentExpenseFilters.job);
+        }
+        if (currentExpenseFilters.site) {
+          const siteIdNum = typeof currentExpenseFilters.site === 'string' ? parseInt(currentExpenseFilters.site, 10) : currentExpenseFilters.site;
+          query = query.eq('site_id', siteIdNum);
+        }
+        if (currentExpenseFilters.dateFrom) {
+          query = query.gte('expense_date', currentExpenseFilters.dateFrom);
+        }
+        if (currentExpenseFilters.dateTo) {
+          query = query.lte('expense_date', currentExpenseFilters.dateTo);
+        }
+
+        const { data: expenses, error } = await query;
+
+        if (error) {
+          console.error('[Expenses] Error loading expenses:', error);
+          if (error.code === 'PGRST204') {
+            // Table doesn't exist yet
+            tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Expenses table not found. Please run the SQL migration.</td></tr>';
+            return;
+          }
+          throw error;
+        }
+
+        allExpenses = expenses || [];
+
+        // Apply search filter (client-side)
+        let filteredExpenses = allExpenses;
+        if (currentExpenseFilters.search) {
+          const searchLower = currentExpenseFilters.search.toLowerCase();
+          filteredExpenses = allExpenses.filter(exp => 
+            exp.description?.toLowerCase().includes(searchLower) ||
+            exp.vendor_name?.toLowerCase().includes(searchLower) ||
+            exp.notes?.toLowerCase().includes(searchLower) ||
+            exp.category?.toLowerCase().includes(searchLower)
+          );
+        }
+
+        // Update summary cards
+        updateExpenseSummaryCards(filteredExpenses);
+
+        // Render table
+        renderExpensesTable(filteredExpenses);
+
+        // Populate filter dropdowns
+        populateExpenseFilters();
+
+        if (showToast) {
+          toast.success(`Loaded ${filteredExpenses.length} expense${filteredExpenses.length !== 1 ? 's' : ''}`, 'Expenses Loaded');
         }
       } catch (error) {
         console.error('[Expenses] Error loading expenses:', error);
+        const tbody = document.getElementById('expenses-table-body');
+        if (tbody) {
+          tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-8 text-center text-red-600 dark:text-red-400">Error loading expenses. Please try again.</td></tr>';
+        }
         toast.error('Failed to load expenses', 'Error');
       }
     }
+
+    // Update expense summary cards
+    function updateExpenseSummaryCards(expenses) {
+      const total = expenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
+      
+      // This month
+      const now = new Date();
+      const thisMonth = expenses.filter(exp => {
+        const expDate = new Date(exp.expense_date);
+        return expDate.getMonth() === now.getMonth() && 
+               expDate.getFullYear() === now.getFullYear();
+      });
+      const monthTotal = thisMonth.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
+
+      // Top category
+      const categoryTotals = {};
+      expenses.forEach(exp => {
+        const cat = exp.category || 'other';
+        categoryTotals[cat] = (categoryTotals[cat] || 0) + parseFloat(exp.amount || 0);
+      });
+      const topCategory = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0];
+      const topCategoryName = topCategory ? topCategory[0].charAt(0).toUpperCase() + topCategory[0].slice(1) : '—';
+
+      // Average per job
+      const jobExpenses = expenses.filter(exp => exp.job_id);
+      const jobTotal = jobExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
+      const avgPerJob = jobExpenses.length > 0 ? jobTotal / jobExpenses.length : 0;
+
+      // Update UI
+      document.getElementById('expenses-total').textContent = `$${total.toFixed(2)}`;
+      document.getElementById('expenses-month').textContent = `$${monthTotal.toFixed(2)}`;
+      document.getElementById('expenses-top-category').textContent = topCategoryName;
+      document.getElementById('expenses-avg-job').textContent = `$${avgPerJob.toFixed(2)}`;
+    }
+
+    // Render expenses table
+    function renderExpensesTable(expenses) {
+      const tbody = document.getElementById('expenses-table-body');
+      if (!tbody) return;
+
+      if (expenses.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No expenses found</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = expenses.map(exp => {
+        const date = exp.expense_date ? new Date(exp.expense_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+        const category = exp.category ? exp.category.charAt(0).toUpperCase() + exp.category.slice(1) : '—';
+        const amount = parseFloat(exp.amount || 0).toFixed(2);
+        const jobTitle = exp.jobs?.title || '—';
+        const siteName = exp.sites?.name || '—';
+        const vendor = exp.vendor_name || '—';
+        const hasReceipt = exp.receipt_emailed_at ? 'Yes' : 'No';
+        const receiptBadge = exp.receipt_emailed_at 
+          ? '<span class="px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">Emailed</span>'
+          : '<span class="px-2 py-1 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">No Receipt</span>';
+
+        return `
+          <tr class="hover:bg-nfglight/30 dark:hover:bg-gray-700/30">
+            <td class="px-4 py-3">${date}</td>
+            <td class="px-4 py-3 font-medium">${escapeHtml(exp.description || '—')}</td>
+            <td class="px-4 py-3">${category}</td>
+            <td class="px-4 py-3 font-semibold text-red-600 dark:text-red-400">$${amount}</td>
+            <td class="px-4 py-3">${escapeHtml(jobTitle)}</td>
+            <td class="px-4 py-3">${escapeHtml(siteName)}</td>
+            <td class="px-4 py-3">${escapeHtml(vendor)}</td>
+            <td class="px-4 py-3">${receiptBadge}</td>
+            <td class="px-4 py-3">
+              <button onclick="viewExpense('${exp.id}')" class="text-nfgblue dark:text-blue-400 hover:underline text-sm">View</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      // Recreate icons
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // Populate expense filter dropdowns
+    async function populateExpenseFilters() {
+      // Populate jobs filter
+      const jobFilter = document.getElementById('expense-job-filter');
+      if (jobFilter && allExpenses.length > 0) {
+        const jobIds = [...new Set(allExpenses.map(exp => exp.job_id).filter(Boolean))];
+        const { data: jobs } = await supabase
+          .from('jobs')
+          .select('id, title')
+          .in('id', jobIds);
+        
+        if (jobs) {
+          const currentValue = jobFilter.value;
+          jobFilter.innerHTML = '<option value="">All Jobs</option>';
+          jobs.forEach(job => {
+            const option = document.createElement('option');
+            option.value = job.id;
+            option.textContent = job.title;
+            if (job.id === currentValue) option.selected = true;
+            jobFilter.appendChild(option);
+          });
+        }
+      }
+
+      // Populate sites filter
+      const siteFilter = document.getElementById('expense-site-filter');
+      if (siteFilter && allExpenses.length > 0) {
+        const siteIds = [...new Set(allExpenses.map(exp => exp.site_id).filter(Boolean))];
+        const { data: sites } = await supabase
+          .from('sites')
+          .select('id, name')
+          .in('id', siteIds);
+        
+        if (sites) {
+          const currentValue = siteFilter.value;
+          siteFilter.innerHTML = '<option value="">All Sites</option>';
+          sites.forEach(site => {
+            const option = document.createElement('option');
+            option.value = site.id;
+            option.textContent = site.name;
+            if (site.id === currentValue) option.selected = true;
+            siteFilter.appendChild(option);
+          });
+        }
+      }
+    }
+
+    // Helper to escape HTML
+    function escapeHtml(text) {
+      if (!text) return '—';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // View expense (placeholder)
+    window.viewExpense = function(expenseId) {
+      console.log('[Expenses] View expense:', expenseId);
+      // TODO: Implement expense detail modal
+      toast.info('Expense detail view coming soon', 'Info');
+    };
+
+    // Attach expense filter listeners
+    document.getElementById('apply-expense-filters')?.addEventListener('click', () => {
+      currentExpenseFilters.category = document.getElementById('expense-category-filter')?.value || '';
+      currentExpenseFilters.job = document.getElementById('expense-job-filter')?.value || '';
+      currentExpenseFilters.site = document.getElementById('expense-site-filter')?.value || '';
+      currentExpenseFilters.dateFrom = document.getElementById('expense-date-from')?.value || '';
+      currentExpenseFilters.dateTo = document.getElementById('expense-date-to')?.value || '';
+      currentExpenseFilters.search = document.getElementById('expense-search')?.value || '';
+      loadExpensesData();
+    });
+
+    document.getElementById('clear-expense-filters')?.addEventListener('click', () => {
+      currentExpenseFilters = {
+        category: '',
+        job: '',
+        site: '',
+        dateFrom: '',
+        dateTo: '',
+        search: ''
+      };
+      document.getElementById('expense-category-filter').value = '';
+      document.getElementById('expense-job-filter').value = '';
+      document.getElementById('expense-site-filter').value = '';
+      document.getElementById('expense-date-from').value = '';
+      document.getElementById('expense-date-to').value = '';
+      document.getElementById('expense-search').value = '';
+      loadExpensesData();
+    });
+
+    // Export expenses
+    document.getElementById('export-expenses-btn')?.addEventListener('click', () => {
+      if (allExpenses.length === 0) {
+        toast.warning('No expenses to export', 'Export');
+        return;
+      }
+
+      const csv = [
+        ['Date', 'Description', 'Category', 'Amount', 'Job', 'Site', 'Vendor', 'Notes'].join(','),
+        ...allExpenses.map(exp => [
+          exp.expense_date || '',
+          `"${(exp.description || '').replace(/"/g, '""')}"`,
+          exp.category || '',
+          exp.amount || 0,
+          exp.jobs?.title || '',
+          exp.sites?.name || '',
+          `"${(exp.vendor_name || '').replace(/"/g, '""')}"`,
+          `"${(exp.notes || '').replace(/"/g, '""')}"`
+        ].join(','))
+      ].join('\n');
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `expenses-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Expenses exported to CSV', 'Export');
+    });
 
     // Load billing summary metrics
     async function loadBillingSummary() {
