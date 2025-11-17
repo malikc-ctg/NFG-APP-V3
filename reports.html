@@ -3376,6 +3376,31 @@
         if (siteId) {
           loadInvoiceJobs(siteId);
           loadInvoiceBookings(siteId);
+        } else {
+          // If no siteId provided, try getting from select
+          const select = document.getElementById('invoice-site-select');
+          if (select && select.value) {
+            console.log('[Billing] 🧪 TEST: Using select value:', select.value);
+            loadInvoiceJobs(select.value);
+            loadInvoiceBookings(select.value);
+          } else {
+            console.error('[Billing] 🧪 TEST: No siteId provided and select has no value');
+          }
+        }
+      };
+      
+      // 5. Global function to manually test with first site
+      window.testFirstSite = function() {
+        const select = document.getElementById('invoice-site-select');
+        if (select && select.options.length > 1) {
+          const firstSiteOption = select.options[1]; // Skip first empty option
+          const siteId = firstSiteOption.value;
+          console.log('[Billing] 🧪 TEST FIRST SITE: Selecting', siteId);
+          select.value = siteId;
+          // Trigger change manually
+          select.dispatchEvent(new Event('change', { bubbles: true }));
+          loadInvoiceJobs(siteId);
+          loadInvoiceBookings(siteId);
         }
       };
       
@@ -3443,11 +3468,21 @@
         
         console.log('[Billing] Found', sites?.length || 0, 'sites');
         
-        // Add sites
+        // Add sites WITH direct onclick handlers on each option
         (sites || []).forEach(site => {
           const option = document.createElement('option');
           option.value = site.id;
           option.textContent = site.name;
+          
+          // Add direct event listener on the option (as a last resort)
+          option.addEventListener('click', function() {
+            console.log('[Billing] 🎯 Option clicked directly:', site.id);
+            setTimeout(() => {
+              loadInvoiceJobs(site.id);
+              loadInvoiceBookings(site.id);
+            }, 50);
+          });
+          
           select.appendChild(option);
         });
         
@@ -3457,6 +3492,21 @@
         // Use setTimeout to ensure DOM is fully updated
         setTimeout(() => {
           attachSiteChangeListener();
+          
+          // Also try directly attaching to the select after sites are added
+          const selectAfterLoad = document.getElementById('invoice-site-select');
+          if (selectAfterLoad) {
+            // Force add a change listener with immediate execution
+            selectAfterLoad.onchange = async function(e) {
+              const siteId = this.value;
+              console.log('[Billing] 🎯🎯🎯 onchange property fired:', siteId);
+              if (siteId) {
+                await loadInvoiceJobs(siteId);
+                await loadInvoiceBookings(siteId);
+              }
+            };
+            console.log('[Billing] ✅ Direct onchange handler attached');
+          }
         }, 100);
       } catch (error) {
         console.error('[Billing] Error loading sites:', error);
