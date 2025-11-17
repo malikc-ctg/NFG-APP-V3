@@ -3533,22 +3533,6 @@
 
       // Additional Details
       renderAdditionalDetails(eventData, eventType, sidebar);
-      if (eventType === 'job') {
-        if (sidebarChangeStatusBtn) sidebarChangeStatusBtn.classList.remove('hidden');
-        if (sidebarViewDetailsBtn) {
-          sidebarViewDetailsBtn.onclick = () => {
-            window.location.href = `jobs.html?job=${eventData.id}`;
-          };
-        }
-      } else {
-        if (sidebarChangeStatusBtn) sidebarChangeStatusBtn.classList.add('hidden');
-        if (sidebarViewDetailsBtn) {
-          sidebarViewDetailsBtn.onclick = () => {
-            closeEventSidebar();
-            viewBooking(eventData.id);
-          };
-        }
-      }
 
       // Edit/Delete buttons
       if (canEdit) {
