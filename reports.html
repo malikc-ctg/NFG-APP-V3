@@ -3425,11 +3425,27 @@
         }
 
         // Fetch expense with related data
-        const { data: expense, error: expenseError } = await supabase
+        let { data: expense, error: expenseError } = await supabase
           .from('expenses')
-          .select('*, jobs(title, status), sites(name), user_profiles!expenses_created_by_fkey(full_name, email)')
+          .select('*, jobs(title, status), sites(name)')
           .eq('id', expenseId)
           .single();
+
+        if (expenseError || !expense) {
+          console.error('[Expenses] Error loading expense:', expenseError);
+          toast.error('Failed to load expense details', 'Error');
+          return;
+        }
+
+        // Fetch creator profile separately (if created_by exists)
+        if (expense.created_by) {
+          const { data: creator } = await supabase
+            .from('user_profiles')
+            .select('full_name, email')
+            .eq('id', expense.created_by)
+            .single();
+          expense.user_profiles = creator;
+        }
 
         if (expenseError || !expense) {
           console.error('[Expenses] Error loading expense:', expenseError);
