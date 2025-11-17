@@ -3564,6 +3564,207 @@
       }
     };
 
+    // Email expense to users
+    let selectedUsersForEmail = new Set();
+    let allUsersForEmail = [];
+
+    async function openEmailExpenseModal(expense) {
+      try {
+        const modal = document.getElementById('email-expense-modal');
+        if (!modal) {
+          console.error('[Expenses] Email modal not found');
+          return;
+        }
+
+        // Reset selection
+        selectedUsersForEmail.clear();
+        allUsersForEmail = [];
+
+        // Show loading
+        const usersList = document.getElementById('expense-email-users-list');
+        if (usersList) {
+          usersList.innerHTML = '<div class="p-3 text-center text-gray-500 dark:text-gray-400">Loading users...</div>';
+        }
+
+        // Fetch all users
+        const { data: users, error } = await supabase
+          .from('user_profiles')
+          .select('id, full_name, email, role')
+          .order('full_name', { ascending: true });
+
+        if (error) {
+          console.error('[Expenses] Error loading users:', error);
+          if (usersList) {
+            usersList.innerHTML = '<div class="p-3 text-center text-red-600 dark:text-red-400">Error loading users</div>';
+          }
+          return;
+        }
+
+        allUsersForEmail = users || [];
+        renderEmailUserList();
+
+        // Show modal
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        if (window.lucide) lucide.createIcons();
+
+      } catch (error) {
+        console.error('[Expenses] Error opening email modal:', error);
+        toast.error('Failed to open email modal', 'Error');
+      }
+    }
+
+    function renderEmailUserList() {
+      const usersList = document.getElementById('expense-email-users-list');
+      if (!usersList) return;
+
+      if (allUsersForEmail.length === 0) {
+        usersList.innerHTML = '<div class="p-3 text-center text-gray-500 dark:text-gray-400">No users found</div>';
+        return;
+      }
+
+      usersList.innerHTML = allUsersForEmail.map(user => {
+        const isSelected = selectedUsersForEmail.has(user.id);
+        return `
+          <label class="flex items-center gap-3 p-3 rounded-lg border border-nfgray dark:border-gray-600 hover:bg-nfglight/30 dark:hover:bg-gray-700/30 cursor-pointer transition ${isSelected ? 'bg-nfglight dark:bg-gray-700 border-nfgblue dark:border-blue-400' : ''}">
+            <input 
+              type="checkbox" 
+              value="${user.id}" 
+              ${isSelected ? 'checked' : ''}
+              class="w-4 h-4 text-nfgblue border-nfgray rounded focus:ring-nfgblue"
+              onchange="toggleExpenseEmailUser('${user.id}', this.checked)"
+            />
+            <div class="flex-1 min-w-0">
+              <p class="font-medium text-gray-900 dark:text-white">${escapeHtml(user.full_name || user.email || 'Unknown')}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">${escapeHtml(user.email || '')}</p>
+              ${user.role ? `<span class="inline-block mt-1 px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">${user.role}</span>` : ''}
+            </div>
+          </label>
+        `;
+      }).join('');
+
+      updateEmailSelectedCount();
+    }
+
+    window.toggleExpenseEmailUser = function(userId, isSelected) {
+      if (isSelected) {
+        selectedUsersForEmail.add(userId);
+      } else {
+        selectedUsersForEmail.delete(userId);
+      }
+      renderEmailUserList();
+      updateEmailSelectedCount();
+    }
+
+    function updateEmailSelectedCount() {
+      const count = selectedUsersForEmail.size;
+      const countEl = document.getElementById('expense-email-selected-count');
+      const countText = document.getElementById('expense-email-count');
+      const sendBtn = document.getElementById('expense-email-send-btn');
+
+      if (countEl && countText) {
+        countText.textContent = count;
+        if (count > 0) {
+          countEl.classList.remove('hidden');
+        } else {
+          countEl.classList.add('hidden');
+        }
+      }
+
+      if (sendBtn) {
+        sendBtn.disabled = count === 0;
+      }
+    }
+
+    // Send expense email to selected users
+    document.getElementById('expense-email-send-btn')?.addEventListener('click', async () => {
+      const expense = window.currentExpenseForEmail;
+      if (!expense) {
+        toast.error('Expense data not found', 'Error');
+        return;
+      }
+
+      if (selectedUsersForEmail.size === 0) {
+        toast.warning('Please select at least one user', 'No Selection');
+        return;
+      }
+
+      const sendBtn = document.getElementById('expense-email-send-btn');
+      const errorDiv = document.getElementById('expense-email-error');
+      const originalText = sendBtn.innerHTML;
+
+      sendBtn.disabled = true;
+      sendBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 inline mr-1 animate-spin"></i> Sending...';
+      if (window.lucide) lucide.createIcons();
+      if (errorDiv) errorDiv.classList.add('hidden');
+
+      try {
+        // Get selected users
+        const selectedUserIds = Array.from(selectedUsersForEmail);
+        const selectedUsers = allUsersForEmail.filter(u => selectedUserIds.includes(u.id));
+
+        // Prepare expense data for email
+        const expenseDataForEmail = {
+          description: expense.description,
+          amount: expense.amount,
+          category: expense.category,
+          expense_date: expense.expense_date,
+          vendor_name: expense.vendor_name,
+          notes: expense.notes,
+          job_title: expense.jobs?.title,
+          site_name: expense.sites?.name
+        };
+
+        // Send email to each selected user
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const user of selectedUsers) {
+          try {
+            // Note: We don't have the receipt file, so sending without attachment
+            await sendExpenseReceiptEmail(
+              expense.id,
+              expenseDataForEmail,
+              null, // No receipt file available
+              user.email,
+              user.full_name || user.email
+            );
+            successCount++;
+          } catch (emailError) {
+            console.error(`[Expenses] Error sending email to ${user.email}:`, emailError);
+            failCount++;
+          }
+        }
+
+        // Show results
+        if (successCount > 0 && failCount === 0) {
+          toast.success(`Expense receipt sent to ${successCount} user(s)`, 'Email Sent');
+          document.getElementById('email-expense-modal').classList.add('hidden');
+          document.getElementById('email-expense-modal').classList.remove('flex');
+        } else if (successCount > 0 && failCount > 0) {
+          toast.warning(`Sent to ${successCount} user(s), failed for ${failCount} user(s)`, 'Partial Success');
+        } else {
+          toast.error('Failed to send emails', 'Error');
+          if (errorDiv) {
+            errorDiv.textContent = 'Failed to send emails. Please try again.';
+            errorDiv.classList.remove('hidden');
+          }
+        }
+
+      } catch (error) {
+        console.error('[Expenses] Error sending expense emails:', error);
+        toast.error('Failed to send emails', 'Error');
+        if (errorDiv) {
+          errorDiv.textContent = error.message || 'Failed to send emails. Please try again.';
+          errorDiv.classList.remove('hidden');
+        }
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = originalText;
+        if (window.lucide) lucide.createIcons();
+      }
+    });
+
     // Attach expense filter listeners
     document.getElementById('apply-expense-filters')?.addEventListener('click', () => {
       currentExpenseFilters.category = document.getElementById('expense-category-filter')?.value || '';
@@ -5806,9 +6007,15 @@
           <i data-lucide="receipt" class="w-5 h-5"></i>
           Expense Details
         </h4>
-        <button data-action="close-modal" data-target="expense-detail-modal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+        <div class="flex items-center gap-2">
+          <button id="expense-email-to-btn" class="px-3 py-1.5 rounded-lg border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight dark:hover:bg-gray-700 text-sm font-medium flex items-center gap-2">
+            <i data-lucide="mail" class="w-4 h-4"></i>
+            Email To
+          </button>
+          <button data-action="close-modal" data-target="expense-detail-modal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
       </div>
 
       <div id="expense-detail-content" class="p-6 space-y-6">
@@ -5869,6 +6076,53 @@
               <p id="expense-detail-created-at" class="font-medium">—</p>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Email Expense To Users Modal -->
+  <div id="email-expense-modal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-[60]">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-md">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between">
+        <h4 class="text-nfgblue dark:text-blue-400 font-semibold flex items-center gap-2">
+          <i data-lucide="mail" class="w-5 h-5"></i>
+          Email Expense Receipt
+        </h4>
+        <button data-action="close-modal" data-target="email-expense-modal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <p class="text-sm text-gray-600 dark:text-gray-400">
+          Select users to send the expense receipt to:
+        </p>
+
+        <!-- User Selection -->
+        <div class="max-h-64 overflow-y-auto border border-nfgray dark:border-gray-600 rounded-xl p-2 space-y-2">
+          <div id="expense-email-users-list" class="space-y-2">
+            <div class="p-3 text-center text-gray-500 dark:text-gray-400">Loading users...</div>
+          </div>
+        </div>
+
+        <!-- Selected Users Count -->
+        <div id="expense-email-selected-count" class="text-sm text-gray-600 dark:text-gray-400 hidden">
+          <span id="expense-email-count">0</span> user(s) selected
+        </div>
+
+        <!-- Error Message -->
+        <div id="expense-email-error" class="hidden text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3"></div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-nfgray">
+          <button type="button" data-action="close-modal" data-target="email-expense-modal" class="px-4 py-2 rounded-xl border border-nfgray dark:border-gray-600 hover:bg-nfglight dark:hover:bg-gray-700 font-medium">
+            Cancel
+          </button>
+          <button id="expense-email-send-btn" class="px-4 py-2 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark font-medium flex items-center gap-2" disabled>
+            <i data-lucide="send" class="w-4 h-4"></i>
+            Send Email
+          </button>
         </div>
       </div>
     </div>
