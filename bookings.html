@@ -3111,51 +3111,82 @@
     // Fetch job with all assigned staff
     async function fetchJobForSidebar(jobId) {
       try {
-        // Fetch job data
+        // Fetch job data (without joins to avoid relationship errors)
         const { data: job, error: jobError } = await supabase
           .from('jobs')
-          .select(`
-            *,
-            sites:site_id (*),
-            assigned_worker:assigned_worker_id (
-              id,
-              full_name,
-              email
-            )
-          `)
+          .select('*')
           .eq('id', jobId)
           .single();
 
         if (jobError) throw jobError;
 
+        // Fetch site data separately
+        let site = null;
+        if (job.site_id) {
+          const { data: siteData, error: siteError } = await supabase
+            .from('sites')
+            .select('*')
+            .eq('id', job.site_id)
+            .single();
+          
+          if (!siteError && siteData) {
+            site = siteData;
+          }
+        }
+
+        // Fetch assigned worker separately
+        let assignedWorker = null;
+        if (job.assigned_worker_id) {
+          const { data: workerData, error: workerError } = await supabase
+            .from('user_profiles')
+            .select('id, full_name, email')
+            .eq('id', job.assigned_worker_id)
+            .single();
+          
+          if (!workerError && workerData) {
+            assignedWorker = workerData;
+          }
+        }
+
         // Fetch all staff assigned to this job's site
         let assignedStaff = [];
         
         // Get primary assigned worker if exists
-        if (job.assigned_worker && job.assigned_worker.id) {
-          assignedStaff.push(job.assigned_worker);
+        if (assignedWorker) {
+          assignedStaff.push(assignedWorker);
         }
 
         // Fetch all workers assigned to the site via worker_site_assignments
         if (job.site_id) {
           const { data: siteAssignments, error: assignmentsError } = await supabase
             .from('worker_site_assignments')
-            .select(`
-              user_profiles:worker_id (
-                id,
-                full_name,
-                email
-              )
-            `)
+            .select('worker_id')
             .eq('site_id', job.site_id);
 
           if (!assignmentsError && siteAssignments) {
-            const siteStaff = siteAssignments
-              .map(a => a.user_profiles)
-              .filter(s => s && (!assignedStaff.find(existing => existing.id === s.id))); // Avoid duplicates
+            // Get unique worker IDs
+            const workerIds = [...new Set(siteAssignments.map(a => a.worker_id).filter(Boolean))];
             
-            assignedStaff = [...assignedStaff, ...siteStaff];
+            if (workerIds.length > 0) {
+              // Fetch user profiles for these workers
+              const { data: siteStaff, error: staffError } = await supabase
+                .from('user_profiles')
+                .select('id, full_name, email')
+                .in('id', workerIds);
+              
+              if (!staffError && siteStaff) {
+                // Filter out duplicates (workers already in assignedStaff)
+                const existingIds = new Set(assignedStaff.map(s => s.id));
+                const newStaff = siteStaff.filter(s => !existingIds.has(s.id));
+                assignedStaff = [...assignedStaff, ...newStaff];
+              }
+            }
           }
+        }
+
+        // Attach site to job object
+        if (site) {
+          job.sites = site;
         }
 
         return { job, staff: assignedStaff };
@@ -3168,26 +3199,54 @@
     // Fetch booking data
     async function fetchBookingForSidebar(bookingId) {
       try {
+        // Fetch booking data (without joins to avoid relationship errors)
         const { data: booking, error: bookingError } = await supabase
           .from('bookings')
-          .select(`
-            *,
-            sites:site_id (*),
-            user_profiles:created_by (
-              id,
-              full_name,
-              email
-            ),
-            client:client_id (
-              id,
-              full_name,
-              email
-            )
-          `)
+          .select('*')
           .eq('id', bookingId)
           .single();
 
         if (bookingError) throw bookingError;
+
+        // Fetch site data separately
+        if (booking.site_id) {
+          const { data: site, error: siteError } = await supabase
+            .from('sites')
+            .select('*')
+            .eq('id', booking.site_id)
+            .single();
+          
+          if (!siteError && site) {
+            booking.sites = site;
+          }
+        }
+
+        // Fetch creator profile separately
+        if (booking.created_by) {
+          const { data: creator, error: creatorError } = await supabase
+            .from('user_profiles')
+            .select('id, full_name, email')
+            .eq('id', booking.created_by)
+            .single();
+          
+          if (!creatorError && creator) {
+            booking.user_profiles = creator;
+          }
+        }
+
+        // Fetch client profile separately
+        if (booking.client_id) {
+          const { data: client, error: clientError } = await supabase
+            .from('user_profiles')
+            .select('id, full_name, email')
+            .eq('id', booking.client_id)
+            .single();
+          
+          if (!clientError && client) {
+            booking.client = client;
+          }
+        }
+
         return booking;
       } catch (error) {
         console.error('Error fetching booking for sidebar:', error);
