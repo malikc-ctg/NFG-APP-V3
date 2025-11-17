@@ -830,94 +830,131 @@
             
             <!-- Sidebar overlay and sidebar will be positioned here -->
             <div id="calendar-sidebar-overlay" class="hidden absolute inset-0 bg-black/40 z-40 transition-opacity duration-300 rounded-xl"></div>
-            <div id="calendar-event-sidebar" class="hidden absolute right-0 top-0 h-full w-full md:w-96 bg-white dark:bg-gray-800 shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out rounded-l-xl">
+            <div id="calendar-event-sidebar" class="hidden absolute right-0 top-0 h-full w-full md:w-96 bg-white dark:bg-gray-800 shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out">
               <div class="h-full flex flex-col overflow-hidden">
                 
                 <!-- Header -->
-                <div class="flex-shrink-0 p-5 border-b border-nfgray dark:border-gray-700 flex items-center justify-between bg-white dark:bg-gray-800">
-                  <h3 id="sidebar-event-title" class="text-xl font-semibold text-gray-900 dark:text-gray-100 truncate flex-1 pr-2"></h3>
-                  <div class="flex items-center gap-1 ml-2 flex-shrink-0">
-                    <button id="sidebar-edit-btn" class="hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                      <i data-lucide="edit" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
+                <div class="flex-shrink-0 px-6 pt-6 pb-4 flex items-start justify-between">
+                  <h3 id="sidebar-event-title" class="text-2xl font-semibold text-gray-900 dark:text-gray-100 flex-1 pr-4"></h3>
+                  <div class="flex items-center gap-2 flex-shrink-0">
+                    <button id="sidebar-edit-btn" class="hidden p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                      <i data-lucide="edit-2" class="w-4 h-4 text-gray-400 dark:text-gray-500"></i>
                     </button>
-                    <button id="sidebar-delete-btn" class="hidden p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 transition-colors">
-                      <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    <button id="sidebar-delete-btn" class="hidden p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                      <i data-lucide="trash-2" class="w-4 h-4 text-gray-400 dark:text-gray-500"></i>
                     </button>
-                    <button id="sidebar-close-btn" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                      <i data-lucide="x" class="w-5 h-5 text-gray-500 dark:text-gray-400"></i>
+                    <button id="sidebar-close-btn" class="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                      <i data-lucide="x" class="w-5 h-5 text-gray-400 dark:text-gray-500"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Event Summary -->
+                <div class="flex-shrink-0 px-6 pb-6 space-y-4">
+                  <!-- Date -->
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+                      <i data-lucide="calendar" class="w-4 h-4 text-gray-600 dark:text-gray-300"></i>
+                    </div>
+                    <span id="sidebar-date" class="text-sm text-gray-700 dark:text-gray-300"></span>
+                  </div>
+                  
+                  <!-- Time -->
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+                      <i data-lucide="clock" class="w-4 h-4 text-gray-600 dark:text-gray-300"></i>
+                    </div>
+                    <span id="sidebar-time" class="text-sm text-gray-700 dark:text-gray-300"></span>
+                  </div>
+                  
+                  <!-- Staff (first one shown) -->
+                  <div id="sidebar-primary-staff" class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+                      <i data-lucide="user" class="w-4 h-4 text-gray-600 dark:text-gray-300"></i>
+                    </div>
+                    <div id="sidebar-primary-staff-content" class="flex-1 min-w-0">
+                      <span class="text-sm text-gray-700 dark:text-gray-300">Loading...</span>
+                    </div>
+                  </div>
+                  
+                  <!-- Action Buttons -->
+                  <div class="flex gap-2 pt-2">
+                    <button id="sidebar-view-details-btn" class="flex-1 px-4 py-2.5 rounded-lg bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark dark:hover:bg-blue-800 font-medium text-sm transition">
+                      View Full Details
+                    </button>
+                    <button id="sidebar-reschedule-btn" class="px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-nfgblue dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium text-sm transition">
+                      Reschedule
                     </button>
                   </div>
                 </div>
 
                 <!-- Scrollable Content -->
-                <div class="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50/50 dark:bg-gray-900/50">
+                <div class="flex-1 overflow-y-auto px-6 pb-6 space-y-4">
                   
-                  <!-- Date & Time -->
-                  <div class="space-y-3">
-                    <div class="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
-                      <div class="p-2 rounded-lg bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700">
-                        <i data-lucide="calendar" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
+                  <!-- Site Information (Collapsible) -->
+                  <div id="sidebar-site-section" class="border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <button id="sidebar-site-toggle" class="w-full flex items-center justify-between group">
+                      <div class="flex items-center gap-3 flex-1 min-w-0">
+                        <div class="w-10 h-10 rounded-full bg-teal-50 dark:bg-teal-900/20 flex items-center justify-center flex-shrink-0">
+                          <span id="sidebar-site-initial" class="text-sm font-semibold text-teal-700 dark:text-teal-400">?</span>
+                        </div>
+                        <div id="sidebar-site-name" class="text-left flex-1 min-w-0">
+                          <p class="font-semibold text-gray-900 dark:text-gray-100 truncate">Loading site...</p>
+                        </div>
                       </div>
-                      <span id="sidebar-date" class="font-medium"></span>
+                      <i data-lucide="chevron-up" class="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors flex-shrink-0"></i>
+                    </button>
+                    <div id="sidebar-site-info" class="hidden mt-3 pl-[52px] space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                      <p id="sidebar-site-address" class="flex items-start gap-2">
+                        <i data-lucide="map-pin" class="w-4 h-4 mt-0.5 flex-shrink-0"></i>
+                        <span>Loading...</span>
+                      </p>
+                      <p id="sidebar-site-deal-value" class="flex items-center gap-2 hidden">
+                        <i data-lucide="dollar-sign" class="w-4 h-4"></i>
+                        <span>Loading...</span>
+                      </p>
                     </div>
-                    <div class="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
-                      <div class="p-2 rounded-lg bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700">
-                        <i data-lucide="clock" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
-                      </div>
-                      <span id="sidebar-time" class="font-medium"></span>
-                    </div>
-                    <div id="sidebar-status-badge" class="ml-[52px]"></div>
                   </div>
 
-                  <!-- Assigned Staff -->
-                  <div>
+                  <!-- Client Information (Collapsible - for bookings) -->
+                  <div id="sidebar-client-section" class="hidden border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <button id="sidebar-client-toggle" class="w-full flex items-center justify-between group">
+                      <div class="flex items-center gap-3 flex-1 min-w-0">
+                        <div class="w-10 h-10 rounded-full bg-teal-50 dark:bg-teal-900/20 flex items-center justify-center flex-shrink-0">
+                          <span id="sidebar-client-initial" class="text-sm font-semibold text-teal-700 dark:text-teal-400">?</span>
+                        </div>
+                        <div id="sidebar-client-name" class="text-left flex-1 min-w-0">
+                          <p class="font-semibold text-gray-900 dark:text-gray-100 truncate">Loading client...</p>
+                        </div>
+                      </div>
+                      <i data-lucide="chevron-up" class="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors flex-shrink-0"></i>
+                    </button>
+                    <div id="sidebar-client-info" class="hidden mt-3 pl-[52px] space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                      <p id="sidebar-client-email" class="flex items-center gap-2">
+                        <i data-lucide="mail" class="w-4 h-4"></i>
+                        <span>Loading...</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Assigned Staff List -->
+                  <div id="sidebar-all-staff-section" class="hidden border-t border-gray-200 dark:border-gray-700 pt-4">
                     <h4 class="text-xs font-semibold mb-3 text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Assigned Staff
+                      All Assigned Staff
                     </h4>
                     <div id="sidebar-staff-list" class="space-y-2">
                       <p class="text-sm text-gray-500 dark:text-gray-400">Loading staff...</p>
                     </div>
-                    <button id="sidebar-add-staff-btn" class="hidden mt-3 text-sm text-nfgblue dark:text-blue-400 hover:text-nfgdark dark:hover:text-blue-300 font-medium transition">
-                      + Add Staff Member
-                    </button>
-                  </div>
-
-                  <!-- Site Information -->
-                  <div>
-                    <h4 class="text-xs font-semibold mb-3 text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Site Information
-                    </h4>
-                    <div id="sidebar-site-info" class="text-sm text-gray-700 dark:text-gray-300">
-                      <p>Loading site...</p>
-                    </div>
-                  </div>
-
-                  <!-- Client Information (for bookings) -->
-                  <div id="sidebar-client-section" class="hidden">
-                    <h4 class="text-xs font-semibold mb-3 text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Client Information
-                    </h4>
-                    <div id="sidebar-client-info" class="text-sm text-gray-700 dark:text-gray-300"></div>
                   </div>
 
                   <!-- Additional Details -->
-                  <div id="sidebar-additional-details" class="text-sm text-gray-700 dark:text-gray-300"></div>
-
-                </div>
-
-                <!-- Action Buttons Footer -->
-                <div class="flex-shrink-0 p-5 border-t border-nfgray dark:border-gray-700 space-y-3 bg-white dark:bg-gray-800">
-                  <button id="sidebar-view-details-btn" class="w-full px-4 py-3 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark dark:hover:bg-blue-800 font-medium transition shadow-sm hover:shadow">
-                    View Full Details
-                  </button>
-                  <div class="grid grid-cols-2 gap-3">
-                    <button id="sidebar-reschedule-btn" class="px-4 py-2.5 rounded-xl border border-nfgray dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium text-sm transition">
-                      Reschedule
-                    </button>
-                    <button id="sidebar-change-status-btn" class="hidden px-4 py-2.5 rounded-xl border border-nfgray dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium text-sm transition">
-                      Change Status
-                    </button>
+                  <div id="sidebar-additional-details" class="hidden border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <h4 class="text-xs font-semibold mb-3 text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Additional Details
+                    </h4>
+                    <div id="sidebar-additional-details-content" class="text-sm text-gray-600 dark:text-gray-400"></div>
                   </div>
+
                 </div>
 
               </div>
@@ -3110,7 +3147,7 @@
         const sidebarTitle = sidebar.querySelector('#sidebar-event-title');
         const sidebarDate = sidebar.querySelector('#sidebar-date');
         const sidebarTime = sidebar.querySelector('#sidebar-time');
-        const sidebarStatusBadge = sidebar.querySelector('#sidebar-status-badge');
+        const sidebarPrimaryStaff = sidebar.querySelector('#sidebar-primary-staff-content');
         const sidebarStaffList = sidebar.querySelector('#sidebar-staff-list');
         const sidebarSiteInfo = sidebar.querySelector('#sidebar-site-info');
         const sidebarClientSection = sidebar.querySelector('#sidebar-client-section');
@@ -3119,11 +3156,11 @@
         if (sidebarTitle) sidebarTitle.textContent = 'Loading...';
         if (sidebarDate) sidebarDate.textContent = '';
         if (sidebarTime) sidebarTime.textContent = '';
-        if (sidebarStatusBadge) sidebarStatusBadge.innerHTML = '';
+        if (sidebarPrimaryStaff) sidebarPrimaryStaff.innerHTML = '<span class="text-sm text-gray-700 dark:text-gray-300">Loading...</span>';
         if (sidebarStaffList) sidebarStaffList.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">Loading staff...</p>';
-        if (sidebarSiteInfo) sidebarSiteInfo.innerHTML = '<p>Loading site...</p>';
+        if (sidebarSiteInfo) sidebarSiteInfo.classList.add('hidden');
         if (sidebarClientSection) sidebarClientSection.classList.add('hidden');
-        if (sidebarAdditionalDetails) sidebarAdditionalDetails.innerHTML = '';
+        if (sidebarAdditionalDetails) sidebarAdditionalDetails.classList.add('hidden');
 
         // Store current event
         currentSidebarEvent = eventId;
@@ -3350,9 +3387,8 @@
       const sidebarTitle = sidebar.querySelector('#sidebar-event-title');
       const sidebarDate = sidebar.querySelector('#sidebar-date');
       const sidebarTime = sidebar.querySelector('#sidebar-time');
-      const sidebarStatusBadge = sidebar.querySelector('#sidebar-status-badge');
       const sidebarClientSection = sidebar.querySelector('#sidebar-client-section');
-      const sidebarChangeStatusBtn = sidebar.querySelector('#sidebar-change-status-btn');
+      const sidebarSiteSection = sidebar.querySelector('#sidebar-site-section');
       const sidebarViewDetailsBtn = sidebar.querySelector('#sidebar-view-details-btn');
       const sidebarEditBtn = sidebar.querySelector('#sidebar-edit-btn');
       const sidebarDeleteBtn = sidebar.querySelector('#sidebar-delete-btn');
@@ -3361,7 +3397,7 @@
       // Title
       if (sidebarTitle) sidebarTitle.textContent = eventData.title || 'Untitled';
 
-      // Date & Time
+      // Date & Time - Simplified format
       let dateStr = '';
       let timeStr = '';
       let isAllDay = eventData.is_all_day;
@@ -3369,14 +3405,13 @@
       if (eventData.scheduled_datetime) {
         const date = new Date(eventData.scheduled_datetime);
         dateStr = date.toLocaleDateString('en-US', { 
-          weekday: 'long', 
-          year: 'numeric', 
+          day: 'numeric',
           month: 'long', 
-          day: 'numeric' 
+          year: 'numeric'
         });
         
         if (!isAllDay) {
-          timeStr = date.toLocaleTimeString('en-US', { 
+          const startTime = date.toLocaleTimeString('en-US', { 
             hour: 'numeric', 
             minute: '2-digit',
             hour12: true 
@@ -3390,7 +3425,9 @@
               minute: '2-digit',
               hour12: true 
             });
-            timeStr = `${timeStr} - ${endTime}`;
+            timeStr = `${startTime} - ${endTime}`;
+          } else {
+            timeStr = startTime;
           }
         } else {
           timeStr = 'All Day';
@@ -3398,10 +3435,9 @@
       } else if (eventData.scheduled_date) {
         const date = new Date(eventData.scheduled_date);
         dateStr = date.toLocaleDateString('en-US', { 
-          weekday: 'long', 
-          year: 'numeric', 
+          day: 'numeric',
           month: 'long', 
-          day: 'numeric' 
+          year: 'numeric'
         });
         timeStr = 'All Day';
       }
@@ -3409,9 +3445,8 @@
       if (sidebarDate) sidebarDate.textContent = dateStr;
       if (sidebarTime) sidebarTime.textContent = timeStr;
 
-      // Status Badge
-      const statusBadge = getStatusBadge(eventData.status, eventType);
-      if (sidebarStatusBadge) sidebarStatusBadge.innerHTML = statusBadge;
+      // Show site section
+      if (sidebarSiteSection) sidebarSiteSection.classList.remove('hidden');
 
       // Assigned Staff
       renderStaffList(staffMembers, eventType, sidebar);
@@ -3434,6 +3469,67 @@
       } else {
         if (sidebarClientSection) sidebarClientSection.classList.add('hidden');
       }
+
+      // Action Buttons
+      if (sidebarViewDetailsBtn) {
+        sidebarViewDetailsBtn.onclick = () => {
+          if (eventType === 'job') {
+            window.location.href = `jobs.html?job=${eventData.id}`;
+          } else {
+            window.location.href = `bookings.html?booking=${eventData.id}`;
+          }
+        };
+      }
+      
+      if (sidebarRescheduleBtn) {
+        sidebarRescheduleBtn.onclick = () => {
+          toast.info('Reschedule functionality coming soon', 'Info');
+        };
+      }
+
+      // Collapsible sections toggle
+      const siteToggle = sidebar.querySelector('#sidebar-site-toggle');
+      const clientToggle = sidebar.querySelector('#sidebar-client-toggle');
+      
+      if (siteToggle) {
+        siteToggle.onclick = () => {
+          const siteInfo = sidebar.querySelector('#sidebar-site-info');
+          const chevron = siteToggle.querySelector('[data-lucide="chevron-up"]');
+          if (siteInfo && chevron) {
+            const isHidden = siteInfo.classList.contains('hidden');
+            siteInfo.classList.toggle('hidden');
+            // Rotate chevron
+            if (isHidden) {
+              chevron.setAttribute('data-lucide', 'chevron-down');
+            } else {
+              chevron.setAttribute('data-lucide', 'chevron-up');
+            }
+            if (window.lucide) lucide.createIcons();
+          }
+        };
+      }
+      
+      if (clientToggle) {
+        clientToggle.onclick = () => {
+          const clientInfo = sidebar.querySelector('#sidebar-client-info');
+          const chevron = clientToggle.querySelector('[data-lucide="chevron-up"]');
+          if (clientInfo && chevron) {
+            const isHidden = clientInfo.classList.contains('hidden');
+            clientInfo.classList.toggle('hidden');
+            // Rotate chevron
+            if (isHidden) {
+              chevron.setAttribute('data-lucide', 'chevron-down');
+            } else {
+              chevron.setAttribute('data-lucide', 'chevron-up');
+            }
+            if (window.lucide) lucide.createIcons();
+          }
+        };
+      }
+      
+      // Initially expand site section
+      const siteInfo = sidebar.querySelector('#sidebar-site-info');
+      if (siteInfo) siteInfo.classList.remove('hidden');
 
       // Additional Details
       renderAdditionalDetails(eventData, eventType, sidebar);
@@ -3504,25 +3600,43 @@
         return;
       }
 
-      const staffHTML = staffMembers.map(staff => {
-        const initials = staff.full_name 
-          ? staff.full_name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
-          : '?';
-        
-        return `
-          <div class="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-nfgray dark:border-gray-700 hover:shadow-sm transition-shadow">
-            <div class="w-10 h-10 rounded-full bg-nfgblue dark:bg-blue-900 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0 shadow-sm">
-              ${initials}
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">${staff.full_name || 'Unknown'}</p>
-              ${staff.email ? `<p class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">${staff.email}</p>` : ''}
-            </div>
-          </div>
-        `;
-      }).join('');
+      // Show primary staff in summary
+      if (staffMembers && staffMembers.length > 0) {
+        const primaryStaff = staffMembers[0];
+        const primaryStaffEl = sidebar.querySelector('#sidebar-primary-staff-content');
+        if (primaryStaffEl) {
+          primaryStaffEl.innerHTML = `<span class="text-sm text-gray-700 dark:text-gray-300">${primaryStaff.full_name || 'Unknown'}</span>`;
+        }
+      }
 
-      if (staffListEl) staffListEl.innerHTML = staffHTML;
+      // Show all staff in collapsible section (if more than 1)
+      if (staffMembers && staffMembers.length > 1) {
+        const allStaffSection = sidebar.querySelector('#sidebar-all-staff-section');
+        if (allStaffSection) allStaffSection.classList.remove('hidden');
+        
+        const staffHTML = staffMembers.map(staff => {
+          const initials = staff.full_name 
+            ? staff.full_name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+            : '?';
+          
+          return `
+            <div class="flex items-center gap-3 py-2">
+              <div class="w-8 h-8 rounded-full bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400 flex items-center justify-center font-semibold text-xs flex-shrink-0">
+                ${initials}
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">${staff.full_name || 'Unknown'}</p>
+                ${staff.email ? `<p class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">${staff.email}</p>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        if (staffListEl) staffListEl.innerHTML = staffHTML;
+      } else {
+        const allStaffSection = sidebar.querySelector('#sidebar-all-staff-section');
+        if (allStaffSection) allStaffSection.classList.add('hidden');
+      }
       
       if (eventType === 'job' && !isStaff) {
         if (addStaffBtn) addStaffBtn.classList.remove('hidden');
@@ -3550,27 +3664,30 @@
         return;
       }
 
-      const siteHTML = `
-        <div class="space-y-3">
-          <p class="font-semibold text-base text-gray-900 dark:text-gray-100 cursor-pointer hover:text-nfgblue dark:hover:text-blue-400 transition" onclick="window.location.href='sites.html?site=${site.id}'">
-            ${site.name || 'Unnamed Site'}
-          </p>
-          ${site.address ? `
-            <div class="flex items-start gap-2.5 text-sm text-gray-600 dark:text-gray-400">
-              <i data-lucide="map-pin" class="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400 dark:text-gray-500"></i>
-              <span>${site.address}</span>
-            </div>
-          ` : ''}
-          ${site.deal_value ? `
-            <div class="flex items-center gap-2.5 text-sm text-gray-600 dark:text-gray-400">
-              <i data-lucide="dollar-sign" class="w-4 h-4 text-gray-400 dark:text-gray-500"></i>
-              <span>Deal Value: <span class="font-semibold text-gray-900 dark:text-gray-100">$${Number(site.deal_value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></span>
-            </div>
-          ` : ''}
-        </div>
-      `;
-
-      if (siteInfoEl) siteInfoEl.innerHTML = siteHTML;
+      const siteName = site.name || 'Unnamed Site';
+      const siteInitial = siteName.charAt(0).toUpperCase();
+      
+      const siteNameEl = sidebar.querySelector('#sidebar-site-name p');
+      const siteInitialEl = sidebar.querySelector('#sidebar-site-initial');
+      const siteAddressEl = sidebar.querySelector('#sidebar-site-address span');
+      const siteDealValueEl = sidebar.querySelector('#sidebar-site-deal-value');
+      const siteDealValueSpan = sidebar.querySelector('#sidebar-site-deal-value span');
+      
+      if (siteNameEl) {
+        siteNameEl.textContent = siteName;
+        siteNameEl.onclick = () => window.location.href = `sites.html?site=${site.id}`;
+        siteNameEl.style.cursor = 'pointer';
+      }
+      if (siteInitialEl) siteInitialEl.textContent = siteInitial;
+      if (siteAddressEl) {
+        siteAddressEl.textContent = site.address || 'No address';
+      }
+      if (site.deal_value && siteDealValueEl && siteDealValueSpan) {
+        siteDealValueSpan.textContent = `Deal Value: $${Number(site.deal_value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        siteDealValueEl.classList.remove('hidden');
+      } else if (siteDealValueEl) {
+        siteDealValueEl.classList.add('hidden');
+      }
       if (window.lucide) lucide.createIcons();
     }
 
@@ -3593,19 +3710,18 @@
         return;
       }
 
-      const clientHTML = `
-        <div class="space-y-3">
-          <p class="font-semibold text-base text-gray-900 dark:text-gray-100">${client.full_name || 'Unknown Client'}</p>
-          ${client.email ? `
-            <div class="flex items-center gap-2.5 text-sm text-gray-600 dark:text-gray-400">
-              <i data-lucide="mail" class="w-4 h-4 text-gray-400 dark:text-gray-500"></i>
-              <span>${client.email}</span>
-            </div>
-          ` : ''}
-        </div>
-      `;
-
-      if (clientInfoEl) clientInfoEl.innerHTML = clientHTML;
+      const clientName = client.full_name || 'Unknown Client';
+      const clientInitial = clientName.charAt(0).toUpperCase();
+      
+      const clientNameEl = sidebar.querySelector('#sidebar-client-name p');
+      const clientInitialEl = sidebar.querySelector('#sidebar-client-initial');
+      const clientEmailEl = sidebar.querySelector('#sidebar-client-email span');
+      
+      if (clientNameEl) clientNameEl.textContent = clientName;
+      if (clientInitialEl) clientInitialEl.textContent = clientInitial;
+      if (clientEmailEl) {
+        clientEmailEl.textContent = client.email || 'No email';
+      }
       if (window.lucide) lucide.createIcons();
     }
 
@@ -3624,55 +3740,40 @@
       const detailsEl = sidebar.querySelector('#sidebar-additional-details');
       let detailsHTML = '';
 
+      const detailsContentEl = sidebar.querySelector('#sidebar-additional-details-content');
+      const detailsSectionEl = sidebar.querySelector('#sidebar-additional-details');
+      
+      if (!detailsContentEl) return;
+      
+      let hasDetails = false;
+      
       if (eventType === 'job') {
-        detailsHTML = `
-          <div class="space-y-3">
-            ${eventData.job_type ? `
-              <div class="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
-                <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Job Type</span>
-                <span class="text-sm font-medium text-gray-900 dark:text-gray-100">${eventData.job_type}</span>
-              </div>
-            ` : ''}
-            ${eventData.frequency ? `
-              <div class="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
-                <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Frequency</span>
-                <span class="text-sm font-medium text-gray-900 dark:text-gray-100">${eventData.frequency}</span>
-              </div>
-            ` : ''}
-            ${eventData.estimated_hours ? `
-              <div class="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
-                <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Estimated Hours</span>
-                <span class="text-sm font-medium text-gray-900 dark:text-gray-100">${eventData.estimated_hours} hrs</span>
-              </div>
-            ` : ''}
-            ${eventData.description ? `
-              <div class="pt-2">
-                <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase block mb-2">Description</span>
-                <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">${eventData.description}</p>
-              </div>
-            ` : ''}
-          </div>
-        `;
+        const parts = [];
+        if (eventData.job_type) parts.push(`<div class="py-1.5"><span class="text-xs text-gray-500 dark:text-gray-400 uppercase">Job Type: </span><span class="text-sm font-medium text-gray-900 dark:text-gray-100">${eventData.job_type}</span></div>`);
+        if (eventData.frequency) parts.push(`<div class="py-1.5"><span class="text-xs text-gray-500 dark:text-gray-400 uppercase">Frequency: </span><span class="text-sm font-medium text-gray-900 dark:text-gray-100">${eventData.frequency}</span></div>`);
+        if (eventData.estimated_hours) parts.push(`<div class="py-1.5"><span class="text-xs text-gray-500 dark:text-gray-400 uppercase">Estimated Hours: </span><span class="text-sm font-medium text-gray-900 dark:text-gray-100">${eventData.estimated_hours} hrs</span></div>`);
+        if (eventData.description) parts.push(`<div class="py-1.5 pt-2"><span class="text-xs text-gray-500 dark:text-gray-400 uppercase block mb-1">Description</span><p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">${eventData.description}</p></div>`);
+        
+        if (parts.length > 0) {
+          detailsContentEl.innerHTML = parts.join('');
+          hasDetails = true;
+        }
       } else if (eventType === 'booking') {
-        detailsHTML = `
-          <div class="space-y-3">
-            ${eventData.description ? `
-              <div class="pt-2">
-                <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase block mb-2">Description</span>
-                <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">${eventData.description}</p>
-              </div>
-            ` : ''}
-            ${eventData.frequency === 'recurring' ? `
-              <div class="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <i data-lucide="refresh-cw" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
-                <span class="text-sm font-medium text-nfgblue dark:text-blue-400">Recurring Booking</span>
-              </div>
-            ` : ''}
-          </div>
-        `;
+        const parts = [];
+        if (eventData.description) parts.push(`<div class="py-1.5"><p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">${eventData.description}</p></div>`);
+        if (eventData.frequency === 'recurring') parts.push(`<div class="py-1.5"><span class="inline-flex items-center gap-2 text-sm text-nfgblue dark:text-blue-400"><i data-lucide="refresh-cw" class="w-4 h-4"></i> Recurring Booking</span></div>`);
+        
+        if (parts.length > 0) {
+          detailsContentEl.innerHTML = parts.join('');
+          hasDetails = true;
+        }
       }
 
-      if (detailsEl) detailsEl.innerHTML = detailsHTML;
+      if (hasDetails) {
+        if (detailsSectionEl) detailsSectionEl.classList.remove('hidden');
+      } else {
+        if (detailsSectionEl) detailsSectionEl.classList.add('hidden');
+      }
       if (window.lucide) lucide.createIcons();
     }
 
