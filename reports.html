@@ -4888,10 +4888,20 @@
         }
       });
       
-      // Remove receipt handler
-      document.getElementById('expense-receipt-remove')?.addEventListener('click', () => {
-        document.getElementById('expense-receipt').value = '';
-        document.getElementById('expense-receipt-preview').classList.add('hidden');
+      // Remove receipt handler (event delegation for dynamically created button)
+      document.addEventListener('click', (e) => {
+        if (e.target.id === 'expense-receipt-remove') {
+          document.getElementById('expense-receipt').value = '';
+          const preview = document.getElementById('expense-receipt-preview');
+          if (preview) {
+            preview.classList.add('hidden');
+            // Reset preview content
+            const previewImg = document.getElementById('expense-receipt-preview-img');
+            if (previewImg) {
+              previewImg.src = '';
+            }
+          }
+        }
       });
       
       // Initialize tabs
