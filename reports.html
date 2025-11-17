@@ -3244,167 +3244,18 @@
         return;
       }
       
-      console.log('[Billing] Attaching site change listener, current value:', siteSelect.value);
-      
-      // ALWAYS remove old listeners by cloning the element (clean slate)
-      // Don't skip - we need to reattach after sites are loaded
-      const newSelect = siteSelect.cloneNode(true);
-      siteSelect.parentNode.replaceChild(newSelect, siteSelect);
-      const freshSelect = document.getElementById('invoice-site-select');
-      
-      if (!freshSelect) {
-        console.error('[Billing] Failed to get fresh select element after clone');
-        return;
-      }
-      
-      // Attach listener with multiple approaches
-      // 1. Native change event (PRIMARY - this should fire when option is selected)
-      freshSelect.addEventListener('change', async function(e) {
-        const siteId = (e.target && e.target.value) || this.value || freshSelect.value;
-        console.log('[Billing] 🔥🔥🔥 Site dropdown CHANGED (native):', siteId, 'Type:', typeof siteId);
-        console.log('[Billing] Event target:', e.target, 'This:', this, 'FreshSelect:', freshSelect);
-        console.log('[Billing] FreshSelect value:', freshSelect.value);
+      // Use direct onchange property (most reliable method)
+      siteSelect.onchange = async function(e) {
+        const siteId = this.value;
         if (siteId && siteId !== '') {
-          console.log('[Billing] ✅ Valid siteId found, loading jobs and bookings for site:', siteId);
           await loadInvoiceJobs(siteId);
           await loadInvoiceBookings(siteId);
         } else {
-          console.warn('[Billing] ⚠️ Empty siteId, clearing jobs and bookings');
+          // Clear jobs and bookings if no site selected
           document.getElementById('invoice-job-select').innerHTML = '<option value="">Select a job (optional)</option>';
           document.getElementById('invoice-booking-select').innerHTML = '<option value="">Select a booking (optional)</option>';
         }
-      }, { capture: false }); // Don't use capture - change events bubble naturally
-      
-      // 2. Also listen on input event
-      freshSelect.addEventListener('input', async function(e) {
-        const siteId = e.target.value || this.value;
-        console.log('[Billing] 🔥🔥🔥 Site dropdown INPUT:', siteId);
-        if (siteId) {
-          await loadInvoiceJobs(siteId);
-          await loadInvoiceBookings(siteId);
-        }
-      }, { capture: true });
-      
-      // 3. Also use event delegation on document (catches all events)
-      document.addEventListener('change', async function(e) {
-        if (e.target && e.target.id === 'invoice-site-select') {
-          const siteId = e.target.value;
-          console.log('[Billing] 🔥🔥🔥 Site dropdown CHANGED (document delegation):', siteId);
-          if (siteId) {
-            await loadInvoiceJobs(siteId);
-            await loadInvoiceBookings(siteId);
-          }
-        }
-      }, true); // Use capture phase
-      
-      // 4. Watch for value changes using MutationObserver (last resort)
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
-            const currentValue = freshSelect.value;
-            console.log('[Billing] 🔥 Site select value attribute changed to:', currentValue);
-            if (currentValue && currentValue !== '') {
-              loadInvoiceJobs(currentValue);
-              loadInvoiceBookings(currentValue);
-            }
-          }
-        });
-      });
-      
-      // Also watch for when options are clicked/selected
-      // Store previous value to detect changes
-      let previousSiteValue = freshSelect.value;
-      
-      // Use multiple intervals to catch value changes (aggressive fallback)
-      const valueCheckInterval = setInterval(() => {
-        const currentValue = freshSelect.value;
-        if (currentValue !== previousSiteValue) {
-          console.log('[Billing] 🔥🔥🔥 Site value changed (interval check):', currentValue, 'Previous:', previousSiteValue);
-          previousSiteValue = currentValue;
-          if (currentValue && currentValue !== '') {
-            loadInvoiceJobs(currentValue);
-            loadInvoiceBookings(currentValue);
-          }
-        }
-      }, 200); // Check every 200ms
-      
-      // Store interval to clear later if needed
-      if (!window.billingSiteSelectInterval) {
-        window.billingSiteSelectInterval = valueCheckInterval;
-      }
-      
-      freshSelect.addEventListener('click', function(e) {
-        console.log('[Billing] Site dropdown clicked, current value:', freshSelect.value);
-        // Immediately check value, then check again after delay
-        setTimeout(() => {
-          const newValue = freshSelect.value;
-          if (newValue && newValue !== '' && newValue !== previousSiteValue) {
-            console.log('[Billing] 🔥 Site value changed after click:', newValue);
-            previousSiteValue = newValue;
-            loadInvoiceJobs(newValue);
-            loadInvoiceBookings(newValue);
-          }
-        }, 150);
-      });
-      
-      // Also listen to mousedown on options (more direct)
-      freshSelect.addEventListener('mousedown', function(e) {
-        if (e.target.tagName === 'OPTION') {
-          const optionValue = e.target.value;
-          console.log('[Billing] Option mousedown:', optionValue);
-          setTimeout(() => {
-            if (freshSelect.value === optionValue && optionValue) {
-              console.log('[Billing] 🔥 Option selected via mousedown:', optionValue);
-              loadInvoiceJobs(optionValue);
-              loadInvoiceBookings(optionValue);
-            }
-          }, 50);
-        }
-      });
-      
-      // Watch the select element for value changes
-      observer.observe(freshSelect, { 
-        attributes: true, 
-        attributeFilter: ['value'],
-        childList: true, // Watch for option changes
-        subtree: true 
-      });
-      
-      // 4. Manual test function attached to window for debugging
-      window.testSiteSelect = function(siteId) {
-        console.log('[Billing] 🧪 TEST: Manually triggering job load for site:', siteId);
-        if (siteId) {
-          loadInvoiceJobs(siteId);
-          loadInvoiceBookings(siteId);
-        } else {
-          // If no siteId provided, try getting from select
-          const select = document.getElementById('invoice-site-select');
-          if (select && select.value) {
-            console.log('[Billing] 🧪 TEST: Using select value:', select.value);
-            loadInvoiceJobs(select.value);
-            loadInvoiceBookings(select.value);
-          } else {
-            console.error('[Billing] 🧪 TEST: No siteId provided and select has no value');
-          }
-        }
       };
-      
-      // 5. Global function to manually test with first site
-      window.testFirstSite = function() {
-        const select = document.getElementById('invoice-site-select');
-        if (select && select.options.length > 1) {
-          const firstSiteOption = select.options[1]; // Skip first empty option
-          const siteId = firstSiteOption.value;
-          console.log('[Billing] 🧪 TEST FIRST SITE: Selecting', siteId);
-          select.value = siteId;
-          // Trigger change manually
-          select.dispatchEvent(new Event('change', { bubbles: true }));
-          loadInvoiceJobs(siteId);
-          loadInvoiceBookings(siteId);
-        }
-      };
-      
-      console.log('[Billing] ✅ Site dropdown listener attached (change, input, click)');
     }
     
     // Load clients for invoice creation
@@ -3468,45 +3319,19 @@
         
         console.log('[Billing] Found', sites?.length || 0, 'sites');
         
-        // Add sites WITH direct onclick handlers on each option
+        // Add sites to dropdown
         (sites || []).forEach(site => {
           const option = document.createElement('option');
           option.value = site.id;
           option.textContent = site.name;
-          
-          // Add direct event listener on the option (as a last resort)
-          option.addEventListener('click', function() {
-            console.log('[Billing] 🎯 Option clicked directly:', site.id);
-            setTimeout(() => {
-              loadInvoiceJobs(site.id);
-              loadInvoiceBookings(site.id);
-            }, 50);
-          });
-          
           select.appendChild(option);
         });
         
         console.log('[Billing] Sites loaded into dropdown');
         
-        // Attach site change listener AFTER sites are loaded (in case element was replaced)
-        // Use setTimeout to ensure DOM is fully updated
+        // Attach site change listener AFTER sites are loaded
         setTimeout(() => {
           attachSiteChangeListener();
-          
-          // Also try directly attaching to the select after sites are added
-          const selectAfterLoad = document.getElementById('invoice-site-select');
-          if (selectAfterLoad) {
-            // Force add a change listener with immediate execution
-            selectAfterLoad.onchange = async function(e) {
-              const siteId = this.value;
-              console.log('[Billing] 🎯🎯🎯 onchange property fired:', siteId);
-              if (siteId) {
-                await loadInvoiceJobs(siteId);
-                await loadInvoiceBookings(siteId);
-              }
-            };
-            console.log('[Billing] ✅ Direct onchange handler attached');
-          }
         }, 100);
       } catch (error) {
         console.error('[Billing] Error loading sites:', error);
@@ -3515,11 +3340,8 @@
     
     // Load jobs for selected site
     async function loadInvoiceJobs(siteId) {
-      console.log('[Billing] ⚡⚡⚡ loadInvoiceJobs CALLED with siteId:', siteId, 'Type:', typeof siteId);
-      
       try {
         if (!siteId) {
-          console.warn('[Billing] ⚠️ No siteId provided, clearing jobs dropdown');
           const select = document.getElementById('invoice-job-select');
           if (select) {
             select.innerHTML = '<option value="">Select a job (optional)</option>';
@@ -3527,7 +3349,7 @@
           return;
         }
         
-        console.log('[Billing] ✅ Fetching jobs for site:', siteId, 'Type:', typeof siteId);
+        console.log('[Billing] Fetching jobs for site:', siteId);
         
         // Convert siteId to number if it's a string (sites table uses BIGSERIAL)
         const siteIdNum = typeof siteId === 'string' ? parseInt(siteId, 10) : siteId;
@@ -3606,53 +3428,30 @@
           return;
         }
         
-        console.log('[Billing] ✅ Query successful. Found', jobs?.length || 0, 'jobs for site');
-        if (jobs && jobs.length > 0) {
-          console.log('[Billing] ✅ Sample job:', jobs[0]);
-          console.log('[Billing] ✅ All jobs:', jobs);
-        } else {
-          console.warn('[Billing] ⚠️ No jobs found for site:', siteIdNum);
-          console.warn('[Billing] ⚠️ This could be due to:');
-          console.warn('[Billing] ⚠️ 1. No jobs exist for this site');
-          console.warn('[Billing] ⚠️ 2. RLS policies blocking access to jobs');
-          console.warn('[Billing] ⚠️ 3. Site ID mismatch');
-          console.warn('[Billing] ⚠️ 4. Jobs table has different site_id format');
-          
-          // Show message in dropdown
-          const select = document.getElementById('invoice-job-select');
-          if (select) {
-            select.innerHTML = '<option value="">No jobs found for this site</option>';
-          }
-          return; // Exit early if no jobs
-        }
+        console.log('[Billing] Found', jobs?.length || 0, 'jobs for site');
         
         const select = document.getElementById('invoice-job-select');
         if (!select) {
-          console.error('[Billing] ❌ Job select element not found!');
+          console.error('[Billing] Job select element not found!');
           return;
         }
-        
-        console.log('[Billing] ✅ Job select element found, populating...');
         
         // Clear existing options
         select.innerHTML = '<option value="">Select a job (optional)</option>';
         
         // Add jobs with status indicator
-        let addedCount = 0;
-        (jobs || []).forEach(job => {
-          const option = document.createElement('option');
-          option.value = job.id;
-          const statusLabel = job.status ? ` (${job.status})` : '';
-          option.textContent = `${job.title}${statusLabel}`;
-          select.appendChild(option);
-          addedCount++;
-        });
-        
-        console.log('[Billing] ✅✅✅ Jobs loaded into dropdown:', addedCount, 'jobs added');
-        console.log('[Billing] ✅ Job select now has', select.options.length, 'options');
-        
-        // Force a visual update
-        select.dispatchEvent(new Event('change', { bubbles: true }));
+        if (jobs && jobs.length > 0) {
+          jobs.forEach(job => {
+            const option = document.createElement('option');
+            option.value = job.id;
+            const statusLabel = job.status ? ` (${job.status})` : '';
+            option.textContent = `${job.title}${statusLabel}`;
+            select.appendChild(option);
+          });
+          console.log('[Billing] Jobs loaded into dropdown:', jobs.length, 'jobs');
+        } else {
+          console.log('[Billing] No jobs found for this site');
+        }
         
         // Check if this select uses custom dropdown - if so, reinitialize it
         if (select.hasAttribute('data-custom-dropdown')) {
