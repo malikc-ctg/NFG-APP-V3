@@ -3465,8 +3465,11 @@
     
     // Load jobs for selected site
     async function loadInvoiceJobs(siteId) {
+      console.log('[Billing] ⚡⚡⚡ loadInvoiceJobs CALLED with siteId:', siteId, 'Type:', typeof siteId);
+      
       try {
         if (!siteId) {
+          console.warn('[Billing] ⚠️ No siteId provided, clearing jobs dropdown');
           const select = document.getElementById('invoice-job-select');
           if (select) {
             select.innerHTML = '<option value="">Select a job (optional)</option>';
@@ -3474,7 +3477,7 @@
           return;
         }
         
-        console.log('[Billing] Fetching jobs for site:', siteId, 'Type:', typeof siteId);
+        console.log('[Billing] ✅ Fetching jobs for site:', siteId, 'Type:', typeof siteId);
         
         // Convert siteId to number if it's a string (sites table uses BIGSERIAL)
         const siteIdNum = typeof siteId === 'string' ? parseInt(siteId, 10) : siteId;
@@ -3553,36 +3556,53 @@
           return;
         }
         
-        console.log('[Billing] Query successful. Found', jobs?.length || 0, 'jobs for site');
+        console.log('[Billing] ✅ Query successful. Found', jobs?.length || 0, 'jobs for site');
         if (jobs && jobs.length > 0) {
-          console.log('[Billing] Sample job:', jobs[0]);
+          console.log('[Billing] ✅ Sample job:', jobs[0]);
+          console.log('[Billing] ✅ All jobs:', jobs);
         } else {
-          console.warn('[Billing] No jobs found for site:', siteIdNum);
-          console.warn('[Billing] This could be due to:');
-          console.warn('[Billing] 1. No jobs exist for this site');
-          console.warn('[Billing] 2. RLS policies blocking access to jobs');
-          console.warn('[Billing] 3. Site ID mismatch');
+          console.warn('[Billing] ⚠️ No jobs found for site:', siteIdNum);
+          console.warn('[Billing] ⚠️ This could be due to:');
+          console.warn('[Billing] ⚠️ 1. No jobs exist for this site');
+          console.warn('[Billing] ⚠️ 2. RLS policies blocking access to jobs');
+          console.warn('[Billing] ⚠️ 3. Site ID mismatch');
+          console.warn('[Billing] ⚠️ 4. Jobs table has different site_id format');
+          
+          // Show message in dropdown
+          const select = document.getElementById('invoice-job-select');
+          if (select) {
+            select.innerHTML = '<option value="">No jobs found for this site</option>';
+          }
+          return; // Exit early if no jobs
         }
         
         const select = document.getElementById('invoice-job-select');
         if (!select) {
-          console.error('[Billing] Job select element not found!');
+          console.error('[Billing] ❌ Job select element not found!');
           return;
         }
+        
+        console.log('[Billing] ✅ Job select element found, populating...');
         
         // Clear existing options
         select.innerHTML = '<option value="">Select a job (optional)</option>';
         
         // Add jobs with status indicator
+        let addedCount = 0;
         (jobs || []).forEach(job => {
           const option = document.createElement('option');
           option.value = job.id;
           const statusLabel = job.status ? ` (${job.status})` : '';
           option.textContent = `${job.title}${statusLabel}`;
           select.appendChild(option);
+          addedCount++;
         });
         
-        console.log('[Billing] Jobs loaded into dropdown:', jobs?.length || 0, 'jobs');
+        console.log('[Billing] ✅✅✅ Jobs loaded into dropdown:', addedCount, 'jobs added');
+        console.log('[Billing] ✅ Job select now has', select.options.length, 'options');
+        
+        // Force a visual update
+        select.dispatchEvent(new Event('change', { bubbles: true }));
         
         // Check if this select uses custom dropdown - if so, reinitialize it
         if (select.hasAttribute('data-custom-dropdown')) {
