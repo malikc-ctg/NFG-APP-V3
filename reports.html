@@ -3091,11 +3091,11 @@
           throw expenseError;
         }
 
-        // Send receipt email if receipt provided
+        // Send expense confirmation email (with or without receipt)
         let emailSent = false;
-        if (receiptBase64 && currentUserProfile?.email) {
+        if (currentUserProfile?.email) {
           try {
-            console.log('[Expenses] Sending receipt email...', {
+            console.log('[Expenses] Sending expense confirmation email...', {
               expenseId: expense.id,
               userEmail: currentUserProfile.email,
               hasReceipt: !!receiptBase64
@@ -3115,14 +3115,14 @@
             const emailResult = await sendExpenseReceiptEmail(
               expense.id,
               expenseDataForEmail,
-              receiptBase64,
+              receiptBase64, // Can be null if no receipt
               currentUserProfile.email,
               currentUserProfile.full_name || currentUserProfile.email
             );
 
             console.log('[Expenses] Email result:', emailResult);
 
-            // Update expense with receipt_emailed_at timestamp
+            // Update expense with receipt_emailed_at timestamp (even if no receipt, we still sent confirmation)
             const { error: updateError } = await supabase
               .from('expenses')
               .update({ receipt_emailed_at: new Date().toISOString() })
@@ -3133,9 +3133,9 @@
             }
 
             emailSent = true;
-            console.log('[Expenses] Receipt email sent successfully');
+            console.log('[Expenses] Expense confirmation email sent successfully');
           } catch (emailError) {
-            console.error('[Expenses] Error sending receipt email:', emailError);
+            console.error('[Expenses] Error sending expense confirmation email:', emailError);
             console.error('[Expenses] Error details:', {
               message: emailError.message,
               stack: emailError.stack,
@@ -3145,7 +3145,7 @@
             // We'll show a warning to the user
           }
         } else {
-          console.log('[Expenses] Email not sent:', {
+          console.log('[Expenses] Email not sent - no user email found:', {
             hasReceipt: !!receiptBase64,
             hasEmail: !!currentUserProfile?.email,
             userEmail: currentUserProfile?.email
@@ -3154,9 +3154,13 @@
 
         // Success message
         if (emailSent) {
-          toast.success('Expense created and receipt sent to your email', 'Expense Added');
-        } else if (receiptBase64) {
-          toast.warning('Expense created, but receipt email failed. Please contact support.', 'Partial Success');
+          if (receiptBase64) {
+            toast.success('Expense created and confirmation email sent with receipt', 'Expense Added');
+          } else {
+            toast.success('Expense created and confirmation email sent', 'Expense Added');
+          }
+        } else if (currentUserProfile?.email) {
+          toast.warning('Expense created, but confirmation email failed. Please contact support.', 'Partial Success');
         } else {
           toast.success('Expense created successfully', 'Expense Added');
         }

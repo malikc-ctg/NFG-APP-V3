@@ -20,9 +20,11 @@ serve(async (req) => {
       )
     }
 
-    // Receipt file is optional
+    // Receipt file is optional - email will be sent regardless
     if (!receiptFile) {
-      console.log('[Expense Receipt Email] No receipt file provided, sending email without attachment')
+      console.log('[Expense Receipt Email] No receipt file provided, sending confirmation email without attachment')
+    } else {
+      console.log('[Expense Receipt Email] Receipt file provided, will attach to email')
     }
 
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
