@@ -3951,6 +3951,94 @@
       }
     };
     
+    // Validate payment amount
+    function validatePaymentAmount(amount, balanceDue) {
+      if (!amount || amount <= 0) {
+        return { valid: false, error: 'Payment amount must be greater than 0' };
+      }
+      if (amount > balanceDue) {
+        return { valid: false, error: `Payment cannot exceed balance due of $${balanceDue.toFixed(2)}` };
+      }
+      return { valid: true };
+    }
+
+    // Format currency
+    function formatCurrency(amount) {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+      }).format(amount);
+    }
+
+    // Update payment form validation
+    function updatePaymentFormValidation() {
+      const amountInput = document.getElementById('payment-amount');
+      const amountError = document.getElementById('payment-amount-error');
+      const submitBtn = document.querySelector('#add-payment-form button[type="submit"]');
+      const balanceDueEl = document.getElementById('payment-balance-due');
+      
+      if (!amountInput || !window.currentPaymentInvoice) return;
+
+      const paymentAmount = parseFloat(amountInput.value) || 0;
+      const balanceDue = Number(window.currentPaymentInvoice.balance_due || 0);
+      
+      // Validate amount
+      const validation = validatePaymentAmount(paymentAmount, balanceDue);
+      
+      if (paymentAmount > 0 && !validation.valid) {
+        // Show error
+        amountError.textContent = validation.error;
+        amountError.classList.remove('hidden');
+        amountInput.classList.add('border-red-500');
+        amountInput.classList.remove('border-nfgray');
+        if (submitBtn) submitBtn.disabled = true;
+        submitBtn?.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        // Hide error
+        amountError.classList.add('hidden');
+        amountInput.classList.remove('border-red-500');
+        amountInput.classList.add('border-nfgray');
+        if (submitBtn) submitBtn.disabled = false;
+        submitBtn?.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+
+      // Update balance preview
+      const newBalanceHint = document.getElementById('payment-new-balance-hint');
+      if (paymentAmount > 0 && paymentAmount <= balanceDue) {
+        const newBalance = balanceDue - paymentAmount;
+        balanceDueEl.textContent = `$${newBalance.toFixed(2)}`;
+        if (newBalanceHint) {
+          newBalanceHint.classList.remove('hidden');
+          newBalanceHint.textContent = `New balance after payment: $${newBalance.toFixed(2)}`;
+        }
+        if (newBalance === 0) {
+          balanceDueEl.textContent = `$${newBalance.toFixed(2)} (Fully Paid)`;
+          balanceDueEl.classList.remove('text-orange-600', 'dark:text-orange-400');
+          balanceDueEl.classList.add('text-green-600', 'dark:text-green-400');
+          if (newBalanceHint) {
+            newBalanceHint.textContent = 'Invoice will be fully paid';
+            newBalanceHint.classList.add('text-green-600', 'dark:text-green-400');
+            newBalanceHint.classList.remove('text-gray-500', 'dark:text-gray-400');
+          }
+        } else {
+          balanceDueEl.classList.remove('text-green-600', 'dark:text-green-400');
+          balanceDueEl.classList.add('text-orange-600', 'dark:text-orange-400');
+          if (newBalanceHint) {
+            newBalanceHint.classList.remove('text-green-600', 'dark:text-green-400');
+            newBalanceHint.classList.add('text-gray-500', 'dark:text-gray-400');
+          }
+        }
+      } else if (paymentAmount === 0 || !amountInput.value) {
+        // Reset to original balance
+        balanceDueEl.textContent = `$${balanceDue.toFixed(2)}`;
+        balanceDueEl.classList.remove('text-green-600', 'dark:text-green-400');
+        balanceDueEl.classList.add('text-orange-600', 'dark:text-orange-400');
+        if (newBalanceHint) {
+          newBalanceHint.classList.add('hidden');
+        }
+      }
+    }
+
     // Open add payment modal
     function openAddPaymentModal(invoiceId, invoice) {
       const modal = document.getElementById('add-payment-modal');
@@ -3978,9 +4066,45 @@
       document.getElementById('payment-amount-error').classList.add('hidden');
       document.getElementById('payment-error-message').classList.add('hidden');
 
+      // Reset balance display
+      const balanceDueEl = document.getElementById('payment-balance-due');
+      const newBalanceHint = document.getElementById('payment-new-balance-hint');
+      balanceDueEl.textContent = `$${balanceDue.toFixed(2)}`;
+      balanceDueEl.classList.remove('text-green-600', 'dark:text-green-400');
+      balanceDueEl.classList.add('text-orange-600', 'dark:text-orange-400');
+      if (newBalanceHint) {
+        newBalanceHint.classList.add('hidden');
+        newBalanceHint.classList.remove('text-green-600', 'dark:text-green-400');
+        newBalanceHint.classList.add('text-gray-500', 'dark:text-gray-400');
+      }
+
+      // Reset input border
+      const amountInput = document.getElementById('payment-amount');
+      amountInput.classList.remove('border-red-500');
+      amountInput.classList.add('border-nfgray');
+
+      // Enable submit button
+      const submitBtn = document.querySelector('#add-payment-form button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+
       // Store current invoice ID and data
       window.currentPaymentInvoiceId = invoiceId;
       window.currentPaymentInvoice = invoice;
+
+      // Attach real-time validation listeners
+      const paymentAmountInput = document.getElementById('payment-amount');
+      if (paymentAmountInput) {
+        // Remove existing listeners to avoid duplicates
+        const newAmountInput = paymentAmountInput.cloneNode(true);
+        paymentAmountInput.parentNode.replaceChild(newAmountInput, paymentAmountInput);
+        
+        // Add new listeners
+        newAmountInput.addEventListener('input', updatePaymentFormValidation);
+        newAmountInput.addEventListener('blur', updatePaymentFormValidation);
+      }
 
       // Show modal
       modal.classList.remove('hidden');
@@ -4616,8 +4740,9 @@
               <p id="payment-invoice-number" class="font-semibold text-nfgblue dark:text-blue-400">—</p>
             </div>
             <div>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Balance Due</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Current Balance Due</p>
               <p id="payment-balance-due" class="font-bold text-lg text-orange-600 dark:text-orange-400">$0.00</p>
+              <p id="payment-new-balance-hint" class="hidden text-xs text-gray-500 dark:text-gray-400 mt-1">New balance after payment</p>
             </div>
           </div>
         </div>
