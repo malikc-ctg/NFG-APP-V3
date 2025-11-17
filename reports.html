@@ -3777,15 +3777,308 @@
     
     // Event listeners are now initialized in initInvoiceModalListeners() above
     
-    // Placeholder functions for invoice actions
-    window.viewInvoice = function(invoiceId) {
-      toast.info('Invoice detail view coming soon', 'Coming Soon');
-      // TODO: Implement invoice detail modal
+    // View invoice details
+    window.viewInvoice = async function(invoiceId) {
+      try {
+        const modal = document.getElementById('invoice-detail-modal');
+        if (!modal) {
+          console.error('[Billing] Invoice detail modal not found');
+          return;
+        }
+
+        // Show loading state
+        document.getElementById('invoice-detail-line-items').innerHTML = '<tr><td colspan="4" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Loading...</td></tr>';
+
+        // Fetch invoice with line items and payments
+        const { data: invoice, error: invoiceError } = await supabase
+          .from('invoices')
+          .select('*')
+          .eq('id', invoiceId)
+          .single();
+
+        if (invoiceError || !invoice) {
+          console.error('[Billing] Error loading invoice:', invoiceError);
+          toast.error('Failed to load invoice', 'Error');
+          return;
+        }
+
+        // Fetch line items
+        const { data: lineItems, error: lineItemsError } = await supabase
+          .from('invoice_line_items')
+          .select('*')
+          .eq('invoice_id', invoiceId)
+          .order('sort_order', { ascending: true });
+
+        // Fetch payments
+        const { data: payments, error: paymentsError } = await supabase
+          .from('payments')
+          .select('*')
+          .eq('invoice_id', invoiceId)
+          .order('payment_date', { ascending: false });
+
+        // Fetch related data (client, site, job, booking)
+        const [client, site, job, booking] = await Promise.all([
+          invoice.client_id ? supabase.from('user_profiles').select('full_name, email').eq('id', invoice.client_id).single() : Promise.resolve({ data: null }),
+          invoice.site_id ? supabase.from('sites').select('name').eq('id', invoice.site_id).single() : Promise.resolve({ data: null }),
+          invoice.job_id ? supabase.from('jobs').select('title').eq('id', invoice.job_id).single() : Promise.resolve({ data: null }),
+          invoice.booking_id ? supabase.from('bookings').select('title').eq('id', invoice.booking_id).single() : Promise.resolve({ data: null })
+        ]);
+
+        // Populate modal
+        document.getElementById('invoice-detail-number').textContent = invoice.invoice_number || 'N/A';
+        document.getElementById('invoice-detail-client').textContent = client.data?.full_name || client.data?.email || 'N/A';
+        document.getElementById('invoice-detail-site').textContent = site.data?.name || 'N/A';
+        document.getElementById('invoice-detail-job').textContent = job.data?.title || 'N/A';
+        document.getElementById('invoice-detail-booking').textContent = booking.data?.title || 'N/A';
+        
+        document.getElementById('invoice-detail-issue-date').textContent = invoice.issue_date ? new Date(invoice.issue_date).toLocaleDateString() : 'N/A';
+        document.getElementById('invoice-detail-due-date').textContent = invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A';
+        
+        // Status badge
+        const statusEl = document.getElementById('invoice-detail-status');
+        const statusColors = {
+          'draft': 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+          'sent': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+          'paid': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+          'overdue': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+          'cancelled': 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+        };
+        statusEl.textContent = invoice.status || 'draft';
+        statusEl.className = `inline-block px-3 py-1 rounded-full text-xs font-medium ${statusColors[invoice.status] || statusColors.draft}`;
+
+        // Line items
+        const lineItemsTbody = document.getElementById('invoice-detail-line-items');
+        if (lineItems && lineItems.length > 0) {
+          lineItemsTbody.innerHTML = lineItems.map(item => `
+            <tr>
+              <td class="px-4 py-3">${item.description || '—'}</td>
+              <td class="px-4 py-3 text-right">${Number(item.quantity || 0).toFixed(2)}</td>
+              <td class="px-4 py-3 text-right">$${Number(item.unit_price || 0).toFixed(2)}</td>
+              <td class="px-4 py-3 text-right font-medium">$${Number(item.line_total || 0).toFixed(2)}</td>
+            </tr>
+          `).join('');
+        } else {
+          lineItemsTbody.innerHTML = '<tr><td colspan="4" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No line items</td></tr>';
+        }
+
+        // Summary
+        document.getElementById('invoice-detail-subtotal').textContent = `$${Number(invoice.subtotal || 0).toFixed(2)}`;
+        document.getElementById('invoice-detail-tax-rate').textContent = Number(invoice.tax_rate || 0).toFixed(1);
+        document.getElementById('invoice-detail-tax').textContent = `$${Number(invoice.tax_amount || 0).toFixed(2)}`;
+        document.getElementById('invoice-detail-discount').textContent = `-$${Number(invoice.discount_amount || 0).toFixed(2)}`;
+        document.getElementById('invoice-detail-total').textContent = `$${Number(invoice.total_amount || 0).toFixed(2)}`;
+        document.getElementById('invoice-detail-paid').textContent = `$${Number(invoice.paid_amount || 0).toFixed(2)}`;
+        document.getElementById('invoice-detail-balance').textContent = `$${Number(invoice.balance_due || 0).toFixed(2)}`;
+
+        // Payments
+        const paymentsEl = document.getElementById('invoice-detail-payments');
+        if (payments && payments.length > 0) {
+          paymentsEl.innerHTML = payments.map(payment => `
+            <div class="flex items-center justify-between p-3 bg-nfglight/30 dark:bg-gray-700/30 rounded-xl">
+              <div>
+                <p class="font-medium text-sm">$${Number(payment.amount).toFixed(2)}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">${new Date(payment.payment_date).toLocaleDateString()} • ${payment.payment_method || 'N/A'}</p>
+                ${payment.reference_number ? `<p class="text-xs text-gray-500 dark:text-gray-400">Ref: ${payment.reference_number}</p>` : ''}
+              </div>
+            </div>
+          `).join('');
+        } else {
+          paymentsEl.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">No payments recorded</p>';
+        }
+
+        // Notes & Terms
+        document.getElementById('invoice-detail-notes').textContent = invoice.notes || '—';
+        document.getElementById('invoice-detail-terms').textContent = invoice.terms || '—';
+
+        // Show edit button only for draft invoices
+        const editBtn = document.getElementById('edit-invoice-btn');
+        if (invoice.status === 'draft') {
+          editBtn.classList.remove('hidden');
+          editBtn.onclick = () => {
+            // TODO: Implement edit functionality
+            toast.info('Edit functionality coming soon', 'Coming Soon');
+          };
+        } else {
+          editBtn.classList.add('hidden');
+        }
+
+        // PDF download button
+        document.getElementById('download-invoice-pdf-btn').onclick = () => {
+          downloadInvoicePDF(invoiceId);
+        };
+
+        // Store current invoice ID for PDF generation
+        window.currentInvoiceId = invoiceId;
+        window.currentInvoiceData = invoice;
+        window.currentInvoiceLineItems = lineItems || [];
+
+        // Show modal
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        if (window.lucide) lucide.createIcons();
+
+      } catch (error) {
+        console.error('[Billing] Error viewing invoice:', error);
+        toast.error('Failed to load invoice details', 'Error');
+      }
     };
     
-    window.downloadInvoicePDF = function(invoiceId) {
-      toast.info('PDF download coming soon', 'Coming Soon');
-      // TODO: Implement PDF generation
+    // Generate and download invoice PDF
+    window.downloadInvoicePDF = async function(invoiceId) {
+      try {
+        // Use invoice data if already loaded, otherwise fetch it
+        let invoice = window.currentInvoiceData;
+        let lineItems = window.currentInvoiceLineItems;
+
+        if (!invoice || invoice.id !== invoiceId) {
+          const { data: invoiceData, error: invoiceError } = await supabase
+            .from('invoices')
+            .select('*')
+            .eq('id', invoiceId)
+            .single();
+
+          if (invoiceError || !invoiceData) {
+            toast.error('Failed to load invoice for PDF', 'Error');
+            return;
+          }
+
+          invoice = invoiceData;
+
+          const { data: lineItemsData } = await supabase
+            .from('invoice_line_items')
+            .select('*')
+            .eq('invoice_id', invoiceId)
+            .order('sort_order', { ascending: true });
+
+          lineItems = lineItemsData || [];
+        }
+
+        // Load jsPDF
+        if (!window.jspdf) {
+          await import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+          window.jspdf = window.jspdf || window.jspdf;
+        }
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // Fetch related data
+        const [client, site] = await Promise.all([
+          invoice.client_id ? supabase.from('user_profiles').select('full_name, email').eq('id', invoice.client_id).single() : Promise.resolve({ data: null }),
+          invoice.site_id ? supabase.from('sites').select('name').eq('id', invoice.site_id).single() : Promise.resolve({ data: null })
+        ]);
+
+        // PDF Content
+        let yPos = 20;
+
+        // Header
+        doc.setFontSize(20);
+        doc.setTextColor(13, 71, 161); // NFG Blue
+        doc.text('INVOICE', 20, yPos);
+        
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        yPos += 10;
+        doc.text(`Invoice #: ${invoice.invoice_number || 'N/A'}`, 20, yPos);
+        yPos += 6;
+        doc.text(`Issue Date: ${invoice.issue_date ? new Date(invoice.issue_date).toLocaleDateString() : 'N/A'}`, 20, yPos);
+        yPos += 6;
+        doc.text(`Due Date: ${invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A'}`, 20, yPos);
+        yPos += 6;
+        doc.text(`Status: ${(invoice.status || 'draft').toUpperCase()}`, 20, yPos);
+
+        // Client Info
+        yPos += 15;
+        doc.setFontSize(14);
+        doc.text('Bill To:', 20, yPos);
+        yPos += 8;
+        doc.setFontSize(11);
+        doc.text(client.data?.full_name || client.data?.email || 'N/A', 20, yPos);
+        if (site.data?.name) {
+          yPos += 6;
+          doc.text(`Site: ${site.data.name}`, 20, yPos);
+        }
+
+        // Line Items Table
+        yPos += 20;
+        doc.setFontSize(12);
+        doc.text('Line Items', 20, yPos);
+        yPos += 8;
+
+        // Table header
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'bold');
+        doc.text('Description', 20, yPos);
+        doc.text('Qty', 120, yPos);
+        doc.text('Unit Price', 140, yPos);
+        doc.text('Total', 170, yPos);
+        yPos += 6;
+        doc.line(20, yPos, 190, yPos);
+        yPos += 4;
+
+        // Table rows
+        doc.setFont(undefined, 'normal');
+        (lineItems || []).forEach(item => {
+          if (yPos > 250) {
+            doc.addPage();
+            yPos = 20;
+          }
+          doc.text(item.description || '—', 20, yPos);
+          doc.text(Number(item.quantity || 0).toFixed(2), 120, yPos);
+          doc.text(`$${Number(item.unit_price || 0).toFixed(2)}`, 140, yPos);
+          doc.text(`$${Number(item.line_total || 0).toFixed(2)}`, 170, yPos);
+          yPos += 6;
+        });
+
+        // Summary
+        yPos += 10;
+        doc.line(120, yPos, 190, yPos);
+        yPos += 8;
+        doc.setFontSize(10);
+        doc.text('Subtotal:', 120, yPos);
+        doc.text(`$${Number(invoice.subtotal || 0).toFixed(2)}`, 170, yPos);
+        yPos += 6;
+        doc.text(`Tax (${Number(invoice.tax_rate || 0).toFixed(1)}%):`, 120, yPos);
+        doc.text(`$${Number(invoice.tax_amount || 0).toFixed(2)}`, 170, yPos);
+        yPos += 6;
+        doc.text('Discount:', 120, yPos);
+        doc.text(`-$${Number(invoice.discount_amount || 0).toFixed(2)}`, 170, yPos);
+        yPos += 6;
+        doc.setFont(undefined, 'bold');
+        doc.setFontSize(12);
+        doc.text('Total:', 120, yPos);
+        doc.text(`$${Number(invoice.total_amount || 0).toFixed(2)}`, 170, yPos);
+        yPos += 8;
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(10);
+        doc.text(`Paid: $${Number(invoice.paid_amount || 0).toFixed(2)}`, 120, yPos);
+        yPos += 6;
+        doc.text(`Balance Due: $${Number(invoice.balance_due || 0).toFixed(2)}`, 120, yPos);
+
+        // Notes & Terms
+        if (invoice.notes || invoice.terms) {
+          yPos += 15;
+          if (invoice.notes) {
+            doc.setFontSize(10);
+            doc.text('Notes:', 20, yPos);
+            yPos += 6;
+            doc.text(invoice.notes, 20, yPos, { maxWidth: 170 });
+            yPos += 10;
+          }
+          if (invoice.terms) {
+            doc.text('Payment Terms:', 20, yPos);
+            yPos += 6;
+            doc.text(invoice.terms, 20, yPos, { maxWidth: 170 });
+          }
+        }
+
+        // Download PDF
+        doc.save(`Invoice-${invoice.invoice_number || invoiceId}.pdf`);
+        toast.success('Invoice PDF downloaded', 'Success');
+
+      } catch (error) {
+        console.error('[Billing] Error generating PDF:', error);
+        toast.error('Failed to generate PDF', 'Error');
+      }
     };
 
     // Initialize
@@ -4100,6 +4393,141 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Invoice Detail Modal -->
+  <div id="invoice-detail-modal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 z-10">
+        <h4 class="text-nfgblue dark:text-blue-400 font-semibold text-lg flex items-center gap-2">
+          <i data-lucide="file-text" class="w-5 h-5"></i>
+          Invoice <span id="invoice-detail-number"></span>
+        </h4>
+        <div class="flex items-center gap-2">
+          <button id="edit-invoice-btn" class="hidden px-3 py-1.5 rounded-lg border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight dark:hover:bg-gray-700 text-sm font-medium">
+            <i data-lucide="edit" class="w-4 h-4 inline mr-1"></i>
+            Edit
+          </button>
+          <button id="download-invoice-pdf-btn" class="px-3 py-1.5 rounded-lg border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight dark:hover:bg-gray-700 text-sm font-medium">
+            <i data-lucide="download" class="w-4 h-4 inline mr-1"></i>
+            PDF
+          </button>
+          <button data-action="close-modal" data-target="invoice-detail-modal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="p-6 space-y-6">
+        <!-- Invoice Header Info -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Client</p>
+            <p id="invoice-detail-client" class="font-medium text-nfgblue dark:text-blue-400">—</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Site</p>
+            <p id="invoice-detail-site" class="font-medium">—</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Job</p>
+            <p id="invoice-detail-job" class="font-medium">—</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Booking</p>
+            <p id="invoice-detail-booking" class="font-medium">—</p>
+          </div>
+        </div>
+
+        <!-- Invoice Dates & Status -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Issue Date</p>
+            <p id="invoice-detail-issue-date" class="font-medium">—</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Due Date</p>
+            <p id="invoice-detail-due-date" class="font-medium">—</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Status</p>
+            <span id="invoice-detail-status" class="inline-block px-3 py-1 rounded-full text-xs font-medium">—</span>
+          </div>
+        </div>
+
+        <!-- Line Items -->
+        <div>
+          <h5 class="text-sm font-semibold text-nfgblue dark:text-blue-400 mb-3">Line Items</h5>
+          <div class="border border-nfgray dark:border-gray-600 rounded-xl overflow-hidden">
+            <table class="w-full text-sm">
+              <thead class="bg-nfglight dark:bg-gray-700">
+                <tr>
+                  <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Description</th>
+                  <th class="px-4 py-3 text-right font-medium text-gray-700 dark:text-gray-300">Quantity</th>
+                  <th class="px-4 py-3 text-right font-medium text-gray-700 dark:text-gray-300">Unit Price</th>
+                  <th class="px-4 py-3 text-right font-medium text-gray-700 dark:text-gray-300">Total</th>
+                </tr>
+              </thead>
+              <tbody id="invoice-detail-line-items" class="divide-y divide-nfgray dark:divide-gray-600">
+                <tr>
+                  <td colspan="4" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Loading...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Invoice Summary -->
+        <div class="bg-nfglight/30 dark:bg-gray-700/30 border border-nfgray dark:border-gray-600 rounded-xl p-4">
+          <div class="space-y-2">
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-600 dark:text-gray-400">Subtotal:</span>
+              <span id="invoice-detail-subtotal" class="font-medium">$0.00</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-600 dark:text-gray-400">Tax (<span id="invoice-detail-tax-rate">0</span>%):</span>
+              <span id="invoice-detail-tax" class="font-medium">$0.00</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-600 dark:text-gray-400">Discount:</span>
+              <span id="invoice-detail-discount" class="font-medium">-$0.00</span>
+            </div>
+            <div class="flex justify-between text-sm pt-2 border-t border-nfgray dark:border-gray-600">
+              <span class="font-semibold text-nfgblue dark:text-blue-400">Total:</span>
+              <span id="invoice-detail-total" class="font-bold text-lg text-nfgblue dark:text-blue-400">$0.00</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-600 dark:text-gray-400">Paid:</span>
+              <span id="invoice-detail-paid" class="font-medium text-green-600 dark:text-green-400">$0.00</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-600 dark:text-gray-400">Balance Due:</span>
+              <span id="invoice-detail-balance" class="font-medium text-orange-600 dark:text-orange-400">$0.00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment History -->
+        <div>
+          <h5 class="text-sm font-semibold text-nfgblue dark:text-blue-400 mb-3">Payment History</h5>
+          <div id="invoice-detail-payments" class="space-y-2">
+            <p class="text-sm text-gray-500 dark:text-gray-400">No payments recorded</p>
+          </div>
+        </div>
+
+        <!-- Notes & Terms -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Notes</p>
+            <p id="invoice-detail-notes" class="text-sm">—</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Payment Terms</p>
+            <p id="invoice-detail-terms" class="text-sm">—</p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
