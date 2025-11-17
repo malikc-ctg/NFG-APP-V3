@@ -3553,6 +3553,18 @@
             : '—';
         }
 
+        // Store current expense for email functionality
+        window.currentExpenseForEmail = expense;
+
+        // Attach email button handler
+        const emailBtn = document.getElementById('expense-email-to-btn');
+        if (emailBtn) {
+          // Remove old listeners by cloning
+          const newBtn = emailBtn.cloneNode(true);
+          emailBtn.parentNode.replaceChild(newBtn, emailBtn);
+          newBtn.onclick = () => openEmailExpenseModal(expense);
+        }
+
         // Show modal
         modal.classList.remove('hidden');
         modal.classList.add('flex');
