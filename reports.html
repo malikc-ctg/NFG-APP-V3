@@ -3447,12 +3447,6 @@
           expense.user_profiles = creator;
         }
 
-        if (expenseError || !expense) {
-          console.error('[Expenses] Error loading expense:', expenseError);
-          toast.error('Failed to load expense details', 'Error');
-          return;
-        }
-
         // Populate modal
         document.getElementById('expense-detail-description').textContent = expense.description || '—';
         document.getElementById('expense-detail-amount').textContent = `$${Number(expense.amount || 0).toFixed(2)}`;
