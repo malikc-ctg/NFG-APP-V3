@@ -1978,7 +1978,6 @@
             loadBillingData();
           } else if (targetTab === 'expenses') {
             loadExpensesData();
-            loadBillingData();
           }
           
           // Recreate icons after tab switch
@@ -2841,6 +2840,93 @@
       } catch (error) {
         console.error('[Billing] Error loading billing data:', error);
         toast.error('Failed to load billing data', 'Error');
+      }
+    }
+
+    // Open add expense modal
+    async function openAddExpenseModal() {
+      const modal = document.getElementById('add-expense-modal');
+      if (!modal) {
+        console.error('[Expenses] Add expense modal not found');
+        return;
+      }
+
+      // Set default expense date to today
+      const today = new Date();
+      document.getElementById('expense-date').value = today.toISOString().split('T')[0];
+
+      // Reset form
+      document.getElementById('add-expense-form').reset();
+      document.getElementById('expense-date').value = today.toISOString().split('T')[0]; // Reset again after form reset
+      document.getElementById('expense-receipt-preview').classList.add('hidden');
+      document.getElementById('expense-error-message').classList.add('hidden');
+
+      // Load job and site dropdowns
+      await loadExpenseJobs();
+      await loadExpenseSites();
+
+      // Show modal
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // Load jobs for expense dropdown
+    async function loadExpenseJobs() {
+      try {
+        const { data: jobs, error } = await supabase
+          .from('jobs')
+          .select('id, title, status')
+          .order('created_at', { ascending: false })
+          .limit(100);
+
+        if (error) throw error;
+
+        const select = document.getElementById('expense-job-select');
+        if (!select) return;
+
+        // Clear existing options (keep first "Select a job" option)
+        select.innerHTML = '<option value="">Select a job (optional)</option>';
+
+        if (jobs && jobs.length > 0) {
+          jobs.forEach(job => {
+            const option = document.createElement('option');
+            option.value = job.id;
+            option.textContent = `${job.title} (${job.status})`;
+            select.appendChild(option);
+          });
+        }
+      } catch (error) {
+        console.error('[Expenses] Error loading jobs:', error);
+      }
+    }
+
+    // Load sites for expense dropdown
+    async function loadExpenseSites() {
+      try {
+        const { data: sites, error } = await supabase
+          .from('sites')
+          .select('id, name')
+          .order('name', { ascending: true });
+
+        if (error) throw error;
+
+        const select = document.getElementById('expense-site-select');
+        if (!select) return;
+
+        // Clear existing options (keep first "Select a site" option)
+        select.innerHTML = '<option value="">Select a site (optional)</option>';
+
+        if (sites && sites.length > 0) {
+          sites.forEach(site => {
+            const option = document.createElement('option');
+            option.value = site.id;
+            option.textContent = site.name;
+            select.appendChild(option);
+          });
+        }
+      } catch (error) {
+        console.error('[Expenses] Error loading sites:', error);
       }
     }
     
@@ -4771,6 +4857,43 @@
         openCreateInvoiceModal();
       });
       
+      // Expenses event listeners
+      document.getElementById('add-expense-btn')?.addEventListener('click', () => {
+        openAddExpenseModal();
+      });
+      
+      // Receipt preview handler
+      document.getElementById('expense-receipt')?.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              const preview = document.getElementById('expense-receipt-preview');
+              const previewImg = document.getElementById('expense-receipt-preview-img');
+              if (preview && previewImg) {
+                previewImg.src = event.target.result;
+                preview.classList.remove('hidden');
+              }
+            };
+            reader.readAsDataURL(file);
+          } else {
+            // For PDFs, just show a message
+            const preview = document.getElementById('expense-receipt-preview');
+            if (preview) {
+              preview.innerHTML = `<p class="text-sm text-gray-600 dark:text-gray-400">PDF file selected: ${file.name}</p><button type="button" id="expense-receipt-remove" class="mt-2 text-sm text-red-600 dark:text-red-400 hover:underline">Remove receipt</button>`;
+              preview.classList.remove('hidden');
+            }
+          }
+        }
+      });
+      
+      // Remove receipt handler
+      document.getElementById('expense-receipt-remove')?.addEventListener('click', () => {
+        document.getElementById('expense-receipt').value = '';
+        document.getElementById('expense-receipt-preview').classList.add('hidden');
+      });
+      
       // Initialize tabs
       initTabs();
       
@@ -5087,6 +5210,165 @@
           >
             <i data-lucide="dollar-sign" class="w-4 h-4 inline mr-1"></i>
             Record Payment
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Expense Modal -->
+  <div id="add-expense-modal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 z-10">
+        <h4 class="text-nfgblue dark:text-blue-400 font-semibold text-lg flex items-center gap-2">
+          <i data-lucide="receipt" class="w-5 h-5"></i>
+          Add Expense
+        </h4>
+        <button data-action="close-modal" data-target="add-expense-modal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="add-expense-form" class="p-6 space-y-6">
+        <!-- Description -->
+        <div>
+          <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Description <span class="text-red-500">*</span></label>
+          <input 
+            type="text" 
+            id="expense-description" 
+            required 
+            class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm"
+            placeholder="e.g., Cleaning supplies for office"
+          />
+        </div>
+
+        <!-- Category & Amount -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Category <span class="text-red-500">*</span></label>
+            <select 
+              id="expense-category" 
+              required 
+              class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm"
+            >
+              <option value="">Select category</option>
+              <option value="supplies">📦 Supplies</option>
+              <option value="equipment">🔧 Equipment</option>
+              <option value="travel">✈️ Travel</option>
+              <option value="labor">👷 Labor</option>
+              <option value="other">📄 Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Amount ($) <span class="text-red-500">*</span></label>
+            <input 
+              type="number" 
+              id="expense-amount" 
+              step="0.01" 
+              min="0" 
+              required 
+              class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm"
+              placeholder="0.00"
+            />
+          </div>
+        </div>
+
+        <!-- Expense Date -->
+        <div>
+          <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Expense Date <span class="text-red-500">*</span></label>
+          <input 
+            type="date" 
+            id="expense-date" 
+            required 
+            class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm"
+          />
+        </div>
+
+        <!-- Job & Site -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Job</label>
+            <select 
+              id="expense-job-select" 
+              class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm"
+            >
+              <option value="">Select a job (optional)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Site</label>
+            <select 
+              id="expense-site-select" 
+              class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm"
+            >
+              <option value="">Select a site (optional)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Vendor Name -->
+        <div>
+          <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Vendor Name</label>
+          <input 
+            type="text" 
+            id="expense-vendor" 
+            class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm"
+            placeholder="e.g., Office Depot, Amazon, etc."
+          />
+        </div>
+
+        <!-- Receipt Upload -->
+        <div>
+          <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Receipt</label>
+          <div class="space-y-2">
+            <input 
+              type="file" 
+              id="expense-receipt" 
+              accept="image/*,.pdf"
+              class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-nfglight dark:file:bg-gray-700 file:text-nfgblue dark:file:text-blue-400 hover:file:bg-nfgray dark:hover:file:bg-gray-600"
+            />
+            <p class="text-xs text-gray-500 dark:text-gray-400">Upload receipt image or PDF (optional)</p>
+            <div id="expense-receipt-preview" class="hidden mt-2">
+              <img id="expense-receipt-preview-img" src="" alt="Receipt preview" class="max-w-xs rounded-xl border border-nfgray dark:border-gray-600">
+              <button type="button" id="expense-receipt-remove" class="mt-2 text-sm text-red-600 dark:text-red-400 hover:underline">
+                Remove receipt
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div>
+          <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Notes</label>
+          <textarea 
+            id="expense-notes" 
+            rows="3" 
+            class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm resize-none"
+            placeholder="Optional notes about this expense"
+          ></textarea>
+        </div>
+
+        <!-- Error Message -->
+        <div id="expense-error-message" class="hidden bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3">
+          <p class="text-sm text-red-600 dark:text-red-400"></p>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-nfgray dark:border-gray-600">
+          <button 
+            type="button" 
+            data-action="close-modal" 
+            data-target="add-expense-modal" 
+            class="px-4 py-2 rounded-xl border border-nfgray dark:border-gray-600 hover:bg-nfglight dark:hover:bg-gray-700 font-medium"
+          >
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            class="px-4 py-2 rounded-xl bg-green-600 dark:bg-green-700 text-white hover:bg-green-700 dark:hover:bg-green-600 font-medium"
+          >
+            <i data-lucide="receipt" class="w-4 h-4 inline mr-1"></i>
+            Add Expense
           </button>
         </div>
       </form>
