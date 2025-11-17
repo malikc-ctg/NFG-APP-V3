@@ -3487,11 +3487,33 @@
           return;
         }
         
-        const { data: bookings, error } = await supabase
+        console.log('[Billing] Fetching bookings for site:', siteId);
+        
+        // Convert siteId to number if it's a string (sites table uses BIGSERIAL)
+        const siteIdNum = typeof siteId === 'string' ? parseInt(siteId, 10) : siteId;
+        
+        if (isNaN(siteIdNum)) {
+          console.error('[Billing] Invalid site ID for bookings:', siteId);
+          return;
+        }
+        
+        // Try querying with number first
+        let { data: bookings, error } = await supabase
           .from('bookings')
           .select('id, title, scheduled_date, status')
-          .eq('site_id', siteId)
+          .eq('site_id', siteIdNum)
           .in('status', ['confirmed', 'completed']);
+        
+        // If no results, try as string (in case database stores as string)
+        if ((!bookings || bookings.length === 0) && !error) {
+          const result = await supabase
+            .from('bookings')
+            .select('id, title, scheduled_date, status')
+            .eq('site_id', String(siteIdNum))
+            .in('status', ['confirmed', 'completed']);
+          bookings = result.data;
+          error = result.error;
+        }
         
         if (error) {
           console.error('[Billing] Error loading bookings:', error);
@@ -3499,19 +3521,27 @@
         }
         
         const select = document.getElementById('invoice-booking-select');
-        if (!select) return;
+        if (!select) {
+          console.error('[Billing] Booking select element not found!');
+          return;
+        }
         
         // Clear existing options
         select.innerHTML = '<option value="">Select a booking (optional)</option>';
         
         // Add bookings
-        (bookings || []).forEach(booking => {
-          const option = document.createElement('option');
-          option.value = booking.id;
-          const dateStr = booking.scheduled_date ? new Date(booking.scheduled_date).toLocaleDateString() : '';
-          option.textContent = `${booking.title || 'Booking'}${dateStr ? ' - ' + dateStr : ''}`;
-          select.appendChild(option);
-        });
+        if (bookings && bookings.length > 0) {
+          bookings.forEach(booking => {
+            const option = document.createElement('option');
+            option.value = booking.id;
+            const dateStr = booking.scheduled_date ? new Date(booking.scheduled_date).toLocaleDateString() : '';
+            option.textContent = `${booking.title || 'Booking'}${dateStr ? ' - ' + dateStr : ''}`;
+            select.appendChild(option);
+          });
+          console.log('[Billing] Bookings loaded into dropdown:', bookings.length, 'bookings');
+        } else {
+          console.log('[Billing] No bookings found for this site');
+        }
       } catch (error) {
         console.error('[Billing] Error loading bookings:', error);
       }
