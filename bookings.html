@@ -380,6 +380,11 @@
         padding: 4px;
         font-size: 12px;
       }
+      
+      /* Hide Week view button on mobile */
+      #calendar-view-week {
+        display: none !important;
+      }
     }
     
     /* Tablet adjustments */
@@ -935,7 +940,7 @@
         <div id="calendar-controls" class="hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <!-- Calendar View Type Toggle -->
           <div class="flex items-center gap-2">
-            <button id="calendar-view-week" class="calendar-view-btn px-4 py-2 rounded-lg bg-nfgblue dark:bg-blue-900 text-white font-medium">
+            <button id="calendar-view-week" class="calendar-view-btn px-4 py-2 rounded-lg bg-nfgblue dark:bg-blue-900 text-white font-medium md:inline-flex hidden">
               Week
         </button>
             <button id="calendar-view-day" class="calendar-view-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700 font-medium">
@@ -2894,6 +2899,19 @@
 
       const isDarkMode = document.documentElement.classList.contains('dark');
       
+      // Check if mobile - default to day view on mobile instead of week
+      const isMobile = window.innerWidth < 768;
+      const initialView = isMobile && currentCalendarView === 'timeGridWeek' 
+        ? 'timeGridDay' 
+        : currentCalendarView;
+      
+      // Update currentCalendarView if we changed it for mobile
+      if (isMobile && currentCalendarView === 'timeGridWeek') {
+        currentCalendarView = 'timeGridDay';
+        // Update button styles
+        updateButtonStyles('day');
+      }
+      
       // Calculate available height for calendar
       const calendarContainer = calendarEl.closest('#calendar-container');
       const scrollableContent = calendarContainer?.closest('.scrollable-content');
@@ -2902,7 +2920,7 @@
         : window.innerHeight - 300; // Fallback calculation
       
       calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: currentCalendarView,
+        initialView: initialView,
         headerToolbar: false, // We'll use custom navigation
         editable: true, // Enable drag-and-drop
         droppable: false,
