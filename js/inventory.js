@@ -2391,7 +2391,7 @@ document.addEventListener('change', (e) => {
     
     currentSiteFilter = value;
     window.currentSiteFilter = currentSiteFilter; // Update global reference
-    renderInventory();
+  renderInventory();
   }
 });
 
@@ -2500,7 +2500,7 @@ async function init() {
   await loadSiteFilter();
   
   try {
-    await renderInventory();
+  await renderInventory();
   } catch (error) {
     console.error('[Inventory] Failed to render inventory:', error);
     toast.error('Failed to load inventory data. Some features may be unavailable.');

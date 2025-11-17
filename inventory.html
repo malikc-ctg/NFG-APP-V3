@@ -532,50 +532,50 @@
 
       <!-- Inventory View -->
       <div id="inventory-view" class="space-y-6">
-        <!-- Category Tabs -->
-        <div class="flex gap-2 border-b border-nfgray overflow-x-auto">
-          <button class="inventory-filter-tab px-4 py-2 font-medium text-nfgblue dark:text-blue-400 border-b-2 border-nfgblue whitespace-nowrap" data-category="all">
-            All Items
-          </button>
-          <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-category="Cleaning Supplies">
-             Cleaning
-          </button>
-          <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-category="Chemicals">
-             Chemicals
-          </button>
-          <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-category="Tools">
-             Tools
-          </button>
-          <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-category="Paper Products">
-             Paper
-          </button>
-          <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-category="PPE">
-             PPE
-          </button>
-        </div>
+      <!-- Category Tabs -->
+      <div class="flex gap-2 border-b border-nfgray overflow-x-auto">
+        <button class="inventory-filter-tab px-4 py-2 font-medium text-nfgblue dark:text-blue-400 border-b-2 border-nfgblue whitespace-nowrap" data-category="all">
+          All Items
+        </button>
+        <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-category="Cleaning Supplies">
+           Cleaning
+        </button>
+        <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-category="Chemicals">
+           Chemicals
+        </button>
+        <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-category="Tools">
+           Tools
+        </button>
+        <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-category="Paper Products">
+           Paper
+        </button>
+        <button class="inventory-filter-tab px-4 py-2 font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-category="PPE">
+           PPE
+        </button>
+      </div>
 
-        <!-- Inventory Table -->
-        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg overflow-hidden">
-          <div class="overflow-x-auto">
-            <table class="w-full">
-              <thead class="bg-nfglight/50 border-b border-nfgray dark:border-gray-700">
-                <tr>
+      <!-- Inventory Table -->
+      <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-nfglight/50 border-b border-nfgray dark:border-gray-700">
+              <tr>
                   <th class="px-4 py-3 text-left text-sm font-medium text-nfgblue dark:text-blue-400 w-10">
                     <!-- Checkbox column -->
                   </th>
-                  <th class="px-4 py-3 text-left text-sm font-medium text-nfgblue dark:text-blue-400">Item</th>
-                  <th class="px-4 py-3 text-left text-sm font-medium text-nfgblue dark:text-blue-400 hidden md:table-cell">Category</th>
-                  <th class="px-4 py-3 text-center text-sm font-medium text-nfgblue dark:text-blue-400">Quantity</th>
-                  <th class="px-4 py-3 text-center text-sm font-medium text-nfgblue dark:text-blue-400">Status</th>
-                  <th class="px-4 py-3 text-center text-sm font-medium text-nfgblue dark:text-blue-400">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="inventory-table-body" class="divide-y divide-nfgray">
-                <tr>
+                <th class="px-4 py-3 text-left text-sm font-medium text-nfgblue dark:text-blue-400">Item</th>
+                <th class="px-4 py-3 text-left text-sm font-medium text-nfgblue dark:text-blue-400 hidden md:table-cell">Category</th>
+                <th class="px-4 py-3 text-center text-sm font-medium text-nfgblue dark:text-blue-400">Quantity</th>
+                <th class="px-4 py-3 text-center text-sm font-medium text-nfgblue dark:text-blue-400">Status</th>
+                <th class="px-4 py-3 text-center text-sm font-medium text-nfgblue dark:text-blue-400">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="inventory-table-body" class="divide-y divide-nfgray">
+              <tr>
                   <td colspan="6" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Loading inventory...</td>
-                </tr>
-              </tbody>
-            </table>
+              </tr>
+            </tbody>
+          </table>
           </div>
         </div>
       </div>

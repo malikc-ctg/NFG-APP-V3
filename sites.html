@@ -632,7 +632,7 @@
         }
         
         // Create site in Supabase
-          const { data: newSite, error } = await supabase
+        const { data: newSite, error } = await supabase
           .from('sites')
           .insert({
             name: siteData.name,

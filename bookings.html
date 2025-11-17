@@ -709,11 +709,11 @@
             <button id="view-table-btn" class="view-toggle-btn px-4 py-2 rounded-lg bg-nfgblue dark:bg-blue-900 text-white font-medium flex items-center gap-2">
               <i data-lucide="list" class="w-4 h-4"></i>
               <span>Table</span>
-            </button>
+        </button>
             <button id="view-calendar-btn" class="view-toggle-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700 font-medium flex items-center gap-2">
               <i data-lucide="calendar" class="w-4 h-4"></i>
               <span>Calendar</span>
-            </button>
+        </button>
           </div>
           
         </div>
@@ -724,13 +724,13 @@
           <div class="flex items-center gap-2">
             <button id="calendar-view-week" class="calendar-view-btn px-4 py-2 rounded-lg bg-nfgblue dark:bg-blue-900 text-white font-medium">
               Week
-            </button>
+        </button>
             <button id="calendar-view-day" class="calendar-view-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700 font-medium">
               Day
             </button>
             <button id="calendar-view-month" class="calendar-view-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700 font-medium">
               Month
-            </button>
+        </button>
           </div>
           
           <!-- Calendar Navigation -->
@@ -746,7 +746,7 @@
             </button>
             <span id="calendar-date-range" class="px-4 py-2 font-medium text-nfgblue dark:text-blue-400 text-sm sm:text-base"></span>
           </div>
-        </div>
+      </div>
       </div>
 
       <!-- Scrollable content area -->
@@ -1193,10 +1193,10 @@
       
       // Staff only: Skip loading bookings, sites for booking creation, categories, and services
       if (!isStaff) {
-        await loadSites();
-        await loadCategories();
-        await loadServices();
-        await loadBookings();
+      await loadSites();
+      await loadCategories();
+      await loadServices();
+      await loadBookings();
       }
       
       // All users: Load jobs (staff will see assigned jobs only)
@@ -1578,10 +1578,10 @@
           // Use scheduled_date for ordering (backward compatible)
           const { data, error } = await supabase
             .from('jobs')
-            .select('*, sites(name, address)')
-            .eq('created_by', currentUser.id)
-            .order('scheduled_date', { ascending: false });
-          
+          .select('*, sites(name, address)')
+          .eq('created_by', currentUser.id)
+          .order('scheduled_date', { ascending: false });
+
           if (error) {
             console.error('❌ Error loading jobs for admin/client:', error);
             throw error;
@@ -3183,7 +3183,7 @@
       // Update button styles immediately BEFORE changing view
       updateButtonStyles('week');
       changeCalendarView('timeGridWeek');
-    });
+        });
     
     document.getElementById('calendar-view-day')?.addEventListener('click', (e) => {
       e.preventDefault();

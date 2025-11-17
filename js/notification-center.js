@@ -523,7 +523,7 @@ async function setupRealtimeUpdates() {
             if (payload.new.type === 'inventory_low_stock') {
               toast.warning(payload.new.message, payload.new.title);
             } else {
-              toast.info(payload.new.message, payload.new.title);
+            toast.info(payload.new.message, payload.new.title);
             }
           }
         }

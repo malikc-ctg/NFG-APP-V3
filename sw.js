@@ -416,11 +416,11 @@ async function requestSyncFromClient() {
     // since sync operations can take time and we don't want to block the service worker
     clients.forEach(client => {
       try {
-        client.postMessage({
-          type: 'REQUEST_SYNC',
+      client.postMessage({
+        type: 'REQUEST_SYNC',
           timestamp: new Date().toISOString(),
           source: 'service-worker'
-        });
+      });
       } catch (err) {
         console.warn('[SW v3] Failed to send sync request to client:', err);
       }
