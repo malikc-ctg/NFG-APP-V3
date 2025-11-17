@@ -3312,16 +3312,54 @@
       });
       
       // Also watch for when options are clicked/selected
+      // Store previous value to detect changes
+      let previousSiteValue = freshSelect.value;
+      
+      // Use multiple intervals to catch value changes (aggressive fallback)
+      const valueCheckInterval = setInterval(() => {
+        const currentValue = freshSelect.value;
+        if (currentValue !== previousSiteValue) {
+          console.log('[Billing] 🔥🔥🔥 Site value changed (interval check):', currentValue, 'Previous:', previousSiteValue);
+          previousSiteValue = currentValue;
+          if (currentValue && currentValue !== '') {
+            loadInvoiceJobs(currentValue);
+            loadInvoiceBookings(currentValue);
+          }
+        }
+      }, 200); // Check every 200ms
+      
+      // Store interval to clear later if needed
+      if (!window.billingSiteSelectInterval) {
+        window.billingSiteSelectInterval = valueCheckInterval;
+      }
+      
       freshSelect.addEventListener('click', function(e) {
         console.log('[Billing] Site dropdown clicked, current value:', freshSelect.value);
-        // After a brief delay, check if value changed (user selected an option)
+        // Immediately check value, then check again after delay
         setTimeout(() => {
-          if (freshSelect.value && freshSelect.value !== '') {
-            console.log('[Billing] 🔥 Site value changed after click:', freshSelect.value);
-            loadInvoiceJobs(freshSelect.value);
-            loadInvoiceBookings(freshSelect.value);
+          const newValue = freshSelect.value;
+          if (newValue && newValue !== '' && newValue !== previousSiteValue) {
+            console.log('[Billing] 🔥 Site value changed after click:', newValue);
+            previousSiteValue = newValue;
+            loadInvoiceJobs(newValue);
+            loadInvoiceBookings(newValue);
           }
-        }, 100);
+        }, 150);
+      });
+      
+      // Also listen to mousedown on options (more direct)
+      freshSelect.addEventListener('mousedown', function(e) {
+        if (e.target.tagName === 'OPTION') {
+          const optionValue = e.target.value;
+          console.log('[Billing] Option mousedown:', optionValue);
+          setTimeout(() => {
+            if (freshSelect.value === optionValue && optionValue) {
+              console.log('[Billing] 🔥 Option selected via mousedown:', optionValue);
+              loadInvoiceJobs(optionValue);
+              loadInvoiceBookings(optionValue);
+            }
+          }, 50);
+        }
       });
       
       // Watch the select element for value changes
