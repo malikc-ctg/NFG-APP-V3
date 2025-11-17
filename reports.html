@@ -221,6 +221,14 @@
             <i data-lucide="dollar-sign" class="w-4 h-4 inline mr-2"></i>
             Billing
           </button>
+          <button 
+            id="tab-expenses" 
+            class="tab-btn px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-nfgblue hover:border-gray-300 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
+            data-tab="expenses"
+          >
+            <i data-lucide="receipt" class="w-4 h-4 inline mr-2"></i>
+            Expenses
+          </button>
         </nav>
       </div>
 
@@ -744,6 +752,131 @@
         </div>
       </div>
       <!-- END Billing Tab Content -->
+
+      <!-- Expenses Tab Content -->
+      <div id="tab-content-expenses" class="tab-content hidden space-y-6">
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <!-- Total Expenses -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Total Expenses</p>
+                <p id="expenses-total" class="text-2xl font-bold text-red-600 dark:text-red-400 mt-1">$0</p>
+              </div>
+              <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <i data-lucide="receipt" class="w-5 h-5 text-red-600 dark:text-red-400"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- This Month Expenses -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">This Month</p>
+                <p id="expenses-month" class="text-2xl font-bold text-orange-600 dark:text-orange-400 mt-1">$0</p>
+              </div>
+              <div class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                <i data-lucide="calendar" class="w-5 h-5 text-orange-600 dark:text-orange-400"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- By Category -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Top Category</p>
+                <p id="expenses-top-category" class="text-2xl font-bold text-nfgblue dark:text-blue-400 mt-1">—</p>
+              </div>
+              <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <i data-lucide="tag" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Average per Job -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Avg per Job</p>
+                <p id="expenses-avg-job" class="text-2xl font-bold text-purple-600 dark:text-purple-400 mt-1">$0</p>
+              </div>
+              <div class="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                <i data-lucide="trending-down" class="w-5 h-5 text-purple-600 dark:text-purple-400"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Expenses Section -->
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg">
+          <div class="p-6 border-b border-nfgray dark:border-gray-700 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Expenses</h3>
+            <button id="add-expense-btn" class="px-4 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700 text-sm font-medium flex items-center gap-2">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              Add Expense
+            </button>
+          </div>
+
+          <!-- Filters -->
+          <div class="p-4 border-b border-nfgray dark:border-gray-700 flex flex-wrap gap-3">
+            <select id="expense-category-filter" class="px-3 py-2 rounded-xl border border-nfgray dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm">
+              <option value="">All Categories</option>
+              <option value="supplies">Supplies</option>
+              <option value="equipment">Equipment</option>
+              <option value="travel">Travel</option>
+              <option value="labor">Labor</option>
+              <option value="other">Other</option>
+            </select>
+            <select id="expense-job-filter" class="px-3 py-2 rounded-xl border border-nfgray dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm">
+              <option value="">All Jobs</option>
+            </select>
+            <select id="expense-site-filter" class="px-3 py-2 rounded-xl border border-nfgray dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm">
+              <option value="">All Sites</option>
+            </select>
+            <input type="date" id="expense-date-from" class="px-3 py-2 rounded-xl border border-nfgray dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm" placeholder="From">
+            <input type="date" id="expense-date-to" class="px-3 py-2 rounded-xl border border-nfgray dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm" placeholder="To">
+            <input type="text" id="expense-search" class="px-3 py-2 rounded-xl border border-nfgray dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm" placeholder="Search...">
+            <button id="apply-expense-filters" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark text-sm">
+              Apply Filters
+            </button>
+            <button id="clear-expense-filters" class="px-4 py-2 rounded-xl border border-nfgray dark:border-gray-600 hover:bg-nfglight dark:hover:bg-gray-700 text-sm">
+              Clear
+            </button>
+            <button id="export-expenses-btn" class="px-4 py-2 rounded-xl border border-nfgray dark:border-gray-600 hover:bg-nfglight dark:hover:bg-gray-700 text-sm flex items-center gap-2">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              Export CSV
+            </button>
+          </div>
+
+          <!-- Expenses Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-nfglight dark:bg-gray-700">
+                <tr>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Date</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Description</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Category</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Amount</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Job</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Site</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Vendor</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Receipt</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="expenses-table-body" class="divide-y divide-nfgray dark:divide-gray-700">
+                <tr>
+                  <td colspan="9" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Loading expenses...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- END Expenses Tab Content -->
     </main>
   </div>
 
@@ -1842,6 +1975,9 @@
           if (targetTab === 'time-tracking') {
             loadTimeTrackingData();
           } else if (targetTab === 'billing') {
+            loadBillingData();
+          } else if (targetTab === 'expenses') {
+            loadExpensesData();
             loadBillingData();
           }
           
