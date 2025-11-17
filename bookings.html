@@ -1009,6 +1009,103 @@
     </div>
   </div>
 
+  <!-- ========== CALENDAR EVENT SIDEBAR ========== -->
+  <!-- Overlay (click to close sidebar) -->
+  <div id="calendar-sidebar-overlay" class="hidden fixed inset-0 bg-black/40 z-40 transition-opacity duration-300"></div>
+
+  <!-- Event Detail Sidebar -->
+  <div id="calendar-event-sidebar" class="hidden fixed right-0 top-0 h-full w-full md:w-96 bg-white dark:bg-gray-800 shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out">
+    <div class="h-full flex flex-col overflow-hidden">
+      
+      <!-- Header -->
+      <div class="flex-shrink-0 p-4 border-b border-nfgray dark:border-gray-700 flex items-center justify-between bg-white dark:bg-gray-800">
+        <h3 id="sidebar-event-title" class="text-lg font-semibold text-nfgblue dark:text-blue-400 truncate flex-1"></h3>
+        <div class="flex items-center gap-2 ml-2">
+          <button id="sidebar-edit-btn" class="hidden p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 transition">
+            <i data-lucide="edit" class="w-4 h-4 text-gray-600 dark:text-gray-400"></i>
+          </button>
+          <button id="sidebar-delete-btn" class="hidden p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 transition">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+          <button id="sidebar-close-btn" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 transition">
+            <i data-lucide="x" class="w-5 h-5 text-gray-600 dark:text-gray-400"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Scrollable Content -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-6">
+        
+        <!-- Date & Time -->
+        <div>
+          <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-2">
+            <i data-lucide="calendar" class="w-4 h-4"></i>
+            <span id="sidebar-date"></span>
+          </div>
+          <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-2">
+            <i data-lucide="clock" class="w-4 h-4"></i>
+            <span id="sidebar-time"></span>
+          </div>
+          <div id="sidebar-status-badge" class="inline-block"></div>
+        </div>
+
+        <!-- Assigned Staff -->
+        <div>
+          <h4 class="font-semibold text-sm mb-3 flex items-center gap-2 text-gray-700 dark:text-gray-300">
+            <i data-lucide="users" class="w-4 h-4"></i>
+            Assigned Staff
+          </h4>
+          <div id="sidebar-staff-list" class="space-y-2">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Loading staff...</p>
+          </div>
+          <button id="sidebar-add-staff-btn" class="hidden mt-2 text-sm text-nfgblue dark:text-blue-400 hover:underline">
+            + Add Staff Member
+          </button>
+        </div>
+
+        <!-- Site Information -->
+        <div>
+          <h4 class="font-semibold text-sm mb-3 flex items-center gap-2 text-gray-700 dark:text-gray-300">
+            <i data-lucide="map-pin" class="w-4 h-4"></i>
+            Site Information
+          </h4>
+          <div id="sidebar-site-info" class="text-sm text-gray-600 dark:text-gray-400">
+            <p>Loading site...</p>
+          </div>
+        </div>
+
+        <!-- Client Information (for bookings) -->
+        <div id="sidebar-client-section" class="hidden">
+          <h4 class="font-semibold text-sm mb-3 flex items-center gap-2 text-gray-700 dark:text-gray-300">
+            <i data-lucide="user" class="w-4 h-4"></i>
+            Client Information
+          </h4>
+          <div id="sidebar-client-info" class="text-sm text-gray-600 dark:text-gray-400"></div>
+        </div>
+
+        <!-- Additional Details -->
+        <div id="sidebar-additional-details" class="text-sm text-gray-600 dark:text-gray-400"></div>
+
+      </div>
+
+      <!-- Action Buttons Footer -->
+      <div class="flex-shrink-0 p-4 border-t border-nfgray dark:border-gray-700 space-y-2 bg-white dark:bg-gray-800">
+        <button id="sidebar-view-details-btn" class="w-full px-4 py-2.5 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark dark:hover:bg-blue-800 font-medium transition">
+          View Full Details
+        </button>
+        <div class="grid grid-cols-2 gap-2">
+          <button id="sidebar-reschedule-btn" class="px-4 py-2 rounded-xl border border-nfgray dark:border-gray-600 hover:bg-nfglight dark:hover:bg-gray-700 font-medium text-sm transition">
+            Reschedule
+          </button>
+          <button id="sidebar-change-status-btn" class="hidden px-4 py-2 rounded-xl border border-nfgray dark:border-gray-600 hover:bg-nfglight dark:hover:bg-gray-700 font-medium text-sm transition">
+            Change Status
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- PWA Installation -->
   <script type="module" src="./js/pwa.js"></script>
   
@@ -2617,23 +2714,26 @@
           openCreateBookingModal(clickedDate);
         },
         
-        // Event click - view details
+        // Event click - open sidebar
         eventClick: (info) => {
           const eventType = info.event.extendedProps.type;
           const eventId = info.event.extendedProps.id;
           const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
           
+          // Prevent default navigation
+          info.jsEvent.preventDefault();
+          
           if (eventType === 'job') {
-            // Open job details (navigate to jobs page)
-            window.location.href = `jobs.html?job=${eventId}`;
+            // Open job sidebar
+            openEventSidebar(eventId, 'job');
           } else if (eventType === 'booking') {
             // Staff cannot view booking details
             if (isStaff) {
               toast.info('Only assigned jobs are visible in calendar view');
               return;
             }
-            // Open booking details (non-staff only)
-            viewBooking(eventId);
+            // Open booking sidebar
+            openEventSidebar(eventId, 'booking');
           }
         },
         
@@ -2920,6 +3020,490 @@
       
       dateRangeEl.textContent = dateText;
     }
+
+    // ========== CALENDAR EVENT SIDEBAR ==========
+    
+    // Store current sidebar data
+    let currentSidebarEvent = null;
+    let currentSidebarType = null;
+
+    // Open event sidebar
+    async function openEventSidebar(eventId, eventType) {
+      try {
+        const sidebar = document.getElementById('calendar-event-sidebar');
+        const overlay = document.getElementById('calendar-sidebar-overlay');
+        
+        if (!sidebar || !overlay) {
+          console.error('Sidebar elements not found');
+          return;
+        }
+
+        // Show loading state
+        sidebar.classList.remove('hidden');
+        sidebar.classList.remove('translate-x-full');
+        overlay.classList.remove('hidden');
+        
+        // Reset sidebar content
+        document.getElementById('sidebar-event-title').textContent = 'Loading...';
+        document.getElementById('sidebar-date').textContent = '';
+        document.getElementById('sidebar-time').textContent = '';
+        document.getElementById('sidebar-status-badge').innerHTML = '';
+        document.getElementById('sidebar-staff-list').innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">Loading staff...</p>';
+        document.getElementById('sidebar-site-info').innerHTML = '<p>Loading site...</p>';
+        document.getElementById('sidebar-client-section').classList.add('hidden');
+        document.getElementById('sidebar-additional-details').innerHTML = '';
+
+        // Store current event
+        currentSidebarEvent = eventId;
+        currentSidebarType = eventType;
+
+        let eventData = null;
+        let staffMembers = [];
+
+        // Fetch event data based on type
+        if (eventType === 'job') {
+          const result = await fetchJobForSidebar(eventId);
+          eventData = result.job;
+          staffMembers = result.staff;
+        } else if (eventType === 'booking') {
+          eventData = await fetchBookingForSidebar(eventId);
+        }
+
+        if (!eventData) {
+          toast.error('Failed to load event details', 'Error');
+          closeEventSidebar();
+          return;
+        }
+
+        // Populate sidebar
+        populateSidebar(eventData, eventType, staffMembers);
+
+        // Reinitialize Lucide icons
+        if (window.lucide) lucide.createIcons();
+
+      } catch (error) {
+        console.error('Error opening event sidebar:', error);
+        toast.error('Failed to open event details', 'Error');
+        closeEventSidebar();
+      }
+    }
+
+    // Close event sidebar
+    function closeEventSidebar() {
+      const sidebar = document.getElementById('calendar-event-sidebar');
+      const overlay = document.getElementById('calendar-sidebar-overlay');
+      
+      if (sidebar) {
+        sidebar.classList.add('translate-x-full');
+        setTimeout(() => {
+          sidebar.classList.add('hidden');
+        }, 300);
+      }
+      
+      if (overlay) {
+        overlay.classList.add('hidden');
+      }
+
+      currentSidebarEvent = null;
+      currentSidebarType = null;
+    }
+
+    // Fetch job with all assigned staff
+    async function fetchJobForSidebar(jobId) {
+      try {
+        // Fetch job data
+        const { data: job, error: jobError } = await supabase
+          .from('jobs')
+          .select(`
+            *,
+            sites:site_id (*),
+            assigned_worker:assigned_worker_id (
+              id,
+              full_name,
+              email
+            )
+          `)
+          .eq('id', jobId)
+          .single();
+
+        if (jobError) throw jobError;
+
+        // Fetch all staff assigned to this job's site
+        let assignedStaff = [];
+        
+        // Get primary assigned worker if exists
+        if (job.assigned_worker && job.assigned_worker.id) {
+          assignedStaff.push(job.assigned_worker);
+        }
+
+        // Fetch all workers assigned to the site via worker_site_assignments
+        if (job.site_id) {
+          const { data: siteAssignments, error: assignmentsError } = await supabase
+            .from('worker_site_assignments')
+            .select(`
+              user_profiles:worker_id (
+                id,
+                full_name,
+                email
+              )
+            `)
+            .eq('site_id', job.site_id);
+
+          if (!assignmentsError && siteAssignments) {
+            const siteStaff = siteAssignments
+              .map(a => a.user_profiles)
+              .filter(s => s && (!assignedStaff.find(existing => existing.id === s.id))); // Avoid duplicates
+            
+            assignedStaff = [...assignedStaff, ...siteStaff];
+          }
+        }
+
+        return { job, staff: assignedStaff };
+      } catch (error) {
+        console.error('Error fetching job for sidebar:', error);
+        throw error;
+      }
+    }
+
+    // Fetch booking data
+    async function fetchBookingForSidebar(bookingId) {
+      try {
+        const { data: booking, error: bookingError } = await supabase
+          .from('bookings')
+          .select(`
+            *,
+            sites:site_id (*),
+            user_profiles:created_by (
+              id,
+              full_name,
+              email
+            ),
+            client:client_id (
+              id,
+              full_name,
+              email
+            )
+          `)
+          .eq('id', bookingId)
+          .single();
+
+        if (bookingError) throw bookingError;
+        return booking;
+      } catch (error) {
+        console.error('Error fetching booking for sidebar:', error);
+        throw error;
+      }
+    }
+
+    // Populate sidebar with event data
+    function populateSidebar(eventData, eventType, staffMembers = []) {
+      const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
+      const canEdit = !isStaff && (eventData.status === 'draft' || eventData.status === 'pending');
+
+      // Title
+      document.getElementById('sidebar-event-title').textContent = eventData.title || 'Untitled';
+
+      // Date & Time
+      let dateStr = '';
+      let timeStr = '';
+      let isAllDay = eventData.is_all_day;
+
+      if (eventData.scheduled_datetime) {
+        const date = new Date(eventData.scheduled_datetime);
+        dateStr = date.toLocaleDateString('en-US', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
+        
+        if (!isAllDay) {
+          timeStr = date.toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: true 
+          });
+          
+          // Calculate end time if estimated_hours exists (for jobs)
+          if (eventType === 'job' && eventData.estimated_hours) {
+            const endDate = new Date(date.getTime() + (eventData.estimated_hours * 60 * 60 * 1000));
+            const endTime = endDate.toLocaleTimeString('en-US', { 
+              hour: 'numeric', 
+              minute: '2-digit',
+              hour12: true 
+            });
+            timeStr = `${timeStr} - ${endTime}`;
+          }
+        } else {
+          timeStr = 'All Day';
+        }
+      } else if (eventData.scheduled_date) {
+        const date = new Date(eventData.scheduled_date);
+        dateStr = date.toLocaleDateString('en-US', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
+        timeStr = 'All Day';
+      }
+
+      document.getElementById('sidebar-date').textContent = dateStr;
+      document.getElementById('sidebar-time').textContent = timeStr;
+
+      // Status Badge
+      const statusBadge = getStatusBadge(eventData.status, eventType);
+      document.getElementById('sidebar-status-badge').innerHTML = statusBadge;
+
+      // Assigned Staff
+      renderStaffList(staffMembers, eventType);
+
+      // Site Information
+      if (eventData.sites) {
+        renderSiteInfo(eventData.sites);
+      } else if (eventData.site_id && eventType === 'booking') {
+        // For bookings, site might not be populated, fetch it
+        supabase.from('sites').select('*').eq('id', eventData.site_id).single()
+          .then(({ data: site }) => {
+            if (site) renderSiteInfo(site);
+          });
+      }
+
+      // Client Information (for bookings)
+      if (eventType === 'booking' && eventData.client) {
+        renderClientInfo(eventData.client);
+        document.getElementById('sidebar-client-section').classList.remove('hidden');
+      } else {
+        document.getElementById('sidebar-client-section').classList.add('hidden');
+      }
+
+      // Additional Details
+      renderAdditionalDetails(eventData, eventType);
+
+      // Action Buttons
+      if (eventType === 'job') {
+        document.getElementById('sidebar-change-status-btn').classList.remove('hidden');
+        document.getElementById('sidebar-view-details-btn').onclick = () => {
+          window.location.href = `jobs.html?job=${eventData.id}`;
+        };
+      } else {
+        document.getElementById('sidebar-change-status-btn').classList.add('hidden');
+        document.getElementById('sidebar-view-details-btn').onclick = () => {
+          closeEventSidebar();
+          viewBooking(eventData.id);
+        };
+      }
+
+      // Edit/Delete buttons
+      if (canEdit) {
+        document.getElementById('sidebar-edit-btn').classList.remove('hidden');
+        document.getElementById('sidebar-delete-btn').classList.remove('hidden');
+      } else {
+        document.getElementById('sidebar-edit-btn').classList.add('hidden');
+        document.getElementById('sidebar-delete-btn').classList.add('hidden');
+      }
+
+      // Reschedule button
+      document.getElementById('sidebar-reschedule-btn').onclick = () => {
+        // Quick reschedule - could open a modal or use inline editing
+        toast.info('Reschedule functionality coming soon', 'Info');
+      };
+    }
+
+    // Render staff list
+    function renderStaffList(staffMembers, eventType) {
+      const staffListEl = document.getElementById('sidebar-staff-list');
+      const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
+      
+      if (!staffMembers || staffMembers.length === 0) {
+        staffListEl.innerHTML = `
+          <p class="text-sm text-gray-500 dark:text-gray-400">No staff assigned</p>
+        `;
+        if (eventType === 'job' && !isStaff) {
+          document.getElementById('sidebar-add-staff-btn').classList.remove('hidden');
+        } else {
+          document.getElementById('sidebar-add-staff-btn').classList.add('hidden');
+        }
+        return;
+      }
+
+      const staffHTML = staffMembers.map(staff => {
+        const initials = staff.full_name 
+          ? staff.full_name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+          : '?';
+        
+        return `
+          <div class="flex items-center gap-3 p-3 bg-nfglight/30 dark:bg-gray-700/30 rounded-xl border border-nfgray dark:border-gray-600">
+            <div class="w-10 h-10 rounded-full bg-nfgblue dark:bg-blue-900 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">
+              ${initials}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-medium text-sm text-gray-700 dark:text-gray-300 truncate">${staff.full_name || 'Unknown'}</p>
+              ${staff.email ? `<p class="text-xs text-gray-500 dark:text-gray-400 truncate">${staff.email}</p>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      staffListEl.innerHTML = staffHTML;
+      
+      if (eventType === 'job' && !isStaff) {
+        document.getElementById('sidebar-add-staff-btn').classList.remove('hidden');
+      } else {
+        document.getElementById('sidebar-add-staff-btn').classList.add('hidden');
+      }
+    }
+
+    // Render site information
+    function renderSiteInfo(site) {
+      const siteInfoEl = document.getElementById('sidebar-site-info');
+      
+      if (!site) {
+        siteInfoEl.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">No site information</p>';
+        return;
+      }
+
+      const siteHTML = `
+        <div class="space-y-2">
+          <p class="font-medium text-gray-700 dark:text-gray-300 cursor-pointer hover:text-nfgblue dark:hover:text-blue-400 transition" onclick="window.location.href='sites.html?site=${site.id}'">
+            ${site.name || 'Unnamed Site'}
+          </p>
+          ${site.address ? `
+            <div class="flex items-start gap-2 text-sm">
+              <i data-lucide="map-pin" class="w-4 h-4 mt-0.5 flex-shrink-0"></i>
+              <span>${site.address}</span>
+            </div>
+          ` : ''}
+          ${site.deal_value ? `
+            <div class="flex items-center gap-2 text-sm">
+              <i data-lucide="dollar-sign" class="w-4 h-4"></i>
+              <span>Deal Value: $${Number(site.deal_value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+          ` : ''}
+        </div>
+      `;
+
+      siteInfoEl.innerHTML = siteHTML;
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // Render client information
+    function renderClientInfo(client) {
+      const clientInfoEl = document.getElementById('sidebar-client-info');
+      
+      if (!client) {
+        clientInfoEl.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">No client information</p>';
+        return;
+      }
+
+      const clientHTML = `
+        <div class="space-y-2">
+          <p class="font-medium text-gray-700 dark:text-gray-300">${client.full_name || 'Unknown Client'}</p>
+          ${client.email ? `
+            <div class="flex items-center gap-2 text-sm">
+              <i data-lucide="mail" class="w-4 h-4"></i>
+              <span>${client.email}</span>
+            </div>
+          ` : ''}
+        </div>
+      `;
+
+      clientInfoEl.innerHTML = clientHTML;
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // Render additional details
+    function renderAdditionalDetails(eventData, eventType) {
+      const detailsEl = document.getElementById('sidebar-additional-details');
+      let detailsHTML = '';
+
+      if (eventType === 'job') {
+        detailsHTML = `
+          <div class="space-y-3">
+            ${eventData.job_type ? `
+              <div>
+                <span class="font-medium text-gray-700 dark:text-gray-300">Job Type:</span>
+                <span class="ml-2">${eventData.job_type}</span>
+              </div>
+            ` : ''}
+            ${eventData.frequency ? `
+              <div>
+                <span class="font-medium text-gray-700 dark:text-gray-300">Frequency:</span>
+                <span class="ml-2">${eventData.frequency}</span>
+              </div>
+            ` : ''}
+            ${eventData.estimated_hours ? `
+              <div>
+                <span class="font-medium text-gray-700 dark:text-gray-300">Estimated Hours:</span>
+                <span class="ml-2">${eventData.estimated_hours} hrs</span>
+              </div>
+            ` : ''}
+            ${eventData.description ? `
+              <div>
+                <span class="font-medium text-gray-700 dark:text-gray-300 block mb-1">Description:</span>
+                <p class="text-sm">${eventData.description}</p>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      } else if (eventType === 'booking') {
+        detailsHTML = `
+          <div class="space-y-3">
+            ${eventData.description ? `
+              <div>
+                <span class="font-medium text-gray-700 dark:text-gray-300 block mb-1">Description:</span>
+                <p class="text-sm">${eventData.description}</p>
+              </div>
+            ` : ''}
+            ${eventData.frequency === 'recurring' ? `
+              <div>
+                <i data-lucide="refresh-cw" class="w-4 h-4 inline mr-1"></i>
+                <span class="font-medium text-gray-700 dark:text-gray-300">Recurring Booking</span>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+
+      detailsEl.innerHTML = detailsHTML;
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // Get status badge HTML
+    function getStatusBadge(status, eventType) {
+      const statusColors = {
+        'pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+        'in_progress': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+        'completed': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+        'cancelled': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+        'draft': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+        'confirmed': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+      };
+
+      const color = statusColors[status] || statusColors['pending'];
+      const statusLabel = status ? status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown';
+
+      return `<span class="px-3 py-1 rounded-full text-xs font-medium ${color}">${statusLabel}</span>`;
+    }
+
+    // Attach sidebar event listeners
+    document.addEventListener('DOMContentLoaded', () => {
+      // Close button
+      document.getElementById('sidebar-close-btn')?.addEventListener('click', closeEventSidebar);
+      
+      // Overlay click
+      document.getElementById('calendar-sidebar-overlay')?.addEventListener('click', closeEventSidebar);
+      
+      // ESC key to close
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          const sidebar = document.getElementById('calendar-event-sidebar');
+          if (sidebar && !sidebar.classList.contains('hidden')) {
+            closeEventSidebar();
+          }
+        }
+      });
+    });
 
     // ========== VIEW TOGGLE ==========
     function initViewToggle() {
