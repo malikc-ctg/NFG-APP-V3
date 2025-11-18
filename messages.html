@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en" class="h-full overflow-hidden">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NFG — Messages</title>
+  <link rel="icon" type="image/png" href="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/NFG%20one.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL05GRyBvbmUucG5nIiwiaWF0IjoxNzYyOTc5NzU5LCJleHAiOjQ4ODUwNDM3NTl9.fnJIDQep2yYlgGKlBRNnkrUoUzXzG7eac39GG6NQPuU">
+
+  <!-- PWA Support -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0D47A1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="NFG">
+  <link rel="apple-touch-icon" href="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/NFG%20one.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL05GRyBvbmUucG5nIiwiaWF0IjoxNzYyOTc5NzU5LCJleHAiOjQ4ODUwNDM3NTl9.fnJIDQep2yYlgGKlBRNnkrUoUzXzG7eac39GG6NQPuU">
+
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN + NFG theme -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            nfgblue: '#0D47A1',
+            nfgdark: '#0A3A84',
+            nfglight: '#E3ECFA',
+            nfgray: '#E5E7EB',
+            nftext: '#1E293B',
+            nfbg: '#F8FAFC'
+          },
+          fontFamily: { inter: ['Inter','sans-serif'] },
+          borderRadius: { xl: '12px' },
+          boxShadow: { nfg: '0 4px 14px rgba(13,71,161,0.06)' }
+        }
+      }
+    }
+  </script>
+
+  <!-- Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Mobile Menu Styles -->
+  <link rel="stylesheet" href="./css/mobile-menu.css">
+  
+  <!-- Notification System -->
+  <link rel="stylesheet" href="./css/notifications.css">
+  
+  <!-- Page Loader -->
+  <link rel="stylesheet" href="./css/loader.css">
+  
+  <!-- Dark Mode -->
+  <link rel="stylesheet" href="./css/dark-mode.css">
+  <script src="./js/dark-mode.js"></script>
+  
+  <!-- Notification Center -->
+  <link rel="stylesheet" href="./css/notification-center.css">
+  
+  <!-- Offline Sync -->
+  <script type="module" src="./js/offline-sync.js"></script>
+  <script type="module" src="./js/offline-indicator.js"></script>
+
+  <!-- Prevent page scrollbar -->
+  <style>
+    html {
+      height: 100% !important;
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+    }
+    body {
+      height: 100vh !important;
+      width: 100vw !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      display: flex !important;
+    }
+    body > aside {
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: thin;
+    }
+    body > div.flex-1 {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      flex: 1;
+      min-width: 0;
+      height: 100vh;
+    }
+    
+    /* Message bubble styles */
+    .message-bubble {
+      max-width: 75%;
+      word-wrap: break-word;
+    }
+    
+    .message-bubble-sent {
+      background-color: #0D47A1;
+      color: white;
+      border-radius: 18px 18px 4px 18px;
+      margin-left: auto;
+    }
+    
+    .message-bubble-received {
+      background-color: #E5E7EB;
+      color: #1E293B;
+      border-radius: 18px 18px 18px 4px;
+      margin-right: auto;
+    }
+    
+    .dark .message-bubble-received {
+      background-color: #374151;
+      color: #F3F4F6;
+    }
+    
+    /* Mobile responsive */
+    @media (max-width: 767px) {
+      #conversation-list {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 10;
+        background: white;
+        dark:bg-gray-800;
+      }
+      
+      #conversation-view {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 20;
+        background: white;
+        dark:bg-gray-800;
+      }
+      
+      #conversation-view.hidden {
+        display: none;
+      }
+    }
+  </style>
+
+</head>
+
+<body class="font-inter bg-nfbg dark:bg-gray-900 h-screen flex text-nftext dark:text-gray-200 overflow-hidden">
+  <!-- Full-Page Loader -->
+  <div id="page-loader">
+    <div class="loader-logo">
+      <img src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/2.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzLzIucG5nIiwiaWF0IjoxNzYxODY2MTE0LCJleHAiOjQ4ODM5MzAxMTR9.E1JoQZxqPy0HOKna6YfjPCfin5Pc3QF0paEV7qzVfDw" alt="NFG">
+    </div>
+    <div class="banter-loader">
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+    </div>
+    <div class="loader-text">Loading Messages...</div>
+    <div class="loader-text-subtitle">Please wait</div>
+  </div>
+
+  
+  <!-- ========== SIDEBAR ========== -->
+  <aside id="sidebar" class="w-64 shrink-0 bg-white dark:bg-gray-800 border-r border-nfgray hidden md:flex md:flex-col transition-all">
+    <div class="p-5 flex items-center justify-center">
+      <img 
+        src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/2.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzLzIucG5nIiwiaWF0IjoxNzYxODY2MTE0LCJleHAiOjQ4ODM5MzAxMTR9.E1JoQZxqPy0HOKna6YfjPCfin5Pc3QF0paEV7qzVfDw" 
+        alt="Northern Facilities Group" 
+        class="h-32 w-auto"
+      />
+    </div>
+    <nav class="px-3 pb-4 flex-1 space-y-1">
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="dashboard.html">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="sites.html">
+        <i data-lucide="map-pin" class="w-4 h-4"></i> Sites
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="bookings.html">
+        <i data-lucide="calendar" class="w-4 h-4"></i> Bookings
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="jobs.html">
+        <i data-lucide="clipboard-check" class="w-4 h-4"></i> Jobs
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="inventory.html">
+        <i data-lucide="package" class="w-4 h-4"></i> Inventory
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="reports.html">
+        <i data-lucide="file-chart-column" class="w-4 h-4"></i> Reports
+      </a>
+      <a id="nav-messages" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight dark:bg-gray-700 text-nfgblue dark:text-blue-400 font-medium w-full text-left" href="messages.html">
+        <i data-lucide="message-circle" class="w-4 h-4"></i> Messages
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="settings.html">
+        <i data-lucide="settings" class="w-4 h-4"></i> Settings
+      </a>
+    </nav>
+    <div class="p-4 border-t border-nfgray dark:border-gray-700">
+      <button id="logout-btn" class="w-full border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight rounded-xl py-2 font-medium">
+        Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- ========== MAIN ========== -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <!-- TOPBAR -->
+    <header class="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-nfgray dark:border-gray-700 flex-shrink-0">
+      <div class="h-14 px-2 sm:px-4 md:px-6 flex items-center justify-between gap-1 sm:gap-2">
+        <div class="flex items-center gap-1 sm:gap-2 min-w-0 flex-1">
+          <button class="md:hidden p-1.5 sm:p-2 rounded-lg border border-nfgray text-nfgblue dark:text-blue-400 flex-shrink-0" data-action="toggle-sidebar" aria-label="Toggle sidebar">
+            <i data-lucide="menu" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+          </button>
+          <h1 class="text-nfgblue dark:text-blue-400 font-semibold text-sm sm:text-base truncate">Messages</h1>
+        </div>
+
+        <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          <!-- Notification Bell (will be injected by notification-center.js) -->
+          
+          <button id="new-message-btn" class="inline-flex items-center justify-center sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark transition flex-shrink-0">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span class="hidden sm:inline text-xs sm:text-sm">New Message</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <main class="flex-1 flex overflow-hidden">
+      <!-- Conversation List Sidebar -->
+      <div id="conversation-list" class="w-full md:w-80 lg:w-96 border-r border-nfgray dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col overflow-hidden">
+        <!-- Search Bar -->
+        <div class="p-4 border-b border-nfgray dark:border-gray-700">
+          <div class="relative">
+            <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+            <input 
+              type="text" 
+              id="conversation-search" 
+              placeholder="Search conversations..." 
+              class="w-full pl-10 pr-4 py-2 rounded-lg border border-nfgray dark:border-gray-600 bg-white dark:bg-gray-700 text-sm focus:ring-2 focus:ring-nfgblue outline-none"
+            />
+          </div>
+        </div>
+
+        <!-- Conversations List -->
+        <div id="conversations-container" class="flex-1 overflow-y-auto">
+          <!-- Loading State -->
+          <div id="conversations-loading" class="p-4 text-center text-gray-500 dark:text-gray-400">
+            <div class="animate-pulse space-y-3">
+              <div class="h-16 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+              <div class="h-16 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+              <div class="h-16 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div id="conversations-empty" class="hidden p-8 text-center">
+            <i data-lucide="message-circle" class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3"></i>
+            <p class="text-gray-500 dark:text-gray-400 text-sm">No conversations yet</p>
+            <p class="text-gray-400 dark:text-gray-500 text-xs mt-1">Start a new conversation to get started</p>
+          </div>
+
+          <!-- Conversations List (will be populated by JS) -->
+          <div id="conversations-list" class="hidden"></div>
+        </div>
+      </div>
+
+      <!-- Conversation View -->
+      <div id="conversation-view" class="flex-1 flex flex-col overflow-hidden bg-white dark:bg-gray-800 md:block hidden">
+        <!-- Empty State (when no conversation selected) -->
+        <div id="conversation-empty" class="flex-1 flex items-center justify-center p-8">
+          <div class="text-center">
+            <i data-lucide="message-circle" class="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4"></i>
+            <p class="text-gray-500 dark:text-gray-400 text-lg font-medium">Select a conversation</p>
+            <p class="text-gray-400 dark:text-gray-500 text-sm mt-2">Choose a conversation from the list to start messaging</p>
+          </div>
+        </div>
+
+        <!-- Active Conversation -->
+        <div id="conversation-active" class="hidden flex-1 flex flex-col overflow-hidden">
+          <!-- Conversation Header -->
+          <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700 bg-white dark:bg-gray-800">
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+              <button id="back-to-list-btn" class="md:hidden p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+              </button>
+              <div id="conversation-header-avatar" class="w-10 h-10 rounded-full bg-nfgblue dark:bg-blue-900 flex items-center justify-center text-white font-semibold flex-shrink-0">
+                <!-- Avatar will be populated -->
+              </div>
+              <div class="min-w-0 flex-1">
+                <h2 id="conversation-header-name" class="font-semibold text-sm truncate">Loading...</h2>
+                <p id="conversation-header-status" class="text-xs text-gray-500 dark:text-gray-400">Online</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Messages Container -->
+          <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900/50">
+            <!-- Loading State -->
+            <div id="messages-loading" class="text-center text-gray-500 dark:text-gray-400 py-8">
+              <div class="animate-pulse space-y-3">
+                <div class="h-12 bg-gray-200 dark:bg-gray-700 rounded-lg w-3/4 ml-auto"></div>
+                <div class="h-12 bg-gray-200 dark:bg-gray-700 rounded-lg w-3/4"></div>
+                <div class="h-12 bg-gray-200 dark:bg-gray-700 rounded-lg w-3/4 ml-auto"></div>
+              </div>
+            </div>
+
+            <!-- Messages List (will be populated by JS) -->
+            <div id="messages-list" class="hidden space-y-4"></div>
+
+            <!-- Empty State (no messages) -->
+            <div id="messages-empty" class="hidden text-center py-8">
+              <i data-lucide="message-square" class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3"></i>
+              <p class="text-gray-500 dark:text-gray-400 text-sm">No messages yet</p>
+              <p class="text-gray-400 dark:text-gray-500 text-xs mt-1">Start the conversation!</p>
+            </div>
+          </div>
+
+          <!-- Message Input -->
+          <div class="p-4 border-t border-nfgray dark:border-gray-700 bg-white dark:bg-gray-800">
+            <form id="message-form" class="flex items-end gap-2">
+              <div class="flex-1">
+                <textarea 
+                  id="message-input" 
+                  rows="1"
+                  placeholder="Type a message..." 
+                  class="w-full px-4 py-2 rounded-lg border border-nfgray dark:border-gray-600 bg-white dark:bg-gray-700 resize-none focus:ring-2 focus:ring-nfgblue outline-none text-sm"
+                  style="max-height: 120px;"
+                ></textarea>
+              </div>
+              <button 
+                type="submit"
+                id="send-message-btn"
+                class="p-2.5 rounded-lg bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark transition flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled
+              >
+                <i data-lucide="send" class="w-5 h-5"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ========== NEW MESSAGE MODAL ========== -->
+  <div id="new-message-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md">
+      <div class="p-6 border-b border-nfgray dark:border-gray-700">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">New Message</h3>
+          <button id="close-new-message-modal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+      <div class="p-6">
+        <div class="mb-4">
+          <label class="block text-sm font-medium mb-2">Select User</label>
+          <div class="relative">
+            <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+            <input 
+              type="text" 
+              id="user-search" 
+              placeholder="Search users..." 
+              class="w-full pl-10 pr-4 py-2 rounded-lg border border-nfgray dark:border-gray-600 bg-white dark:bg-gray-700 text-sm focus:ring-2 focus:ring-nfgblue outline-none"
+            />
+          </div>
+        </div>
+        <div id="users-list" class="max-h-64 overflow-y-auto space-y-2">
+          <!-- Users will be populated here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SCRIPTS ========== -->
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="module" src="./js/notification-center.js"></script>
+  <script type="module" src="./js/messages.js"></script>
+  
+  <script>
+    // Mobile sidebar toggle
+    document.querySelector('[data-action="toggle-sidebar"]')?.addEventListener('click', () => {
+      document.getElementById('sidebar')?.classList.toggle('hidden');
+    });
+
+    // Logout
+    document.getElementById('logout-btn')?.addEventListener('click', async () => {
+      const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2');
+      const supabase = createClient(
+        'https://zqcbldgheimqrnqmbbed.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxY2JsZGdoZWltcXJucW1iYmVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTY0NjY1NDAsImV4cCI6MjAzMjA0MjU0MH0.9qJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJq'
+      );
+      await supabase.auth.signOut();
+      window.location.href = './index.html';
+    });
+
+    // Initialize icons
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+  </script>
+</body>
+</html>
+
