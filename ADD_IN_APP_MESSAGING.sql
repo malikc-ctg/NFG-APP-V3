@@ -155,6 +155,25 @@ ALTER TABLE conversation_participants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE message_reads ENABLE ROW LEVEL SECURITY;
 
+-- ========== HELPER FUNCTION (Must be created before policies) ==========
+
+-- Helper function to check if user is a participant (avoids recursion)
+-- This must be created BEFORE any policies that use it
+CREATE OR REPLACE FUNCTION user_is_participant(conv_id UUID, user_id_param UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 
+    FROM conversation_participants 
+    WHERE conversation_id = conv_id 
+      AND user_id = user_id_param
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Grant execute permission
+GRANT EXECUTE ON FUNCTION user_is_participant(UUID, UUID) TO authenticated;
+
 -- ========== CONVERSATIONS POLICIES ==========
 
 -- Drop existing policies if they exist
@@ -178,19 +197,6 @@ CREATE POLICY "Users can update their created conversations"
   USING (created_by = auth.uid());
 
 -- ========== CONVERSATION PARTICIPANTS POLICIES ==========
-
--- Helper function to check if user is a participant (avoids recursion)
-CREATE OR REPLACE FUNCTION user_is_participant(conv_id UUID, user_id_param UUID)
-RETURNS BOOLEAN AS $$
-BEGIN
-  RETURN EXISTS (
-    SELECT 1 
-    FROM conversation_participants 
-    WHERE conversation_id = conv_id 
-      AND user_id = user_id_param
-  );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Drop existing policies if they exist
 DROP POLICY IF EXISTS "Users can view participants in their conversations" ON conversation_participants;
