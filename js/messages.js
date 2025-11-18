@@ -161,24 +161,11 @@ async function loadConversations() {
     if (listEl) listEl.classList.add('hidden');
 
     // Get user's conversations with participant info
+    // First, get participant records
     const { data: participantData, error: participantError } = await supabase
       .from('conversation_participants')
-      .select(`
-        conversation_id,
-        last_read_at,
-        conversations (
-          id,
-          type,
-          job_id,
-          title,
-          created_by,
-          created_at,
-          updated_at,
-          last_message_at
-        )
-      `)
-      .eq('user_id', currentUser.id)
-      .order('last_message_at', { foreignTable: 'conversations', ascending: false });
+      .select('conversation_id, last_read_at')
+      .eq('user_id', currentUser.id);
 
     if (participantError) throw participantError;
 
@@ -188,23 +175,35 @@ async function loadConversations() {
       return;
     }
 
-    // Get other participants for each conversation
+    // Get conversation details separately
     const conversationIds = participantData.map(p => p.conversation_id);
+    const { data: conversationsData, error: conversationsError } = await supabase
+      .from('conversations')
+      .select('id, type, job_id, title, created_by, created_at, updated_at, last_message_at')
+      .in('id', conversationIds)
+      .order('last_message_at', { ascending: false });
+
+    if (conversationsError) throw conversationsError;
+
+    // Get other participants for each conversation
     const { data: allParticipants, error: participantsError } = await supabase
       .from('conversation_participants')
-      .select(`
-        conversation_id,
-        user_id,
-        user_profiles (
-          id,
-          full_name,
-          email,
-          profile_picture
-        )
-      `)
+      .select('conversation_id, user_id')
       .in('conversation_id', conversationIds);
 
     if (participantsError) throw participantsError;
+
+    // Get user profiles for participants separately (to avoid relationship errors)
+    const userIds = [...new Set((allParticipants || []).map(p => p.user_id))];
+    const { data: userProfiles, error: profilesError } = await supabase
+      .from('user_profiles')
+      .select('id, full_name, email, profile_picture')
+      .in('id', userIds);
+
+    if (profilesError) throw profilesError;
+
+    // Create a map of user_id -> profile
+    const profilesMap = new Map((userProfiles || []).map(profile => [profile.id, profile]));
 
     // Get last messages for unread counts
     const { data: lastMessages, error: messagesError } = await supabase
@@ -216,10 +215,13 @@ async function loadConversations() {
 
     // Build conversations array with participant info
     conversations = participantData.map(participant => {
-      const conversation = participant.conversations;
+      const conversation = (conversationsData || []).find(c => c.id === participant.conversation_id);
+      if (!conversation) return null; // Skip if conversation not found
+
       const otherParticipants = (allParticipants || [])
         .filter(p => p.conversation_id === conversation.id && p.user_id !== currentUser.id)
-        .map(p => p.user_profiles);
+        .map(p => profilesMap.get(p.user_id))
+        .filter(Boolean); // Remove undefined entries
 
       // Get last message for this conversation
       const lastMessage = (lastMessages || []).find(m => m.conversation_id === conversation.id);
@@ -235,7 +237,7 @@ async function loadConversations() {
         lastReadAt: participant.last_read_at,
         unreadCount
       };
-    });
+    }).filter(Boolean); // Remove null entries
 
     // Render conversations
     renderConversations();
