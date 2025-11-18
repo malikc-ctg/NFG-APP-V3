@@ -867,15 +867,17 @@ function updateConversationHeader() {
 function scrollToBottom() {
   const container = document.getElementById('messages-container');
   if (container) {
-    // Use requestAnimationFrame for better scrolling
+    // Use multiple requestAnimationFrame calls to ensure scroll happens after DOM updates
     requestAnimationFrame(() => {
-      container.scrollTop = container.scrollHeight;
-      
-      // Also scroll the main view to ensure input is visible
-      const conversationActive = document.getElementById('conversation-active');
-      if (conversationActive) {
-        conversationActive.scrollTop = conversationActive.scrollHeight;
-      }
+      requestAnimationFrame(() => {
+        // Scroll to bottom
+        container.scrollTop = container.scrollHeight;
+        
+        // Ensure the container is actually scrollable
+        if (container.scrollHeight > container.clientHeight) {
+          container.scrollTop = container.scrollHeight;
+        }
+      });
     });
   }
 }

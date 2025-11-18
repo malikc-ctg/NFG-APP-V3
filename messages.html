@@ -131,8 +131,18 @@
     #messages-container {
       flex: 1 1 auto !important;
       min-height: 0 !important;
+      max-height: 100% !important;
       overflow-y: auto !important;
       overflow-x: hidden !important;
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+    }
+    
+    #conversations-container {
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
     }
     
     #message-form {
@@ -328,7 +338,7 @@
           </div>
 
           <!-- Messages Container -->
-          <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900/50 min-h-0">
+          <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900/50 min-h-0" style="height: calc(100vh - 200px);">
             <!-- Loading State -->
             <div id="messages-loading" class="text-center text-gray-500 dark:text-gray-400 py-8">
               <div class="animate-pulse space-y-3">
