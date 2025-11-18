@@ -533,8 +533,15 @@ async function sendMessage() {
 
     // Re-render messages
     renderMessages();
-    scrollToBottom();
-
+    
+    // Ensure conversation view stays visible
+    showConversationView();
+    
+    // Scroll to bottom after a short delay to ensure DOM is updated
+    setTimeout(() => {
+      scrollToBottom();
+    }, 50);
+    
     // Mark as read
     await markConversationAsRead(currentConversation.id);
 
@@ -585,7 +592,16 @@ function subscribeToMessages(conversationId) {
 
       // Re-render
       renderMessages();
-      scrollToBottom();
+      
+      // Ensure conversation view stays visible
+      if (currentConversation && currentConversation.id === conversationId) {
+        showConversationView();
+        
+        // Scroll to bottom after a short delay
+        setTimeout(() => {
+          scrollToBottom();
+        }, 50);
+      }
 
       // Mark as read if it's not from current user
       if (newMessage.sender_id !== currentUser.id) {
@@ -768,8 +784,11 @@ async function createOrSelectConversation(otherUserId) {
     // Reload conversations
     await loadConversations();
 
-    // Select the conversation
+    // Select the conversation (this will show the view)
     await selectConversation(conversationId);
+    
+    // Ensure view is visible
+    showConversationView();
   } catch (error) {
     console.error('Error creating conversation:', error);
     const errorMessage = error?.message || error?.details || 'Failed to create conversation';
@@ -784,6 +803,14 @@ function showConversationView() {
   const listEl = document.getElementById('conversation-list');
   const viewEl = document.getElementById('conversation-view');
 
+  if (!currentConversation) {
+    // No conversation selected, show empty state
+    if (emptyEl) emptyEl.classList.remove('hidden');
+    if (activeEl) activeEl.classList.add('hidden');
+    return;
+  }
+
+  // Conversation is selected, show active view
   if (emptyEl) emptyEl.classList.add('hidden');
   if (activeEl) activeEl.classList.remove('hidden');
   
@@ -840,9 +867,16 @@ function updateConversationHeader() {
 function scrollToBottom() {
   const container = document.getElementById('messages-container');
   if (container) {
-    setTimeout(() => {
+    // Use requestAnimationFrame for better scrolling
+    requestAnimationFrame(() => {
       container.scrollTop = container.scrollHeight;
-    }, 100);
+      
+      // Also scroll the main view to ensure input is visible
+      const conversationActive = document.getElementById('conversation-active');
+      if (conversationActive) {
+        conversationActive.scrollTop = conversationActive.scrollHeight;
+      }
+    });
   }
 }
 
