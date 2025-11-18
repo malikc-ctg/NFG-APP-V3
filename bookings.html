@@ -400,6 +400,9 @@
         min-height: 44px;
         min-width: 44px;
         touch-action: manipulation;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
       
       /* Prevent text selection on swipe */
@@ -986,7 +989,7 @@
             <button id="calendar-prev" class="px-3 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
               <i data-lucide="chevron-left" class="w-4 h-4"></i>
             </button>
-            <button id="calendar-today" class="px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700 font-medium">
+            <button id="calendar-today" class="px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700 font-medium flex items-center justify-center">
               Today
             </button>
             <button id="calendar-next" class="px-3 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
