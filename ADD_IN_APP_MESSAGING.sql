@@ -329,7 +329,7 @@ BEGIN
       SELECT 1 FROM conversation_participants cp2
       WHERE cp2.conversation_id = c.id AND cp2.user_id = user2_id
     )
-    AND (SELECT COUNT(*) FROM conversation_participants WHERE conversation_id = c.id) = 2
+    AND (SELECT COUNT(*) FROM conversation_participants cp3 WHERE cp3.conversation_id = c.id) = 2
   LIMIT 1;
   
   -- If conversation exists, return it
