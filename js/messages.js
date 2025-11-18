@@ -501,27 +501,35 @@ async function sendMessage() {
         content: content,
         message_type: 'text'
       })
-      .select(`
-        *,
-        sender:user_profiles!messages_sender_id_fkey (
-          id,
-          full_name,
-          email,
-          profile_picture
-        )
-      `)
+      .select('*')
       .single();
 
     if (insertError) throw insertError;
+
+    // Fetch sender profile separately (to avoid PostgREST relationship errors)
+    let senderProfile = null;
+    if (newMessage) {
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('id, full_name, email, profile_picture')
+        .eq('id', newMessage.sender_id)
+        .single();
+      
+      senderProfile = profile;
+    }
 
     // Clear input
     messageInput.value = '';
     messageInput.style.height = 'auto';
     if (sendBtn) sendBtn.disabled = true;
 
-    // Add message to local array
-    messages.push(newMessage);
-    newMessage.readBy = [];
+    // Add message to local array with sender profile
+    const messageWithSender = {
+      ...newMessage,
+      sender: senderProfile || null,
+      readBy: []
+    };
+    messages.push(messageWithSender);
 
     // Re-render messages
     renderMessages();
