@@ -156,13 +156,7 @@ ALTER TABLE message_reads ENABLE ROW LEVEL SECURITY;
 -- Users can view conversations they're participants in
 CREATE POLICY "Users can view their conversations"
   ON conversations FOR SELECT
-  USING (
-    id IN (
-      SELECT conversation_id 
-      FROM conversation_participants 
-      WHERE user_id = auth.uid()
-    )
-  );
+  USING (user_is_participant(id, auth.uid()));
 
 -- Users can create conversations
 CREATE POLICY "Users can create conversations"
@@ -176,26 +170,29 @@ CREATE POLICY "Users can update their created conversations"
 
 -- ========== CONVERSATION PARTICIPANTS POLICIES ==========
 
+-- Helper function to check if user is a participant (avoids recursion)
+CREATE OR REPLACE FUNCTION user_is_participant(conv_id UUID, user_id_param UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 
+    FROM conversation_participants 
+    WHERE conversation_id = conv_id 
+      AND user_id = user_id_param
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Users can view participants in their conversations
 CREATE POLICY "Users can view participants in their conversations"
   ON conversation_participants FOR SELECT
-  USING (
-    conversation_id IN (
-      SELECT conversation_id 
-      FROM conversation_participants 
-      WHERE user_id = auth.uid()
-    )
-  );
+  USING (user_is_participant(conversation_id, auth.uid()));
 
 -- Users can add themselves to conversations (for group chats)
 CREATE POLICY "Users can add participants to conversations they're in"
   ON conversation_participants FOR INSERT
   WITH CHECK (
-    conversation_id IN (
-      SELECT conversation_id 
-      FROM conversation_participants 
-      WHERE user_id = auth.uid()
-    )
+    user_is_participant(conversation_id, auth.uid())
     OR user_id = auth.uid()
   );
 
@@ -211,11 +208,7 @@ CREATE POLICY "Users can update their own participant record"
 CREATE POLICY "Users can view messages in their conversations"
   ON messages FOR SELECT
   USING (
-    conversation_id IN (
-      SELECT conversation_id 
-      FROM conversation_participants 
-      WHERE user_id = auth.uid()
-    )
+    user_is_participant(conversation_id, auth.uid())
     AND deleted_at IS NULL
   );
 
@@ -223,11 +216,7 @@ CREATE POLICY "Users can view messages in their conversations"
 CREATE POLICY "Users can send messages to their conversations"
   ON messages FOR INSERT
   WITH CHECK (
-    conversation_id IN (
-      SELECT conversation_id 
-      FROM conversation_participants 
-      WHERE user_id = auth.uid()
-    )
+    user_is_participant(conversation_id, auth.uid())
     AND sender_id = auth.uid()
   );
 
@@ -249,11 +238,11 @@ CREATE POLICY "Users can delete their own messages"
 CREATE POLICY "Users can view read receipts in their conversations"
   ON message_reads FOR SELECT
   USING (
-    message_id IN (
-      SELECT m.id
+    EXISTS (
+      SELECT 1
       FROM messages m
-      JOIN conversation_participants cp ON m.conversation_id = cp.conversation_id
-      WHERE cp.user_id = auth.uid()
+      WHERE m.id = message_reads.message_id
+        AND user_is_participant(m.conversation_id, auth.uid())
     )
   );
 
@@ -262,11 +251,11 @@ CREATE POLICY "Users can mark messages as read"
   ON message_reads FOR INSERT
   WITH CHECK (
     user_id = auth.uid()
-    AND message_id IN (
-      SELECT m.id
+    AND EXISTS (
+      SELECT 1
       FROM messages m
-      JOIN conversation_participants cp ON m.conversation_id = cp.conversation_id
-      WHERE cp.user_id = auth.uid()
+      WHERE m.id = message_reads.message_id
+        AND user_is_participant(m.conversation_id, auth.uid())
     )
   );
 
