@@ -3,13 +3,8 @@
 // Phase 1: MVP (Core Messaging)
 // =====================================================
 
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+import { supabase } from './supabase.js';
 import { showNotification } from './notifications.js';
-
-const supabaseUrl = 'https://zqcbldgheimqrnqmbbed.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxY2JsZGdoZWltcXJucW1iYmVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTY0NjY1NDAsImV4cCI6MjAzMjA0MjU0MH0.9qJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJq';
-
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 // ========== STATE MANAGEMENT ==========
 let currentUser = null;

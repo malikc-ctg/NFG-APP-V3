@@ -401,11 +401,7 @@
 
     // Logout
     document.getElementById('logout-btn')?.addEventListener('click', async () => {
-      const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2');
-      const supabase = createClient(
-        'https://zqcbldgheimqrnqmbbed.supabase.co',
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxY2JsZGdoZWltcXJucW1iYmVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTY0NjY1NDAsImV4cCI6MjAzMjA0MjU0MH0.9qJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJq'
-      );
+      const { supabase } = await import('./js/supabase.js');
       await supabase.auth.signOut();
       window.location.href = './index.html';
     });
