@@ -374,7 +374,18 @@ GRANT EXECUTE ON FUNCTION mark_conversation_as_read(UUID, UUID) TO authenticated
 -- ========== ENABLE REALTIME (for Supabase Realtime) ==========
 
 -- Enable Realtime for messages table (for real-time message delivery)
-ALTER PUBLICATION supabase_realtime ADD TABLE messages;
+-- Note: This may fail if already enabled, which is fine - just means it's already set up
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 
+    FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' 
+      AND tablename = 'messages'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE messages;
+  END IF;
+END $$;
 
 -- Note: You may need to enable Realtime in Supabase Dashboard as well
 -- Dashboard > Database > Replication > Enable for 'messages' table
