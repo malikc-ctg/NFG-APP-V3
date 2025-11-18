@@ -721,7 +721,14 @@ async function createOrSelectConversation(otherUserId) {
       user2_id: otherUserId
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('RPC Error details:', error);
+      throw error;
+    }
+
+    if (!data) {
+      throw new Error('No conversation ID returned from function');
+    }
 
     const conversationId = data;
 
@@ -735,7 +742,8 @@ async function createOrSelectConversation(otherUserId) {
     await selectConversation(conversationId);
   } catch (error) {
     console.error('Error creating conversation:', error);
-    toast?.error('Failed to create conversation', 'Error');
+    const errorMessage = error?.message || error?.details || 'Failed to create conversation';
+    toast?.error(errorMessage, 'Error');
   }
 }
 

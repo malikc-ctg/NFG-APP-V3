@@ -308,14 +308,27 @@ DECLARE
   conversation_id UUID;
   existing_conversation_id UUID;
 BEGIN
+  -- Validate inputs
+  IF user1_id IS NULL OR user2_id IS NULL THEN
+    RAISE EXCEPTION 'Both user IDs must be provided';
+  END IF;
+  
+  IF user1_id = user2_id THEN
+    RAISE EXCEPTION 'Cannot create conversation with yourself';
+  END IF;
+  
   -- Check if conversation already exists between these two users
   SELECT c.id INTO existing_conversation_id
   FROM conversations c
-  JOIN conversation_participants cp1 ON c.id = cp1.conversation_id
-  JOIN conversation_participants cp2 ON c.id = cp2.conversation_id
   WHERE c.type = 'direct'
-    AND cp1.user_id = user1_id
-    AND cp2.user_id = user2_id
+    AND EXISTS (
+      SELECT 1 FROM conversation_participants cp1
+      WHERE cp1.conversation_id = c.id AND cp1.user_id = user1_id
+    )
+    AND EXISTS (
+      SELECT 1 FROM conversation_participants cp2
+      WHERE cp2.conversation_id = c.id AND cp2.user_id = user2_id
+    )
     AND (SELECT COUNT(*) FROM conversation_participants WHERE conversation_id = c.id) = 2
   LIMIT 1;
   
