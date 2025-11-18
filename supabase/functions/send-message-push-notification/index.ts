@@ -24,6 +24,10 @@ if (vapidPublicKey && vapidPrivateKey) {
 }
 
 serve(async (req) => {
+  console.log('🔔 [Push Notification] Function called');
+  console.log('🔔 [Push Notification] Method:', req.method);
+  console.log('🔔 [Push Notification] URL:', req.url);
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -32,7 +36,13 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     
+    console.log('🔔 [Push Notification] Supabase URL:', supabaseUrl ? 'Set' : 'Missing');
+    console.log('🔔 [Push Notification] Service Role Key:', serviceRoleKey ? 'Set' : 'Missing');
+    console.log('🔔 [Push Notification] VAPID Public Key:', vapidPublicKey ? 'Set' : 'Missing');
+    console.log('🔔 [Push Notification] VAPID Private Key:', vapidPrivateKey ? 'Set' : 'Missing');
+    
     if (!supabaseUrl || !serviceRoleKey) {
+      console.error('❌ [Push Notification] Missing Supabase configuration');
       return new Response(
         JSON.stringify({ error: 'Missing Supabase configuration' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -45,12 +55,21 @@ serve(async (req) => {
     let payload: any
     try {
       payload = await req.json()
-    } catch {
+      console.log('🔔 [Push Notification] Payload received:', JSON.stringify(payload).substring(0, 200));
+    } catch (error) {
+      console.error('❌ [Push Notification] Invalid JSON payload:', error);
       return new Response('Invalid JSON payload', { status: 400, headers: corsHeaders })
     }
 
     // Handle webhook format (Supabase sends { type, table, record, old_record })
     let message = payload.record || payload
+    
+    console.log('🔔 [Push Notification] Message extracted:', {
+      hasRecord: !!payload.record,
+      messageId: message.id || payload.message_id,
+      conversationId: message.conversation_id || payload.conversation_id,
+      senderId: message.sender_id || payload.sender_id
+    });
     
     // If called directly, expect: { message_id, conversation_id, sender_id, content }
     const messageId = message.id || payload.message_id
@@ -59,11 +78,19 @@ serve(async (req) => {
     const content = message.content || payload.content
 
     if (!messageId || !conversationId || !senderId || !content) {
+      console.error('❌ [Push Notification] Missing required fields:', {
+        messageId: !!messageId,
+        conversationId: !!conversationId,
+        senderId: !!senderId,
+        content: !!content
+      });
       return new Response(
-        JSON.stringify({ error: 'Missing required message fields' }),
+        JSON.stringify({ error: 'Missing required message fields', details: { messageId, conversationId, senderId, hasContent: !!content } }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    console.log('🔔 [Push Notification] Processing message:', messageId);
 
     // Get sender profile
     const { data: senderProfile } = await supabaseAdmin
@@ -73,13 +100,20 @@ serve(async (req) => {
       .single()
 
     // Get conversation participants (excluding sender)
-    const { data: participants } = await supabaseAdmin
+    const { data: participants, error: participantsError } = await supabaseAdmin
       .from('conversation_participants')
       .select('user_id')
       .eq('conversation_id', conversationId)
       .neq('user_id', senderId)
 
+    if (participantsError) {
+      console.error('❌ [Push Notification] Error fetching participants:', participantsError);
+    }
+
+    console.log('🔔 [Push Notification] Participants found:', participants?.length || 0);
+
     if (!participants || participants.length === 0) {
+      console.log('⚠️ [Push Notification] No recipients to notify');
       return new Response(
         JSON.stringify({ success: true, message: 'No recipients to notify' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -106,14 +140,23 @@ serve(async (req) => {
 
     // Send push notifications to all recipients
     const userIds = participants.map(p => p.user_id)
-    const { data: subscriptions } = await supabaseAdmin
+    console.log('🔔 [Push Notification] User IDs to notify:', userIds);
+    
+    const { data: subscriptions, error: subscriptionsError } = await supabaseAdmin
       .from('push_subscriptions')
       .select('*')
       .in('user_id', userIds)
 
+    if (subscriptionsError) {
+      console.error('❌ [Push Notification] Error fetching subscriptions:', subscriptionsError);
+    }
+
+    console.log('🔔 [Push Notification] Subscriptions found:', subscriptions?.length || 0);
+
     if (!subscriptions || subscriptions.length === 0) {
+      console.log('⚠️ [Push Notification] No push subscriptions found for users:', userIds);
       return new Response(
-        JSON.stringify({ success: true, message: 'No push subscriptions found' }),
+        JSON.stringify({ success: true, message: 'No push subscriptions found', userIds }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
