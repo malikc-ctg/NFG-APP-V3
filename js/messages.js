@@ -782,6 +782,7 @@ function showConversationView() {
   const emptyEl = document.getElementById('conversation-empty');
   const activeEl = document.getElementById('conversation-active');
   const listEl = document.getElementById('conversation-list');
+  const viewEl = document.getElementById('conversation-view');
 
   if (emptyEl) emptyEl.classList.add('hidden');
   if (activeEl) activeEl.classList.remove('hidden');
@@ -789,6 +790,16 @@ function showConversationView() {
   // On mobile, hide list and show view
   if (window.innerWidth < 768) {
     if (listEl) listEl.classList.add('hidden');
+    if (viewEl) {
+      viewEl.classList.remove('hidden');
+      viewEl.classList.add('flex');
+    }
+  } else {
+    // On desktop, show both
+    if (viewEl) {
+      viewEl.classList.remove('hidden');
+      viewEl.classList.add('md:block');
+    }
   }
 }
 
@@ -797,7 +808,10 @@ function showConversationList() {
   const viewEl = document.getElementById('conversation-view');
 
   if (listEl) listEl.classList.remove('hidden');
-  if (viewEl) viewEl.classList.add('hidden');
+  if (viewEl) {
+    viewEl.classList.add('hidden');
+    viewEl.classList.remove('flex', 'md:block');
+  }
 }
 
 function updateConversationHeader() {
