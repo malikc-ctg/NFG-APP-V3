@@ -4,6 +4,7 @@
 // =====================================================
 
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+import { showNotification } from './notifications.js';
 
 const supabaseUrl = 'https://zqcbldgheimqrnqmbbed.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxY2JsZGdoZWltcXJucW1iYmVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTY0NjY1NDAsImV4cCI6MjAzMjA0MjU0MH0.9qJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJq';
@@ -863,15 +864,13 @@ function escapeHtml(text) {
 }
 
 // ========== TOAST NOTIFICATIONS ==========
-// Simple toast function (can be replaced with your existing toast system)
+// Use existing toast system
 const toast = {
   success: (message, title) => {
-    console.log(`✅ ${title}: ${message}`);
-    // TODO: Integrate with existing toast system
+    showNotification(message, 'success', title);
   },
   error: (message, title) => {
-    console.error(`❌ ${title}: ${message}`);
-    // TODO: Integrate with existing toast system
+    showNotification(message, 'error', title);
   }
 };
 
