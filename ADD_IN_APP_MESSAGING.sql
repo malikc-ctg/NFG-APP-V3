@@ -413,3 +413,7 @@ COMMENT ON TABLE message_reads IS 'Tracks read receipts for messages';
 COMMENT ON FUNCTION create_direct_conversation IS 'Creates a direct message conversation between two users, or returns existing one';
 COMMENT ON FUNCTION mark_conversation_as_read IS 'Marks a conversation as read for a user and updates read receipts';
 
+-- ========== PUSH NOTIFICATIONS FOR MESSAGES ==========
+-- Note: Push notifications are handled via Supabase Webhooks
+-- See SETUP_MESSAGE_PUSH_NOTIFICATIONS.md for setup instructions
+
