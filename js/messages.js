@@ -185,6 +185,12 @@ async function loadConversations() {
 
     if (conversationsError) throw conversationsError;
 
+    if (!conversationsData || conversationsData.length === 0) {
+      if (loadingEl) loadingEl.classList.add('hidden');
+      if (emptyEl) emptyEl.classList.remove('hidden');
+      return;
+    }
+
     // Get other participants for each conversation
     const { data: allParticipants, error: participantsError } = await supabase
       .from('conversation_participants')
