@@ -93,6 +93,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_update_conversation_on_message ON messages;
 CREATE TRIGGER trigger_update_conversation_on_message
   AFTER INSERT ON messages
   FOR EACH ROW
@@ -109,6 +110,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_update_conversation_on_message_update ON messages;
 CREATE TRIGGER trigger_update_conversation_on_message_update
   AFTER UPDATE ON messages
   FOR EACH ROW
@@ -124,6 +126,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_update_messages_updated_at ON messages;
 CREATE TRIGGER trigger_update_messages_updated_at
   BEFORE UPDATE ON messages
   FOR EACH ROW
@@ -138,6 +141,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_update_conversations_updated_at ON conversations;
 CREATE TRIGGER trigger_update_conversations_updated_at
   BEFORE UPDATE ON conversations
   FOR EACH ROW
@@ -152,6 +156,11 @@ ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE message_reads ENABLE ROW LEVEL SECURITY;
 
 -- ========== CONVERSATIONS POLICIES ==========
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view their conversations" ON conversations;
+DROP POLICY IF EXISTS "Users can create conversations" ON conversations;
+DROP POLICY IF EXISTS "Users can update their created conversations" ON conversations;
 
 -- Users can view conversations they're participants in
 CREATE POLICY "Users can view their conversations"
@@ -183,6 +192,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view participants in their conversations" ON conversation_participants;
+DROP POLICY IF EXISTS "Users can add participants to conversations they're in" ON conversation_participants;
+DROP POLICY IF EXISTS "Users can update their own participant record" ON conversation_participants;
+
 -- Users can view participants in their conversations
 CREATE POLICY "Users can view participants in their conversations"
   ON conversation_participants FOR SELECT
@@ -203,6 +217,12 @@ CREATE POLICY "Users can update their own participant record"
   WITH CHECK (user_id = auth.uid());
 
 -- ========== MESSAGES POLICIES ==========
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view messages in their conversations" ON messages;
+DROP POLICY IF EXISTS "Users can send messages to their conversations" ON messages;
+DROP POLICY IF EXISTS "Users can edit their own messages" ON messages;
+DROP POLICY IF EXISTS "Users can delete their own messages" ON messages;
 
 -- Users can view messages in their conversations
 CREATE POLICY "Users can view messages in their conversations"
@@ -233,6 +253,10 @@ CREATE POLICY "Users can delete their own messages"
   WITH CHECK (sender_id = auth.uid());
 
 -- ========== MESSAGE READS POLICIES ==========
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view read receipts in their conversations" ON message_reads;
+DROP POLICY IF EXISTS "Users can mark messages as read" ON message_reads;
 
 -- Users can view read receipts for messages in their conversations
 CREATE POLICY "Users can view read receipts in their conversations"
