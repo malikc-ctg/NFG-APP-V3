@@ -366,15 +366,7 @@ async function loadMessages(conversationId) {
     // Fetch messages
     const { data: messagesData, error: messagesError } = await supabase
       .from('messages')
-      .select(`
-        *,
-        sender:user_profiles!messages_sender_id_fkey (
-          id,
-          full_name,
-          email,
-          profile_picture
-        )
-      `)
+      .select('*')
       .eq('conversation_id', conversationId)
       .is('deleted_at', null)
       .order('created_at', { ascending: true });
@@ -382,6 +374,28 @@ async function loadMessages(conversationId) {
     if (messagesError) throw messagesError;
 
     messages = messagesData || [];
+
+    // Fetch sender profiles separately (to avoid PostgREST relationship errors)
+    if (messages.length > 0) {
+      const senderIds = [...new Set(messages.map(m => m.sender_id))];
+      const { data: senderProfiles, error: profilesError } = await supabase
+        .from('user_profiles')
+        .select('id, full_name, email, profile_picture')
+        .in('id', senderIds);
+
+      if (profilesError) {
+        console.warn('Error fetching sender profiles:', profilesError);
+      } else {
+        // Create a map of sender_id -> profile
+        const profilesMap = new Map((senderProfiles || []).map(profile => [profile.id, profile]));
+        
+        // Attach sender profiles to messages
+        messages = messages.map(message => ({
+          ...message,
+          sender: profilesMap.get(message.sender_id) || null
+        }));
+      }
+    }
 
     // Get read receipts
     if (messages.length > 0) {
