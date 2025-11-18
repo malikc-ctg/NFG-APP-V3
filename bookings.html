@@ -385,6 +385,36 @@
       #calendar-view-week {
         display: none !important;
       }
+      
+      /* Larger touch targets for mobile */
+      .fc-event {
+        min-height: 44px; /* iOS recommended touch target size */
+        min-width: 44px;
+        touch-action: manipulation; /* Prevent double-tap zoom */
+      }
+      
+      .calendar-view-btn,
+      #calendar-prev,
+      #calendar-next,
+      #calendar-today {
+        min-height: 44px;
+        min-width: 44px;
+        touch-action: manipulation;
+      }
+      
+      /* Prevent text selection on swipe */
+      #calendar {
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+      }
+      
+      /* Visual feedback for long press */
+      .fc-event:active {
+        opacity: 0.7;
+        transform: scale(0.98);
+        transition: transform 0.1s, opacity 0.1s;
+      }
     }
     
     /* Tablet adjustments */
@@ -3219,11 +3249,155 @@
           }
         }
       });
+      
+      // Initialize mobile touch gestures
+      initMobileTouchGestures(calendarEl);
     }
 
     function updateCalendar() {
       if (!calendar) return;
       calendar.refetchEvents();
+    }
+
+    // ========== MOBILE TOUCH GESTURES ==========
+    
+    function initMobileTouchGestures(calendarEl) {
+      if (!calendarEl || !calendar) return;
+      
+      // Only enable on mobile devices
+      const isMobile = window.matchMedia('(max-width: 767px)').matches;
+      if (!isMobile) return;
+      
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let touchStartTime = 0;
+      let longPressTimer = null;
+      let longPressTarget = null;
+      const SWIPE_THRESHOLD = 50; // Minimum distance for swipe
+      const LONG_PRESS_DURATION = 500; // Milliseconds
+      
+      // Touch start - detect swipe and long press
+      calendarEl.addEventListener('touchstart', (e) => {
+        const touch = e.touches[0];
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+        touchStartTime = Date.now();
+        
+        // Check if touch is on an event
+        const target = e.target.closest('.fc-event');
+        if (target) {
+          longPressTarget = target;
+          longPressTimer = setTimeout(() => {
+            handleLongPress(target, touch);
+          }, LONG_PRESS_DURATION);
+        }
+      }, { passive: true });
+      
+      // Touch move - cancel long press if user moves
+      calendarEl.addEventListener('touchmove', (e) => {
+        if (longPressTimer) {
+          clearTimeout(longPressTimer);
+          longPressTimer = null;
+          longPressTarget = null;
+        }
+      }, { passive: true });
+      
+      // Touch end - detect swipe
+      calendarEl.addEventListener('touchend', (e) => {
+        if (longPressTimer) {
+          clearTimeout(longPressTimer);
+          longPressTimer = null;
+        }
+        
+        if (!touchStartX || !touchStartY) return;
+        
+        const touch = e.changedTouches[0];
+        const touchEndX = touch.clientX;
+        const touchEndY = touch.clientY;
+        const deltaX = touchEndX - touchStartX;
+        const deltaY = touchEndY - touchStartY;
+        const deltaTime = Date.now() - touchStartTime;
+        
+        // Only process swipe if it's quick and horizontal
+        if (deltaTime < 300 && Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > SWIPE_THRESHOLD) {
+          e.preventDefault();
+          
+          if (deltaX > 0) {
+            // Swipe right - go to previous period
+            if (calendar) {
+              calendar.prev();
+              setTimeout(() => {
+                if (calendar && calendar.view) {
+                  updateCalendarDateRange(calendar.view);
+                }
+              }, 100);
+            }
+          } else {
+            // Swipe left - go to next period
+            if (calendar) {
+              calendar.next();
+              setTimeout(() => {
+                if (calendar && calendar.view) {
+                  updateCalendarDateRange(calendar.view);
+                }
+              }, 100);
+            }
+          }
+        }
+        
+        // Reset
+        touchStartX = 0;
+        touchStartY = 0;
+        touchStartTime = 0;
+        longPressTarget = null;
+      }, { passive: false });
+      
+      // Handle long press on event
+      function handleLongPress(eventElement, touch) {
+        if (!eventElement || !calendar) return;
+        
+        // Find the closest event element
+        const eventEl = eventElement.closest('.fc-event');
+        if (!eventEl) return;
+        
+        // Get event ID from FullCalendar's internal data
+        // FullCalendar stores event data in the element
+        const eventId = eventEl.getAttribute('data-event-id');
+        
+        if (eventId) {
+          const event = calendar.getEventById(eventId);
+          if (event) {
+            showMobileContextMenu(event, touch.clientX, touch.clientY);
+            return;
+          }
+        }
+        
+        // Fallback: trigger click event to use existing eventClick handler
+        const clickEvent = new MouseEvent('click', {
+          bubbles: true,
+          cancelable: true,
+          clientX: touch.clientX,
+          clientY: touch.clientY,
+          view: window
+        });
+        eventEl.dispatchEvent(clickEvent);
+      }
+      
+      // Show mobile context menu (for now, same as click - opens sidebar)
+      function showMobileContextMenu(event, x, y) {
+        const eventId = event.extendedProps?.id;
+        const eventType = event.extendedProps?.type;
+        
+        if (eventId && eventType) {
+          // Haptic feedback (if supported)
+          if (navigator.vibrate) {
+            navigator.vibrate(50);
+          }
+          
+          // Open sidebar (same as regular click)
+          openEventSidebar(eventId, eventType);
+        }
+      }
     }
 
     function updateCalendarDateRange(dateInfo) {
