@@ -17,6 +17,7 @@ let realtimeSubscription = null;
 let typingChannel = null; // For typing indicators
 let presenceChannel = null; // For online/offline status
 let typingTimeout = null; // To clear typing indicator
+let typingChannelSubscribed = false; // Track subscription status
 const TYPING_TIMEOUT_MS = 3000; // Hide typing after 3 seconds
 const MESSAGE_EDIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes to edit
 
@@ -1904,106 +1905,151 @@ function initTypingIndicators() {
     }
   });
   
-  // Track typing state
-  let typingTimeout = null;
+  // Clear any existing typing timeout
+  if (typingTimeout) {
+    clearTimeout(typingTimeout);
+    typingTimeout = null;
+  }
+  
+  // Reset subscription status
+  typingChannelSubscribed = false;
   
   // Listen for typing events from others
   typingChannel
     .on('presence', { event: 'sync' }, () => {
+      console.log('[Typing] Presence sync event');
       updateTypingIndicator();
     })
     .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+      console.log('[Typing] Presence join event', { key, newPresences });
       updateTypingIndicator();
     })
     .on('presence', { event: 'leave' }, () => {
+      console.log('[Typing] Presence leave event');
       updateTypingIndicator();
     });
   
-  // Track channel subscription status
-  let channelSubscribed = false;
-  
   // Subscribe to channel and wait for subscription before tracking
   typingChannel.subscribe((status) => {
+    console.log('[Typing] Channel subscription status:', status);
     if (status === 'SUBSCRIBED') {
-      channelSubscribed = true;
+      typingChannelSubscribed = true;
       console.log('[Typing] Channel subscribed, ready to track');
+      // Trigger initial sync to check for existing typing users
+      updateTypingIndicator();
     } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-      channelSubscribed = false;
+      typingChannelSubscribed = false;
       console.warn('[Typing] Channel closed or error:', status);
     }
   });
   
   // Set up typing tracking (will only work after subscription)
   const messageInput = document.getElementById('message-input');
-  if (messageInput && !messageInput.dataset.typingListenerAttached) {
-    let lastTypingSent = 0;
-    const TYPING_THROTTLE_MS = 1000; // Send typing indicator max once per second
+  if (messageInput) {
+    // Remove existing typing listener if any
+    if (messageInput.dataset.typingListenerAttached) {
+      // Clone to remove old listener (we'll add new one below)
+      const newInput = messageInput.cloneNode(true);
+      messageInput.parentNode.replaceChild(newInput, messageInput);
+    }
     
-    messageInput.addEventListener('input', () => {
-      // Only track if channel is subscribed
-      if (!typingChannel || !channelSubscribed) return;
+    const freshInput = document.getElementById('message-input');
+    if (freshInput) {
+      let lastTypingSent = 0;
+      const TYPING_THROTTLE_MS = 1000; // Send typing indicator max once per second
       
-      const now = Date.now();
-      if (now - lastTypingSent < TYPING_THROTTLE_MS) return;
-      
-      lastTypingSent = now;
-      
-      try {
-        // Send presence with typing state
-        typingChannel.track({
-          typing: true,
-          user_id: currentUser.id,
-          user_name: currentUserProfile?.full_name || currentUser.email,
-          timestamp: new Date().toISOString()
-        });
+      freshInput.addEventListener('input', () => {
+        // Only track if channel is subscribed
+        if (!typingChannel || !typingChannelSubscribed) {
+          console.log('[Typing] Cannot track - channel not ready', { 
+            hasChannel: !!typingChannel, 
+            subscribed: typingChannelSubscribed 
+          });
+          return;
+        }
         
-        // Clear typing state after 3 seconds
-        if (typingTimeout) clearTimeout(typingTimeout);
-        typingTimeout = setTimeout(() => {
-          if (typingChannel && channelSubscribed) {
-            typingChannel.track({
-              typing: false,
-              user_id: currentUser.id
-            });
-          }
-        }, TYPING_TIMEOUT_MS);
-      } catch (error) {
-        console.error('[Typing] Error tracking presence:', error);
-      }
-    });
-    
-    // Mark listener as attached to prevent duplicates
-    messageInput.dataset.typingListenerAttached = 'true';
+        const now = Date.now();
+        if (now - lastTypingSent < TYPING_THROTTLE_MS) return;
+        
+        lastTypingSent = now;
+        
+        try {
+          console.log('[Typing] Sending typing indicator');
+          // Send presence with typing state
+          typingChannel.track({
+            typing: true,
+            user_id: currentUser.id,
+            user_name: currentUserProfile?.full_name || currentUser.email,
+            timestamp: new Date().toISOString()
+          });
+          
+          // Clear typing state after 3 seconds
+          if (typingTimeout) clearTimeout(typingTimeout);
+          typingTimeout = setTimeout(() => {
+            if (typingChannel && typingChannelSubscribed) {
+              console.log('[Typing] Clearing typing indicator');
+              typingChannel.track({
+                typing: false,
+                user_id: currentUser.id
+              });
+            }
+          }, TYPING_TIMEOUT_MS);
+        } catch (error) {
+          console.error('[Typing] Error tracking presence:', error);
+        }
+      });
+      
+      // Mark listener as attached to prevent duplicates
+      freshInput.dataset.typingListenerAttached = 'true';
+    }
   }
 }
 
 // Update typing indicator UI
 function updateTypingIndicator() {
-  if (!typingChannel || !currentConversation) return;
+  if (!typingChannel || !currentConversation) {
+    console.log('[Typing] Cannot update indicator - missing channel or conversation', {
+      hasChannel: !!typingChannel,
+      hasConversation: !!currentConversation
+    });
+    return;
+  }
   
   const state = typingChannel.presenceState();
+  console.log('[Typing] Current presence state:', state);
+  
   const typingUsers = [];
   
   // Get all users who are typing (excluding current user)
   Object.values(state).forEach(presences => {
-    presences.forEach(presence => {
-      if (presence.typing && presence.user_id !== currentUser.id) {
-        typingUsers.push(presence);
-      }
-    });
+    if (Array.isArray(presences)) {
+      presences.forEach(presence => {
+        if (presence.typing && presence.user_id !== currentUser.id) {
+          typingUsers.push(presence);
+        }
+      });
+    }
   });
+  
+  console.log('[Typing] Found typing users:', typingUsers);
   
   // Update UI
   const indicator = document.getElementById('typing-indicator');
   const indicatorText = document.getElementById('typing-indicator-text');
-  if (!indicator || !indicatorText) return;
+  
+  if (!indicator || !indicatorText) {
+    console.warn('[Typing] Typing indicator elements not found in DOM');
+    return;
+  }
   
   if (typingUsers.length > 0) {
     const names = typingUsers.map(u => u.user_name || 'Someone').join(', ');
     indicatorText.textContent = `${names} ${typingUsers.length === 1 ? 'is' : 'are'} typing...`;
     indicator.classList.remove('hidden');
+    console.log('[Typing] Showing indicator:', indicatorText.textContent);
   } else {
     indicator.classList.add('hidden');
+    console.log('[Typing] Hiding indicator - no typing users');
   }
 }
 

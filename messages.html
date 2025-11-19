@@ -532,8 +532,15 @@
             <div id="messages-list" class="hidden space-y-4"></div>
             
             <!-- Typing Indicator (Phase 1) -->
-            <div id="typing-indicator" class="hidden px-4 py-2 text-sm text-gray-500 dark:text-gray-400 italic animate-pulse">
-              <span id="typing-indicator-text">Someone is typing...</span>
+            <div id="typing-indicator" class="hidden px-4 py-2 text-sm text-gray-500 dark:text-gray-400 italic">
+              <div class="flex items-center gap-2">
+                <div class="flex gap-1">
+                  <span class="w-1 h-1 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+                  <span class="w-1 h-1 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+                  <span class="w-1 h-1 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+                </div>
+                <span id="typing-indicator-text">Someone is typing...</span>
+              </div>
             </div>
 
             <!-- Empty State (no messages) -->
