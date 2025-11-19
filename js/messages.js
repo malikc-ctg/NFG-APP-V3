@@ -249,7 +249,7 @@ async function loadConversations() {
 
     if (conversationsError) throw conversationsError;
 
-    if (!conversationsData || conversationsData.length === 0) {
+    if (!filteredConversations || filteredConversations.length === 0) {
       if (loadingEl) loadingEl.classList.add('hidden');
       if (emptyEl) emptyEl.classList.remove('hidden');
       return;
@@ -285,7 +285,7 @@ async function loadConversations() {
 
     // Build conversations array with participant info
     conversations = participantData.map(participant => {
-      const conversation = (conversationsData || []).find(c => c.id === participant.conversation_id);
+      const conversation = filteredConversations.find(c => c.id === participant.conversation_id);
       if (!conversation) return null; // Skip if conversation not found
 
       const otherParticipants = (allParticipants || [])
@@ -1463,7 +1463,8 @@ function updateConversationHeader() {
   const headerStatus = document.getElementById('conversation-header-status');
 
   if (headerName) headerName.textContent = displayName;
-  if (headerStatus) headerStatus.textContent = 'Online'; // TODO: Implement online status
+  // Status will be updated by updateOnlineStatus() when presence channel is ready
+  if (headerStatus) headerStatus.textContent = '...';
   if (headerAvatar) {
     if (avatarUrl) {
       headerAvatar.innerHTML = `<img src="${avatarUrl}" alt="${displayName}" class="w-full h-full rounded-full object-cover">`;
