@@ -1669,22 +1669,51 @@
       
       // Re-initialize custom dropdowns after modal is visible to ensure they're properly set up
       setTimeout(() => {
-        // Remove old dropdown wrappers if they exist
-        const roleWrapper = roleSelect?.nextElementSibling;
-        if (roleWrapper && roleWrapper.classList.contains('nfg-select-wrapper')) {
-          roleWrapper.remove();
-        }
-        const statusWrapper = statusSelect?.nextElementSibling;
-        if (statusWrapper && statusWrapper.classList.contains('nfg-select-wrapper')) {
-          statusWrapper.remove();
-        }
+        // Helper function to clean up and reinitialize a dropdown
+        const cleanupAndInitDropdown = (selectElement) => {
+          if (!selectElement) return;
+          
+          // Find the select element's parent container
+          const parent = selectElement.parentElement;
+          if (!parent) return;
+          
+          // Remove ALL existing wrappers that are siblings of this select (BEFORE the select)
+          // NFGDropdown inserts the wrapper BEFORE the select element
+          let sibling = selectElement.previousElementSibling;
+          while (sibling) {
+            const nextSibling = sibling.previousElementSibling;
+            if (sibling.classList && sibling.classList.contains('nfg-select-wrapper')) {
+              sibling.remove();
+            }
+            sibling = nextSibling;
+          }
+          
+          // Also check if select is inside a wrapper (shouldn't happen, but just in case)
+          if (parent.classList && parent.classList.contains('nfg-select-wrapper')) {
+            // Move select out of wrapper before removing wrapper
+            const grandparent = parent.parentElement;
+            if (grandparent) {
+              grandparent.insertBefore(selectElement, parent);
+              parent.remove();
+            }
+          }
+          
+          // Show the select element and make sure it's visible
+          selectElement.style.display = '';
+          selectElement.style.visibility = 'visible';
+          
+          // Reset initialized flag
+          selectElement.dataset.initialized = 'false';
+          
+          // Reinitialize dropdown (this will create a new wrapper)
+          new NFGDropdown(selectElement);
+        };
         
-        // Reset initialized flag so dropdowns can be re-initialized
-        if (roleSelect) roleSelect.dataset.initialized = 'false';
-        if (statusSelect) statusSelect.dataset.initialized = 'false';
+        // Clean up and reinitialize both dropdowns
+        cleanupAndInitDropdown(roleSelect);
+        cleanupAndInitDropdown(statusSelect);
         
-        // Initialize custom dropdowns (will use the values we set above)
-        initCustomDropdowns();
+        // Recreate icons
         lucide.createIcons();
       }, 100);
     }
