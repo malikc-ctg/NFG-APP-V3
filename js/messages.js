@@ -694,9 +694,14 @@ async function sendMessage() {
       senderProfile = profile;
     }
 
-    // Clear input
+    // Clear input and reset messageBox height
     messageInput.value = '';
     messageInput.style.height = 'auto';
+    const messageBox = messageInput.closest('.messageBox');
+    if (messageBox) {
+      messageBox.style.height = 'auto';
+      messageBox.style.minHeight = '44px';
+    }
     if (sendBtn) sendBtn.disabled = true;
 
     // Add message to local array with sender profile
