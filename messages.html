@@ -259,10 +259,27 @@
       /* Message animations */
       .message-item {
         animation: fadeIn 0.2s ease-out;
+        transition: transform 0.2s ease-out, opacity 0.2s ease-out;
       }
       
       .conversation-item {
-        transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+        transition: transform 0.2s ease-out, opacity 0.2s ease-out, background-color 0.2s ease-out;
+      }
+      
+      /* Smooth transitions for all interactive elements */
+      button, .conversation-item, .message-item {
+        transition-property: transform, opacity, background-color, box-shadow;
+        transition-duration: 0.2s;
+        transition-timing-function: ease-out;
+      }
+      
+      /* Active state animations */
+      button:active {
+        transform: scale(0.95);
+      }
+      
+      .conversation-item:active {
+        opacity: 0.8;
       }
       
       /* Swipe gesture styles */
