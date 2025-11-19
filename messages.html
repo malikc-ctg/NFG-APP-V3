@@ -191,6 +191,11 @@
     
     /* Mobile responsive */
     @media (max-width: 767px) {
+      /* Prevent horizontal scroll on all containers */
+      * {
+        max-width: 100% !important;
+      }
+      
       #conversation-list {
         position: absolute;
         top: 0;
@@ -200,6 +205,8 @@
         z-index: 10;
         background: white;
         dark:bg-gray-800;
+        overflow-x: hidden !important;
+        max-width: 100% !important;
       }
       
       #conversation-view {
@@ -209,8 +216,26 @@
         right: 0;
         bottom: 0;
         z-index: 20;
+        overflow-x: hidden !important;
+        max-width: 100% !important;
         background: white;
         dark:bg-gray-800;
+      }
+      
+      #conversation-active {
+        overflow-x: hidden !important;
+        max-width: 100% !important;
+      }
+      
+      #messages-container {
+        overflow-x: hidden !important;
+        max-width: 100% !important;
+      }
+      
+      #message-form,
+      #message-input {
+        overflow-x: hidden !important;
+        max-width: 100% !important;
       }
       
       #conversation-view.hidden {
