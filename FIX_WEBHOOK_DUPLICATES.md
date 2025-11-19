@@ -1,43 +1,70 @@
 # 🔧 Fix Webhook Duplicates
 
-You have multiple webhooks created. Here's what to do:
+## Problem
+You have **8 webhooks** but you only need **1 webhook** for the `messages` table.
 
-## ✅ Keep Only the Correct One
+## Solution: Delete Extra Webhooks
 
-**Keep this webhook:**
-- **Name:** `message-push-notification`
-- **Table:** `messages` (not `messages_2025_11_15` or any other variant)
-- **Events:** `INSERT`
-- **Webhook URL:** `https://zqcbldgheimqrnqmbbed.supabase.co/functions/v1/send-message-push-notification`
+### ✅ Step 1: Keep ONLY the `messages` webhook
 
-## ❌ Delete the Others
+**You should have:**
+- ✅ `message-push-notification` → Table: `messages` → Keep this one!
+- ❌ `message-push-notification` → Table: `messages_2025_11_15` → **DELETE**
+- ❌ `message-push-notification` → Table: `messages_2025_11_16` → **DELETE**
+- ❌ `message-push-notification` → Table: `messages_2025_11_17` → **DELETE**
+- ❌ `message-push-notification` → Table: `messages_2025_11_18` → **DELETE**
+- ❌ `message-push-notification` → Table: `messages_2025_11_19` → **DELETE**
+- ❌ `message-push-notification` → Table: `messages_2025_11_20` → **DELETE**
+- ❌ `message-push-notification` → Table: `messages_2025_11_21` → **DELETE**
 
-Delete any webhooks for:
-- `messages_2025_11_15` (this looks like a backup/partitioned table)
-- Any other `messages_*` variants
-- Any webhooks pointing to the wrong URL
+### ✅ Step 2: Delete Extra Webhooks
 
-## 📋 Steps to Clean Up:
+For each webhook with table name like `messages_2025_11_XX`:
 
-1. **Click the three dots (⋮) on each duplicate webhook**
-2. **Select "Delete"** for all except the one for the `messages` table
-3. **Keep only the webhook for the `messages` table**
+1. Click the **three dots (⋯)** on the right side of that webhook row
+2. Click **"Delete"** or **"Remove"**
+3. Confirm deletion
+4. **Repeat for all 7 extra webhooks**
 
-## ✅ Verify the Correct Webhook:
+### ✅ Step 3: Verify the Correct Webhook
 
-The webhook you keep should have:
-- ✅ **Table:** `messages` (exactly this, no date suffix)
-- ✅ **Events:** `INSERT` only
-- ✅ **URL:** Points to `send-message-push-notification`
-- ✅ **Enabled:** Should be ON/toggled
+You should only have **ONE** webhook left:
+- **Name**: `message-push-notification`
+- **Table**: `messages` (NOT `messages_2025_11_XX`)
+- **Events**: `INSERT`
+- **Enabled**: ✅ Yes (green toggle)
 
-## 🧪 Test It:
+### ✅ Step 4: Verify Webhook Configuration
 
-1. **Send a test message** in your app
-2. **Check Edge Function logs** - you should see new entries
-3. **Check webhook logs** - should show successful requests
+Click on the webhook (the one for `messages` table) and check:
+
+1. **URL**: `https://zqcbldgheimqrnqmbbed.supabase.co/functions/v1/send-message-push-notification`
+2. **Method**: `POST`
+3. **HTTP Headers**:
+   - `Authorization: Bearer YOUR_SERVICE_ROLE_KEY`
+   - `Content-Type: application/json`
+4. **Enabled**: ✅ Yes
+
+### ✅ Step 5: Test
+
+1. Send a message in your app
+2. Go to webhook **"Logs"** tab
+3. **Refresh the page**
+4. You should see a log entry with status `200` or `202`
 
 ---
 
-**Note:** The `messages_2025_11_15` table looks like it might be a partitioned table or backup. If your actual `messages` table is different, make sure the webhook is pointing to the correct table name.
+## Why This Happened
 
+Those `messages_2025_11_XX` tables don't exist - they were likely created by mistake or Supabase tried to partition the table. Your actual table is just `messages`.
+
+**Only webhook the `messages` table!**
+
+---
+
+## After Cleaning Up
+
+Once you have only the correct webhook:
+1. ✅ Send a message
+2. ✅ Check webhook logs - should see entries now
+3. ✅ Check Edge Function logs - should see `🔔 [Push Notification] Function called`
