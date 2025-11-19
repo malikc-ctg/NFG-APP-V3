@@ -1095,17 +1095,29 @@ function initConversationItemSwipe() {
     let isSwipeActive = false;
     let isRevealed = false;
     
-    // Remove old listeners if any
-    const newItem = item.cloneNode(true);
-    item.parentNode.replaceChild(newItem, item);
-    const freshItem = container.querySelector('.conversation-item');
+    // Track revealed items globally to close others
+    const revealedItems = new Set();
     
-    freshItem.addEventListener('touchstart', (e) => {
+    item.addEventListener('touchstart', (e) => {
+      // Close other revealed items
+      revealedItems.forEach(otherItem => {
+        if (otherItem !== item) {
+          const otherContainer = otherItem.closest('.conversation-item-swipe-container');
+          const otherActions = otherContainer?.querySelector('.swipe-actions');
+          if (otherContainer && otherActions) {
+            otherItem.style.transform = 'translateX(0)';
+            otherActions.style.opacity = '0';
+            otherActions.style.pointerEvents = 'none';
+          }
+          revealedItems.delete(otherItem);
+        }
+      });
+      
       touchStartX = e.touches[0].clientX;
       isSwipeActive = false;
     }, { passive: true });
     
-    freshItem.addEventListener('touchmove', (e) => {
+    item.addEventListener('touchmove', (e) => {
       if (!touchStartX) return;
       
       const deltaX = e.touches[0].clientX - touchStartX;
@@ -1114,8 +1126,8 @@ function initConversationItemSwipe() {
       if (deltaX < 0 && Math.abs(deltaX) > 10) {
         isSwipeActive = true;
         currentX = Math.max(deltaX, -140); // Max reveal 140px
-        freshItem.style.transform = `translateX(${currentX}px)`;
-        freshItem.style.transition = 'none';
+        item.style.transform = `translateX(${currentX}px)`;
+        item.style.transition = 'none';
         
         // Show actions with opacity
         const opacity = Math.min(Math.abs(currentX) / 140, 1);
@@ -1124,8 +1136,8 @@ function initConversationItemSwipe() {
       } else if (deltaX > 0 && isRevealed) {
         // Swiping back to close
         currentX = Math.max(-140 + deltaX, -140);
-        freshItem.style.transform = `translateX(${currentX}px)`;
-        freshItem.style.transition = 'none';
+        item.style.transform = `translateX(${currentX}px)`;
+        item.style.transition = 'none';
         
         const opacity = Math.max(Math.abs(currentX) / 140, 0);
         actions.style.opacity = opacity.toString();
@@ -1133,30 +1145,35 @@ function initConversationItemSwipe() {
       }
     }, { passive: true });
     
-    freshItem.addEventListener('touchend', () => {
-      if (!isSwipeActive && !isRevealed) return;
+    item.addEventListener('touchend', () => {
+      if (!isSwipeActive && !isRevealed) {
+        touchStartX = 0;
+        return;
+      }
       
-      freshItem.style.transition = 'transform 0.2s ease-out';
+      item.style.transition = 'transform 0.2s ease-out';
       
       if (Math.abs(currentX) > 70) {
         // Snap to revealed position
-        freshItem.style.transform = 'translateX(-140px)';
+        item.style.transform = 'translateX(-140px)';
         actions.style.opacity = '1';
         actions.style.pointerEvents = 'auto';
         isRevealed = true;
+        revealedItems.add(item);
       } else {
         // Snap back
-        freshItem.style.transform = 'translateX(0)';
+        item.style.transform = 'translateX(0)';
         actions.style.opacity = '0';
         actions.style.pointerEvents = 'none';
         isRevealed = false;
+        revealedItems.delete(item);
       }
       
       touchStartX = 0;
       isSwipeActive = false;
       
       setTimeout(() => {
-        freshItem.style.transition = '';
+        item.style.transition = '';
       }, 200);
     }, { passive: true });
     
@@ -1164,8 +1181,16 @@ function initConversationItemSwipe() {
     actions.querySelectorAll('.swipe-action-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        const conversationId = freshItem.dataset.conversationId;
+        e.preventDefault();
+        const conversationId = item.dataset.conversationId;
         const action = btn.dataset.action;
+        
+        // Close swipe actions first
+        item.style.transform = 'translateX(0)';
+        actions.style.opacity = '0';
+        actions.style.pointerEvents = 'none';
+        isRevealed = false;
+        revealedItems.delete(item);
         
         if (action === 'archive') {
           // TODO: Implement archive conversation
@@ -1177,23 +1202,30 @@ function initConversationItemSwipe() {
           }
         }
         
-        // Close swipe actions
-        freshItem.style.transform = 'translateX(0)';
-        actions.style.opacity = '0';
-        actions.style.pointerEvents = 'none';
-        isRevealed = false;
+        // Recreate icons after action
+        if (window.lucide) {
+          lucide.createIcons();
+        }
       });
     });
-    
-    // Close on click outside or on other conversation items
-    document.addEventListener('touchstart', (e) => {
-      if (!container.contains(e.target) && isRevealed) {
-        freshItem.style.transform = 'translateX(0)';
-        actions.style.opacity = '0';
-        actions.style.pointerEvents = 'none';
-        isRevealed = false;
-      }
-    });
+  });
+  
+  // Close revealed items when clicking outside
+  document.addEventListener('click', (e) => {
+    if (revealedItems.size > 0) {
+      revealedItems.forEach(revealedItem => {
+        const container = revealedItem.closest('.conversation-item-swipe-container');
+        if (container && !container.contains(e.target)) {
+          const actions = container.querySelector('.swipe-actions');
+          if (actions) {
+            revealedItem.style.transform = 'translateX(0)';
+            actions.style.opacity = '0';
+            actions.style.pointerEvents = 'none';
+            revealedItems.delete(revealedItem);
+          }
+        }
+      });
+    }
   });
 }
 
