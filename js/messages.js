@@ -664,16 +664,25 @@ async function markConversationAsRead(conversationId) {
 
     if (unreadMessages.length > 0) {
       const messageIds = unreadMessages.map(m => m.id);
-      await supabase
-        .from('message_reads')
-        .upsert(
-          messageIds.map(id => ({
-            message_id: id,
-            user_id: currentUser.id,
-            read_at: new Date().toISOString()
-          })),
-          { onConflict: 'message_id,user_id' }
-        );
+      
+      // Insert read receipts (one at a time to handle conflicts gracefully)
+      // Use insert with ignoreDuplicates instead of upsert for better RLS compatibility
+      for (const messageId of messageIds) {
+        try {
+          await supabase
+            .from('message_reads')
+            .insert({
+              message_id: messageId,
+              user_id: currentUser.id,
+              read_at: new Date().toISOString()
+            });
+        } catch (error) {
+          // Ignore duplicate key errors (already marked as read)
+          if (error.code !== '23505' && !error.message?.includes('duplicate')) {
+            console.warn('[Messages] Error marking message as read:', error);
+          }
+        }
+      }
 
       // Update local read status
       unreadMessages.forEach(message => {
