@@ -1064,8 +1064,19 @@ function showConversationView() {
       viewEl.classList.add('md:block');
       viewEl.style.opacity = '1';
     }
-    // Always show back button and FAB on desktop (they're hidden via CSS)
+    // Hide FAB on desktop too (it's mobile-only, but ensure it's hidden when viewing conversation)
+    const fab = document.getElementById('fab-new-message');
+    if (fab) {
+      fab.classList.add('hidden');
+    }
+    // Always show back button on desktop (it's hidden via CSS anyway)
     updateMobileNavigation(true);
+  }
+  
+  // Always hide FAB when viewing a conversation (double-check)
+  const fab = document.getElementById('fab-new-message');
+  if (fab) {
+    fab.classList.add('hidden');
   }
 }
 
@@ -1104,6 +1115,10 @@ function updateMobileNavigation(show) {
   const fab = document.getElementById('fab-new-message');
   const isMobile = window.innerWidth < 768;
   
+  // Check if we're currently viewing a conversation
+  const activeEl = document.getElementById('conversation-active');
+  const isViewingConversation = activeEl && !activeEl.classList.contains('hidden') && currentConversation;
+  
   if (isMobile) {
     // On mobile, show/hide based on state
     if (backBtn) {
@@ -1116,7 +1131,10 @@ function updateMobileNavigation(show) {
     
     if (fab) {
       // FAB should only show when on conversation list (not viewing conversation)
-      if (show) {
+      // Double-check: if viewing conversation, always hide FAB
+      if (isViewingConversation) {
+        fab.classList.add('hidden');
+      } else if (show) {
         fab.classList.remove('hidden');
       } else {
         fab.classList.add('hidden');
