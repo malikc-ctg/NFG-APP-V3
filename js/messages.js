@@ -398,19 +398,37 @@ async function loadMessages(conversationId) {
     }
 
     // Get read receipts
+    // Note: RLS policy requires checking conversation participation for each message
+    // If this query fails with 403, it's an RLS issue - we'll continue without read receipts
     if (messages.length > 0) {
       const messageIds = messages.map(m => m.id);
-      const { data: readsData } = await supabase
+      const { data: readsData, error: readsError } = await supabase
         .from('message_reads')
         .select('message_id, user_id')
         .in('message_id', messageIds);
 
-      // Attach read status to messages
-      messages.forEach(message => {
-        message.readBy = (readsData || [])
-          .filter(r => r.message_id === message.id)
-          .map(r => r.user_id);
-      });
+      // If RLS blocks the query, log warning but continue (read receipts are not critical)
+      if (readsError) {
+        if (readsError.code === 'PGRST301' || readsError.message?.includes('403') || readsError.message?.includes('permission')) {
+          console.warn('[Messages] Could not load read receipts - RLS policy may be blocking. This is non-critical.');
+        } else {
+          console.error('[Messages] Error loading read receipts:', readsError);
+        }
+      }
+
+      // Attach read status to messages (if data was loaded)
+      if (readsData) {
+        messages.forEach(message => {
+          message.readBy = (readsData || [])
+            .filter(r => r.message_id === message.id)
+            .map(r => r.user_id);
+        });
+      } else {
+        // No read receipts available - set empty array
+        messages.forEach(message => {
+          message.readBy = [];
+        });
+      }
     }
 
     // Render messages
