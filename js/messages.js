@@ -238,16 +238,21 @@ async function loadConversations() {
       return;
     }
 
-    // Get conversation details separately (exclude archived conversations)
+    // Get conversation details separately (we'll filter archived conversations client-side)
     const conversationIds = participantData.map(p => p.conversation_id);
     const { data: conversationsData, error: conversationsError } = await supabase
       .from('conversations')
       .select('id, type, job_id, title, created_by, created_at, updated_at, last_message_at, archived_at, archived_by')
       .in('id', conversationIds)
-      .or(`archived_at.is.null,archived_by.neq.${currentUser.id}`) // Show if not archived OR archived by someone else
       .order('last_message_at', { ascending: false });
 
     if (conversationsError) throw conversationsError;
+    
+    // Filter out conversations archived by current user (client-side filter)
+    const filteredConversations = (conversationsData || []).filter(conv => {
+      // Show if not archived OR archived by someone else
+      return !conv.archived_at || conv.archived_by !== currentUser.id;
+    });
 
     if (!filteredConversations || filteredConversations.length === 0) {
       if (loadingEl) loadingEl.classList.add('hidden');
@@ -284,10 +289,10 @@ async function loadConversations() {
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
-    // Build conversations array with participant info
+    // Build conversations array with participant info (only non-archived)
     conversations = participantData.map(participant => {
       const conversation = filteredConversations.find(c => c.id === participant.conversation_id);
-      if (!conversation) return null; // Skip if conversation not found
+      if (!conversation) return null; // Skip if conversation not found or archived
 
       const otherParticipants = (allParticipants || [])
         .filter(p => p.conversation_id === conversation.id && p.user_id !== currentUser.id)
