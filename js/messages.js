@@ -1888,6 +1888,13 @@ async function deleteConversation(conversationId) {
 function initTypingIndicators() {
   if (!currentConversation) return;
   
+  // Cleanup existing channel first
+  if (typingChannel) {
+    typingChannel.untrack();
+    typingChannel.unsubscribe();
+    typingChannel = null;
+  }
+  
   // Create typing channel for this conversation
   typingChannel = supabase.channel(`typing:${currentConversation.id}`, {
     config: {
@@ -1910,39 +1917,52 @@ function initTypingIndicators() {
     })
     .on('presence', { event: 'leave' }, () => {
       updateTypingIndicator();
-    })
-    .subscribe();
-  
-  // Send typing indicator when user types
-  const messageInput = document.getElementById('message-input');
-  if (messageInput) {
-    let lastTypingSent = 0;
-    const TYPING_THROTTLE_MS = 1000; // Send typing indicator max once per second
-    
-    messageInput.addEventListener('input', () => {
-      const now = Date.now();
-      if (now - lastTypingSent < TYPING_THROTTLE_MS) return;
-      
-      lastTypingSent = now;
-      
-      // Send presence with typing state
-      typingChannel.track({
-        typing: true,
-        user_id: currentUser.id,
-        user_name: currentUserProfile?.full_name || currentUser.email,
-        timestamp: new Date().toISOString()
-      });
-      
-      // Clear typing state after 3 seconds
-      if (typingTimeout) clearTimeout(typingTimeout);
-      typingTimeout = setTimeout(() => {
-        typingChannel.track({
-          typing: false,
-          user_id: currentUser.id
-        });
-      }, TYPING_TIMEOUT_MS);
     });
-  }
+  
+  // Subscribe to channel and wait for subscription before tracking
+  typingChannel.subscribe((status) => {
+    if (status === 'SUBSCRIBED') {
+      // Channel is ready, now we can set up typing tracking
+      const messageInput = document.getElementById('message-input');
+      if (messageInput) {
+        let lastTypingSent = 0;
+        const TYPING_THROTTLE_MS = 1000; // Send typing indicator max once per second
+        
+        // Remove old listeners to prevent duplicates
+        const newInput = messageInput.cloneNode(true);
+        messageInput.parentNode.replaceChild(newInput, messageInput);
+        const freshInput = document.getElementById('message-input');
+        
+        freshInput.addEventListener('input', () => {
+          if (!typingChannel) return; // Channel might have been cleaned up
+          
+          const now = Date.now();
+          if (now - lastTypingSent < TYPING_THROTTLE_MS) return;
+          
+          lastTypingSent = now;
+          
+          // Send presence with typing state
+          typingChannel.track({
+            typing: true,
+            user_id: currentUser.id,
+            user_name: currentUserProfile?.full_name || currentUser.email,
+            timestamp: new Date().toISOString()
+          });
+          
+          // Clear typing state after 3 seconds
+          if (typingTimeout) clearTimeout(typingTimeout);
+          typingTimeout = setTimeout(() => {
+            if (typingChannel) {
+              typingChannel.track({
+                typing: false,
+                user_id: currentUser.id
+              });
+            }
+          }, TYPING_TIMEOUT_MS);
+        });
+      }
+    }
+  });
 }
 
 // Update typing indicator UI
@@ -1993,6 +2013,13 @@ function initOnlineStatus() {
   const otherUser = currentConversation.otherParticipants?.[0];
   if (!otherUser) return;
   
+  // Cleanup existing channel first
+  if (presenceChannel) {
+    presenceChannel.untrack();
+    presenceChannel.unsubscribe();
+    presenceChannel = null;
+  }
+  
   // Create presence channel for online status
   presenceChannel = supabase.channel(`presence:${currentConversation.id}`, {
     config: {
@@ -2000,13 +2027,6 @@ function initOnlineStatus() {
         key: currentUser.id
       }
     }
-  });
-  
-  // Set current user as online
-  presenceChannel.track({
-    online: true,
-    user_id: currentUser.id,
-    last_seen: new Date().toISOString()
   });
   
   // Listen for presence changes
@@ -2019,16 +2039,39 @@ function initOnlineStatus() {
     })
     .on('presence', { event: 'leave' }, () => {
       updateOnlineStatus();
-    })
-    .subscribe();
+    });
   
-  // Update last_seen_at when user becomes active
-  updateUserLastSeen();
+  // Subscribe to channel and wait for subscription before tracking
+  presenceChannel.subscribe((status) => {
+    if (status === 'SUBSCRIBED') {
+      // Channel is ready, now we can track presence
+      presenceChannel.track({
+        online: true,
+        user_id: currentUser.id,
+        last_seen: new Date().toISOString()
+      });
+      
+      // Update online status immediately
+      updateOnlineStatus();
+      
+      // Update last_seen_at when user becomes active
+      updateUserLastSeen();
+    }
+  });
   
-  // Update last_seen_at periodically while active
-  setInterval(() => {
-    updateUserLastSeen();
+  // Update last_seen_at periodically while active (only if channel exists)
+  const statusInterval = setInterval(() => {
+    if (presenceChannel) {
+      updateUserLastSeen();
+    } else {
+      clearInterval(statusInterval);
+    }
   }, 30000); // Every 30 seconds
+  
+  // Store interval ID for cleanup
+  if (!window.presenceStatusInterval) {
+    window.presenceStatusInterval = statusInterval;
+  }
 }
 
 // Update online status UI
