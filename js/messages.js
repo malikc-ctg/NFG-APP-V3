@@ -275,11 +275,12 @@ async function loadConversations() {
     // Create a map of user_id -> profile
     const profilesMap = new Map((userProfiles || []).map(profile => [profile.id, profile]));
 
-    // Get last messages for unread counts
+    // Get last messages for unread counts (only for non-archived conversations)
+    const nonArchivedIds = filteredConversations.map(c => c.id);
     const { data: lastMessages, error: messagesError } = await supabase
       .from('messages')
       .select('conversation_id, created_at')
-      .in('conversation_id', conversationIds)
+      .in('conversation_id', nonArchivedIds.length > 0 ? nonArchivedIds : ['00000000-0000-0000-0000-000000000000']) // Empty array workaround
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
