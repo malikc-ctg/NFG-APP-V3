@@ -1919,50 +1919,62 @@ function initTypingIndicators() {
       updateTypingIndicator();
     });
   
+  // Track channel subscription status
+  let channelSubscribed = false;
+  
   // Subscribe to channel and wait for subscription before tracking
   typingChannel.subscribe((status) => {
     if (status === 'SUBSCRIBED') {
-      // Channel is ready, now we can set up typing tracking
-      const messageInput = document.getElementById('message-input');
-      if (messageInput) {
-        let lastTypingSent = 0;
-        const TYPING_THROTTLE_MS = 1000; // Send typing indicator max once per second
-        
-        // Remove old listeners to prevent duplicates
-        const newInput = messageInput.cloneNode(true);
-        messageInput.parentNode.replaceChild(newInput, messageInput);
-        const freshInput = document.getElementById('message-input');
-        
-        freshInput.addEventListener('input', () => {
-          if (!typingChannel) return; // Channel might have been cleaned up
-          
-          const now = Date.now();
-          if (now - lastTypingSent < TYPING_THROTTLE_MS) return;
-          
-          lastTypingSent = now;
-          
-          // Send presence with typing state
-          typingChannel.track({
-            typing: true,
-            user_id: currentUser.id,
-            user_name: currentUserProfile?.full_name || currentUser.email,
-            timestamp: new Date().toISOString()
-          });
-          
-          // Clear typing state after 3 seconds
-          if (typingTimeout) clearTimeout(typingTimeout);
-          typingTimeout = setTimeout(() => {
-            if (typingChannel) {
-              typingChannel.track({
-                typing: false,
-                user_id: currentUser.id
-              });
-            }
-          }, TYPING_TIMEOUT_MS);
-        });
-      }
+      channelSubscribed = true;
+      console.log('[Typing] Channel subscribed, ready to track');
+    } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+      channelSubscribed = false;
+      console.warn('[Typing] Channel closed or error:', status);
     }
   });
+  
+  // Set up typing tracking (will only work after subscription)
+  const messageInput = document.getElementById('message-input');
+  if (messageInput && !messageInput.dataset.typingListenerAttached) {
+    let lastTypingSent = 0;
+    const TYPING_THROTTLE_MS = 1000; // Send typing indicator max once per second
+    
+    messageInput.addEventListener('input', () => {
+      // Only track if channel is subscribed
+      if (!typingChannel || !channelSubscribed) return;
+      
+      const now = Date.now();
+      if (now - lastTypingSent < TYPING_THROTTLE_MS) return;
+      
+      lastTypingSent = now;
+      
+      try {
+        // Send presence with typing state
+        typingChannel.track({
+          typing: true,
+          user_id: currentUser.id,
+          user_name: currentUserProfile?.full_name || currentUser.email,
+          timestamp: new Date().toISOString()
+        });
+        
+        // Clear typing state after 3 seconds
+        if (typingTimeout) clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+          if (typingChannel && channelSubscribed) {
+            typingChannel.track({
+              typing: false,
+              user_id: currentUser.id
+            });
+          }
+        }, TYPING_TIMEOUT_MS);
+      } catch (error) {
+        console.error('[Typing] Error tracking presence:', error);
+      }
+    });
+    
+    // Mark listener as attached to prevent duplicates
+    messageInput.dataset.typingListenerAttached = 'true';
+  }
 }
 
 // Update typing indicator UI
@@ -1998,9 +2010,19 @@ function updateTypingIndicator() {
 // Cleanup typing channel
 function cleanupTypingChannel() {
   if (typingChannel) {
-    typingChannel.untrack();
-    typingChannel.unsubscribe();
+    try {
+      typingChannel.untrack();
+      typingChannel.unsubscribe();
+    } catch (error) {
+      console.error('[Typing] Error cleaning up channel:', error);
+    }
     typingChannel = null;
+  }
+  
+  // Remove typing listener flag
+  const messageInput = document.getElementById('message-input');
+  if (messageInput && messageInput.dataset.typingListenerAttached) {
+    delete messageInput.dataset.typingListenerAttached;
   }
 }
 
