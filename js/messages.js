@@ -1175,10 +1175,29 @@ function initMobileKeyboardHandling() {
       
       if (keyboardHeight > 0) {
         // Keyboard is visible - adjust layout
+        const isDark = document.documentElement.classList.contains('dark');
+        const bgColor = isDark ? '#1F2937' : '#ffffff';
+        
         conversationActive.style.height = `${viewportHeight}px`;
         conversationActive.style.maxHeight = `${viewportHeight}px`;
-        // Ensure background stays consistent
-        conversationActive.style.backgroundColor = window.matchMedia('(prefers-color-scheme: dark)').matches ? '#1F2937' : '#ffffff';
+        conversationActive.style.backgroundColor = bgColor;
+        
+        // Also ensure all parent containers have backgrounds
+        const conversationView = document.getElementById('conversation-view');
+        const main = document.querySelector('main');
+        const bodyDiv = document.querySelector('body > div.flex-1');
+        
+        if (conversationView) {
+          conversationView.style.backgroundColor = bgColor;
+        }
+        if (main) {
+          main.style.backgroundColor = bgColor;
+        }
+        if (bodyDiv) {
+          bodyDiv.style.backgroundColor = bgColor;
+        }
+        document.body.style.backgroundColor = bgColor;
+        document.documentElement.style.backgroundColor = bgColor;
         
         // Scroll input into view
         setTimeout(() => {
