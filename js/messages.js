@@ -14,6 +14,11 @@ let currentConversation = null;
 let messages = [];
 let realtimeChannel = null;
 let realtimeSubscription = null;
+let typingChannel = null; // For typing indicators
+let presenceChannel = null; // For online/offline status
+let typingTimeout = null; // To clear typing indicator
+const TYPING_TIMEOUT_MS = 3000; // Hide typing after 3 seconds
+const MESSAGE_EDIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes to edit
 
 // ========== INITIALIZATION ==========
 document.addEventListener('DOMContentLoaded', async () => {
@@ -233,12 +238,13 @@ async function loadConversations() {
       return;
     }
 
-    // Get conversation details separately
+    // Get conversation details separately (exclude archived conversations)
     const conversationIds = participantData.map(p => p.conversation_id);
     const { data: conversationsData, error: conversationsError } = await supabase
       .from('conversations')
-      .select('id, type, job_id, title, created_by, created_at, updated_at, last_message_at')
+      .select('id, type, job_id, title, created_by, created_at, updated_at, last_message_at, archived_at, archived_by')
       .in('id', conversationIds)
+      .or(`archived_at.is.null,archived_by.neq.${currentUser.id}`) // Show if not archived OR archived by someone else
       .order('last_message_at', { ascending: false });
 
     if (conversationsError) throw conversationsError;
@@ -429,6 +435,13 @@ async function selectConversation(conversationId) {
 
     // Subscribe to real-time updates
     subscribeToMessages(conversationId);
+    
+    // Initialize Phase 1 features (after a short delay to ensure DOM is ready)
+    setTimeout(() => {
+      initTypingIndicators();
+      initOnlineStatus();
+      updateUserLastSeen();
+    }, 300);
 
     // Update conversation list highlight
     document.querySelectorAll('.conversation-item').forEach(item => {
@@ -558,6 +571,12 @@ function renderMessages() {
     const showAvatar = !prevMessage || prevMessage.sender_id !== message.sender_id || 
       (new Date(message.created_at) - new Date(prevMessage.created_at)) > 5 * 60 * 1000; // 5 minutes
 
+    // Check if message can be edited (within 15 minutes and not deleted)
+    const messageAge = Date.now() - new Date(message.created_at).getTime();
+    const canEdit = isSent && !message.deleted_at && messageAge < MESSAGE_EDIT_WINDOW_MS;
+    const canDelete = isSent && !message.deleted_at;
+    const isDeleted = message.deleted_at;
+
     return `
       <div class="message-item flex items-end gap-2 ${isSent ? 'flex-row-reverse' : ''}" data-message-id="${message.id}">
         ${showAvatar && !isSent ? `
@@ -568,14 +587,36 @@ function renderMessages() {
             }
           </div>
         ` : !isSent ? '<div class="w-8"></div>' : ''}
-        <div class="message-bubble ${isSent ? 'message-bubble-sent' : 'message-bubble-received'} px-4 py-2">
+        <div class="message-bubble ${isSent ? 'message-bubble-sent' : 'message-bubble-received'} px-4 py-2 relative group ${isDeleted ? 'opacity-60' : ''}" data-message-id="${message.id}">
           ${!isSent && showAvatar ? `<p class="text-xs font-semibold mb-1 ${isSent ? 'text-white/80' : 'text-gray-600 dark:text-gray-400'}">${escapeHtml(senderName)}</p>` : ''}
-          <p class="text-sm whitespace-pre-wrap">${escapeHtml(message.content || '')}</p>
+          ${isDeleted ? `
+            <p class="text-sm italic ${isSent ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}">This message was deleted</p>
+          ` : `
+            <p class="message-content text-sm whitespace-pre-wrap">${escapeHtml(message.content || '')}</p>
+          `}
           <div class="flex items-center gap-1 mt-1 ${isSent ? 'justify-end' : 'justify-start'}">
             <span class="text-xs ${isSent ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}">${timestamp}</span>
             ${isEdited ? `<span class="text-xs ${isSent ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}">(edited)</span>` : ''}
             ${isSent && isRead ? `<i data-lucide="check-check" class="w-3 h-3 text-blue-300"></i>` : isSent ? `<i data-lucide="check" class="w-3 h-3 text-white/70"></i>` : ''}
           </div>
+          ${canEdit || canDelete ? `
+            <div class="message-actions absolute ${isSent ? 'left-0 -translate-x-full mr-2' : 'right-0 translate-x-full ml-2'} top-0 opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex items-center gap-1">
+              ${canEdit ? `
+                <button class="message-action-btn edit-message-btn p-1.5 rounded-lg bg-white dark:bg-gray-700 shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition" data-message-id="${message.id}" title="Edit">
+                  <i data-lucide="pencil" class="w-3.5 h-3.5 text-gray-600 dark:text-gray-300"></i>
+                </button>
+              ` : ''}
+              ${canDelete ? `
+                <button class="message-action-btn delete-message-btn p-1.5 rounded-lg bg-white dark:bg-gray-700 shadow-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition" data-message-id="${message.id}" title="Delete">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5 text-red-600 dark:text-red-400"></i>
+                </button>
+              ` : ''}
+            </div>
+          ` : ''}
+          ${(canEdit || canDelete) && window.innerWidth < 768 ? `
+            <!-- Mobile: Long press to show menu -->
+            <div class="message-actions-mobile md:hidden"></div>
+          ` : ''}
         </div>
       </div>
     `;
@@ -1040,6 +1081,9 @@ function showConversationList() {
     }, 200);
   }
   
+  // Cleanup channels when leaving conversation
+  cleanupChannels();
+  
   // Clear current conversation
   currentConversation = null;
   
@@ -1283,15 +1327,10 @@ function initConversationItemSwipe() {
         
         if (action === 'archive') {
           triggerHaptic('medium');
-          // TODO: Implement archive conversation
-          toast?.info('Archive feature coming soon', 'Info');
+          archiveConversation(conversationId);
         } else if (action === 'delete') {
           triggerHaptic('heavy');
-          // TODO: Implement delete conversation
-          if (confirm('Are you sure you want to delete this conversation?')) {
-            triggerHaptic('success');
-            toast?.info('Delete feature coming soon', 'Info');
-          }
+          deleteConversation(conversationId);
         }
         
         // Recreate icons after action
@@ -1516,6 +1555,238 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+// ========== PHASE 1: MESSAGE EDITING & DELETING ==========
+
+// Attach message action listeners (edit/delete)
+function attachMessageActionListeners() {
+  // Edit message button
+  document.querySelectorAll('.edit-message-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const messageId = btn.dataset.messageId;
+      editMessage(messageId);
+    });
+  });
+  
+  // Delete message button
+  document.querySelectorAll('.delete-message-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const messageId = btn.dataset.messageId;
+      deleteMessage(messageId);
+    });
+  });
+}
+
+// Mobile long-press for message actions
+function attachMobileMessageLongPress() {
+  let longPressTimer = null;
+  const LONG_PRESS_DURATION = 500; // ms
+  
+  document.querySelectorAll('.message-bubble').forEach(bubble => {
+    bubble.addEventListener('touchstart', (e) => {
+      const messageId = bubble.dataset.messageId;
+      const message = messages.find(m => m.id === messageId);
+      if (!message || message.sender_id !== currentUser.id || message.deleted_at) return;
+      
+      longPressTimer = setTimeout(() => {
+        triggerHaptic('medium');
+        showMobileMessageMenu(messageId, e.touches[0].clientX, e.touches[0].clientY);
+      }, LONG_PRESS_DURATION);
+    });
+    
+    bubble.addEventListener('touchend', () => {
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+    });
+    
+    bubble.addEventListener('touchmove', () => {
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+    });
+  });
+}
+
+// Show mobile message menu
+function showMobileMessageMenu(messageId, x, y) {
+  const message = messages.find(m => m.id === messageId);
+  if (!message) return;
+  
+  const messageAge = Date.now() - new Date(message.created_at).getTime();
+  const canEdit = !message.deleted_at && messageAge < MESSAGE_EDIT_WINDOW_MS;
+  const canDelete = !message.deleted_at;
+  
+  // Remove existing menu
+  const existingMenu = document.getElementById('mobile-message-menu');
+  if (existingMenu) existingMenu.remove();
+  
+  // Create menu
+  const menu = document.createElement('div');
+  menu.id = 'mobile-message-menu';
+  menu.className = 'fixed z-50 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-nfgray dark:border-gray-700 p-2 min-w-[150px]';
+  menu.style.left = `${Math.min(x, window.innerWidth - 160)}px`;
+  menu.style.top = `${Math.min(y, window.innerHeight - 100)}px`;
+  
+  menu.innerHTML = `
+    ${canEdit ? `
+      <button class="mobile-menu-edit w-full px-4 py-2 text-left text-sm rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 flex items-center gap-2" data-message-id="${messageId}">
+        <i data-lucide="pencil" class="w-4 h-4"></i>
+        <span>Edit</span>
+      </button>
+    ` : ''}
+    ${canDelete ? `
+      <button class="mobile-menu-delete w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2" data-message-id="${messageId}">
+        <i data-lucide="trash-2" class="w-4 h-4"></i>
+        <span>Delete</span>
+      </button>
+    ` : ''}
+  `;
+  
+  document.body.appendChild(menu);
+  
+  // Recreate icons
+  if (window.lucide) lucide.createIcons();
+  
+  // Attach listeners
+  menu.querySelector('.mobile-menu-edit')?.addEventListener('click', () => {
+    editMessage(messageId);
+    menu.remove();
+  });
+  
+  menu.querySelector('.mobile-menu-delete')?.addEventListener('click', () => {
+    deleteMessage(messageId);
+    menu.remove();
+  });
+  
+  // Close on outside click
+  setTimeout(() => {
+    document.addEventListener('click', function closeMenu(e) {
+      if (!menu.contains(e.target)) {
+        menu.remove();
+        document.removeEventListener('click', closeMenu);
+      }
+    });
+  }, 100);
+}
+
+// Edit message
+async function editMessage(messageId) {
+  const message = messages.find(m => m.id === messageId);
+  if (!message) return;
+  
+  const newContent = prompt('Edit message:', message.content);
+  if (newContent === null || newContent.trim() === message.content) return;
+  
+  if (!newContent.trim()) {
+    toast?.error('Message cannot be empty', 'Error');
+    triggerHaptic('warning');
+    return;
+  }
+  
+  try {
+    triggerHaptic('medium');
+    
+    const { error } = await supabase
+      .from('messages')
+      .update({
+        content: newContent.trim(),
+        is_edited: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', messageId)
+      .eq('sender_id', currentUser.id); // Ensure user can only edit their own messages
+    
+    if (error) throw error;
+    
+    // Update local message
+    message.content = newContent.trim();
+    message.is_edited = true;
+    message.updated_at = new Date().toISOString();
+    
+    // Re-render messages
+    renderMessages();
+    triggerHaptic('success');
+    toast?.success('Message edited', 'Success');
+  } catch (error) {
+    console.error('Error editing message:', error);
+    triggerHaptic('error');
+    toast?.error('Failed to edit message', 'Error');
+  }
+}
+
+// Delete message
+async function deleteMessage(messageId, deleteForEveryone = false) {
+  const message = messages.find(m => m.id === messageId);
+  if (!message) return;
+  
+  if (!deleteForEveryone) {
+    // Delete for me only (soft delete)
+    const confirmed = confirm('Delete this message? You will no longer see it.');
+    if (!confirmed) return;
+    
+    try {
+      triggerHaptic('heavy');
+      
+      // Soft delete by setting deleted_at
+      const { error } = await supabase
+        .from('messages')
+        .update({
+          deleted_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', messageId)
+        .eq('sender_id', currentUser.id);
+      
+      if (error) throw error;
+      
+      // Update local message
+      message.deleted_at = new Date().toISOString();
+      message.content = '';
+      
+      // Re-render messages
+      renderMessages();
+      triggerHaptic('success');
+      toast?.success('Message deleted', 'Success');
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      triggerHaptic('error');
+      toast?.error('Failed to delete message', 'Error');
+    }
+  } else {
+    // Delete for everyone (hard delete - future feature)
+    const confirmed = confirm('Delete this message for everyone? This cannot be undone.');
+    if (!confirmed) return;
+    
+    try {
+      triggerHaptic('heavy');
+      
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', messageId)
+        .eq('sender_id', currentUser.id);
+      
+      if (error) throw error;
+      
+      // Remove from local array
+      messages = messages.filter(m => m.id !== messageId);
+      
+      // Re-render messages
+      renderMessages();
+      triggerHaptic('success');
+      toast?.success('Message deleted for everyone', 'Success');
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      triggerHaptic('error');
+      toast?.error('Failed to delete message', 'Error');
+    }
+  }
+}
+
 // ========== TOAST NOTIFICATIONS ==========
 // Use existing toast system
 const toast = {
@@ -1524,6 +1795,307 @@ const toast = {
   },
   error: (message, title) => {
     showNotification(message, 'error', title);
+  },
+  info: (message, title) => {
+    showNotification(message, 'info', title);
   }
 };
+
+// ========== PHASE 1: ARCHIVE & DELETE CONVERSATIONS ==========
+
+// Archive conversation
+async function archiveConversation(conversationId) {
+  try {
+    triggerHaptic('medium');
+    
+    const { error } = await supabase
+      .from('conversations')
+      .update({
+        archived_at: new Date().toISOString(),
+        archived_by: currentUser.id
+      })
+      .eq('id', conversationId);
+    
+    if (error) throw error;
+    
+    // Remove from local conversations array
+    conversations = conversations.filter(c => c.id !== conversationId);
+    
+    // If this was the current conversation, clear it
+    if (currentConversation?.id === conversationId) {
+      currentConversation = null;
+      showConversationList();
+    }
+    
+    // Re-render conversations
+    renderConversations();
+    triggerHaptic('success');
+    toast?.success('Conversation archived', 'Success');
+  } catch (error) {
+    console.error('Error archiving conversation:', error);
+    triggerHaptic('error');
+    toast?.error('Failed to archive conversation', 'Error');
+  }
+}
+
+// Delete conversation
+async function deleteConversation(conversationId) {
+  const confirmed = confirm('Are you sure you want to delete this conversation? This action cannot be undone.');
+  if (!confirmed) return;
+  
+  try {
+    triggerHaptic('heavy');
+    
+    // Delete the conversation (this will cascade delete messages via foreign key)
+    const { error } = await supabase
+      .from('conversations')
+      .delete()
+      .eq('id', conversationId);
+    
+    if (error) throw error;
+    
+    // Remove from local conversations array
+    conversations = conversations.filter(c => c.id !== conversationId);
+    
+    // If this was the current conversation, clear it
+    if (currentConversation?.id === conversationId) {
+      currentConversation = null;
+      messages = [];
+      showConversationList();
+    }
+    
+    // Re-render conversations
+    renderConversations();
+    triggerHaptic('success');
+    toast?.success('Conversation deleted', 'Success');
+  } catch (error) {
+    console.error('Error deleting conversation:', error);
+    triggerHaptic('error');
+    toast?.error('Failed to delete conversation', 'Error');
+  }
+}
+
+// ========== PHASE 1: TYPING INDICATORS ==========
+
+// Initialize typing indicators
+function initTypingIndicators() {
+  if (!currentConversation) return;
+  
+  // Create typing channel for this conversation
+  typingChannel = supabase.channel(`typing:${currentConversation.id}`, {
+    config: {
+      presence: {
+        key: currentUser.id
+      }
+    }
+  });
+  
+  // Track typing state
+  let typingTimeout = null;
+  
+  // Listen for typing events from others
+  typingChannel
+    .on('presence', { event: 'sync' }, () => {
+      updateTypingIndicator();
+    })
+    .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+      updateTypingIndicator();
+    })
+    .on('presence', { event: 'leave' }, () => {
+      updateTypingIndicator();
+    })
+    .subscribe();
+  
+  // Send typing indicator when user types
+  const messageInput = document.getElementById('message-input');
+  if (messageInput) {
+    let lastTypingSent = 0;
+    const TYPING_THROTTLE_MS = 1000; // Send typing indicator max once per second
+    
+    messageInput.addEventListener('input', () => {
+      const now = Date.now();
+      if (now - lastTypingSent < TYPING_THROTTLE_MS) return;
+      
+      lastTypingSent = now;
+      
+      // Send presence with typing state
+      typingChannel.track({
+        typing: true,
+        user_id: currentUser.id,
+        user_name: currentUserProfile?.full_name || currentUser.email,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Clear typing state after 3 seconds
+      if (typingTimeout) clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => {
+        typingChannel.track({
+          typing: false,
+          user_id: currentUser.id
+        });
+      }, TYPING_TIMEOUT_MS);
+    });
+  }
+}
+
+// Update typing indicator UI
+function updateTypingIndicator() {
+  if (!typingChannel || !currentConversation) return;
+  
+  const state = typingChannel.presenceState();
+  const typingUsers = [];
+  
+  // Get all users who are typing (excluding current user)
+  Object.values(state).forEach(presences => {
+    presences.forEach(presence => {
+      if (presence.typing && presence.user_id !== currentUser.id) {
+        typingUsers.push(presence);
+      }
+    });
+  });
+  
+  // Update UI
+  const indicator = document.getElementById('typing-indicator');
+  const indicatorText = document.getElementById('typing-indicator-text');
+  if (!indicator || !indicatorText) return;
+  
+  if (typingUsers.length > 0) {
+    const names = typingUsers.map(u => u.user_name || 'Someone').join(', ');
+    indicatorText.textContent = `${names} ${typingUsers.length === 1 ? 'is' : 'are'} typing...`;
+    indicator.classList.remove('hidden');
+  } else {
+    indicator.classList.add('hidden');
+  }
+}
+
+// Cleanup typing channel
+function cleanupTypingChannel() {
+  if (typingChannel) {
+    typingChannel.untrack();
+    typingChannel.unsubscribe();
+    typingChannel = null;
+  }
+}
+
+// ========== PHASE 1: ONLINE/OFFLINE STATUS ==========
+
+// Initialize online status tracking
+function initOnlineStatus() {
+  if (!currentConversation) return;
+  
+  const otherUser = currentConversation.otherParticipants?.[0];
+  if (!otherUser) return;
+  
+  // Create presence channel for online status
+  presenceChannel = supabase.channel(`presence:${currentConversation.id}`, {
+    config: {
+      presence: {
+        key: currentUser.id
+      }
+    }
+  });
+  
+  // Set current user as online
+  presenceChannel.track({
+    online: true,
+    user_id: currentUser.id,
+    last_seen: new Date().toISOString()
+  });
+  
+  // Listen for presence changes
+  presenceChannel
+    .on('presence', { event: 'sync' }, () => {
+      updateOnlineStatus();
+    })
+    .on('presence', { event: 'join' }, () => {
+      updateOnlineStatus();
+    })
+    .on('presence', { event: 'leave' }, () => {
+      updateOnlineStatus();
+    })
+    .subscribe();
+  
+  // Update last_seen_at when user becomes active
+  updateUserLastSeen();
+  
+  // Update last_seen_at periodically while active
+  setInterval(() => {
+    updateUserLastSeen();
+  }, 30000); // Every 30 seconds
+}
+
+// Update online status UI
+function updateOnlineStatus() {
+  if (!presenceChannel || !currentConversation) return;
+  
+  const otherUser = currentConversation.otherParticipants?.[0];
+  if (!otherUser) return;
+  
+  const state = presenceChannel.presenceState();
+  const headerStatus = document.getElementById('conversation-header-status');
+  if (!headerStatus) return;
+  
+  // Check if other user is online
+  let isOnline = false;
+  Object.values(state).forEach(presences => {
+    presences.forEach(presence => {
+      if (presence.user_id === otherUser.id && presence.online) {
+        isOnline = true;
+      }
+    });
+  });
+  
+  if (isOnline) {
+    headerStatus.textContent = 'Online';
+    headerStatus.className = 'text-xs text-green-600 dark:text-green-400';
+  } else {
+    // Show last seen if available
+    const lastSeen = otherUser.last_seen_at;
+    if (lastSeen) {
+      const lastSeenDate = new Date(lastSeen);
+      const now = new Date();
+      const diffMs = now - lastSeenDate;
+      const diffMins = Math.floor(diffMs / 60000);
+      
+      if (diffMins < 5) {
+        headerStatus.textContent = 'Last seen just now';
+      } else if (diffMins < 60) {
+        headerStatus.textContent = `Last seen ${diffMins}m ago`;
+      } else {
+        headerStatus.textContent = `Last seen ${formatRelativeTime(lastSeen)}`;
+      }
+    } else {
+      headerStatus.textContent = 'Offline';
+    }
+    headerStatus.className = 'text-xs text-gray-500 dark:text-gray-400';
+  }
+}
+
+// Update user's last_seen_at in database
+async function updateUserLastSeen() {
+  try {
+    await supabase
+      .from('user_profiles')
+      .update({ last_seen_at: new Date().toISOString() })
+      .eq('id', currentUser.id);
+  } catch (error) {
+    console.error('Error updating last_seen_at:', error);
+    // Non-critical, fail silently
+  }
+}
+
+// Cleanup presence channel
+function cleanupPresenceChannel() {
+  if (presenceChannel) {
+    presenceChannel.untrack();
+    presenceChannel.unsubscribe();
+    presenceChannel = null;
+  }
+}
+
+// Cleanup all channels when leaving conversation
+function cleanupChannels() {
+  cleanupTypingChannel();
+  cleanupPresenceChannel();
+}
 
