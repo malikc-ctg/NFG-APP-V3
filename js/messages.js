@@ -75,6 +75,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const activeEl = document.getElementById('conversation-active');
     const isViewingConversation = activeEl && !activeEl.classList.contains('hidden');
     updateMobileNavigation(!isViewingConversation);
+    
+    // Initialize swipe gestures on mobile
+    if (window.innerWidth < 768) {
+      initPullToRefresh();
+    }
   }, 100);
 });
 
@@ -314,25 +319,36 @@ function renderConversations(filteredConversations = null) {
     const lastMessageTime = conv.last_message_at ? formatRelativeTime(conv.last_message_at) : '';
 
     return `
-      <div 
-        class="conversation-item p-4 border-b border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 cursor-pointer transition ${currentConversation?.id === conv.id ? 'bg-nfglight dark:bg-gray-700' : ''}"
-        data-conversation-id="${conv.id}"
-      >
-        <div class="flex items-center gap-3">
-          <div class="relative flex-shrink-0">
-            ${avatarUrl 
-              ? `<img src="${avatarUrl}" alt="${displayName}" class="w-12 h-12 rounded-full object-cover">`
-              : `<div class="w-12 h-12 rounded-full bg-nfgblue dark:bg-blue-900 flex items-center justify-center text-white font-semibold text-sm">${initials}</div>`
-            }
-            ${conv.unreadCount > 0 ? `<span class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-semibold">${conv.unreadCount}</span>` : ''}
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between mb-1">
-              <h3 class="font-semibold text-sm truncate ${conv.unreadCount > 0 ? 'font-bold' : ''}">${escapeHtml(displayName)}</h3>
-              ${lastMessageTime ? `<span class="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0 ml-2">${lastMessageTime}</span>` : ''}
+      <div class="conversation-item-swipe-container relative overflow-hidden">
+        <div 
+          class="conversation-item p-4 border-b border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 cursor-pointer transition-all relative z-10 bg-white dark:bg-gray-800 ${currentConversation?.id === conv.id ? 'bg-nfglight dark:bg-gray-700' : ''}"
+          data-conversation-id="${conv.id}"
+        >
+          <div class="flex items-center gap-3">
+            <div class="relative flex-shrink-0">
+              ${avatarUrl 
+                ? `<img src="${avatarUrl}" alt="${displayName}" class="w-12 h-12 rounded-full object-cover">`
+                : `<div class="w-12 h-12 rounded-full bg-nfgblue dark:bg-blue-900 flex items-center justify-center text-white font-semibold text-sm">${initials}</div>`
+              }
+              ${conv.unreadCount > 0 ? `<span class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-semibold">${conv.unreadCount}</span>` : ''}
             </div>
-            <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${lastMessageTime ? 'Tap to view messages' : 'No messages yet'}</p>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between mb-1">
+                <h3 class="font-semibold text-sm truncate ${conv.unreadCount > 0 ? 'font-bold' : ''}">${escapeHtml(displayName)}</h3>
+                ${lastMessageTime ? `<span class="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0 ml-2">${lastMessageTime}</span>` : ''}
+              </div>
+              <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${lastMessageTime ? 'Tap to view messages' : 'No messages yet'}</p>
+            </div>
           </div>
+        </div>
+        <!-- Swipe Actions (hidden by default, revealed on swipe left) -->
+        <div class="swipe-actions absolute right-0 top-0 bottom-0 flex items-center gap-2 px-4 bg-gradient-to-r from-transparent to-red-500 dark:to-red-600 opacity-0 pointer-events-none transition-opacity">
+          <button class="swipe-action-btn archive-btn p-3 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 transition" data-action="archive" title="Archive">
+            <i data-lucide="archive" class="w-5 h-5"></i>
+          </button>
+          <button class="swipe-action-btn delete-btn p-3 rounded-lg bg-red-500 text-white hover:bg-red-600 transition" data-action="delete" title="Delete">
+            <i data-lucide="trash-2" class="w-5 h-5"></i>
+          </button>
         </div>
       </div>
     `;
@@ -345,6 +361,11 @@ function renderConversations(filteredConversations = null) {
       selectConversation(conversationId);
     });
   });
+
+  // Initialize swipe gestures for conversation items (mobile only)
+  if (window.innerWidth < 768) {
+    initConversationItemSwipe();
+  }
 
   // Re-create icons
   if (window.lucide) {
@@ -903,6 +924,10 @@ function showConversationView() {
     }
     // Hide back button and FAB when viewing conversation
     updateMobileNavigation(false);
+    // Initialize swipe to go back gesture
+    setTimeout(() => {
+      initSwipeToGoBack();
+    }, 100);
     // Ensure back button icon is visible on mobile
     if (window.lucide) {
       lucide.createIcons();
@@ -977,7 +1002,288 @@ window.addEventListener('resize', () => {
   const activeEl = document.getElementById('conversation-active');
   const isViewingConversation = activeEl && !activeEl.classList.contains('hidden');
   updateMobileNavigation(!isViewingConversation);
+  
+  // Reinitialize swipe gestures if switching to/from mobile
+  if (window.innerWidth < 768) {
+    initSwipeToGoBack();
+    initConversationItemSwipe();
+    initPullToRefresh();
+  }
 });
+
+// ========== SWIPE GESTURES (Mobile Only) ==========
+
+// 1. Swipe right to go back (conversation → list)
+function initSwipeToGoBack() {
+  const conversationView = document.getElementById('conversation-active');
+  if (!conversationView || window.innerWidth >= 768) return;
+  
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let isSwiping = false;
+  let startTime = 0;
+  
+  conversationView.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    startTime = Date.now();
+    isSwiping = false;
+  }, { passive: true });
+  
+  conversationView.addEventListener('touchmove', (e) => {
+    if (!touchStartX || !touchStartY) return;
+    
+    const touchEndX = e.touches[0].clientX;
+    const touchEndY = e.touches[0].clientY;
+    const deltaX = touchEndX - touchStartX;
+    const deltaY = touchEndY - touchStartY;
+    
+    // Check if horizontal swipe (ignore if too much vertical movement)
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+      isSwiping = true;
+      
+      // Only allow swipe right (positive deltaX)
+      if (deltaX > 0 && deltaX < 100) {
+        // Visual feedback: slight translate
+        conversationView.style.transform = `translateX(${deltaX}px)`;
+        conversationView.style.transition = 'none';
+        conversationView.style.opacity = `${1 - (deltaX / 200)}`;
+      }
+    }
+  }, { passive: true });
+  
+  conversationView.addEventListener('touchend', (e) => {
+    if (!touchStartX || !touchStartY) return;
+    
+    const touchEndX = e.changedTouches[0].clientX;
+    const deltaX = touchEndX - touchStartX;
+    const swipeTime = Date.now() - startTime;
+    const swipeSpeed = Math.abs(deltaX) / swipeTime; // pixels per ms
+    
+    // Reset transform
+    conversationView.style.transform = '';
+    conversationView.style.transition = '';
+    conversationView.style.opacity = '';
+    
+    // Swipe right to go back (threshold: 50px or fast swipe)
+    if (isSwiping && deltaX > 0 && currentConversation) {
+      if (deltaX > 50 || (deltaX > 30 && swipeSpeed > 0.5)) {
+        showConversationList();
+      }
+    }
+    
+    touchStartX = 0;
+    touchStartY = 0;
+    isSwiping = false;
+  }, { passive: true });
+}
+
+// 2. Swipe left on conversation items to reveal actions
+function initConversationItemSwipe() {
+  const conversationItems = document.querySelectorAll('.conversation-item');
+  if (conversationItems.length === 0 || window.innerWidth >= 768) return;
+  
+  conversationItems.forEach(item => {
+    const container = item.closest('.conversation-item-swipe-container');
+    if (!container) return;
+    
+    const actions = container.querySelector('.swipe-actions');
+    if (!actions) return;
+    
+    let touchStartX = 0;
+    let currentX = 0;
+    let isSwipeActive = false;
+    let isRevealed = false;
+    
+    // Remove old listeners if any
+    const newItem = item.cloneNode(true);
+    item.parentNode.replaceChild(newItem, item);
+    const freshItem = container.querySelector('.conversation-item');
+    
+    freshItem.addEventListener('touchstart', (e) => {
+      touchStartX = e.touches[0].clientX;
+      isSwipeActive = false;
+    }, { passive: true });
+    
+    freshItem.addEventListener('touchmove', (e) => {
+      if (!touchStartX) return;
+      
+      const deltaX = e.touches[0].clientX - touchStartX;
+      
+      // Only allow left swipe (negative deltaX)
+      if (deltaX < 0 && Math.abs(deltaX) > 10) {
+        isSwipeActive = true;
+        currentX = Math.max(deltaX, -140); // Max reveal 140px
+        freshItem.style.transform = `translateX(${currentX}px)`;
+        freshItem.style.transition = 'none';
+        
+        // Show actions with opacity
+        const opacity = Math.min(Math.abs(currentX) / 140, 1);
+        actions.style.opacity = opacity.toString();
+        actions.style.pointerEvents = opacity > 0.5 ? 'auto' : 'none';
+      } else if (deltaX > 0 && isRevealed) {
+        // Swiping back to close
+        currentX = Math.max(-140 + deltaX, -140);
+        freshItem.style.transform = `translateX(${currentX}px)`;
+        freshItem.style.transition = 'none';
+        
+        const opacity = Math.max(Math.abs(currentX) / 140, 0);
+        actions.style.opacity = opacity.toString();
+        actions.style.pointerEvents = opacity > 0.5 ? 'auto' : 'none';
+      }
+    }, { passive: true });
+    
+    freshItem.addEventListener('touchend', () => {
+      if (!isSwipeActive && !isRevealed) return;
+      
+      freshItem.style.transition = 'transform 0.2s ease-out';
+      
+      if (Math.abs(currentX) > 70) {
+        // Snap to revealed position
+        freshItem.style.transform = 'translateX(-140px)';
+        actions.style.opacity = '1';
+        actions.style.pointerEvents = 'auto';
+        isRevealed = true;
+      } else {
+        // Snap back
+        freshItem.style.transform = 'translateX(0)';
+        actions.style.opacity = '0';
+        actions.style.pointerEvents = 'none';
+        isRevealed = false;
+      }
+      
+      touchStartX = 0;
+      isSwipeActive = false;
+      
+      setTimeout(() => {
+        freshItem.style.transition = '';
+      }, 200);
+    }, { passive: true });
+    
+    // Handle action button clicks
+    actions.querySelectorAll('.swipe-action-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const conversationId = freshItem.dataset.conversationId;
+        const action = btn.dataset.action;
+        
+        if (action === 'archive') {
+          // TODO: Implement archive conversation
+          toast?.info('Archive feature coming soon', 'Info');
+        } else if (action === 'delete') {
+          // TODO: Implement delete conversation
+          if (confirm('Are you sure you want to delete this conversation?')) {
+            toast?.info('Delete feature coming soon', 'Info');
+          }
+        }
+        
+        // Close swipe actions
+        freshItem.style.transform = 'translateX(0)';
+        actions.style.opacity = '0';
+        actions.style.pointerEvents = 'none';
+        isRevealed = false;
+      });
+    });
+    
+    // Close on click outside or on other conversation items
+    document.addEventListener('touchstart', (e) => {
+      if (!container.contains(e.target) && isRevealed) {
+        freshItem.style.transform = 'translateX(0)';
+        actions.style.opacity = '0';
+        actions.style.pointerEvents = 'none';
+        isRevealed = false;
+      }
+    });
+  });
+}
+
+// 3. Pull to refresh on conversation list
+function initPullToRefresh() {
+  const conversationsContainer = document.getElementById('conversations-container');
+  if (!conversationsContainer || window.innerWidth >= 768) return;
+  
+  let touchStartY = 0;
+  let isPulling = false;
+  let pullDistance = 0;
+  
+  // Create pull-to-refresh indicator
+  let indicator = document.getElementById('pull-to-refresh-indicator');
+  if (!indicator) {
+    indicator = document.createElement('div');
+    indicator.id = 'pull-to-refresh-indicator';
+    indicator.className = 'pull-to-refresh-indicator absolute top-0 left-0 right-0 flex items-center justify-center gap-2 py-2 text-gray-500 dark:text-gray-400 text-sm pointer-events-none';
+    indicator.innerHTML = '<i data-lucide="refresh-cw" class="w-4 h-4"></i><span>Pull to refresh</span>';
+    conversationsContainer.style.position = 'relative';
+    conversationsContainer.insertBefore(indicator, conversationsContainer.firstChild);
+  }
+  
+  conversationsContainer.addEventListener('touchstart', (e) => {
+    // Only if at top of scroll
+    if (conversationsContainer.scrollTop === 0) {
+      touchStartY = e.touches[0].clientY;
+      isPulling = false;
+      pullDistance = 0;
+    }
+  }, { passive: true });
+  
+  conversationsContainer.addEventListener('touchmove', (e) => {
+    if (touchStartY === 0 || conversationsContainer.scrollTop > 0) return;
+    
+    const deltaY = e.touches[0].clientY - touchStartY;
+    
+    if (deltaY > 0) {
+      isPulling = true;
+      pullDistance = Math.min(deltaY, 80);
+      
+      // Visual feedback
+      const opacity = Math.min(pullDistance / 80, 1);
+      indicator.style.opacity = opacity.toString();
+      indicator.style.transform = `translateY(${pullDistance - 40}px)`;
+      
+      // Rotate icon based on pull distance
+      const icon = indicator.querySelector('i');
+      if (icon) {
+        icon.style.transform = `rotate(${pullDistance * 4.5}deg)`;
+      }
+      
+      // Change text when ready to refresh
+      const text = indicator.querySelector('span');
+      if (text) {
+        text.textContent = pullDistance >= 70 ? 'Release to refresh' : 'Pull to refresh';
+      }
+    }
+  }, { passive: true });
+  
+  conversationsContainer.addEventListener('touchend', () => {
+    if (isPulling && pullDistance >= 70) {
+      // Trigger refresh
+      indicator.querySelector('i').classList.add('animate-spin');
+      loadConversations().finally(() => {
+        setTimeout(() => {
+          indicator.querySelector('i').classList.remove('animate-spin');
+          indicator.style.opacity = '0';
+          indicator.style.transform = 'translateY(-40px)';
+          const icon = indicator.querySelector('i');
+          if (icon) icon.style.transform = 'rotate(0deg)';
+          const text = indicator.querySelector('span');
+          if (text) text.textContent = 'Pull to refresh';
+        }, 300);
+      });
+    } else {
+      // Reset
+      indicator.style.opacity = '0';
+      indicator.style.transform = 'translateY(-40px)';
+      const icon = indicator.querySelector('i');
+      if (icon) icon.style.transform = 'rotate(0deg)';
+      const text = indicator.querySelector('span');
+      if (text) text.textContent = 'Pull to refresh';
+    }
+    
+    touchStartY = 0;
+    isPulling = false;
+    pullDistance = 0;
+  }, { passive: true });
+}
 
 function updateConversationHeader() {
   if (!currentConversation) return;
