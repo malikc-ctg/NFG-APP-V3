@@ -1177,6 +1177,8 @@ function initMobileKeyboardHandling() {
         // Keyboard is visible - adjust layout
         conversationActive.style.height = `${viewportHeight}px`;
         conversationActive.style.maxHeight = `${viewportHeight}px`;
+        // Ensure background stays consistent
+        conversationActive.style.backgroundColor = window.matchMedia('(prefers-color-scheme: dark)').matches ? '#1F2937' : '#ffffff';
         
         // Scroll input into view
         setTimeout(() => {
