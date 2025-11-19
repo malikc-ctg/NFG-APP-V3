@@ -235,6 +235,10 @@
       #conversation-active {
         overflow-x: hidden !important;
         max-width: 100% !important;
+        background-color: #ffffff !important;
+      }
+      .dark #conversation-active {
+        background-color: #1F2937 !important;
       }
       
       #messages-container {
@@ -506,7 +510,7 @@
     </header>
 
     <!-- CONTENT -->
-    <main class="flex-1 flex overflow-hidden">
+    <main class="flex-1 flex overflow-hidden bg-white dark:bg-gray-800" style="background-color: #ffffff !important;">
       <!-- Conversation List Sidebar -->
       <div id="conversation-list" class="w-full md:w-80 lg:w-96 border-r border-nfgray dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col overflow-hidden">
         <!-- Search Bar -->
@@ -556,7 +560,7 @@
       </div>
 
       <!-- Conversation View -->
-      <div id="conversation-view" class="flex-1 flex flex-col overflow-hidden bg-white dark:bg-gray-800 md:block hidden max-w-full" style="overflow-x: hidden !important;">
+      <div id="conversation-view" class="flex-1 flex flex-col overflow-hidden bg-white dark:bg-gray-800 md:block hidden max-w-full" style="overflow-x: hidden !important; background-color: #ffffff !important;">
         <!-- Empty State (when no conversation selected) -->
         <div id="conversation-empty" class="flex-1 flex items-center justify-center p-8 animate-fade-in">
           <div class="text-center max-w-md mx-auto">
@@ -575,7 +579,7 @@
         </div>
 
         <!-- Active Conversation -->
-        <div id="conversation-active" class="hidden flex-1 flex flex-col overflow-hidden max-w-full" style="overflow-x: hidden !important;">
+        <div id="conversation-active" class="hidden flex-1 flex flex-col overflow-hidden max-w-full bg-white dark:bg-gray-800" style="overflow-x: hidden !important; background-color: #ffffff !important;">
           <!-- Conversation Header -->
           <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700 bg-white dark:bg-gray-800">
             <div class="flex items-center gap-3 min-w-0 flex-1">
