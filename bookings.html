@@ -1723,38 +1723,71 @@
         return;
       }
       
+      const isAdmin = currentUserProfile && currentUserProfile.role === 'admin';
+      
       try {
         console.log('🔍 Loading bookings for user:', currentUser.id);
+        console.log('🔍 User role:', isAdmin ? 'admin' : 'client');
         
-        // Try created_by first, fallback to client_id if created_by doesn't exist
         let bookingsData = null;
-        let bookingsError = null;
+        let result = null;
         
-        // Try loading bookings with created_by filter first
-        console.log('🔍 Attempting to load bookings for user:', currentUser.id);
-        let result = await supabase
-          .from('bookings')
-          .select('*')
-          .eq('created_by', currentUser.id)
-          .limit(100);
-        
-        // If created_by fails, try client_id
-        if (result.error && (result.error.code === 'PGRST204' || result.error.message?.includes('created_by') || result.error.message?.includes('column'))) {
-          console.warn('⚠️ created_by column not found, trying client_id');
+        if (isAdmin) {
+          // For admin, load ALL bookings in the system
+          console.log('🔍 Loading ALL bookings for admin');
           result = await supabase
             .from('bookings')
             .select('*')
-            .eq('client_id', currentUser.id)
-            .limit(100);
-        }
-        
-        // If client_id also fails, try without filter (might be RLS blocking)
-        if (result.error) {
-          console.warn('⚠️ Filtered query failed, trying without filter:', result.error.message);
+            .limit(1000); // Higher limit for admin to see all bookings
+        } else {
+          // For client, load only their bookings
+          console.log('🔍 Loading bookings for client');
+          
+          // Try created_by first, fallback to client_id if created_by doesn't exist
           result = await supabase
             .from('bookings')
             .select('*')
+            .eq('created_by', currentUser.id)
             .limit(100);
+          
+          // If created_by fails, try client_id
+          if (result.error && (result.error.code === 'PGRST204' || result.error.message?.includes('created_by') || result.error.message?.includes('column'))) {
+            console.warn('⚠️ created_by column not found, trying client_id');
+            result = await supabase
+              .from('bookings')
+              .select('*')
+              .eq('client_id', currentUser.id)
+              .limit(100);
+          }
+          
+          // If client_id also fails, try without filter (might be RLS blocking)
+          if (result.error) {
+            console.warn('⚠️ Filtered query failed, trying without filter:', result.error.message);
+            result = await supabase
+              .from('bookings')
+              .select('*')
+              .limit(100);
+          }
+          
+          // If we loaded all bookings, filter by user client-side
+          if (result.data && result.data.length > 0) {
+            const firstBooking = result.data[0];
+            const hasCreatedBy = 'created_by' in firstBooking;
+            const hasClientId = 'client_id' in firstBooking;
+            
+            if (hasCreatedBy || hasClientId) {
+              // Check if we loaded all bookings (no error means we might have loaded all)
+              const userBookings = result.data.filter(b => {
+                return (hasCreatedBy && b.created_by === currentUser.id) || 
+                       (hasClientId && b.client_id === currentUser.id);
+              });
+              if (userBookings.length < result.data.length) {
+                // We filtered client-side, so use filtered results
+                result.data = userBookings;
+                console.log(`✅ Filtered to ${userBookings.length} bookings for current user`);
+              }
+            }
+          }
         }
         
         if (result.error) {
@@ -1767,27 +1800,6 @@
         
         bookingsData = result.data || [];
         console.log(`✅ Loaded ${bookingsData.length} bookings from database`);
-        
-        // If we loaded all bookings, filter by user client-side
-        if (bookingsData.length > 0) {
-          const firstBooking = bookingsData[0];
-          const hasCreatedBy = 'created_by' in firstBooking;
-          const hasClientId = 'client_id' in firstBooking;
-          
-          console.log('📋 Booking columns:', Object.keys(firstBooking));
-          console.log('📋 Has created_by:', hasCreatedBy);
-          console.log('📋 Has client_id:', hasClientId);
-          
-          // Filter by user if we loaded all bookings
-          if (hasCreatedBy || hasClientId) {
-            const userBookings = bookingsData.filter(b => {
-              return (hasCreatedBy && b.created_by === currentUser.id) || 
-                     (hasClientId && b.client_id === currentUser.id);
-            });
-            console.log(`✅ Filtered to ${userBookings.length} bookings for current user`);
-            bookingsData = userBookings;
-          }
-        }
         
         // Sort by scheduled_date if available (client-side sorting)
         if (bookingsData && bookingsData.length > 0) {
@@ -1901,8 +1913,11 @@
         console.log('🔍 Loading jobs for user:', currentUser.id);
         console.log('🔍 User profile role:', currentUserProfile?.role);
         
+        const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
+        const isAdmin = currentUserProfile && currentUserProfile.role === 'admin';
+        
         // For staff, only show assigned jobs
-        if (currentUserProfile && currentUserProfile.role === 'staff') {
+        if (isStaff) {
           console.log('🔍 Loading assigned jobs for staff user:', currentUser.id);
           
           // Query jobs assigned to this staff member
@@ -1958,23 +1973,37 @@
               }
             }
           }
-        } else {
-          // For admin/client, show all their jobs
-          console.log('🔍 Loading jobs for admin/client');
-          // Use scheduled_date for ordering (backward compatible)
+        } else if (isAdmin) {
+          // For admin, show ALL jobs in the system
+          console.log('🔍 Loading ALL jobs for admin');
           const { data, error } = await supabase
             .from('jobs')
-          .select('*, sites(name, address)')
-          .eq('created_by', currentUser.id)
-          .order('scheduled_date', { ascending: false });
+            .select('*, sites(name, address)')
+            .order('scheduled_date', { ascending: false });
 
           if (error) {
-            console.error('❌ Error loading jobs for admin/client:', error);
+            console.error('❌ Error loading jobs for admin:', error);
             throw error;
           }
           
           jobs = data || [];
-          console.log(`✅ Loaded ${jobs.length} jobs for admin/client`);
+          console.log(`✅ Loaded ${jobs.length} jobs for admin (all jobs in system)`);
+        } else {
+          // For client, show only their jobs
+          console.log('🔍 Loading jobs for client');
+          const { data, error } = await supabase
+            .from('jobs')
+            .select('*, sites(name, address)')
+            .eq('created_by', currentUser.id)
+            .order('scheduled_date', { ascending: false });
+
+          if (error) {
+            console.error('❌ Error loading jobs for client:', error);
+            throw error;
+          }
+          
+          jobs = data || [];
+          console.log(`✅ Loaded ${jobs.length} jobs for client`);
         }
         
         if (currentView === 'calendar') {
