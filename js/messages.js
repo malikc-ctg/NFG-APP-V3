@@ -642,6 +642,10 @@ function renderMessages() {
   if (window.lucide) {
     lucide.createIcons();
   }
+  
+  // Attach message action listeners (edit/delete buttons)
+  attachMessageActionListeners();
+  attachMobileMessageLongPress();
 }
 
 // ========== SEND MESSAGE ==========
