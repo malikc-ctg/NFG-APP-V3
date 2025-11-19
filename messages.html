@@ -170,11 +170,188 @@
       overflow-x: hidden !important;
     }
     
-    #message-input {
+    /* Message Box Styles (NFG themed) */
+    .messageBox {
+      width: 100% !important;
       max-width: 100% !important;
+      min-height: 44px;
+      height: auto;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: flex-start !important;
+      gap: 8px;
+      background-color: #ffffff;
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: 1px solid #E5E7EB;
+      transition: all 0.3s ease;
+    }
+    
+    .dark .messageBox {
+      background-color: #1F2937;
+      border-color: #374151;
+    }
+    
+    .messageBox:focus-within {
+      border-color: #0D47A1;
+      box-shadow: 0 0 0 3px rgba(13, 71, 161, 0.1);
+    }
+    
+    .dark .messageBox:focus-within {
+      border-color: #3B82F6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+    
+    /* File Upload Wrapper */
+    .fileUploadWrapper {
+      width: fit-content;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    
+    #file {
+      display: none;
+    }
+    
+    .fileUploadWrapper label {
+      cursor: pointer;
+      width: fit-content;
+      height: fit-content;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 4px;
+      border-radius: 6px;
+      transition: all 0.3s;
+    }
+    
+    .fileUploadWrapper label:hover {
+      background-color: rgba(13, 71, 161, 0.1);
+    }
+    
+    .dark .fileUploadWrapper label:hover {
+      background-color: rgba(59, 130, 246, 0.2);
+    }
+    
+    .fileUploadWrapper label .tooltip {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      margin-bottom: 8px;
+      display: none;
+      opacity: 0;
+      color: white;
+      font-size: 11px;
+      white-space: nowrap;
+      background-color: #1F2937;
+      padding: 6px 10px;
+      border: 1px solid #374151;
+      border-radius: 6px;
+      box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s;
+      pointer-events: none;
+      z-index: 1000;
+    }
+    
+    .fileUploadWrapper label:hover .tooltip {
+      display: block;
+      opacity: 1;
+    }
+    
+    /* Message Input */
+    #message-input {
+      flex: 1;
+      min-width: 0;
+      max-width: 100% !important;
+      height: 28px;
+      min-height: 28px;
+      max-height: 120px;
+      background-color: transparent;
+      outline: none;
+      border: none;
+      padding: 0 8px;
+      color: #1E293B;
+      font-size: 14px;
+      font-family: inherit;
+      resize: none;
+      overflow-y: auto;
       overflow-x: hidden !important;
-      word-wrap: break-word !important;
-      overflow-wrap: break-word !important;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    
+    .dark #message-input {
+      color: #F3F4F6;
+    }
+    
+    #message-input::placeholder {
+      color: #9CA3AF;
+    }
+    
+    .dark #message-input::placeholder {
+      color: #6B7280;
+    }
+    
+    /* Send Button */
+    #send-message-btn,
+    .sendButton {
+      width: fit-content;
+      height: 100%;
+      min-height: 28px;
+      background-color: transparent;
+      outline: none;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: all 0.3s;
+      flex-shrink: 0;
+      color: #9CA3AF;
+    }
+    
+    .dark #send-message-btn,
+    .dark .sendButton {
+      color: #6B7280;
+    }
+    
+    #send-message-btn:hover:not(:disabled),
+    .sendButton:hover:not(:disabled) {
+      background-color: rgba(13, 71, 161, 0.1);
+      color: #0D47A1;
+    }
+    
+    .dark #send-message-btn:hover:not(:disabled),
+    .dark .sendButton:hover:not(:disabled) {
+      background-color: rgba(59, 130, 246, 0.2);
+      color: #3B82F6;
+    }
+    
+    #send-message-btn:disabled,
+    .sendButton:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    #message-input:focus ~ #send-message-btn,
+    #message-input:not(:placeholder-shown) ~ #send-message-btn,
+    #message-input:focus ~ .sendButton,
+    #message-input:not(:placeholder-shown) ~ .sendButton {
+      color: #0D47A1;
+    }
+    
+    .dark #message-input:focus ~ #send-message-btn,
+    .dark #message-input:not(:placeholder-shown) ~ #send-message-btn,
+    .dark #message-input:focus ~ .sendButton,
+    .dark #message-input:not(:placeholder-shown) ~ .sendButton {
+      color: #3B82F6;
     }
     
     /* Mobile keyboard handling */
@@ -646,24 +823,34 @@
 
           <!-- Message Input -->
           <div class="p-4 border-t border-nfgray dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0 max-w-full" style="overflow-x: hidden !important;">
-            <form id="message-form" class="flex items-end gap-2 max-w-full" style="overflow-x: hidden !important;">
-              <div class="flex-1 min-w-0 max-w-full" style="overflow-x: hidden !important;">
-                <textarea 
+            <form id="message-form" class="flex items-center justify-center w-full" style="overflow-x: hidden !important;">
+              <div class="messageBox w-full max-w-full">
+                <!-- File Upload (Optional - can be added later) -->
+                <div class="fileUploadWrapper">
+                  <input type="file" id="file" />
+                  <label for="file">
+                    <i data-lucide="paperclip" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
+                    <div class="tooltip">Attach file</div>
+                  </label>
+                </div>
+                
+                <input 
+                  type="text"
                   id="message-input" 
-                  rows="1"
                   placeholder="Type a message..." 
-                  class="w-full px-4 py-2 rounded-lg border border-nfgray dark:border-gray-600 bg-white dark:bg-gray-700 resize-none focus:ring-2 focus:ring-nfgblue outline-none text-sm max-w-full"
-                  style="max-height: 120px; width: 100%; overflow-x: hidden !important; word-wrap: break-word; overflow-wrap: break-word;"
-                ></textarea>
+                  class="flex-1 min-w-0"
+                  style="width: 100%; max-width: 100%;"
+                />
+                
+                <button 
+                  type="submit"
+                  id="send-message-btn"
+                  class="sendButton"
+                  disabled
+                >
+                  <i data-lucide="send" class="w-4 h-4"></i>
+                </button>
               </div>
-              <button 
-                type="submit"
-                id="send-message-btn"
-                class="p-2.5 rounded-lg bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark transition flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled
-              >
-                <i data-lucide="send" class="w-5 h-5"></i>
-              </button>
             </form>
           </div>
         </div>

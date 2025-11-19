@@ -154,9 +154,15 @@ function initEventListeners() {
   const messageInput = document.getElementById('message-input');
   if (messageInput) {
     messageInput.addEventListener('input', (e) => {
-      // Auto-resize textarea
-      e.target.style.height = 'auto';
-      e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+      // Auto-resize input (adjust messageBox height)
+      const messageBox = e.target.closest('.messageBox');
+      if (messageBox) {
+        e.target.style.height = 'auto';
+        const newHeight = Math.min(e.target.scrollHeight, 120);
+        e.target.style.height = newHeight + 'px';
+        messageBox.style.height = 'auto';
+        messageBox.style.minHeight = Math.max(44, newHeight + 16) + 'px';
+      }
 
       // Enable/disable send button
       const sendBtn = document.getElementById('send-message-btn');
