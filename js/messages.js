@@ -87,6 +87,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       initPullToRefresh();
     }
   }, 100);
+  
+  // Initialize mobile keyboard handling
+  initMobileKeyboardHandling();
 });
 
 // ========== HAPTIC FEEDBACK ==========
@@ -1152,6 +1155,67 @@ function updateMobileNavigation(show) {
   }
 }
 
+// Handle mobile keyboard to prevent blocking input
+function initMobileKeyboardHandling() {
+  if (window.innerWidth >= 768) return; // Desktop only
+  
+  const messageInput = document.getElementById('message-input');
+  const messageForm = document.getElementById('message-form');
+  const conversationActive = document.getElementById('conversation-active');
+  
+  if (!messageInput || !messageForm || !conversationActive) return;
+  
+  // Use Visual Viewport API if available (modern browsers)
+  if (window.visualViewport) {
+    const handleViewportChange = () => {
+      const viewport = window.visualViewport;
+      const viewportHeight = viewport.height;
+      const windowHeight = window.innerHeight;
+      const keyboardHeight = windowHeight - viewportHeight;
+      
+      if (keyboardHeight > 0) {
+        // Keyboard is visible - adjust layout
+        conversationActive.style.height = `${viewportHeight}px`;
+        conversationActive.style.maxHeight = `${viewportHeight}px`;
+        
+        // Scroll input into view
+        setTimeout(() => {
+          messageForm.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }, 100);
+      } else {
+        // Keyboard is hidden - reset to full height
+        conversationActive.style.height = '';
+        conversationActive.style.maxHeight = '';
+      }
+    };
+    
+    window.visualViewport.addEventListener('resize', handleViewportChange);
+    window.visualViewport.addEventListener('scroll', handleViewportChange);
+  }
+  
+  // Fallback: Handle focus/blur events
+  messageInput.addEventListener('focus', () => {
+    // Scroll input into view when focused
+    setTimeout(() => {
+      messageForm.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      
+      // Also scroll the form container
+      const formContainer = messageForm.closest('.p-4');
+      if (formContainer) {
+        formContainer.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    }, 300); // Delay to allow keyboard to appear
+  });
+  
+  // Handle input resize (for textarea auto-resize)
+  messageInput.addEventListener('input', () => {
+    // Ensure input stays visible
+    setTimeout(() => {
+      messageForm.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 50);
+  });
+}
+
 // Handle window resize to update mobile navigation visibility
 window.addEventListener('resize', () => {
   // Check current view state and update navigation accordingly
@@ -1164,6 +1228,7 @@ window.addEventListener('resize', () => {
     initSwipeToGoBack();
     initConversationItemSwipe();
     initPullToRefresh();
+    initMobileKeyboardHandling();
   }
 });
 

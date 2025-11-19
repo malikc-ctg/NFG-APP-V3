@@ -149,6 +149,31 @@
       flex-shrink: 0 !important;
     }
     
+    /* Mobile keyboard handling */
+    @media (max-width: 767px) {
+      /* Use safe-area-inset-bottom for devices with notches */
+      #message-form {
+        padding-bottom: env(safe-area-inset-bottom, 0) !important;
+      }
+      
+      /* Ensure message form stays visible above keyboard */
+      #conversation-active {
+        position: relative;
+        height: 100vh;
+        height: 100dvh; /* Dynamic viewport height */
+        max-height: 100vh;
+        max-height: 100dvh;
+      }
+      
+      /* Adjust when keyboard is visible */
+      @supports (height: 100dvh) {
+        #conversation-active {
+          height: 100dvh;
+          max-height: 100dvh;
+        }
+      }
+    }
+    
     /* Mobile responsive */
     @media (max-width: 767px) {
       #conversation-list {
