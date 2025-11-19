@@ -2045,10 +2045,38 @@ function updateTypingIndicator() {
   if (typingUsers.length > 0) {
     const names = typingUsers.map(u => u.user_name || 'Someone').join(', ');
     indicatorText.textContent = `${names} ${typingUsers.length === 1 ? 'is' : 'are'} typing...`;
+    
+    // Force show indicator - remove hidden class and set display
     indicator.classList.remove('hidden');
+    indicator.style.display = 'block';
+    indicator.style.visibility = 'visible';
+    indicator.style.opacity = '1';
+    
+    // Ensure messages list is visible too
+    const messagesList = document.getElementById('messages-list');
+    if (messagesList) {
+      messagesList.classList.remove('hidden');
+    }
+    
     console.log('[Typing] Showing indicator:', indicatorText.textContent);
+    console.log('[Typing] Indicator element:', indicator);
+    console.log('[Typing] Indicator classes:', indicator.className);
+    console.log('[Typing] Indicator display:', window.getComputedStyle(indicator).display);
+    console.log('[Typing] Indicator visibility:', window.getComputedStyle(indicator).visibility);
+    console.log('[Typing] Indicator opacity:', window.getComputedStyle(indicator).opacity);
+    
+    // Scroll to show typing indicator (with delay to ensure DOM updated)
+    setTimeout(() => {
+      const container = document.getElementById('messages-container');
+      if (container && indicator) {
+        // Scroll to bottom to show typing indicator
+        container.scrollTop = container.scrollHeight;
+      }
+    }, 50);
   } else {
+    // Hide indicator
     indicator.classList.add('hidden');
+    indicator.style.display = 'none';
     console.log('[Typing] Hiding indicator - no typing users');
   }
 }
