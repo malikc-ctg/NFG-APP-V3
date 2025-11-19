@@ -609,6 +609,22 @@ function subscribeToMessages(conversationId) {
       // New message received
       const newMessage = payload.new;
 
+      // Check if message already exists in array (prevents duplicates from own sends)
+      const existingIndex = messages.findIndex(m => m.id === newMessage.id);
+      if (existingIndex !== -1) {
+        // Message already exists, update it with any new data (like read receipts)
+        if (newMessage.sender_id === currentUser.id) {
+          // This is our own message that we already added optimistically
+          // Just update the existing message with any new data
+          messages[existingIndex] = { ...messages[existingIndex], ...newMessage };
+        } else {
+          // Update existing message with new data
+          messages[existingIndex] = { ...messages[existingIndex], ...newMessage };
+        }
+        renderMessages();
+        return;
+      }
+
       // Fetch sender info
       const { data: sender } = await supabase
         .from('user_profiles')
