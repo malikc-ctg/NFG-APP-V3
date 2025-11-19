@@ -76,9 +76,11 @@
     body {
       height: 100vh !important;
       width: 100vw !important;
+      max-width: 100vw !important;
       margin: 0 !important;
       padding: 0 !important;
       overflow: hidden !important;
+      overflow-x: hidden !important;
       display: flex !important;
     }
     body > aside {
@@ -88,6 +90,8 @@
     }
     body > div.flex-1 {
       display: flex;
+      overflow-x: hidden !important;
+      max-width: 100% !important;
       flex-direction: column;
       overflow: hidden;
       flex: 1;
@@ -126,6 +130,8 @@
       flex-direction: column !important;
       min-height: 0 !important;
       max-height: 100% !important;
+      max-width: 100% !important;
+      overflow-x: hidden !important;
     }
     
     #messages-container {
@@ -147,6 +153,15 @@
     
     #message-form {
       flex-shrink: 0 !important;
+      max-width: 100% !important;
+      overflow-x: hidden !important;
+    }
+    
+    #message-input {
+      max-width: 100% !important;
+      overflow-x: hidden !important;
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
     }
     
     /* Mobile keyboard handling */
@@ -428,7 +443,7 @@
   </aside>
 
   <!-- ========== MAIN ========== -->
-  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden max-w-full" style="overflow-x: hidden !important;">
     <!-- TOPBAR -->
     <header class="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-nfgray dark:border-gray-700 flex-shrink-0">
       <div class="h-14 px-2 sm:px-4 md:px-6 flex items-center justify-between gap-1 sm:gap-2">
@@ -506,7 +521,7 @@
       </div>
 
       <!-- Conversation View -->
-      <div id="conversation-view" class="flex-1 flex flex-col overflow-hidden bg-white dark:bg-gray-800 md:block hidden">
+      <div id="conversation-view" class="flex-1 flex flex-col overflow-hidden bg-white dark:bg-gray-800 md:block hidden max-w-full" style="overflow-x: hidden !important;">
         <!-- Empty State (when no conversation selected) -->
         <div id="conversation-empty" class="flex-1 flex items-center justify-center p-8 animate-fade-in">
           <div class="text-center max-w-md mx-auto">
@@ -525,7 +540,7 @@
         </div>
 
         <!-- Active Conversation -->
-        <div id="conversation-active" class="hidden flex-1 flex flex-col overflow-hidden">
+        <div id="conversation-active" class="hidden flex-1 flex flex-col overflow-hidden max-w-full" style="overflow-x: hidden !important;">
           <!-- Conversation Header -->
           <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700 bg-white dark:bg-gray-800">
             <div class="flex items-center gap-3 min-w-0 flex-1">
@@ -543,7 +558,7 @@
           </div>
 
           <!-- Messages Container -->
-          <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900/50 min-h-0" style="height: calc(100vh - 200px);">
+          <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900/50 min-h-0 max-w-full" style="height: calc(100vh - 200px); overflow-x: hidden !important;">
             <!-- Loading State -->
             <div id="messages-loading" class="text-center text-gray-500 dark:text-gray-400 py-8">
               <div class="animate-pulse space-y-3">
@@ -587,15 +602,15 @@
           </div>
 
           <!-- Message Input -->
-          <div class="p-4 border-t border-nfgray dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
-            <form id="message-form" class="flex items-end gap-2">
-              <div class="flex-1">
+          <div class="p-4 border-t border-nfgray dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0 max-w-full" style="overflow-x: hidden !important;">
+            <form id="message-form" class="flex items-end gap-2 max-w-full" style="overflow-x: hidden !important;">
+              <div class="flex-1 min-w-0 max-w-full" style="overflow-x: hidden !important;">
                 <textarea 
                   id="message-input" 
                   rows="1"
                   placeholder="Type a message..." 
-                  class="w-full px-4 py-2 rounded-lg border border-nfgray dark:border-gray-600 bg-white dark:bg-gray-700 resize-none focus:ring-2 focus:ring-nfgblue outline-none text-sm"
-                  style="max-height: 120px;"
+                  class="w-full px-4 py-2 rounded-lg border border-nfgray dark:border-gray-600 bg-white dark:bg-gray-700 resize-none focus:ring-2 focus:ring-nfgblue outline-none text-sm max-w-full"
+                  style="max-height: 120px; width: 100%; overflow-x: hidden !important; word-wrap: break-word; overflow-wrap: break-word;"
                 ></textarea>
               </div>
               <button 
