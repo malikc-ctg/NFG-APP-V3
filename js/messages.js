@@ -68,6 +68,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (window.lucide) {
     lucide.createIcons();
   }
+  
+  // Initialize mobile navigation visibility
+  // Start with hidden, will be shown by updateMobileNavigation after conversations load
+  updateMobileNavigation(false);
 });
 
 // ========== EVENT LISTENERS ==========
@@ -136,6 +140,16 @@ function initEventListeners() {
   // Back to list button (mobile)
   document.getElementById('back-to-list-btn')?.addEventListener('click', () => {
     showConversationList();
+  });
+
+  // Back to dashboard button (mobile)
+  document.getElementById('back-to-dashboard-btn')?.addEventListener('click', () => {
+    window.location.href = './dashboard.html';
+  });
+
+  // Floating Action Button for new message (mobile)
+  document.getElementById('fab-new-message')?.addEventListener('click', () => {
+    openNewMessageModal();
   });
 
   // Close modal on backdrop click
@@ -263,6 +277,9 @@ async function loadConversations() {
     if (conversations.length > 0 && !currentConversation) {
       const mostRecentConversation = conversations[0];
       await selectConversation(mostRecentConversation.id);
+    } else {
+      // If no conversation selected, show back button and FAB (on conversation list)
+      updateMobileNavigation(true);
     }
   } catch (error) {
     console.error('Error loading conversations:', error);
@@ -864,6 +881,8 @@ function showConversationView() {
     // No conversation selected, show empty state
     if (emptyEl) emptyEl.classList.remove('hidden');
     if (activeEl) activeEl.classList.add('hidden');
+    // Show back button and FAB when on empty state (conversation list)
+    updateMobileNavigation(true);
     return;
   }
 
@@ -878,6 +897,8 @@ function showConversationView() {
       viewEl.classList.remove('hidden');
       viewEl.classList.add('flex');
     }
+    // Hide back button and FAB when viewing conversation
+    updateMobileNavigation(false);
     // Ensure back button icon is visible on mobile
     if (window.lucide) {
       lucide.createIcons();
@@ -888,6 +909,8 @@ function showConversationView() {
       viewEl.classList.remove('hidden');
       viewEl.classList.add('md:block');
     }
+    // Always show back button and FAB on desktop (they're hidden via CSS)
+    updateMobileNavigation(true);
   }
 }
 
@@ -900,7 +923,57 @@ function showConversationList() {
     viewEl.classList.add('hidden');
     viewEl.classList.remove('flex', 'md:block');
   }
+  
+  // Clear current conversation
+  currentConversation = null;
+  
+  // Show back button and FAB when on conversation list
+  updateMobileNavigation(true);
 }
+
+// Update mobile navigation visibility (back button and FAB)
+function updateMobileNavigation(show) {
+  const backBtn = document.getElementById('back-to-dashboard-btn');
+  const fab = document.getElementById('fab-new-message');
+  const isMobile = window.innerWidth < 768;
+  
+  if (isMobile) {
+    // On mobile, show/hide based on state
+    if (backBtn) {
+      if (show) {
+        backBtn.classList.remove('hidden');
+      } else {
+        backBtn.classList.add('hidden');
+      }
+    }
+    
+    if (fab) {
+      // FAB should only show when on conversation list (not viewing conversation)
+      if (show) {
+        fab.classList.remove('hidden');
+      } else {
+        fab.classList.add('hidden');
+      }
+    }
+  } else {
+    // On desktop, always hide (they're mobile-only)
+    if (backBtn) backBtn.classList.add('hidden');
+    if (fab) fab.classList.add('hidden');
+  }
+  
+  // Recreate icons when visibility changes
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+// Handle window resize to update mobile navigation visibility
+window.addEventListener('resize', () => {
+  // Check current view state and update navigation accordingly
+  const activeEl = document.getElementById('conversation-active');
+  const isViewingConversation = activeEl && !activeEl.classList.contains('hidden');
+  updateMobileNavigation(!isViewingConversation);
+});
 
 function updateConversationHeader() {
   if (!currentConversation) return;
