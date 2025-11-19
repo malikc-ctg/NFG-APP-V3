@@ -245,11 +245,25 @@ async function loadConversations() {
       };
     }).filter(Boolean); // Remove null entries
 
+    // Sort conversations by last_message_at (most recent first)
+    // If last_message_at is null, use updated_at or created_at
+    conversations.sort((a, b) => {
+      const aTime = new Date(a.last_message_at || a.updated_at || a.created_at);
+      const bTime = new Date(b.last_message_at || b.updated_at || b.created_at);
+      return bTime - aTime; // Most recent first
+    });
+
     // Render conversations
     renderConversations();
 
     if (loadingEl) loadingEl.classList.add('hidden');
     if (listEl) listEl.classList.remove('hidden');
+
+    // Auto-select most recent conversation if none is selected
+    if (conversations.length > 0 && !currentConversation) {
+      const mostRecentConversation = conversations[0];
+      await selectConversation(mostRecentConversation.id);
+    }
   } catch (error) {
     console.error('Error loading conversations:', error);
     toast?.error('Failed to load conversations', 'Error');
