@@ -878,6 +878,10 @@ function showConversationView() {
       viewEl.classList.remove('hidden');
       viewEl.classList.add('flex');
     }
+    // Ensure back button icon is visible on mobile
+    if (window.lucide) {
+      lucide.createIcons();
+    }
   } else {
     // On desktop, show both
     if (viewEl) {

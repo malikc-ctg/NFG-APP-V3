@@ -176,6 +176,20 @@
       #conversation-view.hidden {
         display: none;
       }
+      
+      /* Ensure back button is visible and accessible on mobile */
+      #back-to-list-btn {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        min-width: 44px;
+        min-height: 44px;
+        background-color: white;
+      }
+      
+      .dark #back-to-list-btn {
+        background-color: #1F2937;
+      }
     }
   </style>
 
@@ -324,7 +338,7 @@
           <!-- Conversation Header -->
           <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700 bg-white dark:bg-gray-800">
             <div class="flex items-center gap-3 min-w-0 flex-1">
-              <button id="back-to-list-btn" class="md:hidden p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+              <button id="back-to-list-btn" class="md:hidden p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 text-nfgblue dark:text-blue-400 flex-shrink-0 border border-nfgray dark:border-gray-600">
                 <i data-lucide="arrow-left" class="w-5 h-5"></i>
               </button>
               <div id="conversation-header-avatar" class="w-10 h-10 rounded-full bg-nfgblue dark:bg-blue-900 flex items-center justify-center text-white font-semibold flex-shrink-0">
