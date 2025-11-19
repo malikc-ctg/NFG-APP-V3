@@ -218,6 +218,53 @@
         display: none !important;
       }
       
+      /* Empty state animations */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      
+      @keyframes pulseSlow {
+        0%, 100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.7;
+        }
+      }
+      
+      .animate-fade-in {
+        animation: fadeIn 0.3s ease-out;
+      }
+      
+      .animate-pulse-slow {
+        animation: pulseSlow 3s ease-in-out infinite;
+      }
+      
+      /* Smooth transitions for state changes */
+      #conversation-view,
+      #conversation-active,
+      #conversation-empty,
+      #conversations-list,
+      #conversations-empty {
+        transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+      }
+      
+      /* Message animations */
+      .message-item {
+        animation: fadeIn 0.2s ease-out;
+      }
+      
+      .conversation-item {
+        transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+      }
+      
       /* Swipe gesture styles */
       #conversation-active {
         touch-action: pan-y;
@@ -395,10 +442,20 @@
           </div>
 
           <!-- Empty State -->
-          <div id="conversations-empty" class="hidden p-8 text-center">
-            <i data-lucide="message-circle" class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3"></i>
-            <p class="text-gray-500 dark:text-gray-400 text-sm">No conversations yet</p>
-            <p class="text-gray-400 dark:text-gray-500 text-xs mt-1">Start a new conversation to get started</p>
+          <div id="conversations-empty" class="hidden p-8 text-center animate-fade-in">
+            <div class="max-w-sm mx-auto">
+              <div class="mb-4 flex justify-center">
+                <div class="w-20 h-20 rounded-full bg-gradient-to-br from-nfgblue/10 to-blue-400/10 dark:from-nfgblue/20 dark:to-blue-400/20 flex items-center justify-center animate-pulse-slow">
+                  <i data-lucide="message-circle" class="w-10 h-10 text-nfgblue dark:text-blue-400"></i>
+                </div>
+              </div>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">No conversations yet</h3>
+              <p class="text-gray-500 dark:text-gray-400 text-sm mb-6">Start chatting with your team members to get started</p>
+              <button id="empty-state-new-message-btn" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark dark:hover:bg-blue-800 transition-all transform hover:scale-105 active:scale-95 font-medium shadow-lg">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Start a Conversation</span>
+              </button>
+            </div>
           </div>
 
           <!-- Conversations List (will be populated by JS) -->
@@ -409,11 +466,19 @@
       <!-- Conversation View -->
       <div id="conversation-view" class="flex-1 flex flex-col overflow-hidden bg-white dark:bg-gray-800 md:block hidden">
         <!-- Empty State (when no conversation selected) -->
-        <div id="conversation-empty" class="flex-1 flex items-center justify-center p-8">
-          <div class="text-center">
-            <i data-lucide="message-circle" class="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4"></i>
-            <p class="text-gray-500 dark:text-gray-400 text-lg font-medium">Select a conversation</p>
-            <p class="text-gray-400 dark:text-gray-500 text-sm mt-2">Choose a conversation from the list to start messaging</p>
+        <div id="conversation-empty" class="flex-1 flex items-center justify-center p-8 animate-fade-in">
+          <div class="text-center max-w-md mx-auto">
+            <div class="mb-6 flex justify-center">
+              <div class="w-24 h-24 rounded-full bg-gradient-to-br from-nfgblue/10 to-blue-400/10 dark:from-nfgblue/20 dark:to-blue-400/20 flex items-center justify-center">
+                <i data-lucide="message-circle" class="w-12 h-12 text-nfgblue dark:text-blue-400"></i>
+              </div>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Select a conversation</h3>
+            <p class="text-gray-500 dark:text-gray-400 text-sm mb-6">Choose a conversation from the list to start messaging</p>
+            <div class="flex items-center justify-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+              <i data-lucide="info" class="w-4 h-4"></i>
+              <span>Tap on any conversation to view messages</span>
+            </div>
           </div>
         </div>
 
@@ -450,10 +515,20 @@
             <div id="messages-list" class="hidden space-y-4"></div>
 
             <!-- Empty State (no messages) -->
-            <div id="messages-empty" class="hidden text-center py-8">
-              <i data-lucide="message-square" class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3"></i>
-              <p class="text-gray-500 dark:text-gray-400 text-sm">No messages yet</p>
-              <p class="text-gray-400 dark:text-gray-500 text-xs mt-1">Start the conversation!</p>
+            <div id="messages-empty" class="hidden text-center py-12 animate-fade-in">
+              <div class="max-w-sm mx-auto">
+                <div class="mb-4 flex justify-center">
+                  <div class="w-16 h-16 rounded-full bg-gradient-to-br from-nfgblue/10 to-blue-400/10 dark:from-nfgblue/20 dark:to-blue-400/20 flex items-center justify-center">
+                    <i data-lucide="message-square" class="w-8 h-8 text-nfgblue dark:text-blue-400"></i>
+                  </div>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">No messages yet</h3>
+                <p class="text-gray-500 dark:text-gray-400 text-sm mb-4">Be the first to start the conversation!</p>
+                <div class="flex items-center justify-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+                  <i data-lucide="arrow-down" class="w-4 h-4 animate-bounce"></i>
+                  <span>Type a message below</span>
+                </div>
+              </div>
             </div>
           </div>
 

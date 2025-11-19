@@ -83,10 +83,38 @@ document.addEventListener('DOMContentLoaded', async () => {
   }, 100);
 });
 
+// ========== HAPTIC FEEDBACK ==========
+function triggerHaptic(type = 'light') {
+  if (!window.navigator || !window.navigator.vibrate) return;
+  
+  const patterns = {
+    light: 10,        // Light tap
+    medium: 20,       // Medium tap
+    heavy: 30,        // Heavy tap
+    success: [10, 50, 10],  // Success pattern
+    error: [20, 50, 20],    // Error pattern
+    warning: [15, 30, 15]   // Warning pattern
+  };
+  
+  const pattern = patterns[type] || patterns.light;
+  try {
+    window.navigator.vibrate(pattern);
+  } catch (e) {
+    // Silently fail if haptic feedback is not supported
+  }
+}
+
 // ========== EVENT LISTENERS ==========
 function initEventListeners() {
   // New message button
   document.getElementById('new-message-btn')?.addEventListener('click', () => {
+    triggerHaptic('light');
+    openNewMessageModal();
+  });
+  
+  // Empty state new message button
+  document.getElementById('empty-state-new-message-btn')?.addEventListener('click', () => {
+    triggerHaptic('medium');
     openNewMessageModal();
   });
 
@@ -108,6 +136,7 @@ function initEventListeners() {
   if (messageForm) {
     messageForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      triggerHaptic('medium');
       await sendMessage();
     });
   }
@@ -132,7 +161,10 @@ function initEventListeners() {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         if (messageInput.value.trim()) {
+          triggerHaptic('medium');
           sendMessage();
+        } else {
+          triggerHaptic('warning');
         }
       }
     });
@@ -148,16 +180,19 @@ function initEventListeners() {
 
   // Back to list button (mobile)
   document.getElementById('back-to-list-btn')?.addEventListener('click', () => {
+    triggerHaptic('light');
     showConversationList();
   });
 
   // Back to dashboard button (mobile)
   document.getElementById('back-to-dashboard-btn')?.addEventListener('click', () => {
+    triggerHaptic('light');
     window.location.href = './dashboard.html';
   });
 
   // Floating Action Button for new message (mobile)
   document.getElementById('fab-new-message')?.addEventListener('click', () => {
+    triggerHaptic('medium');
     openNewMessageModal();
   });
 
@@ -524,7 +559,7 @@ function renderMessages() {
       (new Date(message.created_at) - new Date(prevMessage.created_at)) > 5 * 60 * 1000; // 5 minutes
 
     return `
-      <div class="flex items-end gap-2 ${isSent ? 'flex-row-reverse' : ''}">
+      <div class="message-item flex items-end gap-2 ${isSent ? 'flex-row-reverse' : ''}" data-message-id="${message.id}">
         ${showAvatar && !isSent ? `
           <div class="flex-shrink-0">
             ${senderAvatar 
@@ -535,7 +570,7 @@ function renderMessages() {
         ` : !isSent ? '<div class="w-8"></div>' : ''}
         <div class="message-bubble ${isSent ? 'message-bubble-sent' : 'message-bubble-received'} px-4 py-2">
           ${!isSent && showAvatar ? `<p class="text-xs font-semibold mb-1 ${isSent ? 'text-white/80' : 'text-gray-600 dark:text-gray-400'}">${escapeHtml(senderName)}</p>` : ''}
-          <p class="text-sm whitespace-pre-wrap">${escapeHtml(message.content)}</p>
+          <p class="text-sm whitespace-pre-wrap">${escapeHtml(message.content || '')}</p>
           <div class="flex items-center gap-1 mt-1 ${isSent ? 'justify-end' : 'justify-start'}">
             <span class="text-xs ${isSent ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}">${timestamp}</span>
             ${isEdited ? `<span class="text-xs ${isSent ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}">(edited)</span>` : ''}
@@ -555,10 +590,17 @@ function renderMessages() {
 // ========== SEND MESSAGE ==========
 async function sendMessage() {
   const messageInput = document.getElementById('message-input');
-  if (!messageInput || !currentConversation) return;
+  if (!messageInput || !currentConversation) {
+    toast?.error('No conversation selected', 'Error');
+    triggerHaptic('error');
+    return;
+  }
 
   const content = messageInput.value.trim();
-  if (!content) return;
+  if (!content) {
+    triggerHaptic('warning');
+    return;
+  }
 
   try {
     // Disable input and button
@@ -578,7 +620,10 @@ async function sendMessage() {
       .select('*')
       .single();
 
-    if (insertError) throw insertError;
+    if (insertError) {
+      triggerHaptic('error');
+      throw insertError;
+    }
 
     // Fetch sender profile separately (to avoid PostgREST relationship errors)
     let senderProfile = null;
@@ -605,7 +650,7 @@ async function sendMessage() {
     };
     messages.push(messageWithSender);
 
-    // Re-render messages
+    // Re-render messages with animation
     renderMessages();
     
     // Ensure conversation view stays visible
@@ -614,6 +659,8 @@ async function sendMessage() {
     // Scroll to bottom after a short delay to ensure DOM is updated
     setTimeout(() => {
       scrollToBottom();
+      // Trigger success haptic after scroll
+      triggerHaptic('success');
     }, 50);
     
     // Mark as read
@@ -623,6 +670,7 @@ async function sendMessage() {
     await loadConversations();
   } catch (error) {
     console.error('Error sending message:', error);
+    triggerHaptic('error');
     toast?.error('Failed to send message', 'Error');
   } finally {
     const messageInput = document.getElementById('message-input');
@@ -903,24 +951,53 @@ function showConversationView() {
   const viewEl = document.getElementById('conversation-view');
 
   if (!currentConversation) {
-    // No conversation selected, show empty state
-    if (emptyEl) emptyEl.classList.remove('hidden');
-    if (activeEl) activeEl.classList.add('hidden');
+    // No conversation selected, show empty state with fade in
+    if (emptyEl) {
+      emptyEl.classList.remove('hidden');
+      emptyEl.style.opacity = '0';
+      requestAnimationFrame(() => {
+        emptyEl.style.opacity = '1';
+      });
+    }
+    if (activeEl) {
+      activeEl.classList.add('hidden');
+      activeEl.style.opacity = '0';
+    }
     // Show back button and FAB when on empty state (conversation list)
     updateMobileNavigation(true);
     return;
   }
 
-  // Conversation is selected, show active view
-  if (emptyEl) emptyEl.classList.add('hidden');
-  if (activeEl) activeEl.classList.remove('hidden');
+  // Conversation is selected, show active view with smooth transition
+  if (emptyEl) {
+    emptyEl.style.opacity = '0';
+    setTimeout(() => {
+      emptyEl.classList.add('hidden');
+    }, 200);
+  }
+  if (activeEl) {
+    activeEl.classList.remove('hidden');
+    activeEl.style.opacity = '0';
+    requestAnimationFrame(() => {
+      activeEl.style.opacity = '1';
+    });
+  }
   
   // On mobile, hide list and show view
   if (window.innerWidth < 768) {
-    if (listEl) listEl.classList.add('hidden');
+    if (listEl) {
+      listEl.style.opacity = '0';
+      setTimeout(() => {
+        listEl.classList.add('hidden');
+      }, 200);
+    }
     if (viewEl) {
       viewEl.classList.remove('hidden');
       viewEl.classList.add('flex');
+      viewEl.style.opacity = '0';
+      requestAnimationFrame(() => {
+        viewEl.style.opacity = '1';
+      });
     }
     // Hide back button and FAB when viewing conversation
     updateMobileNavigation(false);
@@ -937,6 +1014,7 @@ function showConversationView() {
     if (viewEl) {
       viewEl.classList.remove('hidden');
       viewEl.classList.add('md:block');
+      viewEl.style.opacity = '1';
     }
     // Always show back button and FAB on desktop (they're hidden via CSS)
     updateMobileNavigation(true);
@@ -947,10 +1025,19 @@ function showConversationList() {
   const listEl = document.getElementById('conversation-list');
   const viewEl = document.getElementById('conversation-view');
 
-  if (listEl) listEl.classList.remove('hidden');
+  if (listEl) {
+    listEl.classList.remove('hidden');
+    listEl.style.opacity = '0';
+    requestAnimationFrame(() => {
+      listEl.style.opacity = '1';
+    });
+  }
   if (viewEl) {
-    viewEl.classList.add('hidden');
-    viewEl.classList.remove('flex', 'md:block');
+    viewEl.style.opacity = '0';
+    setTimeout(() => {
+      viewEl.classList.add('hidden');
+      viewEl.classList.remove('flex', 'md:block');
+    }, 200);
   }
   
   // Clear current conversation
@@ -1068,6 +1155,7 @@ function initSwipeToGoBack() {
     // Swipe right to go back (threshold: 50px or fast swipe)
     if (isSwiping && deltaX > 0 && currentConversation) {
       if (deltaX > 50 || (deltaX > 30 && swipeSpeed > 0.5)) {
+        triggerHaptic('medium');
         showConversationList();
       }
     }
@@ -1155,6 +1243,7 @@ function initConversationItemSwipe() {
       
       if (Math.abs(currentX) > 70) {
         // Snap to revealed position
+        triggerHaptic('light');
         item.style.transform = 'translateX(-140px)';
         actions.style.opacity = '1';
         actions.style.pointerEvents = 'auto';
@@ -1193,11 +1282,14 @@ function initConversationItemSwipe() {
         revealedItems.delete(item);
         
         if (action === 'archive') {
+          triggerHaptic('medium');
           // TODO: Implement archive conversation
           toast?.info('Archive feature coming soon', 'Info');
         } else if (action === 'delete') {
+          triggerHaptic('heavy');
           // TODO: Implement delete conversation
           if (confirm('Are you sure you want to delete this conversation?')) {
+            triggerHaptic('success');
             toast?.info('Delete feature coming soon', 'Info');
           }
         }
@@ -1288,9 +1380,11 @@ function initPullToRefresh() {
   
   conversationsContainer.addEventListener('touchend', () => {
     if (isPulling && pullDistance >= 70) {
-      // Trigger refresh
+      // Trigger refresh with haptic feedback
+      triggerHaptic('medium');
       indicator.querySelector('i').classList.add('animate-spin');
       loadConversations().finally(() => {
+        triggerHaptic('success');
         setTimeout(() => {
           indicator.querySelector('i').classList.remove('animate-spin');
           indicator.style.opacity = '0';
