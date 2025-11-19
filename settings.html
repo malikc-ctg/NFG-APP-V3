@@ -1648,14 +1648,19 @@
         statusSelect.value = user.status;
       }
       
-      // Show/hide sections based on current user's role
+      // Show/hide sections based on current user's role and the viewed user's role
       if (currentUserData && canManageUsers()) {
         document.getElementById('role-management-section').classList.remove('hidden');
-        document.getElementById('site-assignments-section').classList.remove('hidden');
         document.getElementById('danger-zone-section').classList.remove('hidden');
         
-        // Load assigned sites
-        await loadUserSites(userId);
+        // Hide site assignments section if viewed user is admin (admins can see all sites)
+        if (user.role === 'admin') {
+          document.getElementById('site-assignments-section').classList.add('hidden');
+        } else {
+          document.getElementById('site-assignments-section').classList.remove('hidden');
+          // Load assigned sites only for non-admin users
+          await loadUserSites(userId);
+        }
       } else {
         document.getElementById('role-management-section').classList.add('hidden');
         document.getElementById('site-assignments-section').classList.add('hidden');
