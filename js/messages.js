@@ -69,9 +69,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     lucide.createIcons();
   }
   
-  // Initialize mobile navigation visibility
-  // Start with hidden, will be shown by updateMobileNavigation after conversations load
-  updateMobileNavigation(false);
+  // Initialize mobile navigation visibility after a short delay to ensure DOM is ready
+  setTimeout(() => {
+    // Check if we're viewing a conversation or on list
+    const activeEl = document.getElementById('conversation-active');
+    const isViewingConversation = activeEl && !activeEl.classList.contains('hidden');
+    updateMobileNavigation(!isViewingConversation);
+  }, 100);
 });
 
 // ========== EVENT LISTENERS ==========
