@@ -483,35 +483,16 @@ async function loadMessages(conversationId) {
     if (emptyEl) emptyEl.classList.add('hidden');
     if (listEl) listEl.classList.add('hidden');
 
-    // Fetch messages
+    // Fetch messages (include deleted ones - they'll show as "deleted" in UI)
     const { data: messagesData, error: messagesError } = await supabase
       .from('messages')
       .select('*')
       .eq('conversation_id', conversationId)
-      .is('deleted_at', null)
       .order('created_at', { ascending: true });
 
     if (messagesError) throw messagesError;
 
     messages = messagesData || [];
-    
-    // Fetch user's deletions for this conversation
-    if (messages.length > 0) {
-      const messageIds = messages.map(m => m.id);
-      const { data: deletionsData, error: deletionsError } = await supabase
-        .from('message_deletions')
-        .select('message_id')
-        .in('message_id', messageIds)
-        .eq('user_id', currentUser.id);
-      
-      if (deletionsError) {
-        console.warn('Error fetching message deletions:', deletionsError);
-      } else {
-        // Filter out deleted messages
-        const deletedMessageIds = new Set((deletionsData || []).map(d => d.message_id));
-        messages = messages.filter(m => !deletedMessageIds.has(m.id));
-      }
-    }
 
     // Fetch sender profiles separately (to avoid PostgREST relationship errors)
     if (messages.length > 0) {
@@ -609,9 +590,10 @@ function renderMessages() {
 
     // Check if message can be edited (within 15 minutes)
     const messageAge = Date.now() - new Date(message.created_at).getTime();
-    const canEdit = isSent && messageAge < MESSAGE_EDIT_WINDOW_MS;
-    // Anyone can delete any message (it will delete for everyone)
-    const canDelete = true; // Messages are filtered out entirely, so all visible messages can be deleted
+    const canEdit = isSent && !message.deleted_at && messageAge < MESSAGE_EDIT_WINDOW_MS;
+    // Only sender can delete their own message
+    const canDelete = isSent && !message.deleted_at;
+    const isDeleted = !!message.deleted_at;
 
     return `
       <div class="message-item flex items-end gap-2 ${isSent ? 'flex-row-reverse' : ''}" data-message-id="${message.id}">
@@ -623,9 +605,13 @@ function renderMessages() {
             }
           </div>
         ` : !isSent ? '<div class="w-8"></div>' : ''}
-        <div class="message-bubble ${isSent ? 'message-bubble-sent' : 'message-bubble-received'} px-4 py-2 relative group" data-message-id="${message.id}">
+        <div class="message-bubble ${isSent ? 'message-bubble-sent' : 'message-bubble-received'} px-4 py-2 relative group ${isDeleted ? 'opacity-60' : ''}" data-message-id="${message.id}">
           ${!isSent && showAvatar ? `<p class="text-xs font-semibold mb-1 ${isSent ? 'text-white/80' : 'text-gray-600 dark:text-gray-400'}">${escapeHtml(senderName)}</p>` : ''}
-          <p class="message-content text-sm whitespace-pre-wrap">${escapeHtml(message.content || '')}</p>
+          ${isDeleted ? `
+            <p class="text-sm italic ${isSent ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}">This message was deleted</p>
+          ` : `
+            <p class="message-content text-sm whitespace-pre-wrap">${escapeHtml(message.content || '')}</p>
+          `}
           <div class="flex items-center gap-1 mt-1 ${isSent ? 'justify-end' : 'justify-start'}">
             <span class="text-xs ${isSent ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}">${timestamp}</span>
             ${isEdited ? `<span class="text-xs ${isSent ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}">(edited)</span>` : ''}
@@ -832,27 +818,21 @@ function subscribeToMessages(conversationId) {
       await loadConversations();
     })
     .on('postgres_changes', {
-      event: 'INSERT',
+      event: 'UPDATE',
       schema: 'public',
-      table: 'message_deletions',
-      filter: `user_id=eq.${currentUser.id}`
+      table: 'messages',
+      filter: `conversation_id=eq.${conversationId}`
     }, async (payload) => {
-      // Message deletion received - remove from local array and re-render
-      const deletion = payload.new;
-      const deletedMessageId = deletion.message_id;
+      // Message updated (might be deleted)
+      const updatedMessage = payload.new;
+      const messageIndex = messages.findIndex(m => m.id === updatedMessage.id);
       
-      // Check if this message is in the current conversation's messages
-      // (all messages in local array are already from current conversation)
-      const deletedMessage = messages.find(m => m.id === deletedMessageId);
-      if (deletedMessage && currentConversation) {
-        // Remove message from local array
-        messages = messages.filter(m => m.id !== deletedMessageId);
+      if (messageIndex !== -1) {
+        // Update local message
+        messages[messageIndex] = { ...messages[messageIndex], ...updatedMessage };
         
         // Re-render messages
         renderMessages();
-        
-        // Update conversation list to reflect deleted message
-        await loadConversations();
       }
     })
     .subscribe();
@@ -1887,54 +1867,36 @@ async function editMessage(messageId) {
   }
 }
 
-// Delete message (always deletes for everyone - all participants)
+// Delete message (soft delete - just sets deleted_at)
 async function deleteMessage(messageId) {
   const message = messages.find(m => m.id === messageId);
   if (!message || !currentConversation) return;
   
-  const confirmed = confirm('Delete this message? It will be permanently removed from this conversation for everyone.');
+  const confirmed = confirm('Delete this message?');
   if (!confirmed) return;
   
   try {
     triggerHaptic('heavy');
     
-    // Get all participants in the conversation
-    const { data: participants, error: participantsError } = await supabase
-      .from('conversation_participants')
-      .select('user_id')
-      .eq('conversation_id', currentConversation.id);
+    // Soft delete: just set deleted_at on the message
+    const { error } = await supabase
+      .from('messages')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', messageId)
+      .eq('sender_id', currentUser.id); // Only sender can delete
     
-    if (participantsError) throw participantsError;
+    if (error) throw error;
     
-    // Create deletion records for all participants (deletes for everyone)
-    // Insert one at a time to avoid RLS issues with bulk inserts
-    const deletionRecords = (participants || []).map(p => ({
-      message_id: messageId,
-      user_id: p.user_id
-    }));
-    
-    // Insert records one by one (ignore duplicates)
-    for (const record of deletionRecords) {
-      const { error: insertError } = await supabase
-        .from('message_deletions')
-        .insert(record)
-        .select()
-        .single();
-      
-      // Ignore duplicate key errors (record already exists)
-      if (insertError && insertError.code !== '23505' && !insertError.message?.includes('duplicate')) {
-        console.error('Error creating deletion record:', insertError);
-        throw insertError;
-      }
+    // Update local message
+    const messageIndex = messages.findIndex(m => m.id === messageId);
+    if (messageIndex !== -1) {
+      messages[messageIndex].deleted_at = new Date().toISOString();
     }
-    
-    // Remove from local messages array
-    messages = messages.filter(m => m.id !== messageId);
     
     // Re-render messages
     renderMessages();
     triggerHaptic('success');
-    toast?.success('Message deleted for everyone', 'Success');
+    toast?.success('Message deleted', 'Success');
   } catch (error) {
     console.error('Error deleting message:', error);
     triggerHaptic('error');
