@@ -408,25 +408,26 @@ function renderConversations(filteredConversations = null) {
               </button>
               <!-- Dropdown Menu -->
               <div 
-                class="conversation-menu-dropdown absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 min-w-[140px] z-50 hidden"
+                class="conversation-menu-dropdown absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl py-1 min-w-[150px] z-[9999] hidden"
                 data-conversation-id="${conv.id}"
                 onclick="event.stopPropagation();"
+                style="overflow: visible !important;"
               >
                 <button 
-                  class="conversation-action-btn archive-btn-desktop w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition flex items-center gap-2"
+                  class="conversation-action-btn archive-btn-desktop w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-colors flex items-center gap-2.5 whitespace-nowrap"
                   data-action="archive" 
                   data-conversation-id="${conv.id}"
                 >
-                  <i data-lucide="archive" class="w-4 h-4 text-yellow-600 dark:text-yellow-400"></i>
-                  <span>Archive</span>
+                  <i data-lucide="archive" class="w-4 h-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0"></i>
+                  <span class="flex-1">Archive</span>
                 </button>
                 <button 
-                  class="conversation-action-btn delete-btn-desktop w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition flex items-center gap-2"
+                  class="conversation-action-btn delete-btn-desktop w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2.5 whitespace-nowrap"
                   data-action="delete" 
                   data-conversation-id="${conv.id}"
                 >
-                  <i data-lucide="trash-2" class="w-4 h-4"></i>
-                  <span>Delete</span>
+                  <i data-lucide="trash-2" class="w-4 h-4 flex-shrink-0"></i>
+                  <span class="flex-1">Delete</span>
                 </button>
               </div>
             </div>

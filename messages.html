@@ -555,6 +555,100 @@
         touch-action: pan-y;
       }
       
+      /* Desktop conversation menu dropdown */
+      .conversation-actions-desktop {
+        position: relative;
+        z-index: 10;
+      }
+      
+      .conversation-menu-dropdown {
+        position: absolute !important;
+        right: 0 !important;
+        top: 100% !important;
+        margin-top: 4px !important;
+        background-color: white !important;
+        border: 1px solid #E5E7EB !important;
+        border-radius: 8px !important;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+        padding: 4px 0 !important;
+        min-width: 150px !important;
+        z-index: 9999 !important;
+        overflow: visible !important;
+      }
+      
+      .dark .conversation-menu-dropdown {
+        background-color: #1F2937 !important;
+        border-color: #374151 !important;
+      }
+      
+      .conversation-menu-dropdown button {
+        display: flex !important;
+        align-items: center !important;
+        width: 100% !important;
+        padding: 10px 16px !important;
+        text-align: left !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        color: #374151 !important;
+        background-color: transparent !important;
+        border: none !important;
+        cursor: pointer !important;
+        transition: background-color 0.15s ease !important;
+        white-space: nowrap !important;
+      }
+      
+      .dark .conversation-menu-dropdown button {
+        color: #D1D5DB !important;
+      }
+      
+      .conversation-menu-dropdown button:hover {
+        background-color: #F9FAFB !important;
+      }
+      
+      .dark .conversation-menu-dropdown button:hover {
+        background-color: #374151 !important;
+      }
+      
+      .conversation-menu-dropdown .archive-btn-desktop:hover {
+        background-color: #FEF3C7 !important;
+        color: #92400E !important;
+      }
+      
+      .dark .conversation-menu-dropdown .archive-btn-desktop:hover {
+        background-color: #78350F !important;
+        color: #FCD34D !important;
+      }
+      
+      .conversation-menu-dropdown .delete-btn-desktop {
+        color: #DC2626 !important;
+      }
+      
+      .dark .conversation-menu-dropdown .delete-btn-desktop {
+        color: #F87171 !important;
+      }
+      
+      .conversation-menu-dropdown .delete-btn-desktop:hover {
+        background-color: #FEE2E2 !important;
+        color: #991B1B !important;
+      }
+      
+      .dark .conversation-menu-dropdown .delete-btn-desktop:hover {
+        background-color: #7F1D1D !important;
+        color: #FCA5A5 !important;
+      }
+      
+      .conversation-menu-dropdown button i {
+        width: 16px !important;
+        height: 16px !important;
+        margin-right: 12px !important;
+        flex-shrink: 0 !important;
+      }
+      
+      .conversation-menu-dropdown button span {
+        flex: 1 !important;
+        display: block !important;
+      }
+      
       .conversation-item {
         touch-action: pan-y;
         will-change: transform;
