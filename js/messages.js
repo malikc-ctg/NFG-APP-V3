@@ -1863,6 +1863,22 @@ async function deleteMessage(messageId, deleteForEveryone = false) {
       
       if (isSender) {
         // User sent this message - can soft delete on server (RLS allows it)
+        // Check if message is already deleted
+        if (message.deleted_at) {
+          toast?.info('Message is already deleted', 'Info');
+          return;
+        }
+        
+        // Verify message sender matches current user before attempting update
+        if (message.sender_id !== currentUser.id) {
+          console.error('Message sender mismatch:', { 
+            messageSenderId: message.sender_id, 
+            currentUserId: currentUser.id 
+          });
+          toast?.error('Cannot delete this message', 'Error');
+          return;
+        }
+        
         const { error } = await supabase
           .from('messages')
           .update({
@@ -1870,9 +1886,21 @@ async function deleteMessage(messageId, deleteForEveryone = false) {
             updated_at: new Date().toISOString()
           })
           .eq('id', messageId)
-          .eq('sender_id', currentUser.id); // Required by RLS policy
+          .eq('sender_id', currentUser.id) // Required by RLS policy
+          .is('deleted_at', null); // Ensure message isn't already deleted
         
-        if (error) throw error;
+        if (error) {
+          console.error('Error details:', {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            messageId,
+            senderId: currentUser.id,
+            messageSenderId: message.sender_id
+          });
+          throw error;
+        }
         
         // Update local message
         message.deleted_at = new Date().toISOString();
@@ -1914,6 +1942,23 @@ async function deleteMessage(messageId, deleteForEveryone = false) {
       
       // Use soft delete (set deleted_at) instead of hard delete
       // This works with the existing RLS UPDATE policy
+      
+      // Check if message is already deleted
+      if (message.deleted_at) {
+        toast?.info('Message is already deleted', 'Info');
+        return;
+      }
+      
+      // Verify message sender matches current user before attempting update
+      if (message.sender_id !== currentUser.id) {
+        console.error('Message sender mismatch:', { 
+          messageSenderId: message.sender_id, 
+          currentUserId: currentUser.id 
+        });
+        toast?.error('Cannot delete this message', 'Error');
+        return;
+      }
+      
       const { error } = await supabase
         .from('messages')
         .update({
@@ -1921,9 +1966,21 @@ async function deleteMessage(messageId, deleteForEveryone = false) {
           updated_at: new Date().toISOString()
         })
         .eq('id', messageId)
-        .eq('sender_id', currentUser.id);
+        .eq('sender_id', currentUser.id) // Required by RLS policy
+        .is('deleted_at', null); // Ensure message isn't already deleted
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          messageId,
+          senderId: currentUser.id,
+          messageSenderId: message.sender_id
+        });
+        throw error;
+      }
       
       // Update local message
       message.deleted_at = new Date().toISOString();
