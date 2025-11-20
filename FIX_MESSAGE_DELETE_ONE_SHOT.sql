@@ -41,10 +41,11 @@ ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 -- Step 3: Create SINGLE unified UPDATE policy
 -- This allows users to update ANY field on their own messages
 -- No restrictions - can edit content, set deleted_at, etc.
+-- IMPORTANT: Using PERMISSIVE so multiple policies can work together if needed
 CREATE POLICY "Users can update their own messages"
   ON messages FOR UPDATE
-  USING (sender_id = auth.uid())
-  WITH CHECK (sender_id = auth.uid());
+  USING (sender_id = auth.uid())  -- Can only update messages they sent
+  WITH CHECK (sender_id = auth.uid());  -- Updated row must still belong to them
 
 -- Step 4: Ensure permissions
 GRANT UPDATE ON messages TO authenticated;
