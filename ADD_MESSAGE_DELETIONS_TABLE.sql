@@ -23,6 +23,13 @@ ALTER TABLE message_deletions ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for message_deletions
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view their own deletions" ON message_deletions;
+DROP POLICY IF EXISTS "Users can create their own deletions" ON message_deletions;
+DROP POLICY IF EXISTS "Users can create deletions for conversation participants" ON message_deletions;
+DROP POLICY IF EXISTS "Users can update their own deletions" ON message_deletions;
+DROP POLICY IF EXISTS "Users can delete their own deletion records" ON message_deletions;
+
 -- Users can view their own deletions
 CREATE POLICY "Users can view their own deletions"
   ON message_deletions FOR SELECT
