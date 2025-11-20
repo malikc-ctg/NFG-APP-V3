@@ -4,20 +4,32 @@
 -- Just allows users to set deleted_at on their own messages
 -- Messages stay in database, just show "This message was deleted" in UI
 
--- Drop any existing conflicting policies
+-- Drop ALL existing UPDATE policies on messages to avoid conflicts
 DROP POLICY IF EXISTS "Users can edit their own messages" ON messages;
 DROP POLICY IF EXISTS "Users can delete their own messages" ON messages;
 DROP POLICY IF EXISTS "Users can update their own messages" ON messages;
 
--- Single policy: Users can update their own messages
--- This allows:
--- 1. Editing content (when deleted_at IS NULL)
--- 2. Setting deleted_at (soft delete)
+-- Single unified policy: Users can update their own messages
+-- USING: Check if user owns the message (can update existing messages they sent)
+-- WITH CHECK: Ensure the updated message still belongs to them (prevents changing sender_id)
+-- No restrictions on deleted_at - allows both editing and soft deleting
 CREATE POLICY "Users can update their own messages"
   ON messages FOR UPDATE
   USING (sender_id = auth.uid())
   WITH CHECK (sender_id = auth.uid());
 
--- Ensure UPDATE permission is granted
+-- Ensure UPDATE permission is granted (should already exist, but ensure it)
 GRANT UPDATE ON messages TO authenticated;
+
+-- Verify the policy was created
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'messages' 
+    AND policyname = 'Users can update their own messages'
+  ) THEN
+    RAISE EXCEPTION 'Policy creation failed!';
+  END IF;
+END $$;
 
