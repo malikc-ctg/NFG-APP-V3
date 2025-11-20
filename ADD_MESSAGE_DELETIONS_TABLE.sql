@@ -91,5 +91,16 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON message_deletions TO authenticated;
 
 -- Enable Realtime publication for message_deletions
 -- This allows real-time updates when messages are deleted
-ALTER PUBLICATION supabase_realtime ADD TABLE message_deletions;
+-- Only add if not already in publication (idempotent)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 
+    FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' 
+    AND tablename = 'message_deletions'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE message_deletions;
+  END IF;
+END $$;
 
