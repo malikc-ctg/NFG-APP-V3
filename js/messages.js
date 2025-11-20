@@ -1907,19 +1907,26 @@ async function deleteMessage(messageId) {
     if (participantsError) throw participantsError;
     
     // Create deletion records for all participants (deletes for everyone)
+    // Insert one at a time to avoid RLS issues with bulk inserts
     const deletionRecords = (participants || []).map(p => ({
       message_id: messageId,
       user_id: p.user_id
     }));
     
-    const { error } = await supabase
-      .from('message_deletions')
-      .upsert(deletionRecords, {
-        onConflict: 'message_id,user_id',
-        ignoreDuplicates: false
-      });
-    
-    if (error) throw error;
+    // Insert records one by one (ignore duplicates)
+    for (const record of deletionRecords) {
+      const { error: insertError } = await supabase
+        .from('message_deletions')
+        .insert(record)
+        .select()
+        .single();
+      
+      // Ignore duplicate key errors (record already exists)
+      if (insertError && insertError.code !== '23505' && !insertError.message?.includes('duplicate')) {
+        console.error('Error creating deletion record:', insertError);
+        throw insertError;
+      }
+    }
     
     // Remove from local messages array
     messages = messages.filter(m => m.id !== messageId);

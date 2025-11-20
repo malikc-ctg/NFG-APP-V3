@@ -66,13 +66,18 @@ CREATE POLICY "Users can view their own deletions"
   USING (user_id = auth.uid());
 
 -- Users can create deletion records for participants in their conversations
--- Use SECURITY DEFINER function to bypass RLS checks
+-- Simplified: If user is a participant in the message's conversation, they can create deletion records
 CREATE POLICY "Users can create deletions for conversation participants"
   ON message_deletions FOR INSERT
   WITH CHECK (
-    -- Allow if current user is a participant in the message's conversation
-    -- This allows creating deletion records for ANY user in the conversation
-    user_is_participant_in_message_conversation(message_id)
+    -- Check directly in the policy to avoid function call issues
+    EXISTS (
+      SELECT 1
+      FROM messages m
+      INNER JOIN conversation_participants cp ON cp.conversation_id = m.conversation_id
+      WHERE m.id = message_deletions.message_id
+        AND cp.user_id = auth.uid()
+    )
   );
 
 -- Users can update their own deletion records (in case we want to undo)
