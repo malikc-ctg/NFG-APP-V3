@@ -113,6 +113,98 @@ function triggerHaptic(type = 'light') {
   }
 }
 
+// ========== PHASE 2: FILE ATTACHMENTS ==========
+let selectedFiles = []; // Track selected files for attachment
+
+// Handle file selection
+function initFileUpload() {
+  const fileInput = document.getElementById('file');
+  if (!fileInput) return;
+  
+  fileInput.addEventListener('change', (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    
+    // Validate file size (10 MB limit)
+    const maxSize = 10 * 1024 * 1024; // 10 MB
+    const validFiles = files.filter(file => {
+      if (file.size > maxSize) {
+        toast?.error(`File "${file.name}" is too large. Maximum size is 10 MB.`, 'File Too Large');
+        triggerHaptic('warning');
+        return false;
+      }
+      return true;
+    });
+    
+    if (validFiles.length > 0) {
+      selectedFiles = [...selectedFiles, ...validFiles];
+      updateFilePreview();
+      triggerHaptic('light');
+    }
+    
+    // Reset input to allow selecting same file again
+    fileInput.value = '';
+  });
+}
+
+// Show file preview before sending
+function updateFilePreview() {
+  const messageBox = document.querySelector('.messageBox');
+  if (!messageBox) return;
+  
+  // Remove existing preview
+  const existingPreview = messageBox.querySelector('.file-preview');
+  if (existingPreview) existingPreview.remove();
+  
+  if (selectedFiles.length === 0) return;
+  
+  // Create preview container
+  const preview = document.createElement('div');
+  preview.className = 'file-preview flex flex-wrap gap-2 p-2 border-t border-gray-200 dark:border-gray-700';
+  preview.innerHTML = selectedFiles.map((file, index) => {
+    const isImage = file.type.startsWith('image/');
+    const fileSize = (file.size / 1024).toFixed(1); // KB
+    
+    return `
+      <div class="file-preview-item flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm">
+        ${isImage ? `
+          <img src="${URL.createObjectURL(file)}" alt="${file.name}" class="w-10 h-10 object-cover rounded">
+        ` : `
+          <i data-lucide="file" class="w-5 h-5 text-gray-600 dark:text-gray-400"></i>
+        `}
+        <div class="flex-1 min-w-0">
+          <p class="text-xs font-medium truncate">${escapeHtml(file.name)}</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">${fileSize} KB</p>
+        </div>
+        <button class="remove-file-btn p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600" data-file-index="${index}" title="Remove">
+          <i data-lucide="x" class="w-4 h-4 text-gray-600 dark:text-gray-400"></i>
+        </button>
+      </div>
+    `;
+  }).join('');
+  
+  // Insert preview before message input
+  const messageInput = document.getElementById('message-input');
+  if (messageInput) {
+    messageBox.insertBefore(preview, messageInput.parentElement || messageInput);
+  }
+  
+  // Recreate icons
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+  
+  // Attach remove file listeners
+  preview.querySelectorAll('.remove-file-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const index = parseInt(btn.dataset.fileIndex);
+      selectedFiles.splice(index, 1);
+      updateFilePreview();
+      triggerHaptic('light');
+    });
+  });
+}
+
 // ========== EVENT LISTENERS ==========
 function initEventListeners() {
   // New message button
@@ -140,6 +232,9 @@ function initEventListeners() {
     });
   }
 
+  // File upload (Phase 2)
+  initFileUpload();
+
   // Message form submission
   const messageForm = document.getElementById('message-form');
   if (messageForm) {
@@ -166,10 +261,10 @@ function initEventListeners() {
         messageBox.style.minHeight = Math.max(44, newHeight + 16) + 'px';
       }
 
-      // Enable/disable send button
+      // Enable/disable send button (enable if text OR files are selected)
       const sendBtn = document.getElementById('send-message-btn');
       if (sendBtn) {
-        sendBtn.disabled = !e.target.value.trim();
+        sendBtn.disabled = !e.target.value.trim() && selectedFiles.length === 0;
       }
     });
 
@@ -178,7 +273,7 @@ function initEventListeners() {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         e.stopPropagation(); // Prevent form submission
-        if (messageInput.value.trim()) {
+        if (messageInput.value.trim() || selectedFiles.length > 0) {
           triggerHaptic('medium');
           sendMessage();
         } else {
@@ -193,7 +288,7 @@ function initEventListeners() {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         e.stopPropagation();
-        if (messageInput.value.trim()) {
+        if (messageInput.value.trim() || selectedFiles.length > 0) {
           triggerHaptic('medium');
           sendMessage();
         }
@@ -703,7 +798,25 @@ function renderMessages() {
           ${isDeleted ? `
             <p class="text-sm italic ${isSent ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}">This message was deleted</p>
           ` : `
-            <p class="message-content text-sm whitespace-pre-wrap">${escapeHtml(message.content || '')}</p>
+            ${message.message_type === 'image' && message.attachment_url ? `
+              <div class="mb-2">
+                <img src="${message.attachment_url}" alt="${escapeHtml(message.attachment_name || 'Image')}" 
+                     class="max-w-xs rounded-lg cursor-pointer" 
+                     onclick="window.open('${message.attachment_url}', '_blank')">
+              </div>
+            ` : message.message_type === 'file' && message.attachment_url ? `
+              <div class="mb-2">
+                <a href="${message.attachment_url}" target="_blank" 
+                   class="inline-flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition">
+                  <i data-lucide="file" class="w-5 h-5 text-gray-600 dark:text-gray-400"></i>
+                  <span class="text-sm font-medium">${escapeHtml(message.attachment_name || 'File')}</span>
+                  <i data-lucide="download" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
+                </a>
+              </div>
+            ` : ''}
+            ${message.content ? `
+              <p class="message-content text-sm whitespace-pre-wrap">${escapeHtml(message.content || '')}</p>
+            ` : ''}
           `}
           <div class="flex items-center gap-1 mt-1 ${isSent ? 'justify-end' : 'justify-start'}">
             <span class="text-xs ${isSent ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}">${timestamp}</span>
@@ -753,7 +866,9 @@ async function sendMessage() {
   }
 
   const content = messageInput.value.trim();
-  if (!content) {
+  
+  // Allow sending with just files (no text) or just text (no files)
+  if (!content && selectedFiles.length === 0) {
     triggerHaptic('warning');
     return;
   }
@@ -764,15 +879,62 @@ async function sendMessage() {
     const sendBtn = document.getElementById('send-message-btn');
     if (sendBtn) sendBtn.disabled = true;
 
+    // Upload files if any are selected (Phase 2)
+    let attachmentUrl = null;
+    let attachmentName = null;
+    let messageType = 'text';
+    
+    if (selectedFiles.length > 0) {
+      const file = selectedFiles[0]; // For now, support single file (can expand to multiple later)
+      const isImage = file.type.startsWith('image/');
+      
+      // Upload file to Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${currentUser.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const storagePath = `message-attachments/${fileName}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('message-attachments')
+        .upload(storagePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+      
+      if (uploadError) {
+        triggerHaptic('error');
+        throw new Error('Failed to upload file: ' + uploadError.message);
+      }
+      
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('message-attachments')
+        .getPublicUrl(storagePath);
+      
+      attachmentUrl = urlData.publicUrl;
+      attachmentName = file.name;
+      messageType = isImage ? 'image' : 'file';
+      
+      // Clear selected files
+      selectedFiles = [];
+      updateFilePreview();
+    }
+
     // Insert message
+    const messageData = {
+      conversation_id: currentConversation.id,
+      sender_id: currentUser.id,
+      content: content || (attachmentName ? `Sent ${attachmentName}` : ''),
+      message_type: messageType
+    };
+    
+    if (attachmentUrl) {
+      messageData.attachment_url = attachmentUrl;
+      messageData.attachment_name = attachmentName;
+    }
+    
     const { data: newMessage, error: insertError } = await supabase
       .from('messages')
-      .insert({
-        conversation_id: currentConversation.id,
-        sender_id: currentUser.id,
-        content: content,
-        message_type: 'text'
-      })
+      .insert(messageData)
       .select('*')
       .single();
 
@@ -797,6 +959,10 @@ async function sendMessage() {
     messageInput.value = '';
     messageInput.style.height = 'auto';
     const messageBox = messageInput.closest('.messageBox');
+    
+    // Clear file preview
+    selectedFiles = [];
+    updateFilePreview();
     if (messageBox) {
       messageBox.style.height = 'auto';
       messageBox.style.minHeight = '44px';
