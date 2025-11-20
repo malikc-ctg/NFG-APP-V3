@@ -35,6 +35,7 @@ DROP FUNCTION IF EXISTS user_can_delete_for_participant(UUID, UUID);
 
 -- Helper function to check if user can delete message for another participant
 -- Uses SECURITY DEFINER to bypass RLS when checking participants
+-- Uses the existing user_is_participant function which is already working
 CREATE OR REPLACE FUNCTION user_can_delete_for_participant(
   p_message_id UUID,
   p_target_user_id UUID
@@ -53,17 +54,9 @@ BEGIN
   END IF;
   
   -- Check if both current user and target user are participants
-  RETURN EXISTS (
-    SELECT 1
-    FROM conversation_participants cp1
-    WHERE cp1.conversation_id = v_conversation_id
-      AND cp1.user_id = auth.uid()
-  ) AND EXISTS (
-    SELECT 1
-    FROM conversation_participants cp2
-    WHERE cp2.conversation_id = v_conversation_id
-      AND cp2.user_id = p_target_user_id
-  );
+  -- Use the existing user_is_participant function which already has SECURITY DEFINER
+  RETURN user_is_participant(v_conversation_id, auth.uid())
+    AND user_is_participant(v_conversation_id, p_target_user_id);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
