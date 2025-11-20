@@ -145,8 +145,10 @@ function initEventListeners() {
   if (messageForm) {
     messageForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      e.stopPropagation();
       triggerHaptic('medium');
       await sendMessage();
+      return false;
     });
   }
 
