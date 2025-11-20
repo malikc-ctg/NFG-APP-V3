@@ -113,8 +113,10 @@ function triggerHaptic(type = 'light') {
   }
 }
 
-// ========== PHASE 2: FILE ATTACHMENTS ==========
+// ========== PHASE 2: FILE ATTACHMENTS & SEARCH ==========
 let selectedFiles = []; // Track selected files for attachment
+let messageSearchQuery = ''; // Track search query
+let originalMessages = []; // Store original messages before search filter
 
 // Handle file selection
 function initFileUpload() {
@@ -234,6 +236,9 @@ function initEventListeners() {
 
   // File upload (Phase 2)
   initFileUpload();
+  
+  // Message search (Phase 2)
+  initMessageSearch();
 
   // Message form submission
   const messageForm = document.getElementById('message-form');
@@ -744,8 +749,118 @@ async function loadMessages(conversationId) {
   }
 }
 
+// ========== HELPER: HIGHLIGHT SEARCH TERM (Phase 2) ==========
+function highlightSearchTerm(text, query) {
+  if (!query) return text;
+  const regex = new RegExp(`(${escapeRegex(query)})`, 'gi');
+  return text.replace(regex, '<mark class="bg-yellow-200 dark:bg-yellow-800/50 px-1 rounded">$1</mark>');
+}
+
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// ========== MESSAGE SEARCH (Phase 2) ==========
+function initMessageSearch() {
+  const toggleSearchBtn = document.getElementById('toggle-message-search-btn');
+  const searchBar = document.getElementById('message-search-bar');
+  const searchInput = document.getElementById('message-search-input');
+  const closeSearchBtn = document.getElementById('close-message-search-btn');
+  
+  if (!toggleSearchBtn || !searchBar || !searchInput) return;
+  
+  // Toggle search bar
+  toggleSearchBtn.addEventListener('click', () => {
+    searchBar.classList.toggle('hidden');
+    if (!searchBar.classList.contains('hidden')) {
+      searchInput.focus();
+      triggerHaptic('light');
+    }
+  });
+  
+  // Close search
+  if (closeSearchBtn) {
+    closeSearchBtn.addEventListener('click', () => {
+      searchBar.classList.add('hidden');
+      messageSearchQuery = '';
+      searchInput.value = '';
+      filterMessagesBySearch('');
+      triggerHaptic('light');
+    });
+  }
+  
+  // Search input handler
+  let searchTimeout;
+  searchInput.addEventListener('input', (e) => {
+    const query = e.target.value.trim();
+    messageSearchQuery = query;
+    
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      filterMessagesBySearch(query);
+    }, 300); // Debounce 300ms
+  });
+}
+
+function filterMessagesBySearch(query) {
+  const resultsCountEl = document.getElementById('message-search-count');
+  const resultsEl = document.getElementById('message-search-results');
+  
+  if (!query) {
+    // Clear search - show all messages
+    originalMessages = [];
+    renderMessages(false);
+    if (resultsEl) resultsEl.classList.add('hidden');
+    return;
+  }
+  
+  // Store original messages if not already stored
+  if (originalMessages.length === 0) {
+    originalMessages = [...messages];
+  }
+  
+  // Filter messages by search query (case-insensitive)
+  const lowerQuery = query.toLowerCase();
+  const filteredMessages = originalMessages.filter(message => {
+    // Search in content
+    if (message.content && message.content.toLowerCase().includes(lowerQuery)) {
+      return true;
+    }
+    // Search in attachment name
+    if (message.attachment_name && message.attachment_name.toLowerCase().includes(lowerQuery)) {
+      return true;
+    }
+    // Search in sender name
+    if (message.sender) {
+      const senderName = (message.sender.full_name || message.sender.email || '').toLowerCase();
+      if (senderName.includes(lowerQuery)) {
+        return true;
+      }
+    }
+    return false;
+  });
+  
+  // Update messages array temporarily for rendering
+  const previousMessages = messages;
+  messages = filteredMessages;
+  renderMessages(true); // Pass true to indicate search mode (for highlighting)
+  messages = previousMessages; // Restore original messages array
+  
+  // Update results count
+  if (resultsCountEl) {
+    resultsCountEl.textContent = filteredMessages.length;
+  }
+  if (resultsEl) {
+    if (filteredMessages.length > 0) {
+      resultsEl.classList.remove('hidden');
+    } else {
+      resultsEl.classList.add('hidden');
+    }
+  }
+}
+
 // ========== RENDER MESSAGES ==========
-function renderMessages() {
+function renderMessages(isSearchMode = false) {
   const listEl = document.getElementById('messages-list');
   if (!listEl) return;
 
@@ -758,6 +873,9 @@ function renderMessages() {
     seenIds.add(message.id);
     return true; // Unique - keep it
   });
+  
+  // Sort by created_at to ensure correct order after deduplication
+  uniqueMessages.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
   // Messages are already filtered when loaded (deleted messages removed)
   // So we can render all messages in the array
@@ -815,7 +933,7 @@ function renderMessages() {
               </div>
             ` : ''}
             ${message.content ? `
-              <p class="message-content text-sm whitespace-pre-wrap">${escapeHtml(message.content || '')}</p>
+              <p class="message-content text-sm whitespace-pre-wrap">${isSearchMode && messageSearchQuery ? highlightSearchTerm(escapeHtml(message.content), messageSearchQuery) : escapeHtml(message.content)}</p>
             ` : ''}
           `}
           <div class="flex items-center gap-1 mt-1 ${isSent ? 'justify-end' : 'justify-start'}">

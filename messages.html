@@ -309,6 +309,95 @@
       color: #6B7280;
     }
     
+    /* File Preview (Phase 2) */
+    .file-preview {
+      margin-bottom: 8px;
+      border-top: 1px solid #E5E7EB;
+    }
+    
+    .dark .file-preview {
+      border-top-color: #374151;
+    }
+    
+    .file-preview-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      background-color: #F3F4F6;
+      border-radius: 8px;
+      font-size: 14px;
+      max-width: 100%;
+    }
+    
+    .dark .file-preview-item {
+      background-color: #374151;
+    }
+    
+    .file-preview-item img {
+      width: 40px;
+      height: 40px;
+      object-fit: cover;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    
+    .file-preview-item .remove-file-btn {
+      padding: 4px;
+      border-radius: 4px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    
+    .file-preview-item .remove-file-btn:hover {
+      background-color: #E5E7EB;
+    }
+    
+    .dark .file-preview-item .remove-file-btn:hover {
+      background-color: #4B5563;
+    }
+    
+    /* Message Attachment Styles */
+    .message-bubble img {
+      max-width: 100%;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    
+    .message-bubble img:hover {
+      opacity: 0.9;
+    }
+    
+    .message-bubble a {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      text-decoration: none;
+      transition: background-color 0.2s;
+    }
+    
+    .message-bubble-received a {
+      background-color: #F3F4F6;
+      color: #1E293B;
+    }
+    
+    .dark .message-bubble-received a {
+      background-color: #374151;
+      color: #F3F4F6;
+    }
+    
+    .message-bubble-received a:hover {
+      background-color: #E5E7EB;
+    }
+    
+    .dark .message-bubble-received a:hover {
+      background-color: #4B5563;
+    }
+    
     /* Send Button */
     #send-message-btn,
     .sendButton {
