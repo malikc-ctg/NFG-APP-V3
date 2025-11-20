@@ -430,12 +430,30 @@
       transition: all 0.2s;
     }
     
-    .add-reaction-btn:hover {
-      background-color: rgba(13, 71, 161, 0.1);
+    /* Desktop: Show on hover */
+    @media (min-width: 768px) {
+      .message-bubble-wrapper {
+        position: relative;
+      }
+      
+      .message-bubble-wrapper:hover .add-reaction-btn {
+        opacity: 1 !important;
+      }
+      
+      .add-reaction-btn:hover {
+        background-color: rgba(13, 71, 161, 0.1);
+      }
+      
+      .dark .add-reaction-btn:hover {
+        background-color: rgba(59, 130, 246, 0.2);
+      }
     }
     
-    .dark .add-reaction-btn:hover {
-      background-color: rgba(59, 130, 246, 0.2);
+    /* Mobile: Always visible */
+    @media (max-width: 767px) {
+      .add-reaction-btn {
+        opacity: 1 !important;
+      }
     }
     
     .emoji-picker {

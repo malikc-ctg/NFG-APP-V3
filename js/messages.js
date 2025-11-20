@@ -973,7 +973,7 @@ function renderMessages(isSearchMode = false) {
             }
           </div>
         ` : !isSent ? '<div class="w-8"></div>' : ''}
-        <div class="message-bubble ${isSent ? 'message-bubble-sent' : 'message-bubble-received'} px-4 py-2 relative group ${isDeleted ? 'opacity-60' : ''}" data-message-id="${message.id}">
+        <div class="message-bubble ${isSent ? 'message-bubble-sent' : 'message-bubble-received'} px-4 py-2 relative message-bubble-wrapper ${isDeleted ? 'opacity-60' : ''}" data-message-id="${message.id}">
           ${!isSent && showAvatar ? `<p class="text-xs font-semibold mb-1 ${isSent ? 'text-white/80' : 'text-gray-600 dark:text-gray-400'}">${escapeHtml(senderName)}</p>` : ''}
           ${isDeleted ? `
             <p class="text-sm italic ${isSent ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}">This message was deleted</p>
