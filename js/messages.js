@@ -175,12 +175,27 @@ function initEventListeners() {
     messageInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
+        e.stopPropagation(); // Prevent form submission
         if (messageInput.value.trim()) {
           triggerHaptic('medium');
           sendMessage();
         } else {
           triggerHaptic('warning');
         }
+        return false; // Extra safety
+      }
+    });
+    
+    // Also handle keypress as backup (for some browsers/edge cases)
+    messageInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (messageInput.value.trim()) {
+          triggerHaptic('medium');
+          sendMessage();
+        }
+        return false;
       }
     });
   }
