@@ -408,7 +408,7 @@ function renderConversations(filteredConversations = null) {
               </button>
               <!-- Dropdown Menu -->
               <div 
-                class="conversation-menu-dropdown absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl py-1 min-w-[150px] z-[9999] hidden"
+                class="conversation-menu-dropdown fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl py-1 min-w-[150px] z-[9999] hidden"
                 data-conversation-id="${conv.id}"
                 onclick="event.stopPropagation();"
                 style="overflow: visible !important;"
@@ -1767,16 +1767,31 @@ function toggleConversationMenu(event) {
     const isHidden = menu.classList.contains('hidden');
     
     if (isHidden) {
-      // Show menu
+      // Get button position for fixed positioning
+      const buttonRect = button.getBoundingClientRect();
+      const menuWidth = 150; // min-w-[150px]
+      const menuHeight = 80; // Approximate height for 2 items
+      
+      // Calculate position - align right edge with button right edge
+      const right = window.innerWidth - buttonRect.right;
+      const top = buttonRect.bottom + 4; // 4px margin
+      
+      // If menu would go off bottom of screen, show it above button instead
+      let finalTop = top;
+      if (top + menuHeight > window.innerHeight) {
+        finalTop = buttonRect.top - menuHeight - 4;
+      }
+      
+      // Show menu with fixed positioning
       menu.classList.remove('hidden');
       menu.style.display = 'block';
       menu.style.visibility = 'visible';
       menu.style.opacity = '1';
-      menu.style.position = 'absolute';
-      menu.style.right = '0';
-      menu.style.top = '100%';
-      menu.style.marginTop = '4px';
-      menu.style.zIndex = '9999';
+      menu.style.position = 'fixed';
+      menu.style.right = `${right}px`;
+      menu.style.top = `${finalTop}px`;
+      menu.style.zIndex = '99999';
+      menu.style.width = `${menuWidth}px`;
       
       // Recreate icons after showing menu
       if (window.lucide) {
@@ -1784,9 +1799,9 @@ function toggleConversationMenu(event) {
       }
       
       console.log('[Menu] Menu shown for conversation:', button.dataset.conversationId);
+      console.log('[Menu] Button rect:', buttonRect);
+      console.log('[Menu] Menu position - right:', right, 'top:', finalTop);
       console.log('[Menu] Menu element:', menu);
-      console.log('[Menu] Menu computed style:', window.getComputedStyle(menu).display);
-      console.log('[Menu] Menu position:', menu.getBoundingClientRect());
     } else {
       // Hide menu
       menu.classList.add('hidden');
