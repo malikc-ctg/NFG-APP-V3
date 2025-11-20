@@ -28,10 +28,24 @@ CREATE POLICY "Users can view their own deletions"
   ON message_deletions FOR SELECT
   USING (user_id = auth.uid());
 
--- Users can create their own deletion records
-CREATE POLICY "Users can create their own deletions"
+-- Users can create deletion records for participants in their conversations
+CREATE POLICY "Users can create deletions for conversation participants"
   ON message_deletions FOR INSERT
-  WITH CHECK (user_id = auth.uid());
+  WITH CHECK (
+    -- Allow if user is creating their own deletion
+    user_id = auth.uid()
+    OR
+    -- OR allow if user is creating deletions for other participants in conversations they're in
+    EXISTS (
+      SELECT 1 
+      FROM messages m
+      INNER JOIN conversation_participants cp1 ON cp1.conversation_id = m.conversation_id
+      INNER JOIN conversation_participants cp2 ON cp2.conversation_id = m.conversation_id
+      WHERE m.id = message_deletions.message_id
+        AND cp1.user_id = auth.uid()  -- Current user is participant
+        AND cp2.user_id = message_deletions.user_id  -- Target user is participant
+    )
+  );
 
 -- Users can update their own deletion records (in case we want to undo)
 CREATE POLICY "Users can update their own deletions"
