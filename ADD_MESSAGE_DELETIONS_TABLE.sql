@@ -69,14 +69,18 @@ CREATE POLICY "Users can view their own deletions"
   USING (user_id = auth.uid());
 
 -- Users can create deletion records for participants in their conversations
+-- Simplified: Allow if the current user is a participant in the message's conversation
 CREATE POLICY "Users can create deletions for conversation participants"
   ON message_deletions FOR INSERT
   WITH CHECK (
-    -- Allow if user is creating their own deletion
-    user_id = auth.uid()
-    OR
-    -- OR allow if user is a participant and target user is also a participant in the same conversation
-    user_can_delete_for_participant(message_id, user_id)
+    -- Check if current user is a participant in the message's conversation
+    EXISTS (
+      SELECT 1
+      FROM messages m
+      INNER JOIN conversation_participants cp ON cp.conversation_id = m.conversation_id
+      WHERE m.id = message_deletions.message_id
+        AND cp.user_id = auth.uid()
+    )
   );
 
 -- Users can update their own deletion records (in case we want to undo)
