@@ -4,7 +4,7 @@
 -- This removes all the message_deletions table and related policies/functions
 -- Run this to start fresh with message deletion
 
--- Drop Realtime publication for message_deletions
+-- Drop Realtime publication for message_deletions (only if table exists)
 DO $$
 BEGIN
   IF EXISTS (
@@ -17,12 +17,17 @@ BEGIN
   END IF;
 END $$;
 
--- Drop all policies on message_deletions table
-DROP POLICY IF EXISTS "Users can view their own deletions" ON message_deletions;
-DROP POLICY IF EXISTS "Users can create their own deletions" ON message_deletions;
-DROP POLICY IF EXISTS "Users can create deletions for conversation participants" ON message_deletions;
-DROP POLICY IF EXISTS "Users can update their own deletions" ON message_deletions;
-DROP POLICY IF EXISTS "Users can delete their own deletion records" ON message_deletions;
+-- Drop all policies on message_deletions table (only if table exists)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'message_deletions') THEN
+    DROP POLICY IF EXISTS "Users can view their own deletions" ON message_deletions;
+    DROP POLICY IF EXISTS "Users can create their own deletions" ON message_deletions;
+    DROP POLICY IF EXISTS "Users can create deletions for conversation participants" ON message_deletions;
+    DROP POLICY IF EXISTS "Users can update their own deletions" ON message_deletions;
+    DROP POLICY IF EXISTS "Users can delete their own deletion records" ON message_deletions;
+  END IF;
+END $$;
 
 -- Drop functions related to message deletions
 DROP FUNCTION IF EXISTS user_can_delete_for_participant(UUID, UUID);
