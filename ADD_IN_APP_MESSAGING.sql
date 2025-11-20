@@ -317,7 +317,7 @@ BEGIN
     RAISE EXCEPTION 'Cannot create conversation with yourself';
   END IF;
   
-  -- Check if conversation already exists between these two users
+  -- Check if conversation already exists between these two users (including archived ones)
   SELECT c.id INTO existing_conversation_id
   FROM conversations c
   WHERE c.type = 'direct'
@@ -332,8 +332,16 @@ BEGIN
     AND (SELECT COUNT(*) FROM conversation_participants cp3 WHERE cp3.conversation_id = c.id) = 2
   LIMIT 1;
   
-  -- If conversation exists, return it
+  -- If conversation exists, un-archive it if it was archived and return it
   IF existing_conversation_id IS NOT NULL THEN
+    -- Un-archive the conversation if it was archived
+    UPDATE conversations
+    SET archived_at = NULL,
+        archived_by = NULL,
+        updated_at = NOW()
+    WHERE id = existing_conversation_id
+      AND archived_at IS NOT NULL;
+    
     RETURN existing_conversation_id;
   END IF;
   
