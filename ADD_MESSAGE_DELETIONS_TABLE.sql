@@ -33,12 +33,10 @@ DROP POLICY IF EXISTS "Users can delete their own deletion records" ON message_d
 -- Drop existing function after policies are dropped
 DROP FUNCTION IF EXISTS user_can_delete_for_participant(UUID, UUID);
 
--- Helper function to check if user can delete message for another participant
+-- Helper function to check if user is participant in message's conversation
 -- Uses SECURITY DEFINER to bypass RLS when checking participants
--- Uses the existing user_is_participant function which is already working
-CREATE OR REPLACE FUNCTION user_can_delete_for_participant(
-  p_message_id UUID,
-  p_target_user_id UUID
+CREATE OR REPLACE FUNCTION user_is_participant_in_message_conversation(
+  p_message_id UUID
 ) RETURNS BOOLEAN AS $$
 DECLARE
   v_conversation_id UUID;
@@ -53,15 +51,14 @@ BEGIN
     RETURN FALSE;
   END IF;
   
-  -- Check if both current user and target user are participants
+  -- Check if current user is a participant in the conversation
   -- Use the existing user_is_participant function which already has SECURITY DEFINER
-  RETURN user_is_participant(v_conversation_id, auth.uid())
-    AND user_is_participant(v_conversation_id, p_target_user_id);
+  RETURN user_is_participant(v_conversation_id, auth.uid());
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Grant execute permission
-GRANT EXECUTE ON FUNCTION user_can_delete_for_participant(UUID, UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION user_is_participant_in_message_conversation(UUID) TO authenticated;
 
 -- Users can view their own deletions
 CREATE POLICY "Users can view their own deletions"
@@ -69,18 +66,13 @@ CREATE POLICY "Users can view their own deletions"
   USING (user_id = auth.uid());
 
 -- Users can create deletion records for participants in their conversations
--- Simplified: Allow if the current user is a participant in the message's conversation
+-- Use SECURITY DEFINER function to bypass RLS checks
 CREATE POLICY "Users can create deletions for conversation participants"
   ON message_deletions FOR INSERT
   WITH CHECK (
-    -- Check if current user is a participant in the message's conversation
-    EXISTS (
-      SELECT 1
-      FROM messages m
-      INNER JOIN conversation_participants cp ON cp.conversation_id = m.conversation_id
-      WHERE m.id = message_deletions.message_id
-        AND cp.user_id = auth.uid()
-    )
+    -- Allow if current user is a participant in the message's conversation
+    -- This allows creating deletion records for ANY user in the conversation
+    user_is_participant_in_message_conversation(message_id)
   );
 
 -- Users can update their own deletion records (in case we want to undo)
