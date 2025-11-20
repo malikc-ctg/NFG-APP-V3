@@ -841,26 +841,18 @@ function subscribeToMessages(conversationId) {
       const deletion = payload.new;
       const deletedMessageId = deletion.message_id;
       
-      // Check if this message is in the current conversation
+      // Check if this message is in the current conversation's messages
+      // (all messages in local array are already from current conversation)
       const deletedMessage = messages.find(m => m.id === deletedMessageId);
       if (deletedMessage && currentConversation) {
-        // Get the message's conversation_id to verify it's from current conversation
-        const { data: messageData } = await supabase
-          .from('messages')
-          .select('conversation_id')
-          .eq('id', deletedMessageId)
-          .single();
+        // Remove message from local array
+        messages = messages.filter(m => m.id !== deletedMessageId);
         
-        if (messageData && messageData.conversation_id === currentConversation.id) {
-          // Remove message from local array
-          messages = messages.filter(m => m.id !== deletedMessageId);
-          
-          // Re-render messages
-          renderMessages();
-          
-          // Update conversation list if needed
-          await loadConversations();
-        }
+        // Re-render messages
+        renderMessages();
+        
+        // Update conversation list to reflect deleted message
+        await loadConversations();
       }
     })
     .subscribe();
