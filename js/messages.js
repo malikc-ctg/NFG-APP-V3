@@ -1042,6 +1042,250 @@ function renderMessages(isSearchMode = false) {
   attachReactionListeners();
 }
 
+// ========== RENDER MESSAGE REACTIONS (Phase 3) ==========
+function renderMessageReactions(messageId) {
+  const reactions = messageReactions.get(messageId) || [];
+  
+  // Group reactions by emoji
+  const emojiGroups = new Map();
+  reactions.forEach(reaction => {
+    if (!emojiGroups.has(reaction.emoji)) {
+      emojiGroups.set(reaction.emoji, []);
+    }
+    emojiGroups.get(reaction.emoji).push(reaction);
+  });
+  
+  const reactionsHTML = Array.from(emojiGroups.entries()).map(([emoji, emojiReactions]) => {
+    const count = emojiReactions.length;
+    const hasUserReaction = emojiReactions.some(r => r.user_id === currentUser.id);
+    const tooltip = emojiReactions.map(r => {
+      const name = r.user?.full_name || r.user?.email || 'Unknown';
+      return name;
+    }).join(', ');
+    
+    return `
+      <button class="reaction-btn flex items-center gap-1 px-2 py-1 rounded-full text-xs transition-colors ${
+        hasUserReaction 
+          ? 'bg-nfgblue/20 dark:bg-blue-900/30 border border-nfgblue dark:border-blue-700' 
+          : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 border border-transparent'
+      }" 
+      data-message-id="${messageId}" 
+      data-emoji="${emoji}" 
+      title="${escapeHtml(tooltip)}">
+        <span class="text-sm">${emoji}</span>
+        <span class="text-gray-600 dark:text-gray-400">${count}</span>
+      </button>
+    `;
+  }).join('');
+  
+  // Always show add reaction button on desktop (visible on hover) and mobile (always visible)
+  const addReactionBtn = `
+    <button class="add-reaction-btn text-xs text-gray-400 dark:text-gray-500 hover:text-nfgblue dark:hover:text-blue-400 md:opacity-0 md:group-hover:opacity-100 transition-opacity ml-1" data-message-id="${messageId}" title="Add reaction">
+      <i data-lucide="smile-plus" class="w-4 h-4"></i>
+    </button>
+  `;
+  
+  return `
+    <div class="message-reactions mt-2 flex items-center gap-1 flex-wrap">
+      ${reactionsHTML}
+      ${addReactionBtn}
+    </div>
+  `;
+}
+
+// ========== ATTACH REACTION LISTENERS (Phase 3) ==========
+function attachReactionListeners() {
+  // Reaction button clicks (toggle reaction)
+  document.querySelectorAll('.reaction-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const messageId = btn.dataset.messageId;
+      const emoji = btn.dataset.emoji;
+      await toggleReaction(messageId, emoji);
+    });
+  });
+  
+  // Add reaction button clicks (show emoji picker)
+  document.querySelectorAll('.add-reaction-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const messageId = btn.dataset.messageId;
+      showEmojiPicker(messageId, btn);
+    });
+  });
+}
+
+// ========== TOGGLE REACTION (Phase 3) ==========
+async function toggleReaction(messageId, emoji) {
+  if (!currentUser || !messageId || !emoji) return;
+  
+  try {
+    const reactions = messageReactions.get(messageId) || [];
+    const hasReaction = reactions.some(r => r.user_id === currentUser.id && r.emoji === emoji);
+    
+    if (hasReaction) {
+      // Remove reaction
+      const { error } = await supabase
+        .from('message_reactions')
+        .delete()
+        .eq('message_id', messageId)
+        .eq('user_id', currentUser.id)
+        .eq('emoji', emoji);
+      
+      if (error) throw error;
+      
+      // Update local state
+      const updatedReactions = reactions.filter(r => !(r.user_id === currentUser.id && r.emoji === emoji));
+      if (updatedReactions.length === 0) {
+        messageReactions.delete(messageId);
+      } else {
+        messageReactions.set(messageId, updatedReactions);
+      }
+    } else {
+      // Add reaction
+      const { error } = await supabase
+        .from('message_reactions')
+        .insert({
+          message_id: messageId,
+          user_id: currentUser.id,
+          emoji: emoji
+        });
+      
+      if (error) throw error;
+      
+      // Update local state
+      const newReaction = {
+        user_id: currentUser.id,
+        emoji: emoji,
+        user: currentUserProfile
+      };
+      messageReactions.set(messageId, [...reactions, newReaction]);
+    }
+    
+    // Re-render messages to update reactions
+    renderMessages();
+    triggerHaptic('light');
+  } catch (error) {
+    console.error('Error toggling reaction:', error);
+    toast?.error('Failed to update reaction', 'Error');
+  }
+}
+
+// ========== SHOW EMOJI PICKER (Phase 3) ==========
+function showEmojiPicker(messageId, triggerBtn) {
+  // Remove existing picker
+  document.getElementById('emoji-picker')?.remove();
+  
+  // Create emoji picker
+  const picker = document.createElement('div');
+  picker.id = 'emoji-picker';
+  picker.className = 'emoji-picker absolute bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl p-3 z-50';
+  picker.style.cssText = `
+    position: fixed;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-width: 280px;
+    max-height: 200px;
+    overflow-y: auto;
+  `;
+  
+  // Add common emojis
+  picker.innerHTML = COMMON_EMOJIS.map(emoji => `
+    <button class="emoji-option w-10 h-10 flex items-center justify-center text-xl rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition" 
+            data-emoji="${emoji}" 
+            data-message-id="${messageId}">
+      ${emoji}
+    </button>
+  `).join('');
+  
+  // Position picker near trigger button
+  const rect = triggerBtn.getBoundingClientRect();
+  picker.style.top = `${rect.top - 220}px`;
+  picker.style.left = `${rect.left}px`;
+  
+  document.body.appendChild(picker);
+  
+  // Attach click listeners
+  picker.querySelectorAll('.emoji-option').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const emoji = btn.dataset.emoji;
+      await toggleReaction(messageId, emoji);
+      picker.remove();
+    });
+  });
+  
+  // Close picker on outside click
+  setTimeout(() => {
+    const closePicker = (e) => {
+      if (!picker.contains(e.target) && e.target !== triggerBtn) {
+        picker.remove();
+        document.removeEventListener('click', closePicker);
+      }
+    };
+    document.addEventListener('click', closePicker);
+  }, 0);
+  
+  triggerHaptic('light');
+}
+
+// ========== MOBILE DOUBLE-TAP FOR REACTIONS (Phase 3) ==========
+function attachMobileDoubleTapReactions() {
+  // Only on mobile devices
+  if (window.innerWidth >= 768) return; // Desktop uses hover
+  
+  const messageBubbles = document.querySelectorAll('.message-bubble-wrapper');
+  
+  messageBubbles.forEach(bubble => {
+    // Remove existing listeners by checking if already attached
+    if (bubble.dataset.doubleTapAttached === 'true') return;
+    bubble.dataset.doubleTapAttached = 'true';
+    
+    let tapTimeout = null;
+    let tapCount = 0;
+    
+    bubble.addEventListener('touchstart', (e) => {
+      tapCount++;
+      
+      if (tapCount === 1) {
+        tapTimeout = setTimeout(() => {
+          // Single tap - reset after delay
+          tapCount = 0;
+        }, 300); // 300ms window for double tap
+      } else if (tapCount === 2) {
+        // Double tap detected
+        clearTimeout(tapTimeout);
+        tapCount = 0;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const messageId = bubble.dataset.messageId;
+        if (!messageId) return;
+        
+        // Show emoji picker
+        const addReactionBtn = bubble.querySelector('.add-reaction-btn');
+        if (addReactionBtn) {
+          showEmojiPicker(messageId, addReactionBtn);
+        } else {
+          // Create temporary button element for positioning
+          const rect = bubble.getBoundingClientRect();
+          const tempBtn = document.createElement('button');
+          tempBtn.style.position = 'fixed';
+          tempBtn.style.bottom = `${window.innerHeight - rect.bottom}px`;
+          tempBtn.style.left = `${rect.left}px`;
+          document.body.appendChild(tempBtn);
+          showEmojiPicker(messageId, tempBtn);
+          setTimeout(() => tempBtn.remove(), 0);
+        }
+        
+        triggerHaptic('medium');
+      }
+    }, { passive: true });
+  });
+}
+
 // ========== SEND MESSAGE ==========
 async function sendMessage() {
   const messageInput = document.getElementById('message-input');
