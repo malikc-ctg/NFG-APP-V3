@@ -1790,8 +1790,9 @@ function toggleConversationMenu(event) {
       menu.style.position = 'fixed';
       menu.style.right = `${right}px`;
       menu.style.top = `${finalTop}px`;
-      menu.style.zIndex = '99999';
+      menu.style.zIndex = '999999';
       menu.style.width = `${menuWidth}px`;
+      menu.style.backgroundColor = window.matchMedia('(prefers-color-scheme: dark)').matches ? '#1F2937' : 'white';
       
       // Recreate icons after showing menu
       if (window.lucide) {
