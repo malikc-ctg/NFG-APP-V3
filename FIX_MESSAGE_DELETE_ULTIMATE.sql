@@ -67,12 +67,12 @@ CREATE POLICY "Users can send messages to their conversations"
   );
 
 -- Step 7: Create UPDATE policy - SIMPLEST POSSIBLE
--- No restrictions on what fields can be updated
--- Just check that the user owns the message
+-- USING: Check if user owns the message (before update)
+-- WITH CHECK: Allow ANY update if USING passed (no restrictions on new values)
 CREATE POLICY "Users can update their own messages"
   ON messages FOR UPDATE
   USING (sender_id = auth.uid())
-  WITH CHECK (sender_id = auth.uid());
+  WITH CHECK (true);  -- Always allow if USING passed - no restrictions on what can be updated
 
 -- Step 8: Ensure permissions
 GRANT SELECT, INSERT, UPDATE ON messages TO authenticated;
