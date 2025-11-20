@@ -33,6 +33,8 @@ ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 -- Drop first to avoid conflicts
 DROP POLICY IF EXISTS "Users can view messages in their conversations" ON messages;
 
+-- Note: We check deleted_at IS NULL here, but UPDATE policy doesn't restrict deleted_at
+-- This allows users to see non-deleted messages, but they can still update (set deleted_at)
 CREATE POLICY "Users can view messages in their conversations"
   ON messages FOR SELECT
   USING (
@@ -41,7 +43,7 @@ CREATE POLICY "Users can view messages in their conversations"
       WHERE cp.conversation_id = messages.conversation_id
         AND cp.user_id = auth.uid()
     )
-    AND deleted_at IS NULL  -- Don't show deleted messages
+    AND deleted_at IS NULL  -- Don't show deleted messages in SELECT
   );
 
 -- Step 5: Recreate INSERT policy (so users can send messages)
