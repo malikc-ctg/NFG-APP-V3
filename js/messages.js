@@ -1746,84 +1746,136 @@ function filterConversations(query) {
 }
 
 // ========== CONVERSATION MENU ==========
+let activeMenu = null; // Track the currently open menu
+
 function toggleConversationMenu(event) {
   event.stopPropagation();
   event.preventDefault();
   
-  // Close all other menus first
-  document.querySelectorAll('.conversation-menu-dropdown').forEach(menu => {
-    const button = menu.previousElementSibling;
-    if (button && button !== event.currentTarget) {
-      menu.classList.add('hidden');
-      menu.style.display = 'none';
-    }
-  });
-  
-  // Find the dropdown menu (next sibling of the button)
   const button = event.currentTarget;
-  const menu = button.nextElementSibling;
+  const conversationId = button.dataset.conversationId;
   
-  if (menu && menu.classList.contains('conversation-menu-dropdown')) {
-    const isHidden = menu.classList.contains('hidden');
-    
-    if (isHidden) {
-      // Get button position for fixed positioning
-      const buttonRect = button.getBoundingClientRect();
-      const menuWidth = 150; // min-w-[150px]
-      const menuHeight = 80; // Approximate height for 2 items
+  // Close any existing menu
+  if (activeMenu) {
+    activeMenu.remove();
+    activeMenu = null;
+  }
+  
+  // Get button position for fixed positioning
+  const buttonRect = button.getBoundingClientRect();
+  const menuWidth = 150;
+  const menuHeight = 88; // 2 items * 44px each
+  
+  // Calculate position - align right edge with button right edge
+  const right = window.innerWidth - buttonRect.right;
+  let top = buttonRect.bottom + 4;
+  
+  // If menu would go off bottom of screen, show it above button instead
+  if (top + menuHeight > window.innerHeight) {
+    top = buttonRect.top - menuHeight - 4;
+    // Ensure it doesn't go off top either
+    if (top < 0) {
+      top = 4;
+    }
+  }
+  
+  // Create new menu and append to body (avoids overflow clipping)
+  const menu = document.createElement('div');
+  menu.className = 'conversation-menu-dropdown';
+  menu.dataset.conversationId = conversationId;
+  
+  const isDark = document.documentElement.classList.contains('dark');
+  menu.style.cssText = `
+    position: fixed !important;
+    right: ${right}px !important;
+    top: ${top}px !important;
+    width: ${menuWidth}px !important;
+    background-color: ${isDark ? '#1F2937' : 'white'} !important;
+    border: 1px solid ${isDark ? '#374151' : '#E5E7EB'} !important;
+    border-radius: 8px !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.1) !important;
+    padding: 4px 0 !important;
+    z-index: 999999 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  `;
+  
+  menu.innerHTML = `
+    <button 
+      class="conversation-action-btn archive-btn-desktop"
+      data-action="archive" 
+      data-conversation-id="${conversationId}"
+      style="display: flex !important; align-items: center !important; width: 100% !important; padding: 10px 16px !important; text-align: left !important; font-size: 14px !important; font-weight: 500 !important; color: ${isDark ? '#D1D5DB' : '#374151'} !important; background-color: transparent !important; border: none !important; cursor: pointer !important; white-space: nowrap !important; gap: 10px !important;"
+    >
+      <i data-lucide="archive" class="w-4 h-4 text-yellow-600 dark:text-yellow-400" style="flex-shrink: 0;"></i>
+      <span style="flex: 1;">Archive</span>
+    </button>
+    <button 
+      class="conversation-action-btn delete-btn-desktop"
+      data-action="delete" 
+      data-conversation-id="${conversationId}"
+      style="display: flex !important; align-items: center !important; width: 100% !important; padding: 10px 16px !important; text-align: left !important; font-size: 14px !important; font-weight: 500 !important; color: ${isDark ? '#F87171' : '#DC2626'} !important; background-color: transparent !important; border: none !important; cursor: pointer !important; white-space: nowrap !important; gap: 10px !important;"
+    >
+      <i data-lucide="trash-2" class="w-4 h-4" style="flex-shrink: 0;"></i>
+      <span style="flex: 1;">Delete</span>
+    </button>
+  `;
+  
+  // Append to body
+  document.body.appendChild(menu);
+  activeMenu = menu;
+  
+  // Recreate icons
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+  
+  // Attach action button listeners
+  menu.querySelectorAll('.conversation-action-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const action = btn.dataset.action;
+      const convId = btn.dataset.conversationId;
       
-      // Calculate position - align right edge with button right edge
-      const right = window.innerWidth - buttonRect.right;
-      const top = buttonRect.bottom + 4; // 4px margin
-      
-      // If menu would go off bottom of screen, show it above button instead
-      let finalTop = top;
-      if (top + menuHeight > window.innerHeight) {
-        finalTop = buttonRect.top - menuHeight - 4;
+      // Close menu
+      if (activeMenu) {
+        activeMenu.remove();
+        activeMenu = null;
       }
       
-      // Show menu with fixed positioning
-      menu.classList.remove('hidden');
-      menu.style.display = 'block';
-      menu.style.visibility = 'visible';
-      menu.style.opacity = '1';
-      menu.style.position = 'fixed';
-      menu.style.right = `${right}px`;
-      menu.style.top = `${finalTop}px`;
-      menu.style.zIndex = '999999';
-      menu.style.width = `${menuWidth}px`;
-      menu.style.backgroundColor = window.matchMedia('(prefers-color-scheme: dark)').matches ? '#1F2937' : 'white';
+      if (action === 'archive') {
+        await archiveConversation(convId);
+      } else if (action === 'delete') {
+        await deleteConversation(convId);
+      }
       
-      // Recreate icons after showing menu
+      // Recreate icons after action
       if (window.lucide) {
         lucide.createIcons();
       }
-      
-      console.log('[Menu] Menu shown for conversation:', button.dataset.conversationId);
-      console.log('[Menu] Button rect:', buttonRect);
-      console.log('[Menu] Menu position - right:', right, 'top:', finalTop);
-      console.log('[Menu] Menu element:', menu);
-    } else {
-      // Hide menu
-      menu.classList.add('hidden');
-      menu.style.display = 'none';
-      menu.style.visibility = 'hidden';
-      menu.style.opacity = '0';
-      
-      console.log('[Menu] Menu hidden for conversation:', button.dataset.conversationId);
-    }
-  } else {
-    console.error('[Menu] Menu element not found for button:', button);
-    console.error('[Menu] Button next sibling:', button.nextElementSibling);
-  }
+    });
+    
+    // Add hover effects
+    btn.addEventListener('mouseenter', () => {
+      if (btn.dataset.action === 'archive') {
+        btn.style.backgroundColor = isDark ? '#78350F' : '#FEF3C7';
+      } else {
+        btn.style.backgroundColor = isDark ? '#7F1D1D' : '#FEE2E2';
+      }
+    });
+    
+    btn.addEventListener('mouseleave', () => {
+      btn.style.backgroundColor = 'transparent';
+    });
+  });
   
   // Close menu when clicking outside
   const closeMenuOnClickOutside = (e) => {
-    if (!button.closest('.conversation-actions-desktop')?.contains(e.target)) {
-      document.querySelectorAll('.conversation-menu-dropdown').forEach(m => {
-        m.classList.add('hidden');
-        m.style.display = 'none';
-      });
+    if (activeMenu && !activeMenu.contains(e.target) && !button.contains(e.target)) {
+      activeMenu.remove();
+      activeMenu = null;
       document.removeEventListener('click', closeMenuOnClickOutside);
     }
   };
@@ -1832,6 +1884,11 @@ function toggleConversationMenu(event) {
   setTimeout(() => {
     document.addEventListener('click', closeMenuOnClickOutside);
   }, 0);
+  
+  console.log('[Menu] Menu created and shown for conversation:', conversationId);
+  console.log('[Menu] Menu position - right:', right, 'top:', top);
+  console.log('[Menu] Menu element:', menu);
+  console.log('[Menu] Menu in DOM:', document.body.contains(menu));
 }
 
 // Expose to global scope for inline onclick
