@@ -610,7 +610,8 @@ function renderMessages() {
     // Check if message can be edited (within 15 minutes and not deleted)
     const messageAge = Date.now() - new Date(message.created_at).getTime();
     const canEdit = isSent && !message.deleted_at && messageAge < MESSAGE_EDIT_WINDOW_MS;
-    const canDelete = isSent && !message.deleted_at;
+    // Anyone can delete any message (it will delete for everyone)
+    const canDelete = !message.deleted_at;
     const isDeleted = message.deleted_at;
 
     return `
@@ -1865,92 +1866,51 @@ async function editMessage(messageId) {
   }
 }
 
-// Delete message (database-backed per-user deletion)
-async function deleteMessage(messageId, deleteForEveryone = false) {
+// Delete message (always deletes for everyone - all participants)
+async function deleteMessage(messageId) {
   const message = messages.find(m => m.id === messageId);
-  if (!message) return;
+  if (!message || !currentConversation) return;
   
-  const isSender = message.sender_id === currentUser.id;
+  const confirmed = confirm('Delete this message? It will be removed for everyone in this conversation.');
+  if (!confirmed) return;
   
-  if (!deleteForEveryone) {
-    // Delete for me only (hide from my UI)
-    const confirmed = confirm('Delete this message? You will no longer see it.');
-    if (!confirmed) return;
+  try {
+    triggerHaptic('heavy');
     
-    try {
-      triggerHaptic('heavy');
-      
-      // Create deletion record for current user
-      const { error } = await supabase
-        .from('message_deletions')
-        .insert({
-          message_id: messageId,
-          user_id: currentUser.id
-        });
-      
-      if (error) throw error;
-      
-      // Remove from local messages array
-      messages = messages.filter(m => m.id !== messageId);
-      
-      // Re-render messages
-      renderMessages();
-      triggerHaptic('success');
-      toast?.success('Message deleted', 'Success');
-    } catch (error) {
-      console.error('Error deleting message:', error);
-      triggerHaptic('error');
-      toast?.error('Failed to delete message: ' + (error.message || 'Unknown error'), 'Error');
-    }
-  } else {
-    // Delete for everyone - hide from both sender and receiver
-    if (!isSender) {
-      toast?.error('You can only delete your own messages for everyone', 'Error');
-      triggerHaptic('error');
-      return;
-    }
+    // Get all participants in the conversation
+    const { data: participants, error: participantsError } = await supabase
+      .from('conversation_participants')
+      .select('user_id')
+      .eq('conversation_id', currentConversation.id);
     
-    const confirmed = confirm('Delete this message for everyone? Both you and the recipient will no longer see it.');
-    if (!confirmed) return;
+    if (participantsError) throw participantsError;
     
-    try {
-      triggerHaptic('heavy');
-      
-      // Get all participants in the conversation
-      const { data: participants, error: participantsError } = await supabase
-        .from('conversation_participants')
-        .select('user_id')
-        .eq('conversation_id', currentConversation.id);
-      
-      if (participantsError) throw participantsError;
-      
-      // Create deletion records for all participants
-      const deletionRecords = (participants || []).map(p => ({
-        message_id: messageId,
-        user_id: p.user_id
-      }));
-      
-      const { error } = await supabase
-        .from('message_deletions')
-        .upsert(deletionRecords, {
-          onConflict: 'message_id,user_id',
-          ignoreDuplicates: false
-        });
-      
-      if (error) throw error;
-      
-      // Remove from local messages array
-      messages = messages.filter(m => m.id !== messageId);
-      
-      // Re-render messages
-      renderMessages();
-      triggerHaptic('success');
-      toast?.success('Message deleted for everyone', 'Success');
-    } catch (error) {
-      console.error('Error deleting message for everyone:', error);
-      triggerHaptic('error');
-      toast?.error('Failed to delete message: ' + (error.message || 'Unknown error'), 'Error');
-    }
+    // Create deletion records for all participants (deletes for everyone)
+    const deletionRecords = (participants || []).map(p => ({
+      message_id: messageId,
+      user_id: p.user_id
+    }));
+    
+    const { error } = await supabase
+      .from('message_deletions')
+      .upsert(deletionRecords, {
+        onConflict: 'message_id,user_id',
+        ignoreDuplicates: false
+      });
+    
+    if (error) throw error;
+    
+    // Remove from local messages array
+    messages = messages.filter(m => m.id !== messageId);
+    
+    // Re-render messages
+    renderMessages();
+    triggerHaptic('success');
+    toast?.success('Message deleted', 'Success');
+  } catch (error) {
+    console.error('Error deleting message:', error);
+    triggerHaptic('error');
+    toast?.error('Failed to delete message: ' + (error.message || 'Unknown error'), 'Error');
   }
 }
 
