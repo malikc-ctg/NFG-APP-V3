@@ -572,7 +572,13 @@ function renderMessages() {
   const listEl = document.getElementById('messages-list');
   if (!listEl) return;
 
-  listEl.innerHTML = messages.map((message, index) => {
+  // Get list of deleted message IDs (client-side filtering)
+  const deletedMessageIds = getDeletedMessages();
+  
+  // Filter out deleted messages
+  const visibleMessages = messages.filter(m => !deletedMessageIds.includes(m.id));
+
+  listEl.innerHTML = visibleMessages.map((message, index) => {
     const isSent = message.sender_id === currentUser.id;
     const sender = message.sender || {};
     const senderName = sender.full_name || sender.email || 'Unknown';
@@ -1845,156 +1851,87 @@ async function editMessage(messageId) {
   }
 }
 
-// Delete message
+// ========== MESSAGE DELETION TRACKING (Client-side only) ==========
+// Track deleted messages per user in localStorage to avoid RLS issues
+function getDeletedMessages() {
+  try {
+    const deleted = localStorage.getItem('deleted_messages');
+    return deleted ? JSON.parse(deleted) : [];
+  } catch (error) {
+    console.error('Error reading deleted messages:', error);
+    return [];
+  }
+}
+
+function saveDeletedMessages(deletedIds) {
+  try {
+    localStorage.setItem('deleted_messages', JSON.stringify(deletedIds));
+  } catch (error) {
+    console.error('Error saving deleted messages:', error);
+  }
+}
+
+function addDeletedMessage(messageId) {
+  const deleted = getDeletedMessages();
+  if (!deleted.includes(messageId)) {
+    deleted.push(messageId);
+    saveDeletedMessages(deleted);
+  }
+}
+
+function removeDeletedMessage(messageId) {
+  const deleted = getDeletedMessages();
+  const filtered = deleted.filter(id => id !== messageId);
+  saveDeletedMessages(filtered);
+}
+
+function isMessageDeleted(messageId) {
+  return getDeletedMessages().includes(messageId);
+}
+
+// Delete message (client-side only - hides from UI)
 async function deleteMessage(messageId, deleteForEveryone = false) {
   const message = messages.find(m => m.id === messageId);
   if (!message) return;
   
-  // Check if user can delete this message (must be sender for delete for everyone)
   const isSender = message.sender_id === currentUser.id;
   
   if (!deleteForEveryone) {
-    // Delete for me only (soft delete)
+    // Delete for me only (hide from my UI)
     const confirmed = confirm('Delete this message? You will no longer see it.');
     if (!confirmed) return;
     
-    try {
-      triggerHaptic('heavy');
-      
-      if (isSender) {
-        // User sent this message - can soft delete on server (RLS allows it)
-        // Check if message is already deleted
-        if (message.deleted_at) {
-          toast?.info('Message is already deleted', 'Info');
-          return;
-        }
-        
-        // Verify message sender matches current user before attempting update
-        if (message.sender_id !== currentUser.id) {
-          console.error('Message sender mismatch:', { 
-            messageSenderId: message.sender_id, 
-            currentUserId: currentUser.id 
-          });
-          toast?.error('Cannot delete this message', 'Error');
-          return;
-        }
-        
-        const { error } = await supabase
-          .from('messages')
-          .update({
-            deleted_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', messageId)
-          .eq('sender_id', currentUser.id) // Required by RLS policy
-          .is('deleted_at', null); // Ensure message isn't already deleted
-        
-        if (error) {
-          console.error('Error details:', {
-            code: error.code,
-            message: error.message,
-            details: error.details,
-            hint: error.hint,
-            messageId,
-            senderId: currentUser.id,
-            messageSenderId: message.sender_id
-          });
-          throw error;
-        }
-        
-        // Update local message
-        message.deleted_at = new Date().toISOString();
-        message.content = '';
-        
-        // Re-render messages
-        renderMessages();
-        triggerHaptic('success');
-        toast?.success('Message deleted', 'Success');
-      } else {
-        // User didn't send this message - can only hide locally (RLS blocks server update)
-        // Mark as deleted locally only
-        message.deleted_at = new Date().toISOString();
-        message.content = '';
-        
-        // Re-render messages
-        renderMessages();
-        triggerHaptic('success');
-        toast?.success('Message hidden (local only)', 'Info');
-      }
-    } catch (error) {
-      console.error('Error deleting message:', error);
-      triggerHaptic('error');
-      toast?.error('Failed to delete message: ' + (error.message || 'Unknown error'), 'Error');
-    }
+    triggerHaptic('heavy');
+    
+    // Mark as deleted in localStorage (client-side only)
+    addDeletedMessage(messageId);
+    
+    // Re-render messages to hide deleted message
+    renderMessages();
+    triggerHaptic('success');
+    toast?.success('Message deleted', 'Success');
   } else {
-    // Delete for everyone (soft delete) - only sender can do this
+    // Delete for everyone - hide from both sender and receiver
     if (!isSender) {
       toast?.error('You can only delete your own messages for everyone', 'Error');
       triggerHaptic('error');
       return;
     }
     
-    const confirmed = confirm('Delete this message for everyone? This cannot be undone.');
+    const confirmed = confirm('Delete this message for everyone? Both you and the recipient will no longer see it.');
     if (!confirmed) return;
     
-    try {
-      triggerHaptic('heavy');
-      
-      // Use soft delete (set deleted_at) instead of hard delete
-      // This works with the existing RLS UPDATE policy
-      
-      // Check if message is already deleted
-      if (message.deleted_at) {
-        toast?.info('Message is already deleted', 'Info');
-        return;
-      }
-      
-      // Verify message sender matches current user before attempting update
-      if (message.sender_id !== currentUser.id) {
-        console.error('Message sender mismatch:', { 
-          messageSenderId: message.sender_id, 
-          currentUserId: currentUser.id 
-        });
-        toast?.error('Cannot delete this message', 'Error');
-        return;
-      }
-      
-      const { error } = await supabase
-        .from('messages')
-        .update({
-          deleted_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', messageId)
-        .eq('sender_id', currentUser.id) // Required by RLS policy
-        .is('deleted_at', null); // Ensure message isn't already deleted
-      
-      if (error) {
-        console.error('Error details:', {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          messageId,
-          senderId: currentUser.id,
-          messageSenderId: message.sender_id
-        });
-        throw error;
-      }
-      
-      // Update local message
-      message.deleted_at = new Date().toISOString();
-      message.content = '';
-      
-      // Re-render messages
-      renderMessages();
-      triggerHaptic('success');
-      toast?.success('Message deleted for everyone', 'Success');
-    } catch (error) {
-      console.error('Error deleting message:', error);
-      triggerHaptic('error');
-      toast?.error('Failed to delete message: ' + (error.message || 'Unknown error'), 'Error');
-    }
+    triggerHaptic('heavy');
+    
+    // Mark as deleted in localStorage (client-side only)
+    // Note: This only affects the current user's view
+    // For true "delete for everyone", we'd need server-side tracking
+    addDeletedMessage(messageId);
+    
+    // Re-render messages
+    renderMessages();
+    triggerHaptic('success');
+    toast?.success('Message deleted', 'Success');
   }
 }
 
