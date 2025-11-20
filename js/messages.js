@@ -1021,6 +1021,9 @@ function renderMessages(isSearchMode = false) {
             <!-- Mobile: Long press to show menu -->
             <div class="message-actions-mobile md:hidden"></div>
           ` : ''}
+          
+          <!-- Message Reactions (Phase 3) -->
+          ${renderMessageReactions(message.id)}
         </div>
       </div>
     `;
