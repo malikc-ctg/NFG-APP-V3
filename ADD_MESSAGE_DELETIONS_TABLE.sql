@@ -35,6 +35,34 @@ CREATE POLICY "Users can view their own deletions"
   ON message_deletions FOR SELECT
   USING (user_id = auth.uid());
 
+-- Helper function to check if user can delete message for another participant
+CREATE OR REPLACE FUNCTION user_can_delete_for_participant(
+  p_message_id UUID,
+  p_target_user_id UUID
+) RETURNS BOOLEAN AS $$
+BEGIN
+  -- Check if both current user and target user are participants in the message's conversation
+  RETURN EXISTS (
+    SELECT 1
+    FROM messages m
+    WHERE m.id = p_message_id
+      AND EXISTS (
+        SELECT 1 FROM conversation_participants cp1
+        WHERE cp1.conversation_id = m.conversation_id
+          AND cp1.user_id = auth.uid()
+      )
+      AND EXISTS (
+        SELECT 1 FROM conversation_participants cp2
+        WHERE cp2.conversation_id = m.conversation_id
+          AND cp2.user_id = p_target_user_id
+      )
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Grant execute permission
+GRANT EXECUTE ON FUNCTION user_can_delete_for_participant(UUID, UUID) TO authenticated;
+
 -- Users can create deletion records for participants in their conversations
 CREATE POLICY "Users can create deletions for conversation participants"
   ON message_deletions FOR INSERT
@@ -42,16 +70,8 @@ CREATE POLICY "Users can create deletions for conversation participants"
     -- Allow if user is creating their own deletion
     user_id = auth.uid()
     OR
-    -- OR allow if user is creating deletions for other participants in conversations they're in
-    EXISTS (
-      SELECT 1 
-      FROM messages m
-      INNER JOIN conversation_participants cp1 ON cp1.conversation_id = m.conversation_id
-      INNER JOIN conversation_participants cp2 ON cp2.conversation_id = m.conversation_id
-      WHERE m.id = message_deletions.message_id
-        AND cp1.user_id = auth.uid()  -- Current user is participant
-        AND cp2.user_id = message_deletions.user_id  -- Target user is participant
-    )
+    -- OR allow if user is a participant and target user is also a participant in the same conversation
+    user_can_delete_for_participant(message_id, user_id)
   );
 
 -- Users can update their own deletion records (in case we want to undo)
