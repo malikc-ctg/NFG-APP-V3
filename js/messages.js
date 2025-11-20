@@ -1034,6 +1034,12 @@ function renderMessages(isSearchMode = false) {
   // Attach message action listeners (edit/delete buttons)
   attachMessageActionListeners();
   attachMobileMessageLongPress();
+  
+  // Attach mobile double-tap for reactions (Phase 3)
+  attachMobileDoubleTapReactions();
+  
+  // Attach reaction listeners (Phase 3)
+  attachReactionListeners();
 }
 
 // ========== SEND MESSAGE ==========
