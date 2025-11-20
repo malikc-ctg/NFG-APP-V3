@@ -494,6 +494,24 @@ async function loadMessages(conversationId) {
     if (messagesError) throw messagesError;
 
     messages = messagesData || [];
+    
+    // Fetch user's deletions for this conversation
+    if (messages.length > 0) {
+      const messageIds = messages.map(m => m.id);
+      const { data: deletionsData, error: deletionsError } = await supabase
+        .from('message_deletions')
+        .select('message_id')
+        .in('message_id', messageIds)
+        .eq('user_id', currentUser.id);
+      
+      if (deletionsError) {
+        console.warn('Error fetching message deletions:', deletionsError);
+      } else {
+        // Filter out deleted messages
+        const deletedMessageIds = new Set((deletionsData || []).map(d => d.message_id));
+        messages = messages.filter(m => !deletedMessageIds.has(m.id));
+      }
+    }
 
     // Fetch sender profiles separately (to avoid PostgREST relationship errors)
     if (messages.length > 0) {
@@ -572,13 +590,9 @@ function renderMessages() {
   const listEl = document.getElementById('messages-list');
   if (!listEl) return;
 
-  // Get list of deleted message IDs (client-side filtering)
-  const deletedMessageIds = getDeletedMessages();
-  
-  // Filter out deleted messages
-  const visibleMessages = messages.filter(m => !deletedMessageIds.includes(m.id));
-
-  listEl.innerHTML = visibleMessages.map((message, index) => {
+  // Messages are already filtered when loaded (deleted messages removed)
+  // So we can render all messages in the array
+  listEl.innerHTML = messages.map((message, index) => {
     const isSent = message.sender_id === currentUser.id;
     const sender = message.sender || {};
     const senderName = sender.full_name || sender.email || 'Unknown';
@@ -589,7 +603,7 @@ function renderMessages() {
     const isRead = message.readBy && message.readBy.length > 0;
 
     // Group messages from same sender (show avatar only on first message)
-    const prevMessage = index > 0 ? visibleMessages[index - 1] : null;
+    const prevMessage = index > 0 ? messages[index - 1] : null;
     const showAvatar = !prevMessage || prevMessage.sender_id !== message.sender_id || 
       (new Date(message.created_at) - new Date(prevMessage.created_at)) > 5 * 60 * 1000; // 5 minutes
 
@@ -1851,45 +1865,7 @@ async function editMessage(messageId) {
   }
 }
 
-// ========== MESSAGE DELETION TRACKING (Client-side only) ==========
-// Track deleted messages per user in localStorage to avoid RLS issues
-function getDeletedMessages() {
-  try {
-    const deleted = localStorage.getItem('deleted_messages');
-    return deleted ? JSON.parse(deleted) : [];
-  } catch (error) {
-    console.error('Error reading deleted messages:', error);
-    return [];
-  }
-}
-
-function saveDeletedMessages(deletedIds) {
-  try {
-    localStorage.setItem('deleted_messages', JSON.stringify(deletedIds));
-  } catch (error) {
-    console.error('Error saving deleted messages:', error);
-  }
-}
-
-function addDeletedMessage(messageId) {
-  const deleted = getDeletedMessages();
-  if (!deleted.includes(messageId)) {
-    deleted.push(messageId);
-    saveDeletedMessages(deleted);
-  }
-}
-
-function removeDeletedMessage(messageId) {
-  const deleted = getDeletedMessages();
-  const filtered = deleted.filter(id => id !== messageId);
-  saveDeletedMessages(filtered);
-}
-
-function isMessageDeleted(messageId) {
-  return getDeletedMessages().includes(messageId);
-}
-
-// Delete message (client-side only - hides from UI)
+// Delete message (database-backed per-user deletion)
 async function deleteMessage(messageId, deleteForEveryone = false) {
   const message = messages.find(m => m.id === messageId);
   if (!message) return;
@@ -1901,15 +1877,31 @@ async function deleteMessage(messageId, deleteForEveryone = false) {
     const confirmed = confirm('Delete this message? You will no longer see it.');
     if (!confirmed) return;
     
-    triggerHaptic('heavy');
-    
-    // Mark as deleted in localStorage (client-side only)
-    addDeletedMessage(messageId);
-    
-    // Re-render messages to hide deleted message
-    renderMessages();
-    triggerHaptic('success');
-    toast?.success('Message deleted', 'Success');
+    try {
+      triggerHaptic('heavy');
+      
+      // Create deletion record for current user
+      const { error } = await supabase
+        .from('message_deletions')
+        .insert({
+          message_id: messageId,
+          user_id: currentUser.id
+        });
+      
+      if (error) throw error;
+      
+      // Remove from local messages array
+      messages = messages.filter(m => m.id !== messageId);
+      
+      // Re-render messages
+      renderMessages();
+      triggerHaptic('success');
+      toast?.success('Message deleted', 'Success');
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      triggerHaptic('error');
+      toast?.error('Failed to delete message: ' + (error.message || 'Unknown error'), 'Error');
+    }
   } else {
     // Delete for everyone - hide from both sender and receiver
     if (!isSender) {
@@ -1921,17 +1913,44 @@ async function deleteMessage(messageId, deleteForEveryone = false) {
     const confirmed = confirm('Delete this message for everyone? Both you and the recipient will no longer see it.');
     if (!confirmed) return;
     
-    triggerHaptic('heavy');
-    
-    // Mark as deleted in localStorage (client-side only)
-    // Note: This only affects the current user's view
-    // For true "delete for everyone", we'd need server-side tracking
-    addDeletedMessage(messageId);
-    
-    // Re-render messages
-    renderMessages();
-    triggerHaptic('success');
-    toast?.success('Message deleted', 'Success');
+    try {
+      triggerHaptic('heavy');
+      
+      // Get all participants in the conversation
+      const { data: participants, error: participantsError } = await supabase
+        .from('conversation_participants')
+        .select('user_id')
+        .eq('conversation_id', currentConversation.id);
+      
+      if (participantsError) throw participantsError;
+      
+      // Create deletion records for all participants
+      const deletionRecords = (participants || []).map(p => ({
+        message_id: messageId,
+        user_id: p.user_id
+      }));
+      
+      const { error } = await supabase
+        .from('message_deletions')
+        .upsert(deletionRecords, {
+          onConflict: 'message_id,user_id',
+          ignoreDuplicates: false
+        });
+      
+      if (error) throw error;
+      
+      // Remove from local messages array
+      messages = messages.filter(m => m.id !== messageId);
+      
+      // Re-render messages
+      renderMessages();
+      triggerHaptic('success');
+      toast?.success('Message deleted for everyone', 'Success');
+    } catch (error) {
+      console.error('Error deleting message for everyone:', error);
+      triggerHaptic('error');
+      toast?.error('Failed to delete message: ' + (error.message || 'Unknown error'), 'Error');
+    }
   }
 }
 
