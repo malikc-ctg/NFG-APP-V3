@@ -551,8 +551,14 @@
       /* Conversation item swipe container */
       .conversation-item-swipe-container {
         position: relative;
-        overflow: hidden;
+        overflow: visible !important; /* Allow dropdown to overflow */
         touch-action: pan-y;
+      }
+      
+      @media (max-width: 767px) {
+        .conversation-item-swipe-container {
+          overflow: hidden; /* Restore overflow:hidden on mobile for swipe */
+        }
       }
       
       /* Desktop conversation menu dropdown */
@@ -574,6 +580,14 @@
         min-width: 150px !important;
         z-index: 9999 !important;
         overflow: visible !important;
+      }
+      
+      .conversation-menu-dropdown.hidden {
+        display: none !important;
+      }
+      
+      .conversation-menu-dropdown:not(.hidden) {
+        display: block !important;
       }
       
       .dark .conversation-menu-dropdown {
@@ -802,7 +816,7 @@
         </div>
 
         <!-- Conversations List -->
-        <div id="conversations-container" class="flex-1 overflow-y-auto">
+        <div id="conversations-container" class="flex-1 overflow-y-auto" style="overflow-x: visible !important;">
           <!-- Loading State -->
           <div id="conversations-loading" class="p-4 text-center text-gray-500 dark:text-gray-400">
             <div class="animate-pulse space-y-3">
