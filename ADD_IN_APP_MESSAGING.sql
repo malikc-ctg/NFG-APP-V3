@@ -301,7 +301,7 @@ CREATE POLICY "Users can mark messages as read"
 -- ========== GRANTS ==========
 
 -- Grant permissions to authenticated users
-GRANT SELECT, INSERT, UPDATE ON conversations TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON conversations TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON conversation_participants TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON messages TO authenticated;
 GRANT SELECT, INSERT ON message_reads TO authenticated;

@@ -16,7 +16,7 @@ CREATE POLICY "Users can delete their conversations"
     OR user_is_participant(id, auth.uid())
   );
 
--- Grant DELETE permission (should already exist, but ensure it)
+-- Grant DELETE permission (ensure it's included in GRANT statement)
 GRANT DELETE ON conversations TO authenticated;
 
 -- Verify the policy was created
