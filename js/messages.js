@@ -1765,7 +1765,9 @@ function showMobileMessageMenu(messageId, x, y) {
   if (!message) return;
   
   const messageAge = Date.now() - new Date(message.created_at).getTime();
-  const canEdit = !message.deleted_at && messageAge < MESSAGE_EDIT_WINDOW_MS;
+  const isSent = message.sender_id === currentUser.id;
+  const canEdit = isSent && !message.deleted_at && messageAge < MESSAGE_EDIT_WINDOW_MS;
+  // Anyone can delete any message (it will delete for everyone)
   const canDelete = !message.deleted_at;
   
   // Remove existing menu
