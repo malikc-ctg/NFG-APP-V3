@@ -196,6 +196,15 @@ CREATE POLICY "Users can update their created conversations"
   ON conversations FOR UPDATE
   USING (created_by = auth.uid());
 
+-- Users can delete conversations they created or are participants in
+DROP POLICY IF EXISTS "Users can delete their conversations" ON conversations;
+CREATE POLICY "Users can delete their conversations"
+  ON conversations FOR DELETE
+  USING (
+    created_by = auth.uid()
+    OR user_is_participant(id, auth.uid())
+  );
+
 -- ========== CONVERSATION PARTICIPANTS POLICIES ==========
 
 -- Drop existing policies if they exist
