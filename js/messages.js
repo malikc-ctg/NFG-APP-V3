@@ -571,9 +571,19 @@ function renderMessages() {
   const listEl = document.getElementById('messages-list');
   if (!listEl) return;
 
+  // Deduplicate messages by ID (keep the most recent one)
+  const seenIds = new Set();
+  const uniqueMessages = messages.filter(message => {
+    if (seenIds.has(message.id)) {
+      return false; // Duplicate - skip it
+    }
+    seenIds.add(message.id);
+    return true; // Unique - keep it
+  }).reverse(); // Reverse to keep the last occurrence of each ID
+
   // Messages are already filtered when loaded (deleted messages removed)
   // So we can render all messages in the array
-  listEl.innerHTML = messages.map((message, index) => {
+  listEl.innerHTML = uniqueMessages.map((message, index) => {
     const isSent = message.sender_id === currentUser.id;
     const sender = message.sender || {};
     const senderName = sender.full_name || sender.email || 'Unknown';
@@ -584,7 +594,7 @@ function renderMessages() {
     const isRead = message.readBy && message.readBy.length > 0;
 
     // Group messages from same sender (show avatar only on first message)
-    const prevMessage = index > 0 ? messages[index - 1] : null;
+    const prevMessage = index > 0 ? uniqueMessages[index - 1] : null;
     const showAvatar = !prevMessage || prevMessage.sender_id !== message.sender_id || 
       (new Date(message.created_at) - new Date(prevMessage.created_at)) > 5 * 60 * 1000; // 5 minutes
 
@@ -828,11 +838,27 @@ function subscribeToMessages(conversationId) {
       const messageIndex = messages.findIndex(m => m.id === updatedMessage.id);
       
       if (messageIndex !== -1) {
-        // Update local message
+        // Update local message in place (don't create new reference)
         messages[messageIndex] = { ...messages[messageIndex], ...updatedMessage };
         
-        // Re-render messages
+        // Re-render messages (deduplication already handled in renderMessages)
         renderMessages();
+      } else {
+        // Message not in local array - might have been deleted and reloaded
+        // Don't add it if it's deleted
+        if (!updatedMessage.deleted_at) {
+          // Fetch sender info and add it
+          const { data: sender } = await supabase
+            .from('user_profiles')
+            .select('id, full_name, email, profile_picture')
+            .eq('id', updatedMessage.sender_id)
+            .single();
+          
+          updatedMessage.sender = sender;
+          updatedMessage.readBy = [];
+          messages.push(updatedMessage);
+          renderMessages();
+        }
       }
     })
     .subscribe();
