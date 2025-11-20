@@ -93,3 +93,7 @@ CREATE POLICY "Users can delete their own deletion records"
 -- Grant permissions
 GRANT SELECT, INSERT, UPDATE, DELETE ON message_deletions TO authenticated;
 
+-- Enable Realtime publication for message_deletions
+-- This allows real-time updates when messages are deleted
+ALTER PUBLICATION supabase_realtime ADD TABLE message_deletions;
+

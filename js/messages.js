@@ -607,12 +607,11 @@ function renderMessages() {
     const showAvatar = !prevMessage || prevMessage.sender_id !== message.sender_id || 
       (new Date(message.created_at) - new Date(prevMessage.created_at)) > 5 * 60 * 1000; // 5 minutes
 
-    // Check if message can be edited (within 15 minutes and not deleted)
+    // Check if message can be edited (within 15 minutes)
     const messageAge = Date.now() - new Date(message.created_at).getTime();
-    const canEdit = isSent && !message.deleted_at && messageAge < MESSAGE_EDIT_WINDOW_MS;
+    const canEdit = isSent && messageAge < MESSAGE_EDIT_WINDOW_MS;
     // Anyone can delete any message (it will delete for everyone)
-    const canDelete = !message.deleted_at;
-    const isDeleted = message.deleted_at;
+    const canDelete = true; // Messages are filtered out entirely, so all visible messages can be deleted
 
     return `
       <div class="message-item flex items-end gap-2 ${isSent ? 'flex-row-reverse' : ''}" data-message-id="${message.id}">
@@ -624,13 +623,9 @@ function renderMessages() {
             }
           </div>
         ` : !isSent ? '<div class="w-8"></div>' : ''}
-        <div class="message-bubble ${isSent ? 'message-bubble-sent' : 'message-bubble-received'} px-4 py-2 relative group ${isDeleted ? 'opacity-60' : ''}" data-message-id="${message.id}">
+        <div class="message-bubble ${isSent ? 'message-bubble-sent' : 'message-bubble-received'} px-4 py-2 relative group" data-message-id="${message.id}">
           ${!isSent && showAvatar ? `<p class="text-xs font-semibold mb-1 ${isSent ? 'text-white/80' : 'text-gray-600 dark:text-gray-400'}">${escapeHtml(senderName)}</p>` : ''}
-          ${isDeleted ? `
-            <p class="text-sm italic ${isSent ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}">This message was deleted</p>
-          ` : `
-            <p class="message-content text-sm whitespace-pre-wrap">${escapeHtml(message.content || '')}</p>
-          `}
+          <p class="message-content text-sm whitespace-pre-wrap">${escapeHtml(message.content || '')}</p>
           <div class="flex items-center gap-1 mt-1 ${isSent ? 'justify-end' : 'justify-start'}">
             <span class="text-xs ${isSent ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}">${timestamp}</span>
             ${isEdited ? `<span class="text-xs ${isSent ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}">(edited)</span>` : ''}
@@ -774,7 +769,7 @@ function subscribeToMessages(conversationId) {
     supabase.removeChannel(realtimeSubscription);
   }
 
-  // Subscribe to new messages
+  // Subscribe to new messages and deletions
   realtimeSubscription = supabase
     .channel(`messages:${conversationId}`)
     .on('postgres_changes', {
@@ -835,6 +830,38 @@ function subscribeToMessages(conversationId) {
 
       // Reload conversations
       await loadConversations();
+    })
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'message_deletions',
+      filter: `user_id=eq.${currentUser.id}`
+    }, async (payload) => {
+      // Message deletion received - remove from local array and re-render
+      const deletion = payload.new;
+      const deletedMessageId = deletion.message_id;
+      
+      // Check if this message is in the current conversation
+      const deletedMessage = messages.find(m => m.id === deletedMessageId);
+      if (deletedMessage && currentConversation) {
+        // Get the message's conversation_id to verify it's from current conversation
+        const { data: messageData } = await supabase
+          .from('messages')
+          .select('conversation_id')
+          .eq('id', deletedMessageId)
+          .single();
+        
+        if (messageData && messageData.conversation_id === currentConversation.id) {
+          // Remove message from local array
+          messages = messages.filter(m => m.id !== deletedMessageId);
+          
+          // Re-render messages
+          renderMessages();
+          
+          // Update conversation list if needed
+          await loadConversations();
+        }
+      }
     })
     .subscribe();
 }
@@ -1873,7 +1900,7 @@ async function deleteMessage(messageId) {
   const message = messages.find(m => m.id === messageId);
   if (!message || !currentConversation) return;
   
-  const confirmed = confirm('Delete this message? It will be removed for everyone in this conversation.');
+  const confirmed = confirm('Delete this message? It will be permanently removed from this conversation for everyone.');
   if (!confirmed) return;
   
   try {
@@ -1908,7 +1935,7 @@ async function deleteMessage(messageId) {
     // Re-render messages
     renderMessages();
     triggerHaptic('success');
-    toast?.success('Message deleted', 'Success');
+    toast?.success('Message deleted for everyone', 'Success');
   } catch (error) {
     console.error('Error deleting message:', error);
     triggerHaptic('error');
