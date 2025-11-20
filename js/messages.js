@@ -396,26 +396,39 @@ function renderConversations(filteredConversations = null) {
               </div>
               <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${lastMessageTime ? 'Tap to view messages' : 'No messages yet'}</p>
             </div>
-            <!-- Desktop Actions (visible on hover, hidden on mobile) -->
-            <div class="conversation-actions-desktop hidden md:flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <!-- Desktop Actions Menu (three dots, visible on hover) -->
+            <div class="conversation-actions-desktop hidden md:block relative opacity-0 group-hover:opacity-100 transition-opacity">
               <button 
-                class="conversation-action-btn archive-btn-desktop p-2 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 transition" 
-                data-action="archive" 
+                class="conversation-menu-btn p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition" 
                 data-conversation-id="${conv.id}"
-                title="Archive"
+                title="More options"
+                onclick="event.stopPropagation(); toggleConversationMenu(event);"
+              >
+                <i data-lucide="more-vertical" class="w-5 h-5 text-gray-600 dark:text-gray-400"></i>
+              </button>
+              <!-- Dropdown Menu -->
+              <div 
+                class="conversation-menu-dropdown absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 min-w-[140px] z-50 hidden"
+                data-conversation-id="${conv.id}"
                 onclick="event.stopPropagation();"
               >
-                <i data-lucide="archive" class="w-4 h-4"></i>
-              </button>
-              <button 
-                class="conversation-action-btn delete-btn-desktop p-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition" 
-                data-action="delete" 
-                data-conversation-id="${conv.id}"
-                title="Delete"
-                onclick="event.stopPropagation();"
-              >
-                <i data-lucide="trash-2" class="w-4 h-4"></i>
-              </button>
+                <button 
+                  class="conversation-action-btn archive-btn-desktop w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition flex items-center gap-2"
+                  data-action="archive" 
+                  data-conversation-id="${conv.id}"
+                >
+                  <i data-lucide="archive" class="w-4 h-4 text-yellow-600 dark:text-yellow-400"></i>
+                  <span>Archive</span>
+                </button>
+                <button 
+                  class="conversation-action-btn delete-btn-desktop w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition flex items-center gap-2"
+                  data-action="delete" 
+                  data-conversation-id="${conv.id}"
+                >
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                  <span>Delete</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -440,12 +453,18 @@ function renderConversations(filteredConversations = null) {
     });
   });
 
-  // Attach desktop action button listeners (archive/delete)
+  // Attach desktop action button listeners (archive/delete from dropdown menu)
   listEl.querySelectorAll('.conversation-action-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation(); // Prevent conversation selection
       const action = btn.dataset.action;
       const conversationId = btn.dataset.conversationId;
+      
+      // Close the menu
+      const menu = btn.closest('.conversation-menu-dropdown');
+      if (menu) {
+        menu.classList.add('hidden');
+      }
       
       if (action === 'archive') {
         await archiveConversation(conversationId);
@@ -1724,6 +1743,48 @@ function filterConversations(query) {
 
   renderConversations(filtered);
 }
+
+// ========== CONVERSATION MENU ==========
+function toggleConversationMenu(event) {
+  // Close all other menus first
+  document.querySelectorAll('.conversation-menu-dropdown').forEach(menu => {
+    const button = menu.previousElementSibling;
+    if (button && button !== event.currentTarget) {
+      menu.classList.add('hidden');
+    }
+  });
+  
+  // Find the dropdown menu (next sibling of the button)
+  const button = event.currentTarget;
+  const menu = button.nextElementSibling;
+  
+  if (menu && menu.classList.contains('conversation-menu-dropdown')) {
+    menu.classList.toggle('hidden');
+    
+    // Recreate icons after showing menu
+    if (window.lucide && !menu.classList.contains('hidden')) {
+      lucide.createIcons();
+    }
+  }
+  
+  // Close menu when clicking outside
+  const closeMenuOnClickOutside = (e) => {
+    if (!button.closest('.conversation-actions-desktop')?.contains(e.target)) {
+      document.querySelectorAll('.conversation-menu-dropdown').forEach(m => {
+        m.classList.add('hidden');
+      });
+      document.removeEventListener('click', closeMenuOnClickOutside);
+    }
+  };
+  
+  // Add listener after current event completes
+  setTimeout(() => {
+    document.addEventListener('click', closeMenuOnClickOutside);
+  }, 0);
+}
+
+// Expose to global scope for inline onclick
+window.toggleConversationMenu = toggleConversationMenu;
 
 // ========== UTILITY FUNCTIONS ==========
 function getInitials(name) {
