@@ -1747,11 +1747,15 @@ function filterConversations(query) {
 
 // ========== CONVERSATION MENU ==========
 function toggleConversationMenu(event) {
+  event.stopPropagation();
+  event.preventDefault();
+  
   // Close all other menus first
   document.querySelectorAll('.conversation-menu-dropdown').forEach(menu => {
     const button = menu.previousElementSibling;
     if (button && button !== event.currentTarget) {
       menu.classList.add('hidden');
+      menu.style.display = 'none';
     }
   });
   
@@ -1760,12 +1764,28 @@ function toggleConversationMenu(event) {
   const menu = button.nextElementSibling;
   
   if (menu && menu.classList.contains('conversation-menu-dropdown')) {
-    menu.classList.toggle('hidden');
+    const isHidden = menu.classList.contains('hidden');
     
-    // Recreate icons after showing menu
-    if (window.lucide && !menu.classList.contains('hidden')) {
-      lucide.createIcons();
+    if (isHidden) {
+      // Show menu
+      menu.classList.remove('hidden');
+      menu.style.display = 'block';
+      
+      // Recreate icons after showing menu
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+      
+      console.log('[Menu] Menu shown for conversation:', button.dataset.conversationId);
+    } else {
+      // Hide menu
+      menu.classList.add('hidden');
+      menu.style.display = 'none';
+      
+      console.log('[Menu] Menu hidden for conversation:', button.dataset.conversationId);
     }
+  } else {
+    console.error('[Menu] Menu element not found for button:', button);
   }
   
   // Close menu when clicking outside
@@ -1773,6 +1793,7 @@ function toggleConversationMenu(event) {
     if (!button.closest('.conversation-actions-desktop')?.contains(e.target)) {
       document.querySelectorAll('.conversation-menu-dropdown').forEach(m => {
         m.classList.add('hidden');
+        m.style.display = 'none';
       });
       document.removeEventListener('click', closeMenuOnClickOutside);
     }
