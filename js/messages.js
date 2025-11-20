@@ -1878,12 +1878,12 @@ async function deleteMessage(messageId) {
   try {
     triggerHaptic('heavy');
     
-    // Soft delete: just set deleted_at on the message
-    const { error } = await supabase
-      .from('messages')
-      .update({ deleted_at: new Date().toISOString() })
-      .eq('id', messageId)
-      .eq('sender_id', currentUser.id); // Only sender can delete
+    // Soft delete: use database function to bypass RLS
+    const { data, error } = await supabase
+      .rpc('soft_delete_message', {
+        p_message_id: messageId,
+        p_user_id: currentUser.id
+      });
     
     if (error) throw error;
     
