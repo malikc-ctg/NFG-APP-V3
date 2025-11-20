@@ -1899,7 +1899,7 @@ async function deleteMessage(messageId, deleteForEveryone = false) {
       toast?.error('Failed to delete message: ' + (error.message || 'Unknown error'), 'Error');
     }
   } else {
-    // Delete for everyone (hard delete) - only sender can do this
+    // Delete for everyone (soft delete) - only sender can do this
     if (!isSender) {
       toast?.error('You can only delete your own messages for everyone', 'Error');
       triggerHaptic('error');
@@ -1912,16 +1912,22 @@ async function deleteMessage(messageId, deleteForEveryone = false) {
     try {
       triggerHaptic('heavy');
       
+      // Use soft delete (set deleted_at) instead of hard delete
+      // This works with the existing RLS UPDATE policy
       const { error } = await supabase
         .from('messages')
-        .delete()
+        .update({
+          deleted_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
         .eq('id', messageId)
         .eq('sender_id', currentUser.id);
       
       if (error) throw error;
       
-      // Remove from local array
-      messages = messages.filter(m => m.id !== messageId);
+      // Update local message
+      message.deleted_at = new Date().toISOString();
+      message.content = '';
       
       // Re-render messages
       renderMessages();
