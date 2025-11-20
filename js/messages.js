@@ -376,7 +376,7 @@ function renderConversations(filteredConversations = null) {
     const lastMessageTime = conv.last_message_at ? formatRelativeTime(conv.last_message_at) : '';
 
     return `
-      <div class="conversation-item-swipe-container relative overflow-hidden">
+      <div class="conversation-item-swipe-container relative overflow-hidden group">
         <div 
           class="conversation-item p-4 border-b border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 cursor-pointer transition-all relative z-10 bg-white dark:bg-gray-800 ${currentConversation?.id === conv.id ? 'bg-nfglight dark:bg-gray-700' : ''}"
           data-conversation-id="${conv.id}"
@@ -395,6 +395,27 @@ function renderConversations(filteredConversations = null) {
                 ${lastMessageTime ? `<span class="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0 ml-2">${lastMessageTime}</span>` : ''}
               </div>
               <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${lastMessageTime ? 'Tap to view messages' : 'No messages yet'}</p>
+            </div>
+            <!-- Desktop Actions (visible on hover, hidden on mobile) -->
+            <div class="conversation-actions-desktop hidden md:flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button 
+                class="conversation-action-btn archive-btn-desktop p-2 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 transition" 
+                data-action="archive" 
+                data-conversation-id="${conv.id}"
+                title="Archive"
+                onclick="event.stopPropagation();"
+              >
+                <i data-lucide="archive" class="w-4 h-4"></i>
+              </button>
+              <button 
+                class="conversation-action-btn delete-btn-desktop p-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition" 
+                data-action="delete" 
+                data-conversation-id="${conv.id}"
+                title="Delete"
+                onclick="event.stopPropagation();"
+              >
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
             </div>
           </div>
         </div>
@@ -419,9 +440,34 @@ function renderConversations(filteredConversations = null) {
     });
   });
 
+  // Attach desktop action button listeners (archive/delete)
+  listEl.querySelectorAll('.conversation-action-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation(); // Prevent conversation selection
+      const action = btn.dataset.action;
+      const conversationId = btn.dataset.conversationId;
+      
+      if (action === 'archive') {
+        await archiveConversation(conversationId);
+      } else if (action === 'delete') {
+        await deleteConversation(conversationId);
+      }
+      
+      // Recreate icons after action
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    });
+  });
+
   // Initialize swipe gestures for conversation items (mobile only)
   if (window.innerWidth < 768) {
     initConversationItemSwipe();
+  }
+  
+  // Recreate icons for desktop action buttons
+  if (window.lucide) {
+    lucide.createIcons();
   }
 
   // Re-create icons
