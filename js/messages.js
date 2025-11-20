@@ -118,6 +118,10 @@ let selectedFiles = []; // Track selected files for attachment
 let messageSearchQuery = ''; // Track search query
 let originalMessages = []; // Store original messages before search filter
 
+// ========== PHASE 3: MESSAGE REACTIONS ==========
+let messageReactions = new Map(); // Map of message_id -> reactions array
+const COMMON_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🔥', '👏', '🎉']; // Quick reaction emojis
+
 // Handle file selection
 function initFileUpload() {
   const fileInput = document.getElementById('file');
@@ -733,6 +737,11 @@ async function loadMessages(conversationId) {
       }
     }
 
+    // Load reactions for messages (Phase 3)
+    if (messages.length > 0) {
+      await loadMessageReactions(messages.map(m => m.id));
+    }
+
     // Render messages
     renderMessages();
 
@@ -746,6 +755,59 @@ async function loadMessages(conversationId) {
   } catch (error) {
     console.error('Error loading messages:', error);
     toast?.error('Failed to load messages', 'Error');
+  }
+}
+
+// ========== LOAD MESSAGE REACTIONS (Phase 3) ==========
+async function loadMessageReactions(messageIds) {
+  if (!messageIds || messageIds.length === 0) return;
+  
+  try {
+    const { data: reactionsData, error: reactionsError } = await supabase
+      .from('message_reactions')
+      .select('message_id, user_id, emoji')
+      .in('message_id', messageIds);
+    
+    if (reactionsError) {
+      console.warn('Error loading message reactions:', reactionsError);
+      return;
+    }
+    
+    // Group reactions by message_id
+    const reactionsMap = new Map();
+    (reactionsData || []).forEach(reaction => {
+      if (!reactionsMap.has(reaction.message_id)) {
+        reactionsMap.set(reaction.message_id, []);
+      }
+      reactionsMap.get(reaction.message_id).push({
+        user_id: reaction.user_id,
+        emoji: reaction.emoji
+      });
+    });
+    
+    // Store in module-level map
+    reactionsMap.forEach((reactions, messageId) => {
+      messageReactions.set(messageId, reactions);
+    });
+    
+    // Also fetch user profiles for reaction users
+    const userIds = [...new Set((reactionsData || []).map(r => r.user_id))];
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('user_profiles')
+        .select('id, full_name, email')
+        .in('id', userIds);
+      
+      // Attach profile info to reactions
+      const profilesMap = new Map((profiles || []).map(p => [p.id, p]));
+      reactionsMap.forEach((reactions, messageId) => {
+        reactions.forEach(reaction => {
+          reaction.user = profilesMap.get(reaction.user_id);
+        });
+      });
+    }
+  } catch (error) {
+    console.error('Error loading message reactions:', error);
   }
 }
 
@@ -1175,6 +1237,12 @@ function subscribeToMessages(conversationId) {
 
       // Re-render
       renderMessages();
+      
+      // Load reactions for new message (Phase 3)
+      if (newMessage.id) {
+        await loadMessageReactions([newMessage.id]);
+        renderMessages();
+      }
       
       // Ensure conversation view stays visible
       if (currentConversation && currentConversation.id === conversationId) {
