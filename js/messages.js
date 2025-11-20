@@ -1297,6 +1297,74 @@ function subscribeToMessages(conversationId) {
       }
     })
     .subscribe();
+  
+  // Subscribe to message reactions (Phase 3) - separate channel for reactions
+  // We'll subscribe to all reactions and filter client-side by message IDs
+  if (window.reactionsChannel) {
+    supabase.removeChannel(window.reactionsChannel);
+  }
+  
+  const reactionsChannel = supabase
+    .channel(`reactions:${conversationId}`)
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'message_reactions'
+    }, async (payload) => {
+      // New reaction added (Phase 3)
+      const reaction = payload.new;
+      
+      // Check if this reaction is for a message in the current conversation
+      const message = messages.find(m => m.id === reaction.message_id);
+      if (!message) return; // Not for this conversation
+      
+      const reactions = messageReactions.get(reaction.message_id) || [];
+      
+      // Check if reaction already exists
+      const exists = reactions.some(r => r.user_id === reaction.user_id && r.emoji === reaction.emoji);
+      if (!exists) {
+        // Fetch user profile
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('id, full_name, email')
+          .eq('id', reaction.user_id)
+          .single();
+        
+        reactions.push({
+          user_id: reaction.user_id,
+          emoji: reaction.emoji,
+          user: profile
+        });
+        messageReactions.set(reaction.message_id, reactions);
+        renderMessages();
+      }
+    })
+    .on('postgres_changes', {
+      event: 'DELETE',
+      schema: 'public',
+      table: 'message_reactions'
+    }, (payload) => {
+      // Reaction removed (Phase 3)
+      const oldReaction = payload.old;
+      
+      // Check if this reaction is for a message in the current conversation
+      const message = messages.find(m => m.id === oldReaction.message_id);
+      if (!message) return; // Not for this conversation
+      
+      const reactions = messageReactions.get(oldReaction.message_id) || [];
+      const updatedReactions = reactions.filter(r => !(r.user_id === oldReaction.user_id && r.emoji === oldReaction.emoji));
+      
+      if (updatedReactions.length === 0) {
+        messageReactions.delete(oldReaction.message_id);
+      } else {
+        messageReactions.set(oldReaction.message_id, updatedReactions);
+      }
+      renderMessages();
+    })
+    .subscribe();
+  
+  // Store reactions channel for cleanup
+  window.reactionsChannel = reactionsChannel;
 }
 
 // ========== MARK AS READ ==========
