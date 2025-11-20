@@ -39,22 +39,30 @@ CREATE OR REPLACE FUNCTION user_can_delete_for_participant(
   p_message_id UUID,
   p_target_user_id UUID
 ) RETURNS BOOLEAN AS $$
+DECLARE
+  v_conversation_id UUID;
 BEGIN
-  -- Check if both current user and target user are participants in the message's conversation
+  -- Get the conversation_id for the message
+  SELECT conversation_id INTO v_conversation_id
+  FROM messages
+  WHERE id = p_message_id;
+  
+  -- If message not found, deny
+  IF v_conversation_id IS NULL THEN
+    RETURN FALSE;
+  END IF;
+  
+  -- Check if both current user and target user are participants
   RETURN EXISTS (
     SELECT 1
-    FROM messages m
-    WHERE m.id = p_message_id
-      AND EXISTS (
-        SELECT 1 FROM conversation_participants cp1
-        WHERE cp1.conversation_id = m.conversation_id
-          AND cp1.user_id = auth.uid()
-      )
-      AND EXISTS (
-        SELECT 1 FROM conversation_participants cp2
-        WHERE cp2.conversation_id = m.conversation_id
-          AND cp2.user_id = p_target_user_id
-      )
+    FROM conversation_participants cp1
+    WHERE cp1.conversation_id = v_conversation_id
+      AND cp1.user_id = auth.uid()
+  ) AND EXISTS (
+    SELECT 1
+    FROM conversation_participants cp2
+    WHERE cp2.conversation_id = v_conversation_id
+      AND cp2.user_id = p_target_user_id
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
