@@ -1770,6 +1770,13 @@ function toggleConversationMenu(event) {
       // Show menu
       menu.classList.remove('hidden');
       menu.style.display = 'block';
+      menu.style.visibility = 'visible';
+      menu.style.opacity = '1';
+      menu.style.position = 'absolute';
+      menu.style.right = '0';
+      menu.style.top = '100%';
+      menu.style.marginTop = '4px';
+      menu.style.zIndex = '9999';
       
       // Recreate icons after showing menu
       if (window.lucide) {
@@ -1777,15 +1784,21 @@ function toggleConversationMenu(event) {
       }
       
       console.log('[Menu] Menu shown for conversation:', button.dataset.conversationId);
+      console.log('[Menu] Menu element:', menu);
+      console.log('[Menu] Menu computed style:', window.getComputedStyle(menu).display);
+      console.log('[Menu] Menu position:', menu.getBoundingClientRect());
     } else {
       // Hide menu
       menu.classList.add('hidden');
       menu.style.display = 'none';
+      menu.style.visibility = 'hidden';
+      menu.style.opacity = '0';
       
       console.log('[Menu] Menu hidden for conversation:', button.dataset.conversationId);
     }
   } else {
     console.error('[Menu] Menu element not found for button:', button);
+    console.error('[Menu] Button next sibling:', button.nextElementSibling);
   }
   
   // Close menu when clicking outside
