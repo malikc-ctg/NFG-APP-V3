@@ -23,15 +23,15 @@ ALTER TABLE message_deletions ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for message_deletions
 
--- Drop existing function if it exists
-DROP FUNCTION IF EXISTS user_can_delete_for_participant(UUID, UUID);
-
--- Drop existing policies if they exist
+-- Drop existing policies first (they depend on the function)
 DROP POLICY IF EXISTS "Users can view their own deletions" ON message_deletions;
 DROP POLICY IF EXISTS "Users can create their own deletions" ON message_deletions;
 DROP POLICY IF EXISTS "Users can create deletions for conversation participants" ON message_deletions;
 DROP POLICY IF EXISTS "Users can update their own deletions" ON message_deletions;
 DROP POLICY IF EXISTS "Users can delete their own deletion records" ON message_deletions;
+
+-- Drop existing function after policies are dropped
+DROP FUNCTION IF EXISTS user_can_delete_for_participant(UUID, UUID);
 
 -- Helper function to check if user can delete message for another participant
 -- Uses SECURITY DEFINER to bypass RLS when checking participants
