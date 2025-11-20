@@ -589,7 +589,7 @@ function renderMessages() {
     const isRead = message.readBy && message.readBy.length > 0;
 
     // Group messages from same sender (show avatar only on first message)
-    const prevMessage = index > 0 ? messages[index - 1] : null;
+    const prevMessage = index > 0 ? visibleMessages[index - 1] : null;
     const showAvatar = !prevMessage || prevMessage.sender_id !== message.sender_id || 
       (new Date(message.created_at) - new Date(prevMessage.created_at)) > 5 * 60 * 1000; // 5 minutes
 
