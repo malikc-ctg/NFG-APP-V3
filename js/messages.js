@@ -571,7 +571,7 @@ function renderMessages() {
   const listEl = document.getElementById('messages-list');
   if (!listEl) return;
 
-  // Deduplicate messages by ID (keep the most recent one)
+  // Deduplicate messages by ID (keep the first occurrence, remove later duplicates)
   const seenIds = new Set();
   const uniqueMessages = messages.filter(message => {
     if (seenIds.has(message.id)) {
@@ -579,7 +579,7 @@ function renderMessages() {
     }
     seenIds.add(message.id);
     return true; // Unique - keep it
-  }).reverse(); // Reverse to keep the last occurrence of each ID
+  });
 
   // Messages are already filtered when loaded (deleted messages removed)
   // So we can render all messages in the array
