@@ -1007,6 +1007,122 @@ function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+// ========== LINK PREVIEWS (Phase 2.3) ==========
+
+// Extract URLs from text
+function extractUrls(text) {
+  if (!text) return [];
+  
+  // URL regex pattern (matches http(s) URLs)
+  const urlPattern = /https?:\/\/[^\s<>"{}|\\^`[\]]+/gi;
+  const urls = text.match(urlPattern) || [];
+  
+  // Remove duplicates and return
+  return [...new Set(urls)];
+}
+
+// Format message content with clickable links
+function formatMessageContent(text) {
+  if (!text) return '';
+  
+  // Escape HTML first
+  let formatted = escapeHtml(text);
+  
+  // Replace URLs with clickable links
+  const urlPattern = /(https?:\/\/[^\s<>"{}|\\^`[\]]+)/gi;
+  formatted = formatted.replace(urlPattern, (url) => {
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-500 dark:text-blue-400 hover:underline break-all">${url}</a>`;
+  });
+  
+  return formatted;
+}
+
+// Fetch link preview metadata (Phase 2.3)
+async function fetchLinkPreview(url) {
+  try {
+    // Use Microlink.io's free API (no key required for basic usage)
+    // Note: This has rate limits, but works for demo purposes
+    const response = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}`);
+    
+    if (!response.ok) {
+      console.warn('Failed to fetch link preview for:', url);
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    // Extract relevant metadata
+    return {
+      url: url,
+      title: data.data?.title || data.data?.description?.substring(0, 60) || 'Link Preview',
+      description: data.data?.description || data.data?.title || '',
+      image: data.data?.image?.url || data.data?.logo?.url || null,
+      siteName: data.data?.publisher || data.data?.author || null
+    };
+  } catch (error) {
+    console.warn('Error fetching link preview:', error);
+    return null;
+  }
+}
+
+// Load link previews for a message (Phase 2.3)
+async function loadLinkPreviews(messageId, messageContent) {
+  if (!messageContent) return;
+  
+  // Extract URLs from message
+  const urls = extractUrls(messageContent);
+  if (urls.length === 0) return;
+  
+  // Fetch previews for each URL
+  const previewPromises = urls.map(url => fetchLinkPreview(url));
+  const previews = await Promise.all(previewPromises);
+  
+  // Filter out null results and store
+  const validPreviews = previews.filter(p => p !== null);
+  if (validPreviews.length > 0) {
+    linkPreviews.set(messageId, validPreviews);
+  }
+}
+
+// Render link preview cards for a message (Phase 2.3)
+function renderLinkPreviews(messageId) {
+  const previews = linkPreviews.get(messageId);
+  if (!previews || previews.length === 0) return '';
+  
+  return previews.map(preview => `
+    <a 
+      href="${preview.url}" 
+      target="_blank" 
+      rel="noopener noreferrer"
+      class="link-preview block mt-2 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-nfgblue dark:hover:border-blue-600 transition-colors bg-white dark:bg-gray-800"
+      onclick="event.stopPropagation()"
+    >
+      <div class="flex">
+        ${preview.image ? `
+          <div class="flex-shrink-0 w-32 h-24 bg-gray-100 dark:bg-gray-700">
+            <img 
+              src="${preview.image}" 
+              alt="${escapeHtml(preview.title)}" 
+              class="w-full h-full object-cover"
+              onerror="this.parentElement.remove()"
+            />
+          </div>
+        ` : ''}
+        <div class="flex-1 p-3 min-w-0">
+          ${preview.siteName ? `
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1 truncate">${escapeHtml(preview.siteName)}</p>
+          ` : ''}
+          <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1 line-clamp-2">${escapeHtml(preview.title)}</h4>
+          ${preview.description ? `
+            <p class="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">${escapeHtml(preview.description)}</p>
+          ` : ''}
+          <p class="text-xs text-gray-400 dark:text-gray-500 mt-2 truncate">${escapeHtml(preview.url)}</p>
+        </div>
+      </div>
+    </a>
+  `).join('');
+}
+
 // ========== MESSAGE SEARCH (Phase 2) ==========
 function initMessageSearch() {
   const toggleSearchBtn = document.getElementById('toggle-message-search-btn');
