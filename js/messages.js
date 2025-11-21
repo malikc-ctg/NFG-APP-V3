@@ -1067,9 +1067,12 @@ function formatMessageContent(text) {
 // Fetch link preview metadata (Phase 2.3)
 async function fetchLinkPreview(url) {
   try {
+    console.log('🌐 fetchLinkPreview called for URL:', url);
     // Use Microlink.io's free API (no key required for basic usage)
     // Note: This has rate limits, but works for demo purposes
+    console.log('Fetching from Microlink API...');
     const response = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}`);
+    console.log('Microlink API response status:', response.status);
     
     if (!response.ok) {
       console.warn('Failed to fetch link preview for:', url);
