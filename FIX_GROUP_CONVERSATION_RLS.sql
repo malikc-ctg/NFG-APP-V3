@@ -28,10 +28,27 @@ CREATE POLICY "Users can add participants to conversations they're in"
   );
 
 -- Also ensure users can insert into conversations they create
--- (This should already exist, but let's make sure)
+-- Fix the INSERT policy to be more explicit
 DROP POLICY IF EXISTS "Users can create conversations" ON conversations;
+DROP POLICY IF EXISTS "Enable insert for authenticated users" ON conversations;
 
+-- Create a more permissive policy for INSERT
 CREATE POLICY "Users can create conversations"
   ON conversations FOR INSERT
-  WITH CHECK (created_by = auth.uid());
+  WITH CHECK (
+    auth.uid() IS NOT NULL
+    AND created_by = auth.uid()
+  );
+
+-- Also add a fallback policy (if the above doesn't work due to function evaluation)
+-- This allows authenticated users to create conversations where they set themselves as creator
+CREATE POLICY "Enable insert for authenticated users" ON conversations
+  FOR INSERT
+  WITH CHECK (
+    auth.role() = 'authenticated'
+    AND (
+      created_by = auth.uid()
+      OR created_by IS NULL  -- Allow null, we'll handle it in the function
+    )
+  );
 
