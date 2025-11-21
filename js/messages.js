@@ -2201,6 +2201,7 @@ function selectGroupParticipant(userId, userName, avatarUrl) {
   }
   
   updateSelectedParticipantsUI();
+  validateGroupForm(); // Update button state when participants change
   
   // Re-render list to update selection state
   const searchQuery = document.getElementById('group-participant-search')?.value || '';
@@ -2276,6 +2277,7 @@ async function updateSelectedParticipantsUI() {
 function removeGroupParticipant(userId) {
   selectedGroupParticipants.delete(userId);
   updateSelectedParticipantsUI();
+  validateGroupForm(); // Update button state when participants change
   
   // Re-render list
   const searchQuery = document.getElementById('group-participant-search')?.value || '';
