@@ -1241,6 +1241,150 @@ function showEmojiPicker(messageId, triggerBtn) {
   triggerHaptic('light');
 }
 
+// ========== LOAD REPLY CONTEXT (Phase 3.2) ==========
+async function loadReplyContext(messages) {
+  // Get all message IDs that have replies
+  const replyMessageIds = messages
+    .filter(m => m.reply_to_id)
+    .map(m => m.reply_to_id);
+  
+  if (replyMessageIds.length === 0) return;
+  
+  // Fetch original messages
+  const uniqueReplyIds = [...new Set(replyMessageIds)];
+  const { data: originalMessages, error } = await supabase
+    .from('messages')
+    .select('id, content, sender_id')
+    .in('id', uniqueReplyIds);
+  
+  if (error) {
+    console.warn('Error loading reply context:', error);
+    return;
+  }
+  
+  // Fetch sender profiles for original messages
+  const originalSenderIds = [...new Set((originalMessages || []).map(m => m.sender_id))];
+  if (originalSenderIds.length > 0) {
+    const { data: originalSenders } = await supabase
+      .from('user_profiles')
+      .select('id, full_name, email')
+      .in('id', originalSenderIds);
+    
+    // Create maps for quick lookup
+    const originalMessagesMap = new Map((originalMessages || []).map(m => [m.id, m]));
+    const originalSendersMap = new Map((originalSenders || []).map(s => [s.id, s]));
+    
+    // Attach original message data to reply messages
+    messages.forEach(message => {
+      if (message.reply_to_id && originalMessagesMap.has(message.reply_to_id)) {
+        const originalMessage = originalMessagesMap.get(message.reply_to_id);
+        message.originalMessage = {
+          ...originalMessage,
+          sender: originalSendersMap.get(originalMessage.sender_id) || null
+        };
+      }
+    });
+  }
+}
+
+// ========== ATTACH REPLY LISTENERS (Phase 3.2) ==========
+function attachReplyListeners() {
+  // Reply button clicks
+  document.querySelectorAll('.reply-message-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const messageId = btn.dataset.messageId;
+      startReply(messageId);
+    });
+  });
+  
+  // Cancel reply button
+  const cancelReplyBtn = document.getElementById('cancel-reply-btn');
+  if (cancelReplyBtn) {
+    cancelReplyBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      cancelReply();
+    });
+  }
+}
+
+// ========== START REPLY (Phase 3.2) ==========
+function startReply(messageId) {
+  const message = messages.find(m => m.id === messageId);
+  if (!message || !currentConversation) return;
+  
+  const sender = message.sender || {};
+  const senderName = sender.full_name || sender.email || 'Unknown';
+  const messagePreview = (message.content || '').substring(0, 50);
+  
+  replyingTo = {
+    messageId: messageId,
+    content: message.content || '',
+    sender: senderName,
+    conversationId: currentConversation.id
+  };
+  
+  // Show reply context UI
+  const replyContext = document.getElementById('reply-context');
+  const replySenderName = document.getElementById('reply-sender-name');
+  const replyContentPreview = document.getElementById('reply-content-preview');
+  
+  if (replyContext && replySenderName && replyContentPreview) {
+    replyContext.classList.remove('hidden');
+    replySenderName.textContent = senderName;
+    replyContentPreview.textContent = messagePreview + (message.content && message.content.length > 50 ? '...' : '');
+    
+    // Scroll reply context into view
+    replyContext.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    
+    // Focus message input
+    const messageInput = document.getElementById('message-input');
+    if (messageInput) {
+      messageInput.focus();
+    }
+  }
+  
+  triggerHaptic('light');
+  
+  // Recreate icons
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+// ========== CANCEL REPLY (Phase 3.2) ==========
+function cancelReply() {
+  replyingTo = null;
+  
+  // Hide reply context UI
+  const replyContext = document.getElementById('reply-context');
+  if (replyContext) {
+    replyContext.classList.add('hidden');
+  }
+  
+  triggerHaptic('light');
+}
+
+// ========== SCROLL TO MESSAGE (Phase 3.2) ==========
+window.scrollToMessage = function(messageId) {
+  const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+  if (!messageElement) {
+    console.warn('Message element not found:', messageId);
+    return;
+  }
+  
+  // Scroll to message
+  messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  
+  // Highlight briefly
+  messageElement.classList.add('animate-pulse');
+  setTimeout(() => {
+    messageElement.classList.remove('animate-pulse');
+  }, 1000);
+  
+  triggerHaptic('light');
+};
+
 // ========== MOBILE DOUBLE-TAP FOR REACTIONS (Phase 3) ==========
 function attachMobileDoubleTapReactions() {
   // Only on mobile devices
