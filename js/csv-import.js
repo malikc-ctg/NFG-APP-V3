@@ -913,7 +913,7 @@ async function startImport() {
 }
 
 // Render import results
-function renderImportResults(imported, failed, failedRows) {
+async function renderImportResults(imported, failed, failedRows) {
   const resultsDiv = document.getElementById('import-results');
   const errorReportDiv = document.getElementById('import-error-report');
   
@@ -942,6 +942,14 @@ function renderImportResults(imported, failed, failedRows) {
         </div>
       ` : ''}
     </div>
+    ${imported > 0 ? `
+      <div class="flex justify-center mt-6">
+        <button id="view-sites-after-import-btn" class="px-6 py-3 bg-nfgblue dark:bg-blue-900 text-white rounded-xl hover:bg-nfgdark transition inline-flex items-center gap-2 font-medium">
+          <i data-lucide="building-2" class="w-5 h-5"></i>
+          View Imported Sites
+        </button>
+      </div>
+    ` : ''}
   `;
   
   if (failedRows.length > 0 && errorReportDiv) {
@@ -952,18 +960,30 @@ function renderImportResults(imported, failed, failedRows) {
   lucide.createIcons();
   
   // Show success message
-  toast.success(`Import complete! ${imported} site(s) imported successfully.`);
+  if (imported > 0) {
+    toast.success(`Import complete! ${imported} site(s) imported successfully.`);
+  }
   
   // Refresh sites list if sites page is open
-  refreshSitesList();
+  await refreshSitesList();
   
-  // Redirect to sites page after a short delay if not already there
-  setTimeout(() => {
-    const currentPath = window.location.pathname;
-    if (!currentPath.includes('sites.html')) {
-      window.location.href = './sites.html';
-    }
-  }, 2000);
+  // Add click handler for "View Sites" button
+  const viewSitesBtn = document.getElementById('view-sites-after-import-btn');
+  if (viewSitesBtn) {
+    viewSitesBtn.addEventListener('click', async () => {
+      // If already on sites page, just refresh and close modal
+      if (window.location.pathname.includes('sites.html')) {
+        if (typeof window.loadAndRenderSites === 'function') {
+          await window.loadAndRenderSites();
+          toast.success('Sites refreshed!');
+        }
+        closeImportModal();
+      } else {
+        // Navigate to sites page
+        window.location.href = './sites.html';
+      }
+    });
+  }
 }
 
 // Refresh sites list on the sites page

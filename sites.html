@@ -149,6 +149,11 @@
         <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           <!-- Notification Bell (will be injected by notification-center.js) -->
           
+          <button id="refresh-sites-btn" class="inline-flex items-center justify-center p-1.5 sm:p-2 rounded-lg sm:rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 transition flex-shrink-0"
+                  title="Refresh Sites">
+            <i data-lucide="refresh-cw" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
+          </button>
+          
           <button id="add-site-btn" class="inline-flex items-center justify-center sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-nfgblue text-white hover:bg-nfgdark transition flex-shrink-0"
                   data-action="open-modal" data-target="addSiteModal"
 >
@@ -780,6 +785,39 @@
       
       // Initialize bulk site operations
       initBulkSiteOperations();
+      
+      // Refresh button handler
+      document.getElementById('refresh-sites-btn')?.addEventListener('click', async () => {
+        const refreshBtn = document.getElementById('refresh-sites-btn');
+        const icon = refreshBtn?.querySelector('i[data-lucide="refresh-cw"]');
+        
+        // Add spinning animation
+        if (refreshBtn) {
+          refreshBtn.disabled = true;
+          refreshBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+        if (icon) {
+          icon.classList.add('animate-spin');
+        }
+        
+        try {
+          console.log('🔄 Manual refresh triggered...');
+          await loadAndRenderSites();
+          toast.success('Sites list refreshed!');
+        } catch (error) {
+          console.error('❌ Error refreshing sites:', error);
+          toast.error('Failed to refresh sites. Please try again.');
+        } finally {
+          // Remove spinning animation
+          if (refreshBtn) {
+            refreshBtn.disabled = false;
+            refreshBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+          }
+          if (icon) {
+            icon.classList.remove('animate-spin');
+          }
+        }
+      });
       
       // View Job History button handler
       document.getElementById('view-job-history-btn')?.addEventListener('click', async () => {
