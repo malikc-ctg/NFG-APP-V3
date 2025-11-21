@@ -2302,24 +2302,44 @@ function validateGroupForm() {
 async function handleCreateGroup() {
   const groupName = document.getElementById('group-name-input')?.value.trim();
   const description = document.getElementById('group-description-input')?.value.trim();
+  const createBtn = document.getElementById('create-group-btn');
+
+  // Disable button during creation to prevent double-clicks
+  if (createBtn) {
+    createBtn.disabled = true;
+    const originalText = createBtn.textContent || createBtn.innerHTML;
+    createBtn.innerHTML = '<span>Creating...</span>';
+  }
 
   if (!groupName) {
+    if (createBtn) {
+      createBtn.disabled = false;
+      createBtn.innerHTML = '<span>Create Group</span>';
+    }
     showNotification('Group name is required', 'error');
     return;
   }
 
   if (selectedGroupParticipants.size === 0) {
+    if (createBtn) {
+      createBtn.disabled = false;
+      createBtn.innerHTML = '<span>Create Group</span>';
+    }
     showNotification('Please select at least one member', 'error');
     return;
   }
 
   try {
     triggerHaptic('medium');
+    console.log('[Group] Creating group:', { groupName, description, participantCount: selectedGroupParticipants.size });
+    
     const conversation = await createGroupConversation(
       groupName,
       description || null,
       Array.from(selectedGroupParticipants)
     );
+
+    console.log('[Group] Group created successfully:', conversation.id);
 
     // Close modal
     closeCreateGroupModal();
@@ -2333,6 +2353,10 @@ async function handleCreateGroup() {
     showNotification(`Group "${groupName}" created successfully!`, 'success');
   } catch (error) {
     console.error('Error creating group:', error);
+    if (createBtn) {
+      createBtn.disabled = false;
+      createBtn.innerHTML = '<span>Create Group</span>';
+    }
     showNotification(error.message || 'Failed to create group', 'error');
   }
 }
