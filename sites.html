@@ -703,6 +703,39 @@
       }
     }
 
+    // Load and render sites (make it globally accessible)
+    async function loadAndRenderSites() {
+      console.log('🔄 Loading and rendering sites...');
+      const sites = await fetchSites();
+      allSites = sites;
+      window.allSites = sites; // Update global reference
+      window.selectedSites = selectedSites;
+      await renderSites(sites, { currentUserProfile });
+      window.lastSitesRefresh = Date.now(); // Update refresh timestamp
+    }
+    
+    // Make loadAndRenderSites globally available for CSV import to call
+    window.loadAndRenderSites = loadAndRenderSites;
+    
+    // Listen for refresh trigger from CSV import (localStorage event for cross-tab)
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'sites-refresh-trigger') {
+        console.log('🔄 Storage event triggered sites refresh');
+        loadAndRenderSites();
+      }
+    });
+    
+    // Also check on focus in case localStorage event doesn't fire
+    window.addEventListener('focus', () => {
+      // Debounce: only refresh if last refresh was more than 2 seconds ago
+      if (window.lastSitesRefresh && Date.now() - window.lastSitesRefresh < 2000) {
+        return;
+      }
+      window.lastSitesRefresh = Date.now();
+      // Don't auto-refresh on focus to avoid interrupting user
+      // loadAndRenderSites();
+    });
+    
     // Initialize page
     async function initPage() {
       // Get current user first
@@ -736,15 +769,8 @@
         }
       }
       
-      const sites = await fetchSites()
-      allSites = sites;
-      window.allSites = allSites;
-      window.selectedSites = selectedSites;
-      window.currentUserProfile = currentUserProfile;
-      
-      // Track last refresh time
-      window.lastSitesRefresh = Date.now();
-      await renderSites(sites, { currentUserProfile })
+      // Use the loadAndRenderSites function instead
+      await loadAndRenderSites();
       
       // Initialize UI event handlers (for View Site buttons and modals)
       initializeUI()
