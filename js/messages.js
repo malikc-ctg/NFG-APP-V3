@@ -920,11 +920,18 @@ async function loadMessages(conversationId) {
     }
 
     // Load link previews for messages (Phase 2.3)
+    console.log('=== LOAD MESSAGES: Starting link preview loading ===');
+    console.log('Total messages:', messages.length);
     if (messages.length > 0) {
-      const previewPromises = messages
-        .filter(m => m.content && !m.deleted_at)
-        .map(m => loadLinkPreviews(m.id, m.content));
+      const messagesWithContent = messages.filter(m => m.content && !m.deleted_at);
+      console.log('Messages with content:', messagesWithContent.length);
+      console.log('Messages to load previews for:', messagesWithContent.map(m => ({ id: m.id, content: m.content?.substring(0, 50) })));
+      const previewPromises = messagesWithContent.map(m => {
+        console.log('Calling loadLinkPreviews for message:', m.id);
+        return loadLinkPreviews(m.id, m.content);
+      });
       await Promise.all(previewPromises);
+      console.log('All preview loads completed in loadMessages');
     }
 
     // Render messages
@@ -1941,6 +1948,9 @@ async function sendMessage() {
     renderMessages();
 
     // Load link previews for the new message (Phase 2.3) - re-render after
+    console.log('=== SEND MESSAGE: Checking link previews ===');
+    console.log('Message content:', newMessage.content);
+    console.log('Message deleted:', !!newMessage.deleted_at);
     if (newMessage.content && !newMessage.deleted_at) {
       console.log('About to load link previews for sent message:', newMessage.id, newMessage.content);
       await loadLinkPreviews(newMessage.id, newMessage.content);
