@@ -6,7 +6,7 @@
 // - Background sync for queued operations
 // - Automatic sync when device comes back online
 
-const CACHE_NAME = 'nfg-app-v3';
+const CACHE_NAME = 'nfg-app-v3.1'; // Bump version to clear old cache
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache immediately
@@ -106,6 +106,14 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   // Skip cross-origin requests and non-GET requests
   if (!event.request.url.startsWith(self.location.origin) || event.request.method !== 'GET') {
+    return;
+  }
+
+  // NEVER cache messages.js - always fetch fresh (for link previews and updates)
+  const url = new URL(event.request.url);
+  if (url.pathname.includes('messages.js') || url.pathname.includes('/js/messages.js')) {
+    console.log('[SW v3] Bypassing cache for messages.js - fetching fresh');
+    event.respondWith(fetch(event.request));
     return;
   }
 
