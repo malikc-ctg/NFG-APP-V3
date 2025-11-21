@@ -1039,8 +1039,8 @@
     <main class="flex-1 flex overflow-hidden bg-white dark:bg-gray-800" style="background-color: #ffffff !important;">
       <!-- Conversation List Sidebar -->
       <div id="conversation-list" class="w-full md:w-80 lg:w-96 border-r border-nfgray dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col overflow-hidden">
-        <!-- Search Bar -->
-        <div class="p-4 border-b border-nfgray dark:border-gray-700">
+        <!-- Search Bar & Filters (Phase 4.4) -->
+        <div class="p-4 border-b border-nfgray dark:border-gray-700 space-y-3">
           <div class="relative">
             <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"></i>
             <input 
@@ -1049,6 +1049,30 @@
               placeholder="Search conversations..." 
               class="w-full pl-10 pr-4 py-2 rounded-lg border border-nfgray dark:border-gray-600 bg-white dark:bg-gray-700 text-sm focus:ring-2 focus:ring-nfgblue outline-none"
             />
+          </div>
+          <!-- Filter Buttons (Phase 4.4) -->
+          <div class="flex gap-2">
+            <button 
+              class="conversation-filter-btn flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition bg-nfgblue text-white dark:bg-blue-900" 
+              data-filter-type="all"
+              onclick="setConversationFilterType('all')"
+            >
+              All
+            </button>
+            <button 
+              class="conversation-filter-btn flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300" 
+              data-filter-type="direct"
+              onclick="setConversationFilterType('direct')"
+            >
+              Direct
+            </button>
+            <button 
+              class="conversation-filter-btn flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300" 
+              data-filter-type="group"
+              onclick="setConversationFilterType('group')"
+            >
+              Groups
+            </button>
           </div>
         </div>
 

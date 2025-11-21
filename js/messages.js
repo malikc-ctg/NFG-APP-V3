@@ -18,6 +18,7 @@ let typingChannel = null; // For typing indicators
 let presenceChannel = null; // For online/offline status
 let typingTimeout = null; // To clear typing indicator
 let typingChannelSubscribed = false; // Track subscription status
+let conversationFilterType = 'all'; // 'all', 'direct', 'group' (Phase 4.4)
 const TYPING_TIMEOUT_MS = 3000; // Hide typing after 3 seconds
 const MESSAGE_EDIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes to edit
 
@@ -345,13 +346,16 @@ function initEventListeners() {
     });
   }
 
-  // Conversation search
+  // Conversation search (Phase 4.4)
   const conversationSearch = document.getElementById('conversation-search');
   if (conversationSearch) {
     conversationSearch.addEventListener('input', (e) => {
       filterConversations(e.target.value);
     });
   }
+  
+  // Make filter function globally available (Phase 4.4)
+  window.setConversationFilterType = setConversationFilterType;
 
   // Back to list button (mobile)
   document.getElementById('back-to-list-btn')?.addEventListener('click', () => {
@@ -3082,6 +3086,22 @@ async function toggleMemberRole(userId) {
 }
 
 async function handleLeaveGroup(conversationId) {
+  // Check if user is the last admin (Phase 4.4 - Edge case handling)
+  const isAdmin = await isGroupAdmin(conversationId);
+  if (isAdmin) {
+    // Load participants to check admin count
+    if (!groupParticipants.has(conversationId)) {
+      await loadGroupParticipantsForConversation(conversationId);
+    }
+    const participants = groupParticipants.get(conversationId) || [];
+    const adminCount = participants.filter(p => p.role === 'admin').length;
+    
+    if (adminCount === 1) {
+      showNotification('You are the last admin. Please promote another member to admin before leaving, or transfer admin privileges.', 'error');
+      return;
+    }
+  }
+  
   const confirmed = confirm('Are you sure you want to leave this group? You will no longer receive messages from this group.');
   if (!confirmed) return;
 
@@ -3861,18 +3881,68 @@ function scrollToBottom() {
 }
 
 function filterConversations(query) {
-  if (!query.trim()) {
-    renderConversations();
-    return;
+  // Apply both search query and type filter (Phase 4.4)
+  let filtered = conversations;
+
+  // Apply type filter first
+  if (conversationFilterType !== 'all') {
+    filtered = filtered.filter(conv => {
+      if (conversationFilterType === 'direct') {
+        return conv.type === 'direct';
+      } else if (conversationFilterType === 'group') {
+        return conv.type === 'group';
+      }
+      return true;
+    });
   }
 
-  const filtered = conversations.filter(conv => {
-    const otherUser = conv.otherParticipants?.[0];
-    const name = (otherUser?.full_name || otherUser?.email || '').toLowerCase();
-    return name.includes(query.toLowerCase());
-  });
+  // Apply search query
+  if (query && query.trim()) {
+    const searchTerm = query.toLowerCase().trim();
+    filtered = filtered.filter(conv => {
+      if (conv.type === 'group') {
+        // Search in group name and description (Phase 4.4)
+        const groupName = (conv.title || '').toLowerCase();
+        const groupDesc = (conv.description || '').toLowerCase();
+        return groupName.includes(searchTerm) || groupDesc.includes(searchTerm);
+      } else if (conv.type === 'direct') {
+        // Search in other user's name or email (existing logic)
+        const otherUser = conv.otherParticipants?.[0];
+        const name = (otherUser?.full_name || '').toLowerCase();
+        const email = (otherUser?.email || '').toLowerCase();
+        return name.includes(searchTerm) || email.includes(searchTerm);
+      }
+      return false;
+    });
+  }
 
   renderConversations(filtered);
+}
+
+// Set conversation filter type (Phase 4.4)
+function setConversationFilterType(type) {
+  conversationFilterType = type;
+  
+  // Update active filter button UI
+  document.querySelectorAll('.conversation-filter-btn').forEach(btn => {
+    if (btn.dataset.filterType === type) {
+      btn.classList.add('bg-nfgblue', 'text-white', 'dark:bg-blue-900');
+      btn.classList.remove('bg-gray-100', 'text-gray-700', 'dark:bg-gray-700', 'dark:text-gray-300');
+    } else {
+      btn.classList.remove('bg-nfgblue', 'text-white', 'dark:bg-blue-900');
+      btn.classList.add('bg-gray-100', 'text-gray-700', 'dark:bg-gray-700', 'dark:text-gray-300');
+    }
+  });
+  
+  // Re-apply current search query
+  const searchInput = document.getElementById('conversation-search');
+  if (searchInput) {
+    filterConversations(searchInput.value);
+  } else {
+    filterConversations('');
+  }
+  
+  triggerHaptic('light');
 }
 
 // ========== CONVERSATION MENU ==========
