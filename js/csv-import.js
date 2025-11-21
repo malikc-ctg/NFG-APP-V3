@@ -834,6 +834,17 @@ async function startImport() {
     return;
   }
   
+  // Get current user ID - CRITICAL for multi-tenancy!
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) {
+    toast.error('Authentication error. Please log in again.');
+    console.error('Error getting user:', userError);
+    return;
+  }
+  
+  const currentUserId = user.id;
+  console.log('📥 Importing sites for user:', currentUserId);
+  
   goToStep(5);
   
   const validRows = validationResults.valid;
@@ -856,6 +867,9 @@ async function startImport() {
       // Set defaults
       if (!site.status) site.status = 'Active';
       
+      // CRITICAL: Set created_by for multi-tenancy!
+      site.created_by = currentUserId;
+      
       // Clean up data
       Object.keys(site).forEach(key => {
         if (site[key] === '' || site[key] === null || site[key] === undefined) {
@@ -865,18 +879,25 @@ async function startImport() {
         }
       });
       
+      // Ensure created_by is always set (don't delete it)
+      site.created_by = currentUserId;
+      
       return site;
     });
     
+    console.log('📦 Batch data prepared:', batchData.map(s => ({ name: s.name, created_by: s.created_by })));
+    
     try {
       // Insert batch
+      console.log('💾 Inserting batch:', batchData.length, 'sites');
       const { data, error } = await supabase
         .from('sites')
         .insert(batchData)
         .select();
       
       if (error) {
-        console.error('Batch import error:', error);
+        console.error('❌ Batch import error:', error);
+        console.error('Batch data:', batchData);
         failed += batch.length;
         batch.forEach(row => {
           failedRows.push({
@@ -886,6 +907,7 @@ async function startImport() {
           });
         });
       } else {
+        console.log(`✅ Successfully imported ${data.length} sites:`, data.map(s => s.name));
         imported += data.length;
       }
       
@@ -909,7 +931,7 @@ async function startImport() {
   
   // Show results
   goToStep(6);
-  renderImportResults(imported, failed, failedRows);
+  await renderImportResults(imported, failed, failedRows);
 }
 
 // Render import results
