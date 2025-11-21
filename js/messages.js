@@ -2372,9 +2372,20 @@ async function createGroupConversation(name, description, participantIds) {
   try {
     // Verify current user
     console.log('[Group] Current user ID:', currentUser?.id);
+    console.log('[Group] Current user object:', currentUser);
+    
     if (!currentUser || !currentUser.id) {
       throw new Error('User not authenticated');
     }
+
+    // Verify Supabase client
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      console.error('[Group] Auth check failed:', authError);
+      throw new Error('Authentication failed');
+    }
+    console.log('[Group] Verified auth user ID:', user.id);
+    console.log('[Group] Auth user matches currentUser:', user.id === currentUser.id);
 
     // 1. Create the conversation
     const conversationData = {
@@ -2385,6 +2396,7 @@ async function createGroupConversation(name, description, participantIds) {
     };
     
     console.log('[Group] Creating conversation with data:', conversationData);
+    console.log('[Group] Using Supabase client:', !!supabase);
     
     const { data: conversation, error: convError } = await supabase
       .from('conversations')
@@ -2398,6 +2410,7 @@ async function createGroupConversation(name, description, participantIds) {
       console.error('[Group] Error message:', convError.message);
       console.error('[Group] Error details:', convError.details);
       console.error('[Group] Error hint:', convError.hint);
+      console.error('[Group] Full error object:', JSON.stringify(convError, null, 2));
       throw new Error(convError.message || 'Failed to create conversation');
     }
 
