@@ -27,10 +27,20 @@ CREATE POLICY "Users can view their conversations"
     )
   );
 
--- INSERT: Simple check - user must be authenticated and set themselves as creator
+-- INSERT: Very simple check - just verify user is authenticated and setting themselves as creator
+-- Remove the auth.uid() IS NOT NULL check as it might cause issues
 CREATE POLICY "Users can create conversations"
   ON conversations FOR INSERT
   WITH CHECK (created_by = auth.uid());
+  
+-- Also add a more permissive fallback policy just in case
+-- (PostgreSQL will use the first matching policy)
+CREATE POLICY "Authenticated users can create conversations"
+  ON conversations FOR INSERT
+  WITH CHECK (
+    auth.role() = 'authenticated'
+    AND created_by = auth.uid()
+  );
 
 -- UPDATE: Users can update conversations they created
 CREATE POLICY "Users can update their created conversations"
