@@ -1042,19 +1042,36 @@ function waitForDOM() {
   
   if (modal && openBtn) {
     console.log('✅ DOM elements found, initializing CSV import...');
-    initCSVImport();
+    try {
+      initCSVImport();
+    } catch (error) {
+      console.error('❌ Error initializing CSV import:', error);
+    }
   } else {
-    console.log('⏳ Waiting for DOM elements...');
-    setTimeout(waitForDOM, 100);
+    console.log('⏳ Waiting for DOM elements... modal:', !!modal, 'button:', !!openBtn);
+    // Only retry up to 50 times (5 seconds)
+    if (typeof waitForDOM.retries === 'undefined') {
+      waitForDOM.retries = 0;
+    }
+    waitForDOM.retries++;
+    if (waitForDOM.retries < 50) {
+      setTimeout(waitForDOM, 100);
+    } else {
+      console.error('❌ Failed to find DOM elements after 5 seconds. Modal:', !!modal, 'Button:', !!openBtn);
+    }
   }
 }
 
+// Wait for DOM to be ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(waitForDOM, 100);
+    console.log('📄 DOMContentLoaded - waiting for CSV import elements...');
+    setTimeout(waitForDOM, 200);
   });
 } else {
-  setTimeout(waitForDOM, 100);
+  // DOM already loaded
+  console.log('📄 DOM already loaded - checking for CSV import elements...');
+  setTimeout(waitForDOM, 200);
 }
 
 // Also export for manual initialization if needed
