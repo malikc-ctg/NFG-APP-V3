@@ -1117,10 +1117,17 @@ async function loadLinkPreviews(messageId, messageContent) {
 
 // Render link preview cards for a message (Phase 2.3)
 function renderLinkPreviews(messageId) {
+  console.log('=== renderLinkPreviews called ===');
+  console.log('Message ID:', messageId);
+  console.log('Current linkPreviews map:', Array.from(linkPreviews.entries()));
   const previews = linkPreviews.get(messageId);
-  console.log('Rendering previews for message', messageId, ':', previews);
-  if (!previews || previews.length === 0) return '';
+  console.log('Previews for message', messageId, ':', previews);
+  if (!previews || previews.length === 0) {
+    console.log('No previews found for message', messageId);
+    return '';
+  }
   
+  console.log('Rendering', previews.length, 'preview(s) for message', messageId);
   return previews.map(preview => `
     <a 
       href="${preview.url}" 
