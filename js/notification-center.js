@@ -11,6 +11,7 @@ import { toast } from './notifications.js';
 const NOTIFICATION_TYPE_ICONS = {
   job_assigned: 'clipboard-list',
   job_completed: 'check-circle',
+  message_reaction: 'smile', // Phase 3: Message reactions
   job_updated: 'edit',
   booking_created: 'calendar',
   booking_updated: 'refresh-cw',
