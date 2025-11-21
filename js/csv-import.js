@@ -141,19 +141,26 @@ function initCSVImport() {
   const openBtn = document.getElementById('open-import-modal-btn');
   if (!openBtn) {
     console.error('❌ Import modal button not found');
+    console.log('Available buttons:', Array.from(document.querySelectorAll('button')).map(b => b.id).filter(Boolean));
     return;
   }
   console.log('✅ Import button found');
   
-  // Remove existing listeners to prevent duplicates
+  // Remove any existing listeners by cloning
   const newOpenBtn = openBtn.cloneNode(true);
-  openBtn.parentNode.replaceChild(newOpenBtn, openBtn);
+  if (openBtn.parentNode) {
+    openBtn.parentNode.replaceChild(newOpenBtn, openBtn);
+  }
   
+  // Add click listener
   newOpenBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    console.log('🔵 Import button clicked');
+    e.stopPropagation();
+    console.log('🔵 Import button clicked!');
     openImportModal();
   });
+  
+  console.log('✅ Import button listener attached');
   
   // Close modal buttons
   const closeModalBtn = document.getElementById('close-import-modal');
