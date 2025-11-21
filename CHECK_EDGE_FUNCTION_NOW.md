@@ -50,3 +50,4 @@ Now let's see if the trigger fired and called the Edge Function:
 
 
 
+

@@ -19,6 +19,7 @@ let presenceChannel = null; // For online/offline status
 let typingTimeout = null; // To clear typing indicator
 let typingChannelSubscribed = false; // Track subscription status
 let conversationFilterType = 'all'; // 'all', 'direct', 'group' (Phase 4.4)
+const linkPreviews = new Map(); // messageId -> linkPreviewData[] (Phase 2.3)
 const TYPING_TIMEOUT_MS = 3000; // Hide typing after 3 seconds
 const MESSAGE_EDIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes to edit
 
@@ -918,6 +919,14 @@ async function loadMessages(conversationId) {
       await loadReplyContext(messages);
     }
 
+    // Load link previews for messages (Phase 2.3)
+    if (messages.length > 0) {
+      const previewPromises = messages
+        .filter(m => m.content && !m.deleted_at)
+        .map(m => loadLinkPreviews(m.id, m.content));
+      await Promise.all(previewPromises);
+    }
+
     // Render messages
     renderMessages();
 
@@ -1198,7 +1207,8 @@ function renderMessages(isSearchMode = false) {
               </div>
             ` : ''}
             ${message.content ? `
-              <p class="message-content text-sm whitespace-pre-wrap">${isSearchMode && messageSearchQuery ? highlightSearchTerm(escapeHtml(message.content), messageSearchQuery) : escapeHtml(message.content)}</p>
+              <p class="message-content text-sm whitespace-pre-wrap">${isSearchMode && messageSearchQuery ? highlightSearchTerm(escapeHtml(message.content), messageSearchQuery) : formatMessageContent(message.content)}</p>
+              ${renderLinkPreviews(message.id)}
             ` : ''}
           `}
           <div class="flex items-center gap-1 mt-1 ${isSent ? 'justify-end' : 'justify-start'}">
@@ -1786,6 +1796,11 @@ async function sendMessage() {
       await loadReplyContext([messageWithSender]);
     }
 
+    // Load link previews for the new message (Phase 2.3)
+    if (newMessage.content && !newMessage.deleted_at) {
+      await loadLinkPreviews(newMessage.id, newMessage.content);
+    }
+
     // Re-render messages with animation
     renderMessages();
     
@@ -1867,6 +1882,11 @@ function subscribeToMessages(conversationId) {
       // Load reply context for new message if it's a reply (Phase 3.2)
       if (newMessage.reply_to_id) {
         await loadReplyContext([newMessage]);
+      }
+
+      // Load link previews for new message (Phase 2.3)
+      if (newMessage.content && !newMessage.deleted_at) {
+        await loadLinkPreviews(newMessage.id, newMessage.content);
       }
 
       // Re-render
