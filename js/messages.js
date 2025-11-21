@@ -1530,13 +1530,8 @@ async function sendMessage() {
     };
     
     // Add reply_to_id if replying (Phase 3.2)
-    console.log('[Reply] Current replyingTo state:', replyingTo);
     if (replyingTo && replyingTo.messageId) {
-      console.log('[Reply] Adding reply_to_id to message:', replyingTo.messageId);
       messageData.reply_to_id = replyingTo.messageId;
-      console.log('[Reply] messageData with reply_to_id:', messageData);
-    } else {
-      console.log('[Reply] No reply context found - replyingTo:', replyingTo);
     }
     
     if (attachmentUrl) {
