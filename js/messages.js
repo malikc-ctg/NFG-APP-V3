@@ -2370,20 +2370,34 @@ async function handleCreateGroup() {
 
 async function createGroupConversation(name, description, participantIds) {
   try {
+    // Verify current user
+    console.log('[Group] Current user ID:', currentUser?.id);
+    if (!currentUser || !currentUser.id) {
+      throw new Error('User not authenticated');
+    }
+
     // 1. Create the conversation
+    const conversationData = {
+      type: 'group',
+      title: name,
+      description: description || null,
+      created_by: currentUser.id
+    };
+    
+    console.log('[Group] Creating conversation with data:', conversationData);
+    
     const { data: conversation, error: convError } = await supabase
       .from('conversations')
-      .insert([{
-        type: 'group',
-        title: name,
-        description: description || null,
-        created_by: currentUser.id
-      }])
+      .insert([conversationData])
       .select()
       .single();
 
     if (convError) {
       console.error('[Group] Error creating conversation:', convError);
+      console.error('[Group] Error code:', convError.code);
+      console.error('[Group] Error message:', convError.message);
+      console.error('[Group] Error details:', convError.details);
+      console.error('[Group] Error hint:', convError.hint);
       throw new Error(convError.message || 'Failed to create conversation');
     }
 
