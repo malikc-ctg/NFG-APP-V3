@@ -2139,7 +2139,7 @@ function selectGroupParticipant(userId, userName, avatarUrl) {
   triggerHaptic('light');
 }
 
-function updateSelectedParticipantsUI() {
+async function updateSelectedParticipantsUI() {
   const container = document.getElementById('selected-participants-container');
   const list = document.getElementById('selected-participants-list');
   
@@ -2152,23 +2152,54 @@ function updateSelectedParticipantsUI() {
 
   container.classList.remove('hidden');
   
-  // Fetch selected user names (simplified - in production, cache user data)
+  // Fetch selected user names
   const selectedIds = Array.from(selectedGroupParticipants);
-  list.innerHTML = selectedIds.map(userId => {
-    // We'll need to fetch names, but for now show ID
-    return `
-      <div class="inline-flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 rounded-full text-sm" data-user-id="${userId}">
-        <span class="text-green-700 dark:text-green-300">${userId.substring(0, 8)}...</span>
-        <button onclick="removeGroupParticipant('${userId}')" class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200">
-          <i data-lucide="x" class="w-4 h-4"></i>
-        </button>
-      </div>
-    `;
-  }).join('');
+  if (selectedIds.length > 0) {
+    try {
+      const { data: profiles, error } = await supabase
+        .from('user_profiles')
+        .select('id, full_name, email')
+        .in('id', selectedIds);
 
-  // Re-create icons
-  if (window.lucide) {
-    lucide.createIcons();
+      if (error) throw error;
+
+      const profilesMap = new Map((profiles || []).map(p => [p.id, p]));
+
+      list.innerHTML = selectedIds.map(userId => {
+        const profile = profilesMap.get(userId);
+        const displayName = profile?.full_name || profile?.email || userId.substring(0, 8) + '...';
+        return `
+          <div class="inline-flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 rounded-full text-sm" data-user-id="${userId}">
+            <span class="text-green-700 dark:text-green-300">${escapeHtml(displayName)}</span>
+            <button onclick="removeGroupParticipant('${userId}')" class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      // Re-create icons
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    } catch (error) {
+      console.error('Error loading selected participant names:', error);
+      // Fallback to showing IDs
+      list.innerHTML = selectedIds.map(userId => {
+        return `
+          <div class="inline-flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 rounded-full text-sm" data-user-id="${userId}">
+            <span class="text-green-700 dark:text-green-300">${userId.substring(0, 8)}...</span>
+            <button onclick="removeGroupParticipant('${userId}')" class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    }
   }
 }
 
@@ -2419,7 +2450,7 @@ function selectGroupParticipant(userId, userName, avatarUrl) {
   triggerHaptic('light');
 }
 
-function updateSelectedParticipantsUI() {
+async function updateSelectedParticipantsUI() {
   const container = document.getElementById('selected-participants-container');
   const list = document.getElementById('selected-participants-list');
   
@@ -2432,23 +2463,54 @@ function updateSelectedParticipantsUI() {
 
   container.classList.remove('hidden');
   
-  // Fetch selected user names (simplified - in production, cache user data)
+  // Fetch selected user names
   const selectedIds = Array.from(selectedGroupParticipants);
-  list.innerHTML = selectedIds.map(userId => {
-    // We'll need to fetch names, but for now show ID
-    return `
-      <div class="inline-flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 rounded-full text-sm" data-user-id="${userId}">
-        <span class="text-green-700 dark:text-green-300">${userId.substring(0, 8)}...</span>
-        <button onclick="removeGroupParticipant('${userId}')" class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200">
-          <i data-lucide="x" class="w-4 h-4"></i>
-        </button>
-      </div>
-    `;
-  }).join('');
+  if (selectedIds.length > 0) {
+    try {
+      const { data: profiles, error } = await supabase
+        .from('user_profiles')
+        .select('id, full_name, email')
+        .in('id', selectedIds);
 
-  // Re-create icons
-  if (window.lucide) {
-    lucide.createIcons();
+      if (error) throw error;
+
+      const profilesMap = new Map((profiles || []).map(p => [p.id, p]));
+
+      list.innerHTML = selectedIds.map(userId => {
+        const profile = profilesMap.get(userId);
+        const displayName = profile?.full_name || profile?.email || userId.substring(0, 8) + '...';
+        return `
+          <div class="inline-flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 rounded-full text-sm" data-user-id="${userId}">
+            <span class="text-green-700 dark:text-green-300">${escapeHtml(displayName)}</span>
+            <button onclick="removeGroupParticipant('${userId}')" class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      // Re-create icons
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    } catch (error) {
+      console.error('Error loading selected participant names:', error);
+      // Fallback to showing IDs
+      list.innerHTML = selectedIds.map(userId => {
+        return `
+          <div class="inline-flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 rounded-full text-sm" data-user-id="${userId}">
+            <span class="text-green-700 dark:text-green-300">${userId.substring(0, 8)}...</span>
+            <button onclick="removeGroupParticipant('${userId}')" class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    }
   }
 }
 
