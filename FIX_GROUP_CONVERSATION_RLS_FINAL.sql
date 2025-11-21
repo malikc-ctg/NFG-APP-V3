@@ -81,12 +81,8 @@ CREATE POLICY "Users can add participants to conversations they're in"
       AND conversations.created_by = auth.uid()
     )
     OR
-    -- User is already a participant (allows adding others to existing groups)
-    EXISTS (
-      SELECT 1 FROM conversation_participants cp
-      WHERE cp.conversation_id = conversation_participants.conversation_id
-      AND cp.user_id = auth.uid()
-    )
+    -- User is already a participant (use helper function to avoid recursion)
+    user_is_participant(conversation_id, auth.uid())
   );
 
 -- UPDATE: Users can update their own participant record
