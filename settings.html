@@ -17,6 +17,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- PapaParse for CSV parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <link rel="stylesheet" href="./css/custom-dropdown.css">
   
   <!-- Mobile Menu Styles -->
@@ -31,6 +33,114 @@
   <!-- Dark Mode -->
   <link rel="stylesheet" href="./css/dark-mode.css">
   <script src="./js/dark-mode.js"></script>
+  
+  <!-- CSV Import Styles -->
+  <style>
+    /* Step Indicator Styles */
+    #import-step-indicator {
+      position: relative;
+    }
+    
+    .step-indicator {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      position: relative;
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .step-number {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.875rem;
+      border: 2px solid #E5E7EB;
+      background: white;
+      color: #9CA3AF;
+      transition: all 0.3s;
+    }
+    
+    .dark .step-number {
+      border-color: #374151;
+      background: #1F2937;
+      color: #6B7280;
+    }
+    
+    .step-indicator.active .step-number {
+      border-color: #0D47A1;
+      background: #0D47A1;
+      color: white;
+    }
+    
+    .dark .step-indicator.active .step-number {
+      border-color: #3B82F6;
+      background: #3B82F6;
+      color: white;
+    }
+    
+    .step-indicator.completed .step-number {
+      border-color: #10B981;
+      background: #10B981;
+      color: white;
+    }
+    
+    .step-label {
+      font-size: 0.75rem;
+      color: #9CA3AF;
+      text-align: center;
+    }
+    
+    .dark .step-label {
+      color: #6B7280;
+    }
+    
+    .step-indicator.active .step-label {
+      color: #0D47A1;
+      font-weight: 600;
+    }
+    
+    .dark .step-indicator.active .step-label {
+      color: #3B82F6;
+    }
+    
+    .step-line {
+      position: absolute;
+      top: 1rem;
+      left: 50%;
+      right: -50%;
+      height: 2px;
+      background: #E5E7EB;
+      z-index: -1;
+    }
+    
+    .dark .step-line {
+      background: #374151;
+    }
+    
+    .step-indicator:last-child .step-line {
+      display: none;
+    }
+    
+    .step-indicator.completed + .step-indicator .step-line,
+    .step-indicator.active + .step-indicator .step-line {
+      background: #10B981;
+    }
+    
+    /* Import Step Styles */
+    .import-step {
+      display: none;
+    }
+    
+    .import-step.active {
+      display: block;
+    }
+  </style>
   
   <script>
     tailwind.config = {
@@ -293,6 +403,35 @@
             <div id="pending-invitations-list" class="space-y-2 md:space-y-3">
               <!-- Populated by JS -->
             </div>
+          </div>
+        </section>
+
+        <!-- Data Import Section -->
+        <section id="data-import-section" class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl shadow-nfg p-4 md:p-6">
+          <div class="flex items-center justify-between gap-3 mb-4">
+            <div class="flex items-center gap-2 md:gap-3 min-w-0">
+              <div class="w-8 h-8 md:w-10 md:h-10 flex-shrink-0 rounded-full bg-nfglight dark:bg-gray-700 flex items-center justify-center">
+                <i data-lucide="upload" class="w-4 h-4 md:w-5 md:h-5 text-nfgblue dark:text-blue-400"></i>
+              </div>
+              <div class="min-w-0">
+                <h3 class="text-base md:text-lg font-semibold text-nfgblue dark:text-blue-400">Data Import</h3>
+                <p class="text-xs md:text-sm text-gray-500 truncate">Import data from CSV files</p>
+              </div>
+            </div>
+            <button id="open-import-modal-btn" class="items-center gap-1.5 md:gap-2 px-3 py-2 md:px-4 bg-nfgblue dark:bg-blue-900 text-white rounded-xl hover:bg-nfgdark transition text-sm flex-shrink-0 flex">
+              <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+              <span class="hidden sm:inline">Import Data</span>
+            </button>
+          </div>
+          
+          <div class="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+            <p>Migrate data from your existing platform quickly and easily.</p>
+            <ul class="list-disc list-inside space-y-1 ml-2">
+              <li>Import sites, jobs, users, and bookings</li>
+              <li>Automatic column mapping</li>
+              <li>Data validation before import</li>
+              <li>Error reporting for failed rows</li>
+            </ul>
           </div>
         </section>
 
@@ -2029,6 +2168,206 @@
     // Start initialization
     init()
   </script>
+  
+  <!-- CSV Import -->
+  <script type="module" src="./js/csv-import.js"></script>
+  
+  <!-- CSV Import Modal -->
+  <div id="csv-import-modal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-[60]">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div class="p-4 md:p-6 border-b border-nfgray dark:border-gray-700 flex items-center justify-between flex-shrink-0">
+        <div>
+          <h3 class="text-lg md:text-xl font-semibold text-nfgblue dark:text-blue-400">Import Data from CSV</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Migrate your data from existing platforms</p>
+        </div>
+        <button id="close-import-modal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      
+      <div class="flex-1 overflow-y-auto p-4 md:p-6">
+        <!-- Step Indicator -->
+        <div id="import-step-indicator" class="flex items-center justify-between mb-6">
+          <div class="flex-1 flex items-center">
+            <div class="step-indicator active" data-step="1">
+              <div class="step-number">1</div>
+              <span class="step-label">Select Type</span>
+            </div>
+            <div class="step-line"></div>
+            <div class="step-indicator" data-step="2">
+              <div class="step-number">2</div>
+              <span class="step-label">Upload CSV</span>
+            </div>
+            <div class="step-line"></div>
+            <div class="step-indicator" data-step="3">
+              <div class="step-number">3</div>
+              <span class="step-label">Map Columns</span>
+            </div>
+            <div class="step-line"></div>
+            <div class="step-indicator" data-step="4">
+              <div class="step-number">4</div>
+              <span class="step-label">Preview</span>
+            </div>
+            <div class="step-line"></div>
+            <div class="step-indicator" data-step="5">
+              <div class="step-number">5</div>
+              <span class="step-label">Import</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Step 1: Select Import Type -->
+        <div id="import-step-1" class="import-step active">
+          <h4 class="text-lg font-semibold mb-4">What would you like to import?</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <button class="import-type-btn p-4 border-2 border-nfgray rounded-xl hover:border-nfgblue hover:bg-nfglight dark:hover:bg-gray-700 transition" data-type="sites">
+              <i data-lucide="building-2" class="w-8 h-8 text-nfgblue dark:text-blue-400 mb-2"></i>
+              <span class="font-semibold block">Sites</span>
+              <span class="text-sm text-gray-500 dark:text-gray-400">Import locations and addresses</span>
+            </button>
+            <button class="import-type-btn p-4 border-2 border-nfgray rounded-xl hover:border-nfgblue hover:bg-nfglight dark:hover:bg-gray-700 transition" data-type="jobs" disabled>
+              <i data-lucide="clipboard-list" class="w-8 h-8 text-gray-400 mb-2"></i>
+              <span class="font-semibold block text-gray-400">Jobs</span>
+              <span class="text-sm text-gray-500">Coming soon</span>
+            </button>
+            <button class="import-type-btn p-4 border-2 border-nfgray rounded-xl hover:border-nfgblue hover:bg-nfglight dark:hover:bg-gray-700 transition" data-type="users" disabled>
+              <i data-lucide="users" class="w-8 h-8 text-gray-400 mb-2"></i>
+              <span class="font-semibold block text-gray-400">Users</span>
+              <span class="text-sm text-gray-500">Coming soon</span>
+            </button>
+            <button class="import-type-btn p-4 border-2 border-nfgray rounded-xl hover:border-nfgblue hover:bg-nfglight dark:hover:bg-gray-700 transition" data-type="bookings" disabled>
+              <i data-lucide="calendar" class="w-8 h-8 text-gray-400 mb-2"></i>
+              <span class="font-semibold block text-gray-400">Bookings</span>
+              <span class="text-sm text-gray-500">Coming soon</span>
+            </button>
+          </div>
+          <div class="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+            <div class="flex items-start gap-3">
+              <i data-lucide="download" class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5"></i>
+              <div>
+                <p class="font-medium text-blue-900 dark:text-blue-100 mb-1">Need a template?</p>
+                <a id="download-template-btn" href="#" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">Download CSV template</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Step 2: Upload CSV -->
+        <div id="import-step-2" class="import-step hidden">
+          <h4 class="text-lg font-semibold mb-4">Upload CSV File</h4>
+          <div id="csv-upload-area" class="border-2 border-dashed border-nfgray rounded-xl p-8 text-center hover:border-nfgblue transition cursor-pointer">
+            <input type="file" id="csv-file-input" accept=".csv" class="hidden">
+            <i data-lucide="upload-cloud" class="w-12 h-12 text-nfgblue dark:text-blue-400 mx-auto mb-4"></i>
+            <p class="text-lg font-medium mb-2">Drag & drop CSV file here</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">or click to browse</p>
+            <button id="browse-csv-btn" class="px-4 py-2 bg-nfgblue dark:bg-blue-900 text-white rounded-xl hover:bg-nfgdark transition">
+              Browse Files
+            </button>
+            <p class="text-xs text-gray-400 mt-4">Maximum file size: 10MB</p>
+          </div>
+          <div id="csv-file-info" class="hidden mt-4 p-4 bg-nfglight dark:bg-gray-700 rounded-xl">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <i data-lucide="file-text" class="w-6 h-6 text-nfgblue dark:text-blue-400"></i>
+                <div>
+                  <p id="csv-file-name" class="font-medium"></p>
+                  <p id="csv-file-size" class="text-sm text-gray-500 dark:text-gray-400"></p>
+                </div>
+              </div>
+              <button id="remove-csv-file" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">
+                <i data-lucide="x" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Step 3: Column Mapping -->
+        <div id="import-step-3" class="import-step hidden">
+          <h4 class="text-lg font-semibold mb-4">Map CSV Columns to NFG Fields</h4>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Match your CSV columns to the correct NFG fields</p>
+          <div class="overflow-x-auto">
+            <table class="w-full border-collapse">
+              <thead>
+                <tr class="border-b border-nfgray dark:border-gray-700">
+                  <th class="text-left p-3 font-semibold">CSV Column</th>
+                  <th class="text-left p-3 font-semibold">NFG Field</th>
+                  <th class="text-left p-3 font-semibold">Sample Value</th>
+                </tr>
+              </thead>
+              <tbody id="column-mapping-table">
+                <!-- Populated by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <!-- Step 4: Preview & Validate -->
+        <div id="import-step-4" class="import-step hidden">
+          <h4 class="text-lg font-semibold mb-4">Import Preview</h4>
+          <div id="validation-stats" class="mb-4 flex gap-4 flex-wrap">
+            <div class="flex items-center gap-2">
+              <span id="valid-count" class="text-green-600 dark:text-green-400 font-semibold">0</span>
+              <span class="text-sm text-gray-600 dark:text-gray-400">valid rows</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="warning-count" class="text-yellow-600 dark:text-yellow-400 font-semibold">0</span>
+              <span class="text-sm text-gray-600 dark:text-gray-400">warnings</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="error-count" class="text-red-600 dark:text-red-400 font-semibold">0</span>
+              <span class="text-sm text-gray-600 dark:text-gray-400">errors</span>
+            </div>
+          </div>
+          <div id="preview-table-container" class="overflow-x-auto border border-nfgray dark:border-gray-700 rounded-xl">
+            <table class="w-full">
+              <thead class="bg-nfglight dark:bg-gray-700">
+                <tr id="preview-table-headers"></tr>
+              </thead>
+              <tbody id="preview-table-body"></tbody>
+            </table>
+          </div>
+          <div id="preview-errors" class="mt-4 hidden"></div>
+        </div>
+        
+        <!-- Step 5: Import Progress -->
+        <div id="import-step-5" class="import-step hidden">
+          <h4 class="text-lg font-semibold mb-4">Importing...</h4>
+          <div class="space-y-4">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium">Progress</span>
+                <span id="import-progress-text" class="text-sm text-gray-500 dark:text-gray-400">0 / 0</span>
+              </div>
+              <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                <div id="import-progress-bar" class="bg-nfgblue dark:bg-blue-900 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Step 6: Results -->
+        <div id="import-step-6" class="import-step hidden">
+          <h4 class="text-lg font-semibold mb-4">Import Complete!</h4>
+          <div id="import-results" class="space-y-4">
+            <!-- Populated by JavaScript -->
+          </div>
+          <div id="import-error-report" class="mt-4 hidden">
+            <a id="download-error-report" href="#" class="inline-flex items-center gap-2 px-4 py-2 border border-red-200 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              Download Error Report
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      <div class="p-4 md:p-6 border-t border-nfgray dark:border-gray-700 flex items-center justify-end gap-3 flex-shrink-0">
+        <button id="import-cancel-btn" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 transition">Cancel</button>
+        <button id="import-back-btn" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 transition hidden">Back</button>
+        <button id="import-next-btn" class="px-4 py-2 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark transition hidden">Next</button>
+        <button id="import-confirm-btn" class="px-4 py-2 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark transition hidden">Start Import</button>
+      </div>
+    </div>
+  </div>
   
   <!-- Notification Center -->
   <script type="module" src="./js/notification-center.js"></script>
