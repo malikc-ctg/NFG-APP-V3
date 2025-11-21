@@ -56,15 +56,12 @@ CREATE POLICY "Users can delete their conversations"
   );
 
 -- Step 4: Recreate conversation_participants policies
--- SELECT: Users can view participants in their conversations
+-- SELECT: Users can view participants in conversations they're in
+-- Use the helper function to avoid recursion
 CREATE POLICY "Users can view participants in their conversations"
   ON conversation_participants FOR SELECT
   USING (
-    EXISTS (
-      SELECT 1 FROM conversation_participants cp
-      WHERE cp.conversation_id = conversation_participants.conversation_id
-      AND cp.user_id = auth.uid()
-    )
+    user_is_participant(conversation_id, auth.uid())
   );
 
 -- INSERT: Allow users to add participants when:
