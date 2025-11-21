@@ -1067,10 +1067,14 @@ async function fetchLinkPreview(url) {
 
 // Load link previews for a message (Phase 2.3)
 async function loadLinkPreviews(messageId, messageContent) {
-  if (!messageContent) return;
+  if (!messageContent) {
+    console.log('No content for message:', messageId);
+    return;
+  }
   
   // Extract URLs from message
   const urls = extractUrls(messageContent);
+  console.log('Extracted URLs for message', messageId, ':', urls);
   if (urls.length === 0) return;
   
   // Fetch previews for each URL
@@ -1079,14 +1083,17 @@ async function loadLinkPreviews(messageId, messageContent) {
   
   // Filter out null results and store
   const validPreviews = previews.filter(p => p !== null);
+  console.log('Valid previews for message', messageId, ':', validPreviews);
   if (validPreviews.length > 0) {
     linkPreviews.set(messageId, validPreviews);
+    console.log('Stored previews in map for message:', messageId);
   }
 }
 
 // Render link preview cards for a message (Phase 2.3)
 function renderLinkPreviews(messageId) {
   const previews = linkPreviews.get(messageId);
+  console.log('Rendering previews for message', messageId, ':', previews);
   if (!previews || previews.length === 0) return '';
   
   return previews.map(preview => `
@@ -1912,13 +1919,15 @@ async function sendMessage() {
       await loadReplyContext([messageWithSender]);
     }
 
-    // Load link previews for the new message (Phase 2.3)
+    // Re-render messages with animation (before previews load)
+    renderMessages();
+
+    // Load link previews for the new message (Phase 2.3) - re-render after
     if (newMessage.content && !newMessage.deleted_at) {
       await loadLinkPreviews(newMessage.id, newMessage.content);
+      // Re-render after previews load
+      renderMessages();
     }
-
-    // Re-render messages with animation
-    renderMessages();
     
     // Ensure conversation view stays visible
     showConversationView();
@@ -2000,13 +2009,15 @@ function subscribeToMessages(conversationId) {
         await loadReplyContext([newMessage]);
       }
 
-      // Load link previews for new message (Phase 2.3)
+      // Re-render first
+      renderMessages();
+
+      // Load link previews for new message (Phase 2.3) - re-render after
       if (newMessage.content && !newMessage.deleted_at) {
         await loadLinkPreviews(newMessage.id, newMessage.content);
+        // Re-render after previews load
+        renderMessages();
       }
-
-      // Re-render
-      renderMessages();
       
       // Load reactions for new message (Phase 3)
       if (newMessage.id) {
