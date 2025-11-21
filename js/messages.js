@@ -926,23 +926,28 @@ async function loadMessages(conversationId) {
       await loadReplyContext(messages);
     }
 
-    // Load link previews for messages (Phase 2.3)
-    console.log('=== LOAD MESSAGES: Starting link preview loading ===');
-    console.log('Total messages:', messages.length);
+    // Render messages first (so they appear quickly)
+    renderMessages();
+
+    // Load link previews for messages (Phase 2.3) - load after rendering, then re-render
     if (messages.length > 0) {
+      console.log('=== LOAD MESSAGES: Starting link preview loading ===');
+      console.log('Total messages:', messages.length);
       const messagesWithContent = messages.filter(m => m.content && !m.deleted_at);
       console.log('Messages with content:', messagesWithContent.length);
-      console.log('Messages to load previews for:', messagesWithContent.map(m => ({ id: m.id, content: m.content?.substring(0, 50) })));
-      const previewPromises = messagesWithContent.map(m => {
-        console.log('Calling loadLinkPreviews for message:', m.id);
-        return loadLinkPreviews(m.id, m.content);
-      });
-      await Promise.all(previewPromises);
-      console.log('All preview loads completed in loadMessages');
+      
+      if (messagesWithContent.length > 0) {
+        const previewPromises = messagesWithContent.map(m => {
+          console.log('Queueing preview load for message:', m.id, 'Content:', m.content?.substring(0, 50));
+          return loadLinkPreviews(m.id, m.content);
+        });
+        await Promise.all(previewPromises);
+        console.log('All preview loads completed - re-rendering with previews');
+        
+        // Re-render after previews load to show preview cards
+        renderMessages();
+      }
     }
-
-    // Render messages
-    renderMessages();
 
     if (loadingEl) loadingEl.classList.add('hidden');
     if (messages.length === 0) {
