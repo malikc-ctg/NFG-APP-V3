@@ -741,6 +741,9 @@
       window.allSites = allSites;
       window.selectedSites = selectedSites;
       window.currentUserProfile = currentUserProfile;
+      
+      // Track last refresh time
+      window.lastSitesRefresh = Date.now();
       await renderSites(sites, { currentUserProfile })
       
       // Initialize UI event handlers (for View Site buttons and modals)

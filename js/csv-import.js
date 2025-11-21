@@ -954,10 +954,71 @@ function renderImportResults(imported, failed, failedRows) {
   // Show success message
   toast.success(`Import complete! ${imported} site(s) imported successfully.`);
   
-  // Refresh sites page if open
+  // Refresh sites list if sites page is open
+  refreshSitesList();
+  
+  // Redirect to sites page after a short delay if not already there
   setTimeout(() => {
-    window.location.href = './sites.html';
+    const currentPath = window.location.pathname;
+    if (!currentPath.includes('sites.html')) {
+      window.location.href = './sites.html';
+    }
   }, 2000);
+}
+
+// Refresh sites list on the sites page
+async function refreshSitesList() {
+  console.log('🔄 Attempting to refresh sites list...');
+  
+  // Method 1: Use loadAndRenderSites if available (cleanest approach)
+  if (typeof window.loadAndRenderSites === 'function') {
+    console.log('✅ loadAndRenderSites found, calling it...');
+    try {
+      await window.loadAndRenderSites();
+      console.log('✅ Sites list refreshed via loadAndRenderSites!');
+      return;
+    } catch (error) {
+      console.error('❌ Error calling loadAndRenderSites:', error);
+    }
+  }
+  
+  // Method 2: Use fetchSites and renderSites separately
+  if (typeof window.fetchSites === 'function' && typeof window.renderSites === 'function') {
+    console.log('✅ Sites page functions found, refreshing...');
+    try {
+      // Get current user profile if available
+      const currentUserProfile = window.currentUserProfile || null;
+      
+      // Fetch updated sites
+      const sites = await window.fetchSites();
+      console.log(`✅ Fetched ${sites.length} sites, rendering...`);
+      
+      // Render the updated sites list
+      await window.renderSites(sites, { currentUserProfile });
+      
+      console.log('✅ Sites list refreshed successfully!');
+      
+      // Also update the allSites global variable if it exists
+      if (typeof window !== 'undefined') {
+        window.allSites = sites;
+      }
+      return;
+    } catch (error) {
+      console.error('❌ Error refreshing sites list:', error);
+    }
+  }
+  
+  // Method 3: Trigger refresh via storage event (for cross-tab communication)
+  console.log('ℹ️ Sites page functions not available, triggering storage event...');
+  try {
+    localStorage.setItem('sites-refresh-trigger', Date.now().toString());
+    // Remove it immediately so the event fires
+    setTimeout(() => {
+      localStorage.removeItem('sites-refresh-trigger');
+    }, 100);
+  } catch (e) {
+    console.warn('Could not trigger cross-tab refresh:', e);
+  }
 }
 
 // Generate error report CSV
