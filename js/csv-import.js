@@ -141,26 +141,38 @@ function initCSVImport() {
   const openBtn = document.getElementById('open-import-modal-btn');
   if (!openBtn) {
     console.error('❌ Import modal button not found');
-    console.log('Available buttons:', Array.from(document.querySelectorAll('button')).map(b => b.id).filter(Boolean));
+    const allButtons = Array.from(document.querySelectorAll('button')).map(b => ({ id: b.id, text: b.textContent?.substring(0, 20) }));
+    console.log('Available buttons:', allButtons);
     return;
   }
-  console.log('✅ Import button found');
+  console.log('✅ Import button found:', openBtn);
   
-  // Remove any existing listeners by cloning
+  // Remove any existing listeners by cloning (prevents duplicates)
   const newOpenBtn = openBtn.cloneNode(true);
   if (openBtn.parentNode) {
     openBtn.parentNode.replaceChild(newOpenBtn, openBtn);
+  } else {
+    console.warn('⚠️ Button has no parent, using original button');
   }
   
   // Add click listener
-  newOpenBtn.addEventListener('click', (e) => {
+  const targetBtn = newOpenBtn.parentNode ? newOpenBtn : openBtn;
+  targetBtn.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('🔵 Import button clicked!');
+    console.log('🔵 Import button clicked! Opening modal...');
     openImportModal();
   });
   
-  console.log('✅ Import button listener attached');
+  // Also add a direct onclick handler as backup
+  targetBtn.onclick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('🔵 Import button onclick handler fired!');
+    openImportModal();
+  };
+  
+  console.log('✅ Import button listener attached to:', targetBtn);
   
   // Close modal buttons
   const closeModalBtn = document.getElementById('close-import-modal');
