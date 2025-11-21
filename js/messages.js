@@ -2,6 +2,7 @@
 // In-App Messaging System
 // Phase 1: MVP (Core Messaging)
 // =====================================================
+console.log('🔵 MESSAGES.JS FILE LOADED AT:', new Date().toISOString());
 
 import { supabase } from './supabase.js';
 import { showNotification } from './notifications.js';
