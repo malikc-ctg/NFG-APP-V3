@@ -2124,6 +2124,13 @@ function closeCreateGroupModal() {
   document.getElementById('group-participant-search').value = '';
   selectedGroupParticipants.clear();
   updateSelectedParticipantsUI();
+  
+  // Reset button state
+  const createBtn = document.getElementById('create-group-btn');
+  if (createBtn) {
+    createBtn.disabled = true;
+    createBtn.innerHTML = '<span>Create Group</span>';
+  }
 }
 
 async function loadGroupParticipants(searchQuery = '') {
@@ -2375,7 +2382,12 @@ async function createGroupConversation(name, description, participantIds) {
       .select()
       .single();
 
-    if (convError) throw convError;
+    if (convError) {
+      console.error('[Group] Error creating conversation:', convError);
+      throw new Error(convError.message || 'Failed to create conversation');
+    }
+
+    console.log('[Group] Conversation created:', conversation.id);
 
     // 2. Add all participants (including creator as admin)
     const allParticipants = [currentUser.id, ...participantIds];
@@ -2385,11 +2397,22 @@ async function createGroupConversation(name, description, participantIds) {
       role: userId === currentUser.id ? 'admin' : 'participant' // Creator is admin
     }));
 
-    const { error: participantsError } = await supabase
-      .from('conversation_participants')
-      .insert(participantEntries);
+    console.log('[Group] Adding participants:', participantEntries.length);
 
-    if (participantsError) throw participantsError;
+    // Insert participants one at a time if batch insert fails
+    // This ensures we can see which specific participant fails
+    for (const entry of participantEntries) {
+      const { error: participantError } = await supabase
+        .from('conversation_participants')
+        .insert([entry]);
+      
+      if (participantError) {
+        console.error('[Group] Error adding participant:', entry.user_id, participantError);
+        throw new Error(`Failed to add participant: ${participantError.message}`);
+      }
+    }
+    
+    console.log('[Group] All participants added successfully');
 
     // 3. Create system message
     const memberNames = await Promise.all(
