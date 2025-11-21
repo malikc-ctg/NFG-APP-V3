@@ -1595,6 +1595,11 @@ async function sendMessage() {
     };
     messages.push(messageWithSender);
 
+    // Load reply context for the new message if it's a reply (Phase 3.2)
+    if (newMessage.reply_to_id) {
+      await loadReplyContext([messageWithSender]);
+    }
+
     // Re-render messages with animation
     renderMessages();
     
@@ -1672,6 +1677,11 @@ function subscribeToMessages(conversationId) {
 
       // Add to messages array
       messages.push(newMessage);
+
+      // Load reply context for new message if it's a reply (Phase 3.2)
+      if (newMessage.reply_to_id) {
+        await loadReplyContext([newMessage]);
+      }
 
       // Re-render
       renderMessages();
