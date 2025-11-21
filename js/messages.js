@@ -745,6 +745,11 @@ async function loadMessages(conversationId) {
       await loadMessageReactions(messages.map(m => m.id));
     }
 
+    // Load reply context for messages (Phase 3.2)
+    if (messages.length > 0) {
+      await loadReplyContext(messages);
+    }
+
     // Render messages
     renderMessages();
 
