@@ -1019,6 +1019,19 @@ function renderMessages(isSearchMode = false) {
   // Messages are already filtered when loaded (deleted messages removed)
   // So we can render all messages in the array
   listEl.innerHTML = uniqueMessages.map((message, index) => {
+    // Handle system messages differently (Phase 4)
+    if (message.message_type === 'system') {
+      const timestamp = formatMessageTime(message.created_at);
+      return `
+        <div class="message-item flex items-center justify-center py-2" data-message-id="${message.id}">
+          <div class="system-message text-center px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700/50 max-w-md">
+            <p class="text-xs italic text-gray-600 dark:text-gray-400">${escapeHtml(message.content || '')}</p>
+            <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">${timestamp}</span>
+          </div>
+        </div>
+      `;
+    }
+
     const isSent = message.sender_id === currentUser.id;
     const sender = message.sender || {};
     const senderName = sender.full_name || sender.email || 'Unknown';
