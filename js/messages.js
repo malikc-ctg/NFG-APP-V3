@@ -772,8 +772,14 @@ async function selectConversation(conversationId) {
     showConversationView();
     updateConversationHeader();
     
-    // Load messages
-    await loadMessages(conversationId);
+  // Load messages
+  await loadMessages(conversationId);
+  
+  // Load group participants if group conversation (Phase 4.3)
+  if (conversation.type === 'group') {
+    await loadGroupParticipantsForConversation(conversationId);
+    updateConversationHeader();
+  }
 
     // Mark as read
     await markConversationAsRead(conversationId);
@@ -1970,6 +1976,126 @@ function subscribeToMessages(conversationId) {
   
   // Store reactions channel for cleanup
   window.reactionsChannel = reactionsChannel;
+  
+  // Subscribe to conversation_participants changes (Phase 4.3)
+  if (window.participantsChannel) {
+    supabase.removeChannel(window.participantsChannel);
+  }
+  
+  const participantsChannel = supabase
+    .channel(`participants:${conversationId}`)
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'conversation_participants',
+      filter: `conversation_id=eq.${conversationId}`
+    }, async (payload) => {
+      // New participant added (Phase 4.3)
+      const newParticipant = payload.new;
+      
+      // Reload participants
+      await loadGroupParticipantsForConversation(conversationId);
+      
+      // Update conversation header if needed
+      if (currentConversation && currentConversation.id === conversationId) {
+        updateConversationHeader();
+      }
+      
+      // Reload conversations to update participant count
+      await loadConversations();
+    })
+    .on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'conversation_participants',
+      filter: `conversation_id=eq.${conversationId}`
+    }, async (payload) => {
+      // Participant role updated (Phase 4.3)
+      const updatedParticipant = payload.new;
+      
+      // Reload participants
+      await loadGroupParticipantsForConversation(conversationId);
+      
+      // Update UI if group info modal is open
+      if (currentConversation && currentConversation.id === conversationId) {
+        const groupInfoModal = document.getElementById('group-info-modal');
+        if (groupInfoModal && !groupInfoModal.classList.contains('hidden')) {
+          await showGroupInfo(conversationId);
+        }
+        updateConversationHeader();
+      }
+      
+      // Update current user's role
+      if (updatedParticipant.user_id === currentUser.id) {
+        currentUserGroupRole.set(conversationId, updatedParticipant.role);
+        updateGroupActionsVisibility();
+      }
+    })
+    .on('postgres_changes', {
+      event: 'DELETE',
+      schema: 'public',
+      table: 'conversation_participants',
+      filter: `conversation_id=eq.${conversationId}`
+    }, async (payload) => {
+      // Participant removed (Phase 4.3)
+      const removedParticipant = payload.old;
+      
+      // If current user was removed, redirect to conversation list
+      if (removedParticipant.user_id === currentUser.id) {
+        showConversationList();
+        await loadConversations();
+        showNotification('You have been removed from the group', 'info');
+        return;
+      }
+      
+      // Reload participants
+      await loadGroupParticipantsForConversation(conversationId);
+      
+      // Update conversation header if needed
+      if (currentConversation && currentConversation.id === conversationId) {
+        updateConversationHeader();
+        
+        // Close group info modal if open
+        const groupInfoModal = document.getElementById('group-info-modal');
+        if (groupInfoModal && !groupInfoModal.classList.contains('hidden')) {
+          await showGroupInfo(conversationId);
+        }
+      }
+      
+      // Reload conversations to update participant count
+      await loadConversations();
+    })
+    .subscribe();
+  
+  // Store participants channel for cleanup
+  window.participantsChannel = participantsChannel;
+  
+  // Load group participants for current conversation (Phase 4.3)
+  if (currentConversation && currentConversation.type === 'group') {
+    await loadGroupParticipantsForConversation(conversationId);
+    updateGroupActionsVisibility();
+  }
+}
+
+// Update group actions visibility based on permissions (Phase 4.3)
+async function updateGroupActionsVisibility() {
+  if (!currentConversation || currentConversation.type !== 'group') {
+    const groupActionsBtn = document.getElementById('group-actions-btn');
+    if (groupActionsBtn) {
+      groupActionsBtn.classList.add('hidden');
+    }
+    return;
+  }
+  
+  const groupActionsBtn = document.getElementById('group-actions-btn');
+  if (groupActionsBtn) {
+    groupActionsBtn.classList.remove('hidden');
+  }
+  
+  // Load role if not cached
+  if (!currentUserGroupRole.has(currentConversation.id)) {
+    await isGroupAdmin(currentConversation.id);
+  }
 }
 
 // ========== MARK AS READ ==========
@@ -2087,6 +2213,8 @@ function searchUsers(query) {
 
 // ========== CREATE GROUP MODAL (Phase 4) ==========
 let selectedGroupParticipants = new Set(); // Track selected participants for group creation
+let groupParticipants = new Map(); // conversationId -> participants[] (Phase 4.3)
+let currentUserGroupRole = new Map(); // conversationId -> role (Phase 4.3)
 
 async function openCreateGroupModal() {
   const modal = document.getElementById('create-group-modal');
@@ -2477,8 +2605,7 @@ window.selectGroupParticipant = selectGroupParticipant;
 window.removeGroupParticipant = removeGroupParticipant;
 
 // ========== GROUP MANAGEMENT (Phase 4.2) ==========
-let groupMembers = []; // Current group members cache
-let currentUserGroupRole = null; // Current user's role in the active group
+let groupMembers = []; // Current group members cache (deprecated, use groupParticipants Map instead)
 let selectedMembersToAdd = new Set(); // Track selected members to add
 
 // Show group info modal
@@ -2520,9 +2647,19 @@ async function showGroupInfo(conversationId) {
       profile: profilesMap.get(p.user_id)
     }));
 
-    // Find current user's role
+    // Find current user's role (Phase 4.3)
     const currentUserParticipant = participants.find(p => p.user_id === currentUser.id);
-    currentUserGroupRole = currentUserParticipant?.role || 'participant';
+    const userRole = currentUserParticipant?.role || 'participant';
+    currentUserGroupRole.set(conversationId, userRole);
+    
+    // Also update groupParticipants Map (Phase 4.3)
+    const participantsWithProfiles = participants.map(p => ({
+      user_id: p.user_id,
+      role: p.role,
+      joined_at: p.joined_at,
+      user: profilesMap.get(p.user_id)
+    }));
+    groupParticipants.set(conversationId, participantsWithProfiles);
 
     // Update modal content
     const nameEl = document.getElementById('group-info-name');
@@ -2545,7 +2682,7 @@ async function showGroupInfo(conversationId) {
         const avatarUrl = profile?.profile_picture;
         const isAdmin = member.role === 'admin';
         const isCurrentUser = member.user_id === currentUser.id;
-        const canManage = currentUserGroupRole === 'admin' && !isCurrentUser;
+        const canManage = currentUserGroupRole.get(conversationId) === 'admin' && !isCurrentUser;
 
         return `
           <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
@@ -2581,9 +2718,10 @@ async function showGroupInfo(conversationId) {
       }
     }
 
-    // Show/hide add member button based on role
+    // Show/hide add member button based on role (Phase 4.3)
     if (addMemberBtn) {
-      if (currentUserGroupRole === 'admin') {
+      const userRole = currentUserGroupRole.get(conversationId);
+      if (userRole === 'admin') {
         addMemberBtn.classList.remove('hidden');
       } else {
         addMemberBtn.classList.add('hidden');
@@ -2606,7 +2744,7 @@ function closeGroupInfoModal() {
   modal.classList.add('hidden');
   modal.classList.remove('flex');
   groupMembers = [];
-  currentUserGroupRole = null;
+  // Don't clear role cache - keep it for performance
 }
 
 // Open add member modal
@@ -2817,6 +2955,13 @@ async function addParticipantsToGroup(conversationId, userIds) {
 async function removeMemberFromGroup(userId, userName) {
   if (!currentConversation || currentConversation.type !== 'group') return;
   if (userId === currentUser.id) return; // Use leave group instead
+
+  // Check if user is admin (Phase 4.3)
+  const isAdmin = await isGroupAdmin(currentConversation.id);
+  if (!isAdmin) {
+    showNotification('Only admins can remove members', 'error');
+    return;
+  }
 
   const confirmed = confirm(`Are you sure you want to remove ${userName} from the group?`);
   if (!confirmed) return;
