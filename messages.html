@@ -1450,7 +1450,14 @@
   <!-- ========== SCRIPTS ========== -->
   <script type="module" src="./js/supabase.js"></script>
   <script type="module" src="./js/notification-center.js"></script>
-  <script type="module" src="./js/messages.js?v=20250123"></script>
+  <script type="module" src="./js/messages.js?v=20250123-2"></script>
+  <script>
+    // Force immediate test
+    console.log('✅ messages.html loaded - testing console');
+    window.addEventListener('DOMContentLoaded', () => {
+      console.log('✅ DOMContentLoaded fired in messages.html');
+    });
+  </script>
   
   <script>
     // Mobile sidebar toggle

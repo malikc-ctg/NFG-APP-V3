@@ -2,7 +2,9 @@
 // In-App Messaging System
 // Phase 1: MVP (Core Messaging)
 // =====================================================
-console.log('🔵 MESSAGES.JS FILE LOADED AT:', new Date().toISOString());
+console.log('%c🔵 MESSAGES.JS FILE LOADED', 'background: #0D47A1; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
+console.log('🔵 Timestamp:', new Date().toISOString());
+console.log('🔵 Version: 20250123-2');
 
 import { supabase } from './supabase.js';
 import { showNotification } from './notifications.js';
@@ -1027,7 +1029,10 @@ function escapeRegex(str) {
 }
 
 // ========== LINK PREVIEWS (Phase 2.3) ==========
-console.log('=== LINK PREVIEW FUNCTIONS LOADED ===');
+console.log('%c🔗 LINK PREVIEW FUNCTIONS LOADED', 'background: #10B981; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
+console.log('🔗 extractUrls function:', typeof extractUrls);
+console.log('🔗 loadLinkPreviews function:', typeof loadLinkPreviews);
+console.log('🔗 renderLinkPreviews function:', typeof renderLinkPreviews);
 
 // Extract URLs from text
 function extractUrls(text) {
