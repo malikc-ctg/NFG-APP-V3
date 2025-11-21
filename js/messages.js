@@ -2400,6 +2400,521 @@ async function createGroupConversation(name, description, participantIds) {
 window.selectGroupParticipant = selectGroupParticipant;
 window.removeGroupParticipant = removeGroupParticipant;
 
+// ========== GROUP MANAGEMENT (Phase 4.2) ==========
+let groupMembers = []; // Current group members cache
+let currentUserGroupRole = null; // Current user's role in the active group
+let selectedMembersToAdd = new Set(); // Track selected members to add
+
+// Show group info modal
+async function showGroupInfo(conversationId) {
+  const modal = document.getElementById('group-info-modal');
+  if (!modal) return;
+
+  try {
+    // Fetch conversation details
+    const { data: conversation, error: convError } = await supabase
+      .from('conversations')
+      .select('id, title, description, created_at, type')
+      .eq('id', conversationId)
+      .single();
+
+    if (convError) throw convError;
+
+    // Fetch all participants with their roles
+    const { data: participants, error: participantsError } = await supabase
+      .from('conversation_participants')
+      .select('user_id, role, joined_at')
+      .eq('conversation_id', conversationId);
+
+    if (participantsError) throw participantsError;
+
+    // Fetch user profiles for participants
+    const userIds = participants.map(p => p.user_id);
+    const { data: profiles, error: profilesError } = await supabase
+      .from('user_profiles')
+      .select('id, full_name, email, profile_picture')
+      .in('id', userIds);
+
+    if (profilesError) throw profilesError;
+
+    // Combine participants with profiles
+    const profilesMap = new Map(profiles.map(p => [p.id, p]));
+    groupMembers = participants.map(p => ({
+      ...p,
+      profile: profilesMap.get(p.user_id)
+    }));
+
+    // Find current user's role
+    const currentUserParticipant = participants.find(p => p.user_id === currentUser.id);
+    currentUserGroupRole = currentUserParticipant?.role || 'participant';
+
+    // Update modal content
+    const nameEl = document.getElementById('group-info-name');
+    const descEl = document.getElementById('group-info-description');
+    const membersListEl = document.getElementById('group-members-list');
+    const addMemberBtn = document.getElementById('add-member-btn');
+
+    if (nameEl) nameEl.textContent = conversation.title || 'Unnamed Group';
+    if (descEl) {
+      descEl.textContent = conversation.description || 'No description';
+      descEl.style.display = conversation.description ? 'block' : 'none';
+    }
+
+    // Render members list
+    if (membersListEl) {
+      membersListEl.innerHTML = groupMembers.map(member => {
+        const profile = member.profile;
+        const displayName = profile?.full_name || profile?.email || 'Unknown';
+        const initials = getInitials(displayName);
+        const avatarUrl = profile?.profile_picture;
+        const isAdmin = member.role === 'admin';
+        const isCurrentUser = member.user_id === currentUser.id;
+        const canManage = currentUserGroupRole === 'admin' && !isCurrentUser;
+
+        return `
+          <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+            ${avatarUrl 
+              ? `<img src="${avatarUrl}" alt="${displayName}" class="w-10 h-10 rounded-full object-cover">`
+              : `<div class="w-10 h-10 rounded-full bg-nfgblue dark:bg-blue-900 flex items-center justify-center text-white font-semibold text-sm">${initials}</div>`
+            }
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <h4 class="font-medium text-sm truncate">${escapeHtml(displayName)}</h4>
+                ${isCurrentUser ? '<span class="text-xs text-gray-400">(You)</span>' : ''}
+                ${isAdmin ? '<span class="text-xs px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded">Admin</span>' : ''}
+              </div>
+              <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${escapeHtml(profile?.email || '')}</p>
+            </div>
+            ${canManage ? `
+              <div class="flex items-center gap-1">
+                <button onclick="toggleMemberRole('${member.user_id}')" class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition" title="${isAdmin ? 'Remove admin' : 'Make admin'}">
+                  <i data-lucide="${isAdmin ? 'shield-off' : 'shield'}" class="w-4 h-4 text-gray-600 dark:text-gray-400"></i>
+                </button>
+                <button onclick="removeMemberFromGroup('${member.user_id}', '${escapeHtml(displayName).replace(/'/g, "\\'")}')" class="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition" title="Remove member">
+                  <i data-lucide="user-x" class="w-4 h-4 text-red-600 dark:text-red-400"></i>
+                </button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+
+      // Re-create icons
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    }
+
+    // Show/hide add member button based on role
+    if (addMemberBtn) {
+      if (currentUserGroupRole === 'admin') {
+        addMemberBtn.classList.remove('hidden');
+      } else {
+        addMemberBtn.classList.add('hidden');
+      }
+    }
+
+    // Show modal
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  } catch (error) {
+    console.error('Error loading group info:', error);
+    showNotification('Failed to load group info', 'error');
+  }
+}
+
+function closeGroupInfoModal() {
+  const modal = document.getElementById('group-info-modal');
+  if (!modal) return;
+
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  groupMembers = [];
+  currentUserGroupRole = null;
+}
+
+// Open add member modal
+async function openAddMemberModal(conversationId) {
+  const modal = document.getElementById('add-member-modal');
+  if (!modal) return;
+
+  selectedMembersToAdd.clear();
+  document.getElementById('add-member-search').value = '';
+  document.getElementById('confirm-add-member-btn').disabled = true;
+
+  // Load users not already in group
+  await loadUsersForAddMember(conversationId);
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+function closeAddMemberModal() {
+  const modal = document.getElementById('add-member-modal');
+  if (!modal) return;
+
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  selectedMembersToAdd.clear();
+  document.getElementById('add-member-search').value = '';
+}
+
+async function loadUsersForAddMember(conversationId, searchQuery = '') {
+  try {
+    // Get current participant IDs
+    const { data: participants } = await supabase
+      .from('conversation_participants')
+      .select('user_id')
+      .eq('conversation_id', conversationId);
+
+    const participantIds = (participants || []).map(p => p.user_id);
+
+    // Load users excluding current participants and current user
+    let query = supabase
+      .from('user_profiles')
+      .select('id, full_name, email, profile_picture')
+      .neq('id', currentUser.id)
+      .not('id', 'in', `(${participantIds.length > 0 ? participantIds.join(',') : '00000000-0000-0000-0000-000000000000'})`)
+      .order('full_name');
+
+    if (searchQuery) {
+      query = query.or(`full_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
+    }
+
+    const { data: users, error } = await query.limit(50);
+
+    if (error) throw error;
+
+    renderAddMemberList(users || []);
+  } catch (error) {
+    console.error('Error loading users for add member:', error);
+    showNotification('Failed to load users', 'error');
+  }
+}
+
+function searchMembersToAdd(query) {
+  if (currentConversation && currentConversation.type === 'group') {
+    loadUsersForAddMember(currentConversation.id, query);
+  }
+}
+
+function renderAddMemberList(users) {
+  const listEl = document.getElementById('add-member-list');
+  if (!listEl) return;
+
+  if (users.length === 0) {
+    listEl.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No users found</p>';
+    return;
+  }
+
+  listEl.innerHTML = users.map(user => {
+    const displayName = user.full_name || user.email || 'Unknown';
+    const initials = getInitials(displayName);
+    const avatarUrl = user.profile_picture;
+    const isSelected = selectedMembersToAdd.has(user.id);
+
+    return `
+      <div 
+        class="flex items-center gap-3 p-3 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 cursor-pointer transition ${isSelected ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500' : ''}"
+        onclick="toggleMemberSelection('${user.id}')"
+      >
+        ${avatarUrl 
+          ? `<img src="${avatarUrl}" alt="${displayName}" class="w-10 h-10 rounded-full object-cover">`
+          : `<div class="w-10 h-10 rounded-full bg-nfgblue dark:bg-blue-900 flex items-center justify-center text-white font-semibold text-sm">${initials}</div>`
+        }
+        <div class="flex-1 min-w-0">
+          <h4 class="font-medium text-sm truncate">${escapeHtml(displayName)}</h4>
+          <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${escapeHtml(user.email || '')}</p>
+        </div>
+        ${isSelected ? '<i data-lucide="check" class="w-5 h-5 text-green-600 dark:text-green-400"></i>' : ''}
+      </div>
+    `;
+  }).join('');
+
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+function toggleMemberSelection(userId) {
+  if (selectedMembersToAdd.has(userId)) {
+    selectedMembersToAdd.delete(userId);
+  } else {
+    selectedMembersToAdd.add(userId);
+  }
+
+  const confirmBtn = document.getElementById('confirm-add-member-btn');
+  if (confirmBtn) {
+    confirmBtn.disabled = selectedMembersToAdd.size === 0;
+  }
+
+  // Re-render list
+  const searchQuery = document.getElementById('add-member-search')?.value || '';
+  if (currentConversation && currentConversation.type === 'group') {
+    loadUsersForAddMember(currentConversation.id, searchQuery);
+  }
+
+  triggerHaptic('light');
+}
+
+async function handleAddMembers() {
+  if (!currentConversation || currentConversation.type !== 'group') return;
+  if (selectedMembersToAdd.size === 0) return;
+
+  try {
+    await addParticipantsToGroup(currentConversation.id, Array.from(selectedMembersToAdd));
+    closeAddMemberModal();
+    // Refresh group info
+    await showGroupInfo(currentConversation.id);
+    showNotification('Members added successfully', 'success');
+  } catch (error) {
+    console.error('Error adding members:', error);
+    showNotification(error.message || 'Failed to add members', 'error');
+  }
+}
+
+async function addParticipantsToGroup(conversationId, userIds) {
+  try {
+    // Add participants
+    const participantEntries = userIds.map(userId => ({
+      conversation_id: conversationId,
+      user_id: userId,
+      role: 'participant'
+    }));
+
+    const { error: insertError } = await supabase
+      .from('conversation_participants')
+      .insert(participantEntries);
+
+    if (insertError) throw insertError;
+
+    // Get admin name for system message
+    const { data: adminProfile } = await supabase
+      .from('user_profiles')
+      .select('full_name, email')
+      .eq('id', currentUser.id)
+      .single();
+
+    const adminName = adminProfile?.full_name || adminProfile?.email || 'Admin';
+
+    // Get added member names
+    const { data: memberProfiles } = await supabase
+      .from('user_profiles')
+      .select('full_name, email')
+      .in('id', userIds);
+
+    const memberNames = (memberProfiles || []).map(p => p.full_name || p.email || 'Unknown');
+    const memberList = memberNames.join(', ');
+
+    // Create system message
+    await supabase
+      .from('messages')
+      .insert([{
+        conversation_id: conversationId,
+        sender_id: currentUser.id,
+        content: `${memberList} ${memberNames.length === 1 ? 'was' : 'were'} added by ${adminName}.`,
+        message_type: 'system'
+      }]);
+
+    // Reload conversations to update participant count
+    await loadConversations();
+    
+    // Update current conversation
+    const updatedConv = conversations.find(c => c.id === conversationId);
+    if (updatedConv) {
+      currentConversation = updatedConv;
+      updateConversationHeader();
+    }
+
+    // Reload messages to show system message
+    await loadMessages(conversationId);
+  } catch (error) {
+    console.error('Error adding participants:', error);
+    throw error;
+  }
+}
+
+async function removeMemberFromGroup(userId, userName) {
+  if (!currentConversation || currentConversation.type !== 'group') return;
+  if (userId === currentUser.id) return; // Use leave group instead
+
+  const confirmed = confirm(`Are you sure you want to remove ${userName} from the group?`);
+  if (!confirmed) return;
+
+  try {
+    // Remove participant
+    const { error: deleteError } = await supabase
+      .from('conversation_participants')
+      .delete()
+      .eq('conversation_id', currentConversation.id)
+      .eq('user_id', userId);
+
+    if (deleteError) throw deleteError;
+
+    // Get admin name for system message
+    const { data: adminProfile } = await supabase
+      .from('user_profiles')
+      .select('full_name, email')
+      .eq('id', currentUser.id)
+      .single();
+
+    const adminName = adminProfile?.full_name || adminProfile?.email || 'Admin';
+
+    // Create system message
+    await supabase
+      .from('messages')
+      .insert([{
+        conversation_id: currentConversation.id,
+        sender_id: currentUser.id,
+        content: `${userName} was removed by ${adminName}.`,
+        message_type: 'system'
+      }]);
+
+    // Reload conversations
+    await loadConversations();
+    
+    // Update current conversation
+    const updatedConv = conversations.find(c => c.id === currentConversation.id);
+    if (updatedConv) {
+      currentConversation = updatedConv;
+      updateConversationHeader();
+    }
+
+    // Refresh group info
+    await showGroupInfo(currentConversation.id);
+    
+    // Reload messages to show system message
+    await loadMessages(currentConversation.id);
+
+    showNotification(`${userName} removed from group`, 'success');
+  } catch (error) {
+    console.error('Error removing member:', error);
+    showNotification(error.message || 'Failed to remove member', 'error');
+  }
+}
+
+async function toggleMemberRole(userId) {
+  if (!currentConversation || currentConversation.type !== 'group') return;
+  if (userId === currentUser.id) return; // Cannot change own role
+
+  try {
+    // Find member's current role
+    const member = groupMembers.find(m => m.user_id === userId);
+    if (!member) return;
+
+    const newRole = member.role === 'admin' ? 'participant' : 'admin';
+
+    // Update role
+    const { error: updateError } = await supabase
+      .from('conversation_participants')
+      .update({ role: newRole })
+      .eq('conversation_id', currentConversation.id)
+      .eq('user_id', userId);
+
+    if (updateError) throw updateError;
+
+    // Get admin and member names for system message
+    const { data: adminProfile } = await supabase
+      .from('user_profiles')
+      .select('full_name, email')
+      .eq('id', currentUser.id)
+      .single();
+
+    const { data: memberProfile } = await supabase
+      .from('user_profiles')
+      .select('full_name, email')
+      .eq('id', userId)
+      .single();
+
+    const adminName = adminProfile?.full_name || adminProfile?.email || 'Admin';
+    const memberName = memberProfile?.full_name || memberProfile?.email || 'Member';
+
+    // Create system message
+    const systemMessage = newRole === 'admin' 
+      ? `${memberName} was promoted to admin by ${adminName}.`
+      : `${memberName} is now a participant.`;
+
+    await supabase
+      .from('messages')
+      .insert([{
+        conversation_id: currentConversation.id,
+        sender_id: currentUser.id,
+        content: systemMessage,
+        message_type: 'system'
+      }]);
+
+    // Refresh group info
+    await showGroupInfo(currentConversation.id);
+    
+    // Reload messages to show system message
+    await loadMessages(currentConversation.id);
+
+    showNotification(`Role updated successfully`, 'success');
+  } catch (error) {
+    console.error('Error updating member role:', error);
+    showNotification(error.message || 'Failed to update role', 'error');
+  }
+}
+
+async function handleLeaveGroup(conversationId) {
+  const confirmed = confirm('Are you sure you want to leave this group? You will no longer receive messages from this group.');
+  if (!confirmed) return;
+
+  try {
+    // Get user name for system message
+    const { data: userProfile } = await supabase
+      .from('user_profiles')
+      .select('full_name, email')
+      .eq('id', currentUser.id)
+      .single();
+
+    const userName = userProfile?.full_name || userProfile?.email || 'User';
+
+    // Remove participant
+    const { error: deleteError } = await supabase
+      .from('conversation_participants')
+      .delete()
+      .eq('conversation_id', conversationId)
+      .eq('user_id', currentUser.id);
+
+    if (deleteError) throw deleteError;
+
+    // Create system message
+    await supabase
+      .from('messages')
+      .insert([{
+        conversation_id: conversationId,
+        sender_id: currentUser.id,
+        content: `${userName} left the group.`,
+        message_type: 'system'
+      }]);
+
+    // Close group info modal
+    closeGroupInfoModal();
+
+    // Reload conversations
+    await loadConversations();
+
+    // Clear current conversation and show list
+    currentConversation = null;
+    showConversationList();
+
+    showNotification('You left the group', 'success');
+  } catch (error) {
+    console.error('Error leaving group:', error);
+    showNotification(error.message || 'Failed to leave group', 'error');
+  }
+}
+
+// Make functions globally available
+window.toggleMemberSelection = toggleMemberSelection;
+window.removeMemberFromGroup = removeMemberFromGroup;
+window.toggleMemberRole = toggleMemberRole;
+
 function renderUsersList(users) {
   const usersList = document.getElementById('users-list');
   if (!usersList) return;
