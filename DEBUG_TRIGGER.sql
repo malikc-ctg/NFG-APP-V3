@@ -81,3 +81,4 @@ SELECT 'Trigger function updated with logging. Now test by creating a notificati
 
 
 
+

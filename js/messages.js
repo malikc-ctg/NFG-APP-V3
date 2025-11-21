@@ -228,6 +228,12 @@ function initEventListeners() {
     openNewMessageModal();
   });
 
+  // New group button (Phase 4)
+  document.getElementById('new-group-btn')?.addEventListener('click', () => {
+    triggerHaptic('light');
+    openCreateGroupModal();
+  });
+
   // Close new message modal
   document.getElementById('close-new-message-modal')?.addEventListener('click', () => {
     closeNewMessageModal();
@@ -238,6 +244,36 @@ function initEventListeners() {
   if (userSearch) {
     userSearch.addEventListener('input', (e) => {
       searchUsers(e.target.value);
+    });
+  }
+
+  // Close create group modal (Phase 4)
+  document.getElementById('close-create-group-modal')?.addEventListener('click', () => {
+    closeCreateGroupModal();
+  });
+
+  document.getElementById('cancel-create-group-btn')?.addEventListener('click', () => {
+    closeCreateGroupModal();
+  });
+
+  // Create group button (Phase 4)
+  document.getElementById('create-group-btn')?.addEventListener('click', async () => {
+    await handleCreateGroup();
+  });
+
+  // Group participant search (Phase 4)
+  const groupParticipantSearch = document.getElementById('group-participant-search');
+  if (groupParticipantSearch) {
+    groupParticipantSearch.addEventListener('input', (e) => {
+      searchGroupParticipants(e.target.value);
+    });
+  }
+
+  // Group name input validation (Phase 4)
+  const groupNameInput = document.getElementById('group-name-input');
+  if (groupNameInput) {
+    groupNameInput.addEventListener('input', (e) => {
+      validateGroupForm();
     });
   }
 
@@ -344,6 +380,16 @@ function initEventListeners() {
       }
     });
   }
+
+  // Close create group modal on backdrop click (Phase 4)
+  const createGroupModal = document.getElementById('create-group-modal');
+  if (createGroupModal) {
+    createGroupModal.addEventListener('click', (e) => {
+      if (e.target === createGroupModal) {
+        closeCreateGroupModal();
+      }
+    });
+  }
 }
 
 // ========== LOAD CONVERSATIONS ==========
@@ -441,11 +487,17 @@ async function loadConversations() {
         new Date(lastMessage.created_at) > new Date(participant.last_read_at)
         ? 1 : 0; // Simplified: 1 if there's a new message, 0 otherwise
 
+      // For groups, get participant count
+      const participantCount = conversation.type === 'group' 
+        ? (allParticipants || []).filter(p => p.conversation_id === conversation.id).length
+        : null;
+
       return {
         ...conversation,
         otherParticipants,
         lastReadAt: participant.last_read_at,
-        unreadCount
+        unreadCount,
+        participant_count: participantCount
       };
     }).filter(Boolean); // Remove null entries
 
@@ -493,11 +545,18 @@ function renderConversations(filteredConversations = null) {
   document.getElementById('conversations-empty')?.classList.add('hidden');
 
   listEl.innerHTML = conversationsToRender.map(conv => {
+    const isGroup = conv.type === 'group';
     const otherUser = conv.otherParticipants?.[0];
-    const displayName = otherUser?.full_name || otherUser?.email || 'Unknown User';
-    const initials = getInitials(displayName);
-    const avatarUrl = otherUser?.profile_picture;
+    
+    // For groups, use title; for direct messages, use other user's name
+    const displayName = isGroup 
+      ? (conv.title || 'Unnamed Group')
+      : (otherUser?.full_name || otherUser?.email || 'Unknown User');
+    
+    const initials = isGroup ? getInitials(displayName) : getInitials(displayName);
+    const avatarUrl = isGroup ? null : otherUser?.profile_picture;
     const lastMessageTime = conv.last_message_at ? formatRelativeTime(conv.last_message_at) : '';
+    const participantCount = isGroup ? (conv.participant_count || conv.otherParticipants?.length || 0) : null;
 
     return `
       <div class="conversation-item-swipe-container relative overflow-hidden group">
@@ -507,18 +566,28 @@ function renderConversations(filteredConversations = null) {
         >
           <div class="flex items-center gap-3">
             <div class="relative flex-shrink-0">
-              ${avatarUrl 
-                ? `<img src="${avatarUrl}" alt="${displayName}" class="w-12 h-12 rounded-full object-cover">`
-                : `<div class="w-12 h-12 rounded-full bg-nfgblue dark:bg-blue-900 flex items-center justify-center text-white font-semibold text-sm">${initials}</div>`
+              ${isGroup
+                ? `<div class="w-12 h-12 rounded-full bg-green-600 dark:bg-green-700 flex items-center justify-center text-white font-semibold text-sm">${initials}</div>`
+                : (avatarUrl 
+                  ? `<img src="${avatarUrl}" alt="${displayName}" class="w-12 h-12 rounded-full object-cover">`
+                  : `<div class="w-12 h-12 rounded-full bg-nfgblue dark:bg-blue-900 flex items-center justify-center text-white font-semibold text-sm">${initials}</div>`)
               }
               ${conv.unreadCount > 0 ? `<span class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-semibold">${conv.unreadCount}</span>` : ''}
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center justify-between mb-1">
-                <h3 class="font-semibold text-sm truncate ${conv.unreadCount > 0 ? 'font-bold' : ''}">${escapeHtml(displayName)}</h3>
+                <div class="flex items-center gap-2 flex-1 min-w-0">
+                  <h3 class="font-semibold text-sm truncate ${conv.unreadCount > 0 ? 'font-bold' : ''}">${escapeHtml(displayName)}</h3>
+                  ${isGroup ? `<i data-lucide="users" class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0"></i>` : ''}
+                </div>
                 ${lastMessageTime ? `<span class="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0 ml-2">${lastMessageTime}</span>` : ''}
               </div>
-              <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${lastMessageTime ? 'Tap to view messages' : 'No messages yet'}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                ${isGroup && participantCount 
+                  ? `${participantCount} ${participantCount === 1 ? 'member' : 'members'}`
+                  : (lastMessageTime ? 'Tap to view messages' : 'No messages yet')
+                }
+              </p>
             </div>
             <!-- Desktop Actions Menu (three dots, visible on hover) -->
             <div class="conversation-actions-desktop hidden md:block relative opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1933,6 +2002,570 @@ function searchUsers(query) {
   loadUsers(query);
 }
 
+// ========== CREATE GROUP MODAL (Phase 4) ==========
+let selectedGroupParticipants = new Set(); // Track selected participants for group creation
+
+async function openCreateGroupModal() {
+  const modal = document.getElementById('create-group-modal');
+  if (!modal) return;
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+
+  // Reset form
+  document.getElementById('group-name-input').value = '';
+  document.getElementById('group-description-input').value = '';
+  selectedGroupParticipants.clear();
+  updateSelectedParticipantsUI();
+  validateGroupForm();
+
+  // Load users for participant selection
+  await loadGroupParticipants('');
+
+  // Re-create icons
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+function closeCreateGroupModal() {
+  const modal = document.getElementById('create-group-modal');
+  if (!modal) return;
+
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+
+  // Clear form
+  document.getElementById('group-name-input').value = '';
+  document.getElementById('group-description-input').value = '';
+  document.getElementById('group-participant-search').value = '';
+  selectedGroupParticipants.clear();
+  updateSelectedParticipantsUI();
+}
+
+async function loadGroupParticipants(searchQuery = '') {
+  try {
+    let query = supabase
+      .from('user_profiles')
+      .select('id, full_name, email, profile_picture, role')
+      .neq('id', currentUser.id)
+      .order('full_name');
+
+    if (searchQuery) {
+      query = query.or(`full_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
+    }
+
+    const { data: users, error } = await query.limit(50);
+
+    if (error) throw error;
+
+    renderGroupParticipantsList(users || []);
+  } catch (error) {
+    console.error('Error loading group participants:', error);
+    showNotification('Failed to load users', 'error');
+  }
+}
+
+function searchGroupParticipants(query) {
+  loadGroupParticipants(query);
+}
+
+function renderGroupParticipantsList(users) {
+  const participantsList = document.getElementById('group-participants-list');
+  if (!participantsList) return;
+
+  if (users.length === 0) {
+    participantsList.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No users found</p>';
+    return;
+  }
+
+  participantsList.innerHTML = users.map(user => {
+    const displayName = user.full_name || user.email || 'Unknown';
+    const initials = getInitials(displayName);
+    const avatarUrl = user.profile_picture;
+    const isSelected = selectedGroupParticipants.has(user.id);
+
+    return `
+      <div 
+        class="flex items-center gap-3 p-3 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 cursor-pointer transition ${isSelected ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500' : ''}"
+        data-user-id="${user.id}"
+        onclick="selectGroupParticipant('${user.id}', '${escapeHtml(displayName).replace(/'/g, "\\'")}', '${user.profile_picture || ''}')"
+      >
+        ${avatarUrl 
+          ? `<img src="${avatarUrl}" alt="${displayName}" class="w-10 h-10 rounded-full object-cover">`
+          : `<div class="w-10 h-10 rounded-full bg-nfgblue dark:bg-blue-900 flex items-center justify-center text-white font-semibold text-sm">${initials}</div>`
+        }
+        <div class="flex-1 min-w-0">
+          <h4 class="font-medium text-sm truncate">${escapeHtml(displayName)}</h4>
+          <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${escapeHtml(user.email || '')}</p>
+        </div>
+        ${isSelected ? '<i data-lucide="check" class="w-5 h-5 text-green-600 dark:text-green-400"></i>' : ''}
+      </div>
+    `;
+  }).join('');
+
+  // Re-create icons
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+function selectGroupParticipant(userId, userName, avatarUrl) {
+  if (selectedGroupParticipants.has(userId)) {
+    selectedGroupParticipants.delete(userId);
+  } else {
+    selectedGroupParticipants.add(userId);
+  }
+  
+  updateSelectedParticipantsUI();
+  
+  // Re-render list to update selection state
+  const searchQuery = document.getElementById('group-participant-search')?.value || '';
+  loadGroupParticipants(searchQuery);
+  
+  triggerHaptic('light');
+}
+
+function updateSelectedParticipantsUI() {
+  const container = document.getElementById('selected-participants-container');
+  const list = document.getElementById('selected-participants-list');
+  
+  if (!container || !list) return;
+
+  if (selectedGroupParticipants.size === 0) {
+    container.classList.add('hidden');
+    return;
+  }
+
+  container.classList.remove('hidden');
+  
+  // Fetch selected user names (simplified - in production, cache user data)
+  const selectedIds = Array.from(selectedGroupParticipants);
+  list.innerHTML = selectedIds.map(userId => {
+    // We'll need to fetch names, but for now show ID
+    return `
+      <div class="inline-flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 rounded-full text-sm" data-user-id="${userId}">
+        <span class="text-green-700 dark:text-green-300">${userId.substring(0, 8)}...</span>
+        <button onclick="removeGroupParticipant('${userId}')" class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+    `;
+  }).join('');
+
+  // Re-create icons
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+function removeGroupParticipant(userId) {
+  selectedGroupParticipants.delete(userId);
+  updateSelectedParticipantsUI();
+  
+  // Re-render list
+  const searchQuery = document.getElementById('group-participant-search')?.value || '';
+  loadGroupParticipants(searchQuery);
+  
+  triggerHaptic('light');
+}
+
+function validateGroupForm() {
+  const groupName = document.getElementById('group-name-input')?.value.trim();
+  const createBtn = document.getElementById('create-group-btn');
+  
+  if (!createBtn) return;
+
+  if (groupName && groupName.length > 0 && selectedGroupParticipants.size > 0) {
+    createBtn.disabled = false;
+  } else {
+    createBtn.disabled = true;
+  }
+}
+
+async function handleCreateGroup() {
+  const groupName = document.getElementById('group-name-input')?.value.trim();
+  const description = document.getElementById('group-description-input')?.value.trim();
+
+  if (!groupName) {
+    showNotification('Group name is required', 'error');
+    return;
+  }
+
+  if (selectedGroupParticipants.size === 0) {
+    showNotification('Please select at least one member', 'error');
+    return;
+  }
+
+  try {
+    triggerHaptic('medium');
+    const conversation = await createGroupConversation(
+      groupName,
+      description || null,
+      Array.from(selectedGroupParticipants)
+    );
+
+    // Close modal
+    closeCreateGroupModal();
+
+    // Reload conversations
+    await loadConversations();
+
+    // Select the new group conversation
+    await selectConversation(conversation.id);
+
+    showNotification(`Group "${groupName}" created successfully!`, 'success');
+  } catch (error) {
+    console.error('Error creating group:', error);
+    showNotification(error.message || 'Failed to create group', 'error');
+  }
+}
+
+async function createGroupConversation(name, description, participantIds) {
+  try {
+    // 1. Create the conversation
+    const { data: conversation, error: convError } = await supabase
+      .from('conversations')
+      .insert([{
+        type: 'group',
+        title: name,
+        description: description || null,
+        created_by: currentUser.id
+      }])
+      .select()
+      .single();
+
+    if (convError) throw convError;
+
+    // 2. Add all participants (including creator as admin)
+    const allParticipants = [currentUser.id, ...participantIds];
+    const participantEntries = allParticipants.map(userId => ({
+      conversation_id: conversation.id,
+      user_id: userId,
+      role: userId === currentUser.id ? 'admin' : 'participant' // Creator is admin
+    }));
+
+    const { error: participantsError } = await supabase
+      .from('conversation_participants')
+      .insert(participantEntries);
+
+    if (participantsError) throw participantsError;
+
+    // 3. Create system message
+    const memberNames = await Promise.all(
+      participantIds.map(async (userId) => {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('full_name, email')
+          .eq('id', userId)
+          .single();
+        return profile?.full_name || profile?.email || 'Unknown';
+      })
+    );
+
+    const memberList = memberNames.join(', ');
+    const systemMessage = `Group created. ${memberList} added.`;
+
+    await supabase
+      .from('messages')
+      .insert([{
+        conversation_id: conversation.id,
+        sender_id: currentUser.id,
+        content: systemMessage,
+        message_type: 'system'
+      }]);
+
+    return conversation;
+  } catch (error) {
+    console.error('Error creating group conversation:', error);
+    throw error;
+  }
+}
+
+// Make functions globally available
+window.selectGroupParticipant = selectGroupParticipant;
+window.removeGroupParticipant = removeGroupParticipant;
+async function openCreateGroupModal() {
+  const modal = document.getElementById('create-group-modal');
+  if (!modal) return;
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+
+  // Reset form
+  document.getElementById('group-name-input').value = '';
+  document.getElementById('group-description-input').value = '';
+  selectedGroupParticipants.clear();
+  updateSelectedParticipantsUI();
+  validateGroupForm();
+
+  // Load users for participant selection
+  await loadGroupParticipants('');
+
+  // Re-create icons
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+function closeCreateGroupModal() {
+  const modal = document.getElementById('create-group-modal');
+  if (!modal) return;
+
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+
+  // Clear form
+  document.getElementById('group-name-input').value = '';
+  document.getElementById('group-description-input').value = '';
+  document.getElementById('group-participant-search').value = '';
+  selectedGroupParticipants.clear();
+  updateSelectedParticipantsUI();
+}
+
+async function loadGroupParticipants(searchQuery = '') {
+  try {
+    let query = supabase
+      .from('user_profiles')
+      .select('id, full_name, email, profile_picture, role')
+      .neq('id', currentUser.id)
+      .order('full_name');
+
+    if (searchQuery) {
+      query = query.or(`full_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
+    }
+
+    const { data: users, error } = await query.limit(50);
+
+    if (error) throw error;
+
+    renderGroupParticipantsList(users || []);
+  } catch (error) {
+    console.error('Error loading group participants:', error);
+    showNotification('Failed to load users', 'error');
+  }
+}
+
+function searchGroupParticipants(query) {
+  loadGroupParticipants(query);
+}
+
+function renderGroupParticipantsList(users) {
+  const participantsList = document.getElementById('group-participants-list');
+  if (!participantsList) return;
+
+  if (users.length === 0) {
+    participantsList.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No users found</p>';
+    return;
+  }
+
+  participantsList.innerHTML = users.map(user => {
+    const displayName = user.full_name || user.email || 'Unknown';
+    const initials = getInitials(displayName);
+    const avatarUrl = user.profile_picture;
+    const isSelected = selectedGroupParticipants.has(user.id);
+
+    return `
+      <div 
+        class="flex items-center gap-3 p-3 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 cursor-pointer transition ${isSelected ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500' : ''}"
+        data-user-id="${user.id}"
+        onclick="selectGroupParticipant('${user.id}', '${escapeHtml(displayName).replace(/'/g, "\\'")}', '${user.profile_picture || ''}')"
+      >
+        ${avatarUrl 
+          ? `<img src="${avatarUrl}" alt="${displayName}" class="w-10 h-10 rounded-full object-cover">`
+          : `<div class="w-10 h-10 rounded-full bg-nfgblue dark:bg-blue-900 flex items-center justify-center text-white font-semibold text-sm">${initials}</div>`
+        }
+        <div class="flex-1 min-w-0">
+          <h4 class="font-medium text-sm truncate">${escapeHtml(displayName)}</h4>
+          <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${escapeHtml(user.email || '')}</p>
+        </div>
+        ${isSelected ? '<i data-lucide="check" class="w-5 h-5 text-green-600 dark:text-green-400"></i>' : ''}
+      </div>
+    `;
+  }).join('');
+
+  // Re-create icons
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+function selectGroupParticipant(userId, userName, avatarUrl) {
+  if (selectedGroupParticipants.has(userId)) {
+    selectedGroupParticipants.delete(userId);
+  } else {
+    selectedGroupParticipants.add(userId);
+  }
+  
+  updateSelectedParticipantsUI();
+  
+  // Re-render list to update selection state
+  const searchQuery = document.getElementById('group-participant-search')?.value || '';
+  loadGroupParticipants(searchQuery);
+  
+  triggerHaptic('light');
+}
+
+function updateSelectedParticipantsUI() {
+  const container = document.getElementById('selected-participants-container');
+  const list = document.getElementById('selected-participants-list');
+  
+  if (!container || !list) return;
+
+  if (selectedGroupParticipants.size === 0) {
+    container.classList.add('hidden');
+    return;
+  }
+
+  container.classList.remove('hidden');
+  
+  // Fetch selected user names (simplified - in production, cache user data)
+  const selectedIds = Array.from(selectedGroupParticipants);
+  list.innerHTML = selectedIds.map(userId => {
+    // We'll need to fetch names, but for now show ID
+    return `
+      <div class="inline-flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 rounded-full text-sm" data-user-id="${userId}">
+        <span class="text-green-700 dark:text-green-300">${userId.substring(0, 8)}...</span>
+        <button onclick="removeGroupParticipant('${userId}')" class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+    `;
+  }).join('');
+
+  // Re-create icons
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+function removeGroupParticipant(userId) {
+  selectedGroupParticipants.delete(userId);
+  updateSelectedParticipantsUI();
+  
+  // Re-render list
+  const searchQuery = document.getElementById('group-participant-search')?.value || '';
+  loadGroupParticipants(searchQuery);
+  
+  triggerHaptic('light');
+}
+
+function validateGroupForm() {
+  const groupName = document.getElementById('group-name-input')?.value.trim();
+  const createBtn = document.getElementById('create-group-btn');
+  
+  if (!createBtn) return;
+
+  if (groupName && groupName.length > 0 && selectedGroupParticipants.size > 0) {
+    createBtn.disabled = false;
+  } else {
+    createBtn.disabled = true;
+  }
+}
+
+async function handleCreateGroup() {
+  const groupName = document.getElementById('group-name-input')?.value.trim();
+  const description = document.getElementById('group-description-input')?.value.trim();
+
+  if (!groupName) {
+    showNotification('Group name is required', 'error');
+    return;
+  }
+
+  if (selectedGroupParticipants.size === 0) {
+    showNotification('Please select at least one member', 'error');
+    return;
+  }
+
+  try {
+    triggerHaptic('medium');
+    const conversation = await createGroupConversation(
+      groupName,
+      description || null,
+      Array.from(selectedGroupParticipants)
+    );
+
+    // Close modal
+    closeCreateGroupModal();
+
+    // Reload conversations
+    await loadConversations();
+
+    // Select the new group conversation
+    await selectConversation(conversation.id);
+
+    showNotification(`Group "${groupName}" created successfully!`, 'success');
+  } catch (error) {
+    console.error('Error creating group:', error);
+    showNotification(error.message || 'Failed to create group', 'error');
+  }
+}
+
+async function createGroupConversation(name, description, participantIds) {
+  try {
+    // 1. Create the conversation
+    const { data: conversation, error: convError } = await supabase
+      .from('conversations')
+      .insert([{
+        type: 'group',
+        title: name,
+        description: description || null,
+        created_by: currentUser.id
+      }])
+      .select()
+      .single();
+
+    if (convError) throw convError;
+
+    // 2. Add all participants (including creator as admin)
+    const allParticipants = [currentUser.id, ...participantIds];
+    const participantEntries = allParticipants.map(userId => ({
+      conversation_id: conversation.id,
+      user_id: userId,
+      role: userId === currentUser.id ? 'admin' : 'participant' // Creator is admin
+    }));
+
+    const { error: participantsError } = await supabase
+      .from('conversation_participants')
+      .insert(participantEntries);
+
+    if (participantsError) throw participantsError;
+
+    // 3. Create system message
+    const memberNames = await Promise.all(
+      participantIds.map(async (userId) => {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('full_name, email')
+          .eq('id', userId)
+          .single();
+        return profile?.full_name || profile?.email || 'Unknown';
+      })
+    );
+
+    const memberList = memberNames.join(', ');
+    const systemMessage = `Group created. ${memberList} added.`;
+
+    await supabase
+      .from('messages')
+      .insert([{
+        conversation_id: conversation.id,
+        sender_id: currentUser.id,
+        content: systemMessage,
+        message_type: 'system'
+      }]);
+
+    return conversation;
+  } catch (error) {
+    console.error('Error creating group conversation:', error);
+    throw error;
+  }
+}
+
+// Make functions globally available
+window.selectGroupParticipant = selectGroupParticipant;
+window.removeGroupParticipant = removeGroupParticipant;
+
 function renderUsersList(users) {
   const usersList = document.getElementById('users-list');
   if (!usersList) return;
@@ -2581,20 +3214,44 @@ function initPullToRefresh() {
 function updateConversationHeader() {
   if (!currentConversation) return;
 
+  const isGroup = currentConversation.type === 'group';
   const otherUser = currentConversation.otherParticipants?.[0];
-  const displayName = otherUser?.full_name || otherUser?.email || 'Unknown User';
+  
+  // For groups, use title; for direct messages, use other user's name
+  const displayName = isGroup 
+    ? (currentConversation.title || 'Unnamed Group')
+    : (otherUser?.full_name || otherUser?.email || 'Unknown User');
+  
   const initials = getInitials(displayName);
-  const avatarUrl = otherUser?.profile_picture;
+  const avatarUrl = isGroup ? null : otherUser?.profile_picture;
+  const participantCount = isGroup ? (currentConversation.participant_count || 0) : null;
 
   const headerName = document.getElementById('conversation-header-name');
   const headerAvatar = document.getElementById('conversation-header-avatar');
   const headerStatus = document.getElementById('conversation-header-status');
 
-  if (headerName) headerName.textContent = displayName;
-  // Status will be updated by updateOnlineStatus() when presence channel is ready
-  if (headerStatus) headerStatus.textContent = '...';
+  if (headerName) {
+    headerName.textContent = displayName;
+  }
+  
+  // For groups, show participant count; for direct messages, show status
+  if (headerStatus) {
+    if (isGroup && participantCount) {
+      headerStatus.textContent = `${participantCount} ${participantCount === 1 ? 'member' : 'members'}`;
+      headerStatus.className = 'text-xs text-gray-500 dark:text-gray-400';
+    } else {
+      // Status will be updated by updateOnlineStatus() when presence channel is ready
+      headerStatus.textContent = '...';
+    }
+  }
+  
   if (headerAvatar) {
-    if (avatarUrl) {
+    if (isGroup) {
+      // Group avatar: green background with initials
+      headerAvatar.innerHTML = '';
+      headerAvatar.className = 'w-10 h-10 rounded-full bg-green-600 dark:bg-green-700 flex items-center justify-center text-white font-semibold flex-shrink-0';
+      headerAvatar.textContent = initials;
+    } else if (avatarUrl) {
       headerAvatar.innerHTML = `<img src="${avatarUrl}" alt="${displayName}" class="w-full h-full rounded-full object-cover">`;
     } else {
       headerAvatar.textContent = initials;
