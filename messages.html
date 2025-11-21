@@ -500,6 +500,31 @@
       background-color: #374151;
     }
     
+    /* Reply Context (Phase 3.2) */
+    #reply-context {
+      transition: all 0.3s ease;
+      animation: slideDown 0.3s ease;
+    }
+    
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .reply-context {
+      transition: all 0.2s;
+    }
+    
+    .reply-context:hover {
+      transform: translateX(2px);
+    }
+    
     /* Send Button */
     #send-message-btn,
     .sendButton {

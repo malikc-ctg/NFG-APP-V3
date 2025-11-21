@@ -122,6 +122,9 @@ let originalMessages = []; // Store original messages before search filter
 let messageReactions = new Map(); // Map of message_id -> reactions array
 const COMMON_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🔥', '👏', '🎉']; // Quick reaction emojis
 
+// ========== PHASE 3.2: MESSAGE REPLIES ==========
+let replyingTo = null; // { messageId, content, sender, conversationId } - current reply context
+
 // Handle file selection
 function initFileUpload() {
   const fileInput = document.getElementById('file');
@@ -1003,8 +1006,13 @@ function renderMessages(isSearchMode = false) {
             ${isEdited ? `<span class="text-xs ${isSent ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}">(edited)</span>` : ''}
             ${isSent && isRead ? `<i data-lucide="check-check" class="w-3 h-3 text-blue-300"></i>` : isSent ? `<i data-lucide="check" class="w-3 h-3 text-white/70"></i>` : ''}
           </div>
-          ${canEdit || canDelete ? `
+          ${canEdit || canDelete || !isDeleted ? `
             <div class="message-actions absolute ${isSent ? 'left-0 -translate-x-full mr-2' : 'right-0 translate-x-full ml-2'} top-0 opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex items-center gap-1">
+              ${!isDeleted ? `
+                <button class="message-action-btn reply-message-btn p-1.5 rounded-lg bg-white dark:bg-gray-700 shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition" data-message-id="${message.id}" title="Reply">
+                  <i data-lucide="corner-up-left" class="w-3.5 h-3.5 text-gray-600 dark:text-gray-300"></i>
+                </button>
+              ` : ''}
               ${canEdit ? `
                 <button class="message-action-btn edit-message-btn p-1.5 rounded-lg bg-white dark:bg-gray-700 shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition" data-message-id="${message.id}" title="Edit">
                   <i data-lucide="pencil" class="w-3.5 h-3.5 text-gray-600 dark:text-gray-300"></i>
