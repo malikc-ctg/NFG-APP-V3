@@ -976,8 +976,22 @@ function renderMessages(isSearchMode = false) {
             }
           </div>
         ` : !isSent ? '<div class="w-8"></div>' : ''}
-        <div class="message-bubble ${isSent ? 'message-bubble-sent' : 'message-bubble-received'} px-4 py-2 relative message-bubble-wrapper ${isDeleted ? 'opacity-60' : ''}" data-message-id="${message.id}">
+        <div class="message-bubble ${isSent ? 'message-bubble-sent' : 'message-bubble-received'} px-4 py-2 relative message-bubble-wrapper group ${isDeleted ? 'opacity-60' : ''}" data-message-id="${message.id}">
           ${!isSent && showAvatar ? `<p class="text-xs font-semibold mb-1 ${isSent ? 'text-white/80' : 'text-gray-600 dark:text-gray-400'}">${escapeHtml(senderName)}</p>` : ''}
+          
+          ${message.reply_to_id && message.originalMessage ? `
+            <div class="reply-context mb-2 p-2 bg-gray-100 dark:bg-gray-700/50 rounded text-xs border-l-2 border-nfgblue cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition" 
+                 onclick="scrollToMessage('${message.reply_to_id}')" 
+                 title="Click to jump to original message">
+              <p class="font-semibold text-nfgblue dark:text-blue-400 mb-0.5">
+                ${escapeHtml(message.originalMessage.sender?.full_name || message.originalMessage.sender?.email || 'Unknown')}
+              </p>
+              <p class="truncate text-gray-600 dark:text-gray-400">
+                ${escapeHtml((message.originalMessage.content || '').substring(0, 50))}${message.originalMessage.content && message.originalMessage.content.length > 50 ? '...' : ''}
+              </p>
+            </div>
+          ` : ''}
+          
           ${isDeleted ? `
             <p class="text-sm italic ${isSent ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}">This message was deleted</p>
           ` : `
