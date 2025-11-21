@@ -24,7 +24,11 @@ const TYPING_TIMEOUT_MS = 3000; // Hide typing after 3 seconds
 const MESSAGE_EDIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes to edit
 
 // ========== INITIALIZATION ==========
+console.log('=== MESSAGES.JS LOADED ===');
+console.log('Link previews map initialized:', linkPreviews);
+
 document.addEventListener('DOMContentLoaded', async () => {
+  console.log('=== DOM CONTENT LOADED - MESSAGES ===');
   // Hide page loader
   const pageLoader = document.getElementById('page-loader');
   if (pageLoader) {
@@ -833,6 +837,7 @@ async function selectConversation(conversationId) {
 
 // ========== LOAD MESSAGES ==========
 async function loadMessages(conversationId) {
+  console.log('=== loadMessages() CALLED ===', conversationId);
   try {
     const loadingEl = document.getElementById('messages-loading');
     const emptyEl = document.getElementById('messages-empty');
@@ -1015,6 +1020,7 @@ function escapeRegex(str) {
 }
 
 // ========== LINK PREVIEWS (Phase 2.3) ==========
+console.log('=== LINK PREVIEW FUNCTIONS LOADED ===');
 
 // Extract URLs from text
 function extractUrls(text) {
@@ -1811,6 +1817,7 @@ function attachMobileDoubleTapReactions() {
 
 // ========== SEND MESSAGE ==========
 async function sendMessage() {
+  console.log('=== sendMessage() CALLED ===');
   const messageInput = document.getElementById('message-input');
   if (!messageInput || !currentConversation) {
     toast?.error('No conversation selected', 'Error');
@@ -1819,6 +1826,7 @@ async function sendMessage() {
   }
 
   const content = messageInput.value.trim();
+  console.log('Message content:', content);
   
   // Allow sending with just files (no text) or just text (no files)
   if (!content && selectedFiles.length === 0) {
