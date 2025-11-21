@@ -3830,9 +3830,12 @@ function updateConversationHeader() {
   }
 
   // Show/hide group actions button (Phase 4.2)
+  // Show/hide group actions button (Phase 4.3)
   if (groupActionsBtn) {
     if (isGroup) {
       groupActionsBtn.classList.remove('hidden');
+      // Update visibility based on permissions (async check)
+      updateGroupActionsVisibility();
     } else {
       groupActionsBtn.classList.add('hidden');
     }
