@@ -1531,7 +1531,10 @@ async function sendMessage() {
     
     // Add reply_to_id if replying (Phase 3.2)
     if (replyingTo && replyingTo.messageId) {
+      console.log('[Reply] Adding reply_to_id:', replyingTo.messageId);
       messageData.reply_to_id = replyingTo.messageId;
+    } else {
+      console.log('[Reply] No reply context found:', replyingTo);
     }
     
     if (attachmentUrl) {
@@ -1570,6 +1573,12 @@ async function sendMessage() {
     // Clear file preview
     selectedFiles = [];
     updateFilePreview();
+    
+    // Clear reply context (Phase 3.2) - AFTER message is sent
+    if (replyingTo) {
+      cancelReply();
+    }
+    
     if (messageBox) {
       messageBox.style.height = 'auto';
       messageBox.style.minHeight = '44px';
