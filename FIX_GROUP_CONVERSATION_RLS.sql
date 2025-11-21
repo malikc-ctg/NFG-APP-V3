@@ -51,25 +51,17 @@ GRANT INSERT ON conversation_participants TO authenticated;
 
 -- Step 4: Verify the helper function exists and has proper permissions
 -- This function is used by the RLS policies
-DO $$
+-- Just recreate it to ensure it exists (CREATE OR REPLACE is safe)
+CREATE OR REPLACE FUNCTION user_is_participant(conv_id UUID, user_id_param UUID)
+RETURNS BOOLEAN AS $$
 BEGIN
-  -- Check if function exists, if not create it
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_proc 
-    WHERE proname = 'user_is_participant'
-  ) THEN
-    CREATE OR REPLACE FUNCTION user_is_participant(conv_id UUID, user_id_param UUID)
-    RETURNS BOOLEAN AS $$
-    BEGIN
-      RETURN EXISTS (
-        SELECT 1 
-        FROM conversation_participants 
-        WHERE conversation_id = conv_id 
-          AND user_id = user_id_param
-      );
-    END;
-    $$ LANGUAGE plpgsql SECURITY DEFINER;
-    
-    GRANT EXECUTE ON FUNCTION user_is_participant(UUID, UUID) TO authenticated;
-  END IF;
-END $$;
+  RETURN EXISTS (
+    SELECT 1 
+    FROM conversation_participants 
+    WHERE conversation_id = conv_id 
+      AND user_id = user_id_param
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION user_is_participant(UUID, UUID) TO authenticated;
