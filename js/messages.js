@@ -390,6 +390,76 @@ function initEventListeners() {
       }
     });
   }
+
+  // Group actions button (Phase 4.2)
+  document.getElementById('group-actions-btn')?.addEventListener('click', () => {
+    if (currentConversation && currentConversation.type === 'group') {
+      showGroupInfo(currentConversation.id);
+    }
+  });
+
+  // Group info modal (Phase 4.2)
+  document.getElementById('close-group-info-modal')?.addEventListener('click', () => {
+    closeGroupInfoModal();
+  });
+  document.getElementById('close-group-info-btn')?.addEventListener('click', () => {
+    closeGroupInfoModal();
+  });
+
+  // Leave group button (Phase 4.2)
+  document.getElementById('leave-group-btn')?.addEventListener('click', async () => {
+    if (currentConversation && currentConversation.type === 'group') {
+      await handleLeaveGroup(currentConversation.id);
+    }
+  });
+
+  // Add member button (Phase 4.2)
+  document.getElementById('add-member-btn')?.addEventListener('click', () => {
+    if (currentConversation && currentConversation.type === 'group') {
+      openAddMemberModal(currentConversation.id);
+    }
+  });
+
+  // Add member modal (Phase 4.2)
+  document.getElementById('close-add-member-modal')?.addEventListener('click', () => {
+    closeAddMemberModal();
+  });
+  document.getElementById('cancel-add-member-btn')?.addEventListener('click', () => {
+    closeAddMemberModal();
+  });
+  document.getElementById('confirm-add-member-btn')?.addEventListener('click', async () => {
+    if (currentConversation && currentConversation.type === 'group') {
+      await handleAddMembers();
+    }
+  });
+
+  // Add member search (Phase 4.2)
+  const addMemberSearch = document.getElementById('add-member-search');
+  if (addMemberSearch) {
+    addMemberSearch.addEventListener('input', (e) => {
+      searchMembersToAdd(e.target.value);
+    });
+  }
+
+  // Close group info modal on backdrop click (Phase 4.2)
+  const groupInfoModal = document.getElementById('group-info-modal');
+  if (groupInfoModal) {
+    groupInfoModal.addEventListener('click', (e) => {
+      if (e.target === groupInfoModal) {
+        closeGroupInfoModal();
+      }
+    });
+  }
+
+  // Close add member modal on backdrop click (Phase 4.2)
+  const addMemberModal = document.getElementById('add-member-modal');
+  if (addMemberModal) {
+    addMemberModal.addEventListener('click', (e) => {
+      if (e.target === addMemberModal) {
+        closeAddMemberModal();
+      }
+    });
+  }
 }
 
 // ========== LOAD CONVERSATIONS ==========
@@ -2330,10 +2400,6 @@ async function createGroupConversation(name, description, participantIds) {
 window.selectGroupParticipant = selectGroupParticipant;
 window.removeGroupParticipant = removeGroupParticipant;
 
-// Make functions globally available
-window.selectGroupParticipant = selectGroupParticipant;
-window.removeGroupParticipant = removeGroupParticipant;
-
 function renderUsersList(users) {
   const usersList = document.getElementById('users-list');
   if (!usersList) return;
@@ -2997,6 +3063,7 @@ function updateConversationHeader() {
   const headerName = document.getElementById('conversation-header-name');
   const headerAvatar = document.getElementById('conversation-header-avatar');
   const headerStatus = document.getElementById('conversation-header-status');
+  const groupActionsBtn = document.getElementById('group-actions-btn');
 
   if (headerName) {
     headerName.textContent = displayName;
@@ -3023,6 +3090,15 @@ function updateConversationHeader() {
       headerAvatar.innerHTML = `<img src="${avatarUrl}" alt="${displayName}" class="w-full h-full rounded-full object-cover">`;
     } else {
       headerAvatar.textContent = initials;
+    }
+  }
+
+  // Show/hide group actions button (Phase 4.2)
+  if (groupActionsBtn) {
+    if (isGroup) {
+      groupActionsBtn.classList.remove('hidden');
+    } else {
+      groupActionsBtn.classList.add('hidden');
     }
   }
 }
