@@ -1011,14 +1011,21 @@ function escapeRegex(str) {
 
 // Extract URLs from text
 function extractUrls(text) {
-  if (!text) return [];
+  console.log('extractUrls called with:', text);
+  if (!text) {
+    console.log('extractUrls: No text provided');
+    return [];
+  }
   
   // URL regex pattern (matches http(s) URLs)
   const urlPattern = /https?:\/\/[^\s<>"{}|\\^`[\]]+/gi;
   const urls = text.match(urlPattern) || [];
+  console.log('extractUrls found URLs:', urls);
   
   // Remove duplicates and return
-  return [...new Set(urls)];
+  const uniqueUrls = [...new Set(urls)];
+  console.log('extractUrls returning:', uniqueUrls);
+  return uniqueUrls;
 }
 
 // Format message content with clickable links
@@ -1067,6 +1074,10 @@ async function fetchLinkPreview(url) {
 
 // Load link previews for a message (Phase 2.3)
 async function loadLinkPreviews(messageId, messageContent) {
+  console.log('=== loadLinkPreviews called ===');
+  console.log('Message ID:', messageId);
+  console.log('Message Content:', messageContent);
+  
   if (!messageContent) {
     console.log('No content for message:', messageId);
     return;
@@ -1075,8 +1086,12 @@ async function loadLinkPreviews(messageId, messageContent) {
   // Extract URLs from message
   const urls = extractUrls(messageContent);
   console.log('Extracted URLs for message', messageId, ':', urls);
-  if (urls.length === 0) return;
+  if (urls.length === 0) {
+    console.log('No URLs found in message, returning');
+    return;
+  }
   
+  console.log('Fetching previews for', urls.length, 'URL(s)...');
   // Fetch previews for each URL
   const previewPromises = urls.map(url => fetchLinkPreview(url));
   const previews = await Promise.all(previewPromises);
@@ -1087,6 +1102,9 @@ async function loadLinkPreviews(messageId, messageContent) {
   if (validPreviews.length > 0) {
     linkPreviews.set(messageId, validPreviews);
     console.log('Stored previews in map for message:', messageId);
+    console.log('Current linkPreviews map:', Array.from(linkPreviews.entries()));
+  } else {
+    console.log('No valid previews found, not storing');
   }
 }
 
@@ -1924,9 +1942,16 @@ async function sendMessage() {
 
     // Load link previews for the new message (Phase 2.3) - re-render after
     if (newMessage.content && !newMessage.deleted_at) {
+      console.log('About to load link previews for sent message:', newMessage.id, newMessage.content);
       await loadLinkPreviews(newMessage.id, newMessage.content);
+      console.log('Link previews loaded, re-rendering...');
       // Re-render after previews load
       renderMessages();
+    } else {
+      console.log('Skipping link preview load - no content or deleted:', {
+        hasContent: !!newMessage.content,
+        isDeleted: !!newMessage.deleted_at
+      });
     }
     
     // Ensure conversation view stays visible
