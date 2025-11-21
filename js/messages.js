@@ -612,7 +612,26 @@ function renderConversations(filteredConversations = null) {
 
   if (conversationsToRender.length === 0) {
     listEl.innerHTML = '';
-    document.getElementById('conversations-empty')?.classList.remove('hidden');
+    const emptyEl = document.getElementById('conversations-empty');
+    if (emptyEl) {
+      emptyEl.classList.remove('hidden');
+      
+      // Update empty state message based on filter (Phase 4.4)
+      const emptyTitle = emptyEl.querySelector('h3');
+      const emptyMessage = emptyEl.querySelector('p');
+      if (emptyTitle && emptyMessage) {
+        if (conversationFilterType === 'direct') {
+          emptyTitle.textContent = 'No direct messages';
+          emptyMessage.textContent = 'Start a conversation with a team member';
+        } else if (conversationFilterType === 'group') {
+          emptyTitle.textContent = 'No groups yet';
+          emptyMessage.textContent = 'Create a group to collaborate with multiple team members';
+        } else {
+          emptyTitle.textContent = 'No conversations yet';
+          emptyMessage.textContent = 'Start chatting with your team members to get started';
+        }
+      }
+    }
     return;
   }
 
@@ -3026,12 +3045,33 @@ async function toggleMemberRole(userId) {
   if (!currentConversation || currentConversation.type !== 'group') return;
   if (userId === currentUser.id) return; // Cannot change own role
 
+  // Check if user is admin (Phase 4.4)
+  const isAdmin = await isGroupAdmin(currentConversation.id);
+  if (!isAdmin) {
+    showNotification('Only admins can change member roles', 'error');
+    return;
+  }
+
   try {
     // Find member's current role
     const member = groupMembers.find(m => m.user_id === userId);
     if (!member) return;
 
     const newRole = member.role === 'admin' ? 'participant' : 'admin';
+
+    // Prevent removing last admin (Phase 4.4 - Edge case handling)
+    if (newRole === 'participant') {
+      // Load participants if not cached
+      if (!groupParticipants.has(currentConversation.id)) {
+        await loadGroupParticipantsForConversation(currentConversation.id);
+      }
+      const participants = groupParticipants.get(currentConversation.id) || [];
+      const adminCount = participants.filter(p => p.role === 'admin' && p.user_id !== userId).length;
+      if (adminCount === 0) {
+        showNotification('Cannot remove the last admin from the group. Promote another member to admin first.', 'error');
+        return;
+      }
+    }
 
     // Update role
     const { error: updateError } = await supabase
