@@ -1065,6 +1065,9 @@ function renderMessages(isSearchMode = false) {
   
   // Attach reaction listeners (Phase 3)
   attachReactionListeners();
+  
+  // Attach reply button listeners (Phase 3.2)
+  attachReplyListeners();
 }
 
 // ========== RENDER MESSAGE REACTIONS (Phase 3) ==========
