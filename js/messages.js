@@ -21,6 +21,7 @@ let typingTimeout = null; // To clear typing indicator
 let typingChannelSubscribed = false; // Track subscription status
 let conversationFilterType = 'all'; // 'all', 'direct', 'group' (Phase 4.4)
 const linkPreviews = new Map(); // messageId -> linkPreviewData[] (Phase 2.3)
+const revealedItems = new Set(); // For swipe gesture tracking (must be global scope)
 const TYPING_TIMEOUT_MS = 3000; // Hide typing after 3 seconds
 const MESSAGE_EDIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes to edit
 
@@ -3816,8 +3817,7 @@ function initConversationItemSwipe() {
     let isSwipeActive = false;
     let isRevealed = false;
     
-    // Track revealed items globally to close others
-    const revealedItems = new Set();
+    // Use global revealedItems Set (defined at module level)
     
     item.addEventListener('touchstart', (e) => {
       // Close other revealed items
