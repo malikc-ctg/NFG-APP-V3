@@ -1450,10 +1450,26 @@
   <!-- ========== SCRIPTS ========== -->
   <script type="module" src="./js/supabase.js"></script>
   <script type="module" src="./js/notification-center.js"></script>
-  <script type="module" src="./js/messages.js?v=20250123-2"></script>
+  <script>
+    // AGGRESSIVE CACHE BUSTING - Run immediately
+    console.log('%c🚨 CACHE BUST TEST - HTML SCRIPT LOADED', 'background: red; color: white; padding: 10px; font-size: 16px; font-weight: bold;');
+    console.log('Timestamp:', new Date().toISOString());
+    
+    // Disable service worker if it exists
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        console.log('Found service workers:', registrations.length);
+        registrations.forEach(reg => {
+          console.log('Unregistering service worker:', reg.scope);
+          reg.unregister();
+        });
+      });
+    }
+  </script>
+  <script type="module" src="./js/messages.js?v=20250123-3&t=<?php echo time(); ?>"></script>
   <script>
     // Force immediate test
-    console.log('✅ messages.html loaded - testing console');
+    console.log('✅ messages.html inline script executed');
     window.addEventListener('DOMContentLoaded', () => {
       console.log('✅ DOMContentLoaded fired in messages.html');
     });

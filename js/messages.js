@@ -2,9 +2,12 @@
 // In-App Messaging System
 // Phase 1: MVP (Core Messaging)
 // =====================================================
-console.log('%c🔵 MESSAGES.JS FILE LOADED', 'background: #0D47A1; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
+// IMMEDIATE EXECUTION TEST
+console.log('%c🚨🚨🚨 MESSAGES.JS FILE LOADED - VERSION 20250123-3 🚨🚨🚨', 'background: red; color: white; padding: 15px; font-size: 18px; font-weight: bold; border: 3px solid yellow;');
 console.log('🔵 Timestamp:', new Date().toISOString());
-console.log('🔵 Version: 20250123-2');
+console.log('🔵 Version: 20250123-3');
+console.log('🔵 File URL:', import.meta.url);
+console.trace('Stack trace to verify execution');
 
 import { supabase } from './supabase.js';
 import { showNotification } from './notifications.js';
