@@ -1512,6 +1512,11 @@ async function sendMessage() {
       message_type: messageType
     };
     
+    // Add reply_to_id if replying (Phase 3.2)
+    if (replyingTo && replyingTo.messageId) {
+      messageData.reply_to_id = replyingTo.messageId;
+    }
+    
     if (attachmentUrl) {
       messageData.attachment_url = attachmentUrl;
       messageData.attachment_name = attachmentName;
