@@ -16,8 +16,8 @@ let validationResults = null;
 let currentStep = 1;
 let existingSites = [];
 
-// Step indicator elements
-const stepIndicators = document.querySelectorAll('.step-indicator[data-step]');
+// Step indicator elements (will be queried after DOM ready)
+let stepIndicators = null;
 
 // NFG field definitions for each import type
 const FIELD_DEFINITIONS = {
@@ -114,20 +114,71 @@ const COLUMN_MAPPINGS = {
 };
 
 // Initialize CSV import system
-export function initCSVImport() {
-  console.log('📥 CSV Import System Initialized');
+function initCSVImport() {
+  console.log('📥 CSV Import System Initializing...');
+  
+  // Check if PapaParse is loaded
+  if (typeof window.Papa === 'undefined') {
+    console.error('❌ PapaParse library not loaded. Please check the script tag in settings.html');
+    console.log('Available on window:', Object.keys(window).filter(k => k.toLowerCase().includes('papa')));
+    return;
+  }
+  console.log('✅ PapaParse loaded');
+  
+  // Check if modal exists
+  const modal = document.getElementById('csv-import-modal');
+  if (!modal) {
+    console.error('❌ CSV import modal not found in DOM');
+    return;
+  }
+  console.log('✅ CSV import modal found');
+  
+  // Query step indicators now that DOM might be ready
+  stepIndicators = document.querySelectorAll('.step-indicator[data-step]');
+  console.log(`✅ Found ${stepIndicators.length} step indicators`);
   
   // Open import modal button
-  document.getElementById('open-import-modal-btn')?.addEventListener('click', openImportModal);
+  const openBtn = document.getElementById('open-import-modal-btn');
+  if (!openBtn) {
+    console.error('❌ Import modal button not found');
+    return;
+  }
+  console.log('✅ Import button found');
+  
+  // Remove existing listeners to prevent duplicates
+  const newOpenBtn = openBtn.cloneNode(true);
+  openBtn.parentNode.replaceChild(newOpenBtn, openBtn);
+  
+  newOpenBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    console.log('🔵 Import button clicked');
+    openImportModal();
+  });
   
   // Close modal buttons
-  document.getElementById('close-import-modal')?.addEventListener('click', closeImportModal);
-  document.getElementById('import-cancel-btn')?.addEventListener('click', closeImportModal);
+  const closeModalBtn = document.getElementById('close-import-modal');
+  const cancelBtn = document.getElementById('import-cancel-btn');
+  if (closeModalBtn) {
+    closeModalBtn.addEventListener('click', closeImportModal);
+  }
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', closeImportModal);
+  }
   
   // Navigation buttons
-  document.getElementById('import-back-btn')?.addEventListener('click', goToPreviousStep);
-  document.getElementById('import-next-btn')?.addEventListener('click', goToNextStep);
-  document.getElementById('import-confirm-btn')?.addEventListener('click', startImport);
+  const backBtn = document.getElementById('import-back-btn');
+  const nextBtn = document.getElementById('import-next-btn');
+  const confirmBtn = document.getElementById('import-confirm-btn');
+  
+  if (backBtn) {
+    backBtn.addEventListener('click', goToPreviousStep);
+  }
+  if (nextBtn) {
+    nextBtn.addEventListener('click', goToNextStep);
+  }
+  if (confirmBtn) {
+    confirmBtn.addEventListener('click', startImport);
+  }
   
   // Import type selection
   document.querySelectorAll('.import-type-btn').forEach(btn => {
@@ -181,16 +232,35 @@ export function initCSVImport() {
   });
   
   // Template download
-  document.getElementById('download-template-btn')?.addEventListener('click', downloadTemplate);
+  const templateBtn = document.getElementById('download-template-btn');
+  if (templateBtn) {
+    templateBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      downloadTemplate();
+    });
+  }
+  
+  console.log('✅ CSV Import System fully initialized - all event listeners attached');
 }
 
 // Open import modal
 function openImportModal() {
+  console.log('🔵 openImportModal() called');
   const modal = document.getElementById('csv-import-modal');
-  if (!modal) return;
+  if (!modal) {
+    console.error('❌ Modal not found!');
+    toast.error('Import modal not found. Please refresh the page.');
+    return;
+  }
   
+  console.log('✅ Opening modal...');
   modal.classList.remove('hidden');
   modal.classList.add('flex');
+  
+  // Reinitialize Lucide icons for the modal
+  if (window.lucide) {
+    lucide.createIcons();
+  }
   
   // Reset to step 1
   resetImport();
@@ -199,6 +269,8 @@ function openImportModal() {
   
   // Load existing sites for validation
   loadExistingSites();
+  
+  console.log('✅ Modal opened successfully');
 }
 
 // Close import modal
@@ -688,6 +760,11 @@ function goToStep(step) {
 }
 
 function updateStepIndicator() {
+  if (!stepIndicators) {
+    stepIndicators = document.querySelectorAll('.step-indicator[data-step]');
+  }
+  if (!stepIndicators || stepIndicators.length === 0) return;
+  
   stepIndicators.forEach(indicator => {
     const step = parseInt(indicator.dataset.step);
     if (step < currentStep) {
@@ -959,9 +1036,27 @@ function formatFileSize(bytes) {
 }
 
 // Initialize when DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initCSVImport);
-} else {
-  initCSVImport();
+function waitForDOM() {
+  const modal = document.getElementById('csv-import-modal');
+  const openBtn = document.getElementById('open-import-modal-btn');
+  
+  if (modal && openBtn) {
+    console.log('✅ DOM elements found, initializing CSV import...');
+    initCSVImport();
+  } else {
+    console.log('⏳ Waiting for DOM elements...');
+    setTimeout(waitForDOM, 100);
+  }
 }
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(waitForDOM, 100);
+  });
+} else {
+  setTimeout(waitForDOM, 100);
+}
+
+// Also export for manual initialization if needed
+window.initCSVImport = initCSVImport;
 
