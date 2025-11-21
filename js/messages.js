@@ -776,9 +776,9 @@ async function selectConversation(conversationId) {
   await loadMessages(conversationId);
   
   // Load group participants if group conversation (Phase 4.3)
-  if (conversation.type === 'group') {
+  if (currentConversation && currentConversation.type === 'group') {
     await loadGroupParticipantsForConversation(conversationId);
-    updateConversationHeader();
+    updateGroupActionsVisibility();
   }
 
     // Mark as read
