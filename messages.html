@@ -1469,22 +1469,7 @@
       });
     }
   </script>
-  <script type="module">
-    // Force load with absolute timestamp to bypass ALL caches
-    const script = document.createElement('script');
-    script.type = 'module';
-    script.src = './js/messages.js?v=20250123-11&_t=' + Date.now() + '&_r=' + Math.random() + '&_cb=' + performance.now();
-    script.onerror = function() {
-      console.error('❌ Failed to load messages.js, trying again...');
-      setTimeout(() => {
-        const retry = document.createElement('script');
-        retry.type = 'module';
-        retry.src = './js/messages.js?v=20250123-11&_t=' + Date.now() + '&_r=' + Math.random();
-        document.head.appendChild(retry);
-      }, 1000);
-    };
-    document.head.appendChild(script);
-  </script>
+  <script type="module" src="./js/messages.js?v=20250123-12&_t=<?php echo time(); ?>&_r=<?php echo rand(); ?>"></script>
   <script>
     // AGGRESSIVE CACHE BUSTING - Unregister service worker and clear caches
     (async function() {

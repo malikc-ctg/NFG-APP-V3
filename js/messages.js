@@ -3,9 +3,20 @@
 // Phase 1: MVP (Core Messaging)
 // =====================================================
 // IMMEDIATE EXECUTION TEST
-console.log('%c🚨🚨🚨 MESSAGES.JS FILE LOADED - VERSION 20250123-11 🚨🚨🚨', 'background: red; color: white; padding: 15px; font-size: 18px; font-weight: bold; border: 3px solid yellow;');
+console.log('%c🚨🚨🚨 MESSAGES.JS FILE LOADED - VERSION 20250123-12 🚨🚨🚨', 'background: red; color: white; padding: 15px; font-size: 18px; font-weight: bold; border: 3px solid yellow;');
 console.log('🔵 Timestamp:', new Date().toISOString());
-console.log('🔵 Version: 20250123-11');
+console.log('🔵 Version: 20250123-12');
+
+// Initialize immediately if DOM is already loaded, otherwise wait for DOMContentLoaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeMessages);
+} else {
+  // DOM is already loaded, initialize immediately
+  console.log('🔵 DOM already loaded, initializing immediately...');
+  initializeMessages();
+}
+
+async function initializeMessages() {
 console.log('🔵 File loaded from:', import.meta.url);
 console.log('🔵 File URL:', import.meta.url);
 console.trace('Stack trace to verify execution');
@@ -43,7 +54,7 @@ const MESSAGE_EDIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes to edit
 console.log('=== MESSAGES.JS LOADED ===');
 console.log('Link previews map initialized:', linkPreviews);
 
-document.addEventListener('DOMContentLoaded', async () => {
+async function initializeMessages() {
   console.log('=== DOM CONTENT LOADED - MESSAGES ===');
   console.log('🔵 Step 1: DOM loaded, starting initialization...');
   
