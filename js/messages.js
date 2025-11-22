@@ -3,9 +3,9 @@
 // Phase 1: MVP (Core Messaging)
 // =====================================================
 // IMMEDIATE EXECUTION TEST
-console.log('%c🚨🚨🚨 MESSAGES.JS FILE LOADED - VERSION 20250123-12 🚨🚨🚨', 'background: red; color: white; padding: 15px; font-size: 18px; font-weight: bold; border: 3px solid yellow;');
+console.log('%c🚨🚨🚨 MESSAGES.JS FILE LOADED - VERSION 20250123-13 🚨🚨🚨', 'background: red; color: white; padding: 15px; font-size: 18px; font-weight: bold; border: 3px solid yellow;');
 console.log('🔵 Timestamp:', new Date().toISOString());
-console.log('🔵 Version: 20250123-12');
+console.log('🔵 Version: 20250123-13');
 
 // Initialize immediately if DOM is already loaded, otherwise wait for DOMContentLoaded
 if (document.readyState === 'loading') {
