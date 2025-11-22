@@ -3,9 +3,9 @@
 // Phase 1: MVP (Core Messaging)
 // =====================================================
 // IMMEDIATE EXECUTION TEST
-console.log('%c🚨🚨🚨 MESSAGES.JS FILE LOADED - VERSION 20250123-10 🚨🚨🚨', 'background: red; color: white; padding: 15px; font-size: 18px; font-weight: bold; border: 3px solid yellow;');
+console.log('%c🚨🚨🚨 MESSAGES.JS FILE LOADED - VERSION 20250123-11 🚨🚨🚨', 'background: red; color: white; padding: 15px; font-size: 18px; font-weight: bold; border: 3px solid yellow;');
 console.log('🔵 Timestamp:', new Date().toISOString());
-console.log('🔵 Version: 20250123-10');
+console.log('🔵 Version: 20250123-11');
 console.log('🔵 File loaded from:', import.meta.url);
 console.log('🔵 File URL:', import.meta.url);
 console.trace('Stack trace to verify execution');
@@ -45,6 +45,8 @@ console.log('Link previews map initialized:', linkPreviews);
 
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('=== DOM CONTENT LOADED - MESSAGES ===');
+  console.log('🔵 Step 1: DOM loaded, starting initialization...');
+  
   // Hide page loader
   const pageLoader = document.getElementById('page-loader');
   if (pageLoader) {
@@ -52,15 +54,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Get current user
+  console.log('🔵 Step 2: Getting current user...');
   const { data: { user }, error: userError } = await supabase.auth.getUser();
-  if (userError || !user) {
+  
+  if (userError) {
+    console.error('❌ User error:', userError);
+    window.location.href = './index.html';
+    return;
+  }
+  
+  if (!user) {
+    console.error('❌ No user found, redirecting...');
     window.location.href = './index.html';
     return;
   }
 
+  console.log('🔵 Step 3: User found:', user.id);
   currentUser = user;
 
   // Get user profile
+  console.log('🔵 Step 4: Loading user profile...');
   const { data: profile, error: profileError } = await supabase
     .from('user_profiles')
     .select('*')
@@ -68,7 +81,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     .single();
 
   if (profileError) {
-    console.error('Error loading user profile:', profileError);
+    console.error('❌ Error loading user profile:', profileError);
     // Create profile if doesn't exist
     const { data: newProfile } = await supabase
       .from('user_profiles')
@@ -86,12 +99,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     currentUserProfile = profile;
   }
 
+  console.log('🔵 Step 5: Profile loaded, initializing event listeners...');
   // Initialize event listeners
   initEventListeners();
 
+  console.log('🔵 Step 6: Checking if we should load conversations...');
+  console.log('🔵 currentUser:', currentUser?.id);
   // Load conversations (only if user is set)
   if (currentUser && currentUser.id) {
-    await loadConversations();
+    console.log('🔵 Step 7: Calling loadConversations()...');
+    try {
+      await loadConversations();
+      console.log('🔵 Step 8: loadConversations() completed');
+    } catch (error) {
+      console.error('❌ Error in loadConversations():', error);
+    }
   } else {
     console.error('❌ Cannot load conversations: currentUser is not set');
     const emptyEl = document.getElementById('conversations-empty');
