@@ -53,8 +53,10 @@ const MESSAGE_EDIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes to edit
 // ========== INITIALIZATION ==========
 console.log('=== MESSAGES.JS LOADED ===');
 console.log('Link previews map initialized:', linkPreviews);
+console.log('🔵 Document readyState:', document.readyState);
 
-async function initializeMessages() {
+// Immediately invoke async function to start initialization
+(async function initializeMessages() {
   console.log('=== DOM CONTENT LOADED - MESSAGES ===');
   console.log('🔵 Step 1: DOM loaded, starting initialization...');
   
@@ -159,6 +161,9 @@ async function initializeMessages() {
   
   // Initialize mobile keyboard handling
   initMobileKeyboardHandling();
+  
+  console.log('🔵 ✅ Initialization complete!');
+})(); // Immediately invoke the async function
 });
 
 // ========== HAPTIC FEEDBACK ==========
