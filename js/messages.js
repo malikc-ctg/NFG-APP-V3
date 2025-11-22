@@ -3,9 +3,9 @@
 // Phase 1: MVP (Core Messaging)
 // =====================================================
 // IMMEDIATE EXECUTION TEST
-console.log('%c🚨🚨🚨 MESSAGES.JS FILE LOADED - VERSION 20250123-14 🚨🚨🚨', 'background: red; color: white; padding: 15px; font-size: 18px; font-weight: bold; border: 3px solid yellow;');
+console.log('%c🚨🚨🚨 MESSAGES.JS FILE LOADED - VERSION 20250123-15 🚨🚨🚨', 'background: red; color: white; padding: 15px; font-size: 18px; font-weight: bold; border: 3px solid yellow;');
 console.log('🔵 Timestamp:', new Date().toISOString());
-console.log('🔵 Version: 20250123-14');
+console.log('🔵 Version: 20250123-15');
 console.log('🔵 File loaded from:', import.meta.url);
 console.trace('Stack trace to verify execution');
 
@@ -45,8 +45,12 @@ console.log('🔵 Document readyState:', document.readyState);
 
 // Immediately invoke async function to start initialization
 (async function initializeMessages() {
-  console.log('=== DOM CONTENT LOADED - MESSAGES ===');
-  console.log('🔵 Step 1: DOM loaded, starting initialization...');
+  try {
+    console.log('🔵🔵🔵 INITIALIZE MESSAGES FUNCTION CALLED 🔵🔵🔵');
+    console.log('=== DOM CONTENT LOADED - MESSAGES ===');
+    console.log('🔵 Step 1: DOM loaded, starting initialization...');
+    console.log('🔵 supabase available:', typeof supabase !== 'undefined');
+    console.log('🔵 showNotification available:', typeof showNotification !== 'undefined');
   
   // Hide page loader
   const pageLoader = document.getElementById('page-loader');
