@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>NFG — Messages</title>
   <link rel="icon" type="image/png" href="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/NFG%20one.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL05GRyBvbmUucG5nIiwiaWF0IjoxNzYyOTc5NzU5LCJleHAiOjQ4ODUwNDM3NTl9.fnJIDQep2yYlgGKlBRNnkrUoUzXzG7eac39GG6NQPuU">
 
@@ -1466,8 +1469,55 @@
       });
     }
   </script>
-  <script type="module" src="./js/messages.js?v=20250123-4&t=" + Date.now()></script>
+  <script type="module">
+    // Force load with absolute timestamp to bypass ALL caches
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.src = './js/messages.js?v=20250123-9&_t=' + Date.now() + '&_r=' + Math.random() + '&_cb=' + performance.now();
+    script.onerror = function() {
+      console.error('❌ Failed to load messages.js, trying again...');
+      setTimeout(() => {
+        const retry = document.createElement('script');
+        retry.type = 'module';
+        retry.src = './js/messages.js?v=20250123-9&_t=' + Date.now() + '&_r=' + Math.random();
+        document.head.appendChild(retry);
+      }, 1000);
+    };
+    document.head.appendChild(script);
+  </script>
   <script>
+    // AGGRESSIVE CACHE BUSTING - Unregister service worker and clear caches
+    (async function() {
+      console.log('🔴 AGGRESSIVE CACHE BUST - Clearing all caches...');
+      
+      // Unregister service worker
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        console.log('Found service workers:', registrations.length);
+        for (let registration of registrations) {
+          console.log('Unregistering service worker:', registration.scope);
+          await registration.unregister();
+        }
+      }
+      
+      // Clear all caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        console.log('Found caches:', cacheNames);
+        await Promise.all(cacheNames.map(name => {
+          console.log('Deleting cache:', name);
+          return caches.delete(name);
+        }));
+      }
+      
+      // Force reload with cache bypass
+      console.log('✅ Cache cleared! Forcing reload...');
+      if (sessionStorage.getItem('cacheCleared') !== 'true') {
+        sessionStorage.setItem('cacheCleared', 'true');
+        window.location.href = window.location.href.split('?')[0] + '?v=' + Date.now() + '&_cb=' + Math.random();
+      }
+    })();
+    
     // Force immediate test
     console.log('✅ messages.html inline script executed');
     window.addEventListener('DOMContentLoaded', () => {

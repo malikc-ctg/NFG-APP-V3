@@ -3,14 +3,23 @@
 // Phase 1: MVP (Core Messaging)
 // =====================================================
 // IMMEDIATE EXECUTION TEST
-console.log('%c🚨🚨🚨 MESSAGES.JS FILE LOADED - VERSION 20250123-3 🚨🚨🚨', 'background: red; color: white; padding: 15px; font-size: 18px; font-weight: bold; border: 3px solid yellow;');
+console.log('%c🚨🚨🚨 MESSAGES.JS FILE LOADED - VERSION 20250123-9 🚨🚨🚨', 'background: red; color: white; padding: 15px; font-size: 18px; font-weight: bold; border: 3px solid yellow;');
 console.log('🔵 Timestamp:', new Date().toISOString());
-console.log('🔵 Version: 20250123-3');
+console.log('🔵 Version: 20250123-9');
+console.log('🔵 File loaded from:', import.meta.url);
 console.log('🔵 File URL:', import.meta.url);
 console.trace('Stack trace to verify execution');
 
 import { supabase } from './supabase.js';
 import { showNotification } from './notifications.js';
+
+// Create toast helper for backward compatibility
+const toast = {
+  error: (message, title = 'Error') => showNotification(message, 'error', title),
+  success: (message, title = 'Success') => showNotification(message, 'success', title),
+  info: (message, title = 'Info') => showNotification(message, 'info', title),
+  warning: (message, title = 'Warning') => showNotification(message, 'warning', title)
+};
 
 // ========== STATE MANAGEMENT ==========
 let currentUser = null;
@@ -80,8 +89,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Initialize event listeners
   initEventListeners();
 
-  // Load conversations
-  await loadConversations();
+  // Load conversations (only if user is set)
+  if (currentUser && currentUser.id) {
+    await loadConversations();
+  } else {
+    console.error('❌ Cannot load conversations: currentUser is not set');
+    const emptyEl = document.getElementById('conversations-empty');
+    const loadingEl = document.getElementById('conversations-loading');
+    if (loadingEl) loadingEl.classList.add('hidden');
+    if (emptyEl) {
+      emptyEl.classList.remove('hidden');
+      const emptyTitle = emptyEl.querySelector('h3');
+      const emptyMessage = emptyEl.querySelector('p');
+      if (emptyTitle) emptyTitle.textContent = 'Authentication Error';
+      if (emptyMessage) emptyMessage.textContent = 'Please refresh the page';
+    }
+  }
 
   // Initialize icons
   if (window.lucide) {
@@ -481,9 +504,14 @@ function initEventListeners() {
 // ========== LOAD CONVERSATIONS ==========
 async function loadConversations() {
   try {
+    console.log('🔵 loadConversations() STARTED');
+    console.log('🔵 currentUser:', currentUser?.id);
+    
     const loadingEl = document.getElementById('conversations-loading');
     const emptyEl = document.getElementById('conversations-empty');
     const listEl = document.getElementById('conversations-list');
+
+    console.log('🔵 DOM elements found:', { loadingEl: !!loadingEl, emptyEl: !!emptyEl, listEl: !!listEl });
 
     if (loadingEl) loadingEl.classList.remove('hidden');
     if (emptyEl) emptyEl.classList.add('hidden');
@@ -491,28 +519,44 @@ async function loadConversations() {
 
     // Get user's conversations with participant info
     // First, get participant records
+    console.log('🔵 Fetching conversation_participants for user:', currentUser?.id);
     const { data: participantData, error: participantError } = await supabase
       .from('conversation_participants')
       .select('conversation_id, last_read_at')
       .eq('user_id', currentUser.id);
 
-    if (participantError) throw participantError;
+    console.log('🔵 Participant query result:', { data: participantData, error: participantError });
+
+    if (participantError) {
+      console.error('❌ Participant query error:', participantError);
+      throw participantError;
+    }
 
     if (!participantData || participantData.length === 0) {
+      console.log('🔵 No participants found - showing empty state');
       if (loadingEl) loadingEl.classList.add('hidden');
       if (emptyEl) emptyEl.classList.remove('hidden');
       return;
     }
 
+    console.log('🔵 Found', participantData.length, 'participant records');
+
     // Get conversation details separately (we'll filter archived conversations client-side)
     const conversationIds = participantData.map(p => p.conversation_id);
+    console.log('🔵 Fetching conversations for IDs:', conversationIds);
+    
     const { data: conversationsData, error: conversationsError } = await supabase
       .from('conversations')
       .select('id, type, job_id, title, created_by, created_at, updated_at, last_message_at, archived_at, archived_by')
       .in('id', conversationIds)
       .order('last_message_at', { ascending: false });
 
-    if (conversationsError) throw conversationsError;
+    console.log('🔵 Conversations query result:', { data: conversationsData, error: conversationsError });
+
+    if (conversationsError) {
+      console.error('❌ Conversations query error:', conversationsError);
+      throw conversationsError;
+    }
     
     // Filter out conversations archived by current user (client-side filter)
     const filteredConversations = (conversationsData || []).filter(conv => {
@@ -610,7 +654,29 @@ async function loadConversations() {
       updateMobileNavigation(true);
     }
   } catch (error) {
-    console.error('Error loading conversations:', error);
+    console.error('❌❌❌ Error loading conversations:', error);
+    console.error('❌ Error details:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+      stack: error.stack
+    });
+    
+    const loadingEl = document.getElementById('conversations-loading');
+    const emptyEl = document.getElementById('conversations-empty');
+    const listEl = document.getElementById('conversations-list');
+    
+    if (loadingEl) loadingEl.classList.add('hidden');
+    if (listEl) listEl.classList.add('hidden');
+    if (emptyEl) {
+      emptyEl.classList.remove('hidden');
+      const emptyTitle = emptyEl.querySelector('h3');
+      const emptyMessage = emptyEl.querySelector('p');
+      if (emptyTitle) emptyTitle.textContent = 'Error loading conversations';
+      if (emptyMessage) emptyMessage.textContent = error.message || 'Please refresh the page';
+    }
+    
     toast?.error('Failed to load conversations', 'Error');
   }
 }
@@ -4600,18 +4666,7 @@ async function deleteMessage(messageId) {
 }
 
 // ========== TOAST NOTIFICATIONS ==========
-// Use existing toast system
-const toast = {
-  success: (message, title) => {
-    showNotification(message, 'success', title);
-  },
-  error: (message, title) => {
-    showNotification(message, 'error', title);
-  },
-  info: (message, title) => {
-    showNotification(message, 'info', title);
-  }
-};
+// Toast helper is defined at the top of the file (line 16)
 
 // ========== PHASE 1: ARCHIVE & DELETE CONVERSATIONS ==========
 
