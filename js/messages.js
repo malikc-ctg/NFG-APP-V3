@@ -2,12 +2,7 @@
 // In-App Messaging System
 // Phase 1: MVP (Core Messaging)
 // =====================================================
-// IMMEDIATE EXECUTION TEST
-console.log('%c🚨🚨🚨 MESSAGES.JS FILE LOADED - VERSION 20250123-15 🚨🚨🚨', 'background: red; color: white; padding: 15px; font-size: 18px; font-weight: bold; border: 3px solid yellow;');
-console.log('🔵 Timestamp:', new Date().toISOString());
-console.log('🔵 Version: 20250123-15');
-console.log('🔵 File loaded from:', import.meta.url);
-console.trace('Stack trace to verify execution');
+// Messages.js loaded
 
 import { supabase } from './supabase.js';
 import { showNotification } from './notifications.js';
@@ -46,11 +41,6 @@ console.log('🔵 Document readyState:', document.readyState);
 // Immediately invoke async function to start initialization
 (async function initializeMessages() {
   try {
-    console.log('🔵🔵🔵 INITIALIZE MESSAGES FUNCTION CALLED 🔵🔵🔵');
-    console.log('=== DOM CONTENT LOADED - MESSAGES ===');
-    console.log('🔵 Step 1: DOM loaded, starting initialization...');
-    console.log('🔵 supabase available:', typeof supabase !== 'undefined');
-    console.log('🔵 showNotification available:', typeof showNotification !== 'undefined');
   
   // Hide page loader
   const pageLoader = document.getElementById('page-loader');
@@ -59,26 +49,16 @@ console.log('🔵 Document readyState:', document.readyState);
   }
 
   // Get current user
-  console.log('🔵 Step 2: Getting current user...');
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   
-  if (userError) {
-    console.error('❌ User error:', userError);
-    window.location.href = './index.html';
-    return;
-  }
-  
-  if (!user) {
-    console.error('❌ No user found, redirecting...');
+  if (userError || !user) {
     window.location.href = './index.html';
     return;
   }
 
-  console.log('🔵 Step 3: User found:', user.id);
   currentUser = user;
 
   // Get user profile
-  console.log('🔵 Step 4: Loading user profile...');
   const { data: profile, error: profileError } = await supabase
     .from('user_profiles')
     .select('*')
@@ -104,23 +84,13 @@ console.log('🔵 Document readyState:', document.readyState);
     currentUserProfile = profile;
   }
 
-  console.log('🔵 Step 5: Profile loaded, initializing event listeners...');
   // Initialize event listeners
   initEventListeners();
 
-  console.log('🔵 Step 6: Checking if we should load conversations...');
-  console.log('🔵 currentUser:', currentUser?.id);
-  // Load conversations (only if user is set)
+  // Load conversations
   if (currentUser && currentUser.id) {
-    console.log('🔵 Step 7: Calling loadConversations()...');
-    try {
-      await loadConversations();
-      console.log('🔵 Step 8: loadConversations() completed');
-    } catch (error) {
-      console.error('❌ Error in loadConversations():', error);
-    }
+    await loadConversations();
   } else {
-    console.error('❌ Cannot load conversations: currentUser is not set');
     const emptyEl = document.getElementById('conversations-empty');
     const loadingEl = document.getElementById('conversations-loading');
     if (loadingEl) loadingEl.classList.add('hidden');
@@ -154,14 +124,8 @@ console.log('🔵 Document readyState:', document.readyState);
   // Initialize mobile keyboard handling
   initMobileKeyboardHandling();
   
-  console.log('🔵 ✅ Initialization complete!');
   } catch (error) {
-    console.error('❌❌❌ CRITICAL ERROR IN INITIALIZATION:', error);
-    console.error('Error stack:', error.stack);
-    console.error('Error message:', error.message);
-    console.error('Error name:', error.name);
-    
-    // Show error to user
+    console.error('Error initializing messages:', error);
     const loadingEl = document.getElementById('conversations-loading');
     const emptyEl = document.getElementById('conversations-empty');
     if (loadingEl) loadingEl.classList.add('hidden');
@@ -170,7 +134,7 @@ console.log('🔵 Document readyState:', document.readyState);
       const emptyTitle = emptyEl.querySelector('h3');
       const emptyMessage = emptyEl.querySelector('p');
       if (emptyTitle) emptyTitle.textContent = 'Error Loading Messages';
-      if (emptyMessage) emptyMessage.textContent = error.message || 'Please refresh the page';
+      if (emptyMessage) emptyMessage.textContent = 'Please refresh the page';
     }
   }
 })(); // Immediately invoke the async function
@@ -551,14 +515,9 @@ function initEventListeners() {
 // ========== LOAD CONVERSATIONS ==========
 async function loadConversations() {
   try {
-    console.log('🔵 loadConversations() STARTED');
-    console.log('🔵 currentUser:', currentUser?.id);
-    
     const loadingEl = document.getElementById('conversations-loading');
     const emptyEl = document.getElementById('conversations-empty');
     const listEl = document.getElementById('conversations-list');
-
-    console.log('🔵 DOM elements found:', { loadingEl: !!loadingEl, emptyEl: !!emptyEl, listEl: !!listEl });
 
     if (loadingEl) loadingEl.classList.remove('hidden');
     if (emptyEl) emptyEl.classList.add('hidden');
@@ -566,44 +525,28 @@ async function loadConversations() {
 
     // Get user's conversations with participant info
     // First, get participant records
-    console.log('🔵 Fetching conversation_participants for user:', currentUser?.id);
     const { data: participantData, error: participantError } = await supabase
       .from('conversation_participants')
       .select('conversation_id, last_read_at')
       .eq('user_id', currentUser.id);
 
-    console.log('🔵 Participant query result:', { data: participantData, error: participantError });
-
-    if (participantError) {
-      console.error('❌ Participant query error:', participantError);
-      throw participantError;
-    }
+    if (participantError) throw participantError;
 
     if (!participantData || participantData.length === 0) {
-      console.log('🔵 No participants found - showing empty state');
       if (loadingEl) loadingEl.classList.add('hidden');
       if (emptyEl) emptyEl.classList.remove('hidden');
       return;
     }
 
-    console.log('🔵 Found', participantData.length, 'participant records');
-
     // Get conversation details separately (we'll filter archived conversations client-side)
     const conversationIds = participantData.map(p => p.conversation_id);
-    console.log('🔵 Fetching conversations for IDs:', conversationIds);
-    
     const { data: conversationsData, error: conversationsError } = await supabase
       .from('conversations')
       .select('id, type, job_id, title, created_by, created_at, updated_at, last_message_at, archived_at, archived_by')
       .in('id', conversationIds)
       .order('last_message_at', { ascending: false });
 
-    console.log('🔵 Conversations query result:', { data: conversationsData, error: conversationsError });
-
-    if (conversationsError) {
-      console.error('❌ Conversations query error:', conversationsError);
-      throw conversationsError;
-    }
+    if (conversationsError) throw conversationsError;
     
     // Filter out conversations archived by current user (client-side filter)
     const filteredConversations = (conversationsData || []).filter(conv => {
@@ -701,15 +644,7 @@ async function loadConversations() {
       updateMobileNavigation(true);
     }
   } catch (error) {
-    console.error('❌❌❌ Error loading conversations:', error);
-    console.error('❌ Error details:', {
-      message: error.message,
-      code: error.code,
-      details: error.details,
-      hint: error.hint,
-      stack: error.stack
-    });
-    
+    console.error('Error loading conversations:', error);
     const loadingEl = document.getElementById('conversations-loading');
     const emptyEl = document.getElementById('conversations-empty');
     const listEl = document.getElementById('conversations-list');
@@ -721,7 +656,7 @@ async function loadConversations() {
       const emptyTitle = emptyEl.querySelector('h3');
       const emptyMessage = emptyEl.querySelector('p');
       if (emptyTitle) emptyTitle.textContent = 'Error loading conversations';
-      if (emptyMessage) emptyMessage.textContent = error.message || 'Please refresh the page';
+      if (emptyMessage) emptyMessage.textContent = 'Please refresh the page';
     }
     
     toast?.error('Failed to load conversations', 'Error');
@@ -1049,19 +984,10 @@ async function loadMessages(conversationId) {
 
     // Load link previews for messages (Phase 2.3) - load after rendering, then re-render
     if (messages.length > 0) {
-      console.log('=== LOAD MESSAGES: Starting link preview loading ===');
-      console.log('Total messages:', messages.length);
       const messagesWithContent = messages.filter(m => m.content && !m.deleted_at);
-      console.log('Messages with content:', messagesWithContent.length);
-      
       if (messagesWithContent.length > 0) {
-        const previewPromises = messagesWithContent.map(m => {
-          console.log('Queueing preview load for message:', m.id, 'Content:', m.content?.substring(0, 50));
-          return loadLinkPreviews(m.id, m.content);
-        });
+        const previewPromises = messagesWithContent.map(m => loadLinkPreviews(m.id, m.content));
         await Promise.all(previewPromises);
-        console.log('All preview loads completed - re-rendering with previews');
-        
         // Re-render after previews load to show preview cards
         renderMessages();
       }
