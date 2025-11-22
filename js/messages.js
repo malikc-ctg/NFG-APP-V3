@@ -155,8 +155,25 @@ console.log('🔵 Document readyState:', document.readyState);
   initMobileKeyboardHandling();
   
   console.log('🔵 ✅ Initialization complete!');
+  } catch (error) {
+    console.error('❌❌❌ CRITICAL ERROR IN INITIALIZATION:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error message:', error.message);
+    console.error('Error name:', error.name);
+    
+    // Show error to user
+    const loadingEl = document.getElementById('conversations-loading');
+    const emptyEl = document.getElementById('conversations-empty');
+    if (loadingEl) loadingEl.classList.add('hidden');
+    if (emptyEl) {
+      emptyEl.classList.remove('hidden');
+      const emptyTitle = emptyEl.querySelector('h3');
+      const emptyMessage = emptyEl.querySelector('p');
+      if (emptyTitle) emptyTitle.textContent = 'Error Loading Messages';
+      if (emptyMessage) emptyMessage.textContent = error.message || 'Please refresh the page';
+    }
+  }
 })(); // Immediately invoke the async function
-});
 
 // ========== HAPTIC FEEDBACK ==========
 function triggerHaptic(type = 'light') {
