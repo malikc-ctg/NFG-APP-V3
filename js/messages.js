@@ -3,9 +3,9 @@
 // Phase 1: MVP (Core Messaging)
 // =====================================================
 // IMMEDIATE EXECUTION TEST
-console.log('%c🚨🚨🚨 MESSAGES.JS FILE LOADED - VERSION 20250123-9 🚨🚨🚨', 'background: red; color: white; padding: 15px; font-size: 18px; font-weight: bold; border: 3px solid yellow;');
+console.log('%c🚨🚨🚨 MESSAGES.JS FILE LOADED - VERSION 20250123-10 🚨🚨🚨', 'background: red; color: white; padding: 15px; font-size: 18px; font-weight: bold; border: 3px solid yellow;');
 console.log('🔵 Timestamp:', new Date().toISOString());
-console.log('🔵 Version: 20250123-9');
+console.log('🔵 Version: 20250123-10');
 console.log('🔵 File loaded from:', import.meta.url);
 console.log('🔵 File URL:', import.meta.url);
 console.trace('Stack trace to verify execution');
@@ -2091,7 +2091,7 @@ async function sendMessage() {
 }
 
 // ========== REAL-TIME SUBSCRIPTION ==========
-function subscribeToMessages(conversationId) {
+async function subscribeToMessages(conversationId) {
   // Unsubscribe from previous channel
   if (realtimeSubscription) {
     supabase.removeChannel(realtimeSubscription);

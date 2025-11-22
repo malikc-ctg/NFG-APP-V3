@@ -1473,13 +1473,13 @@
     // Force load with absolute timestamp to bypass ALL caches
     const script = document.createElement('script');
     script.type = 'module';
-    script.src = './js/messages.js?v=20250123-9&_t=' + Date.now() + '&_r=' + Math.random() + '&_cb=' + performance.now();
+    script.src = './js/messages.js?v=20250123-10&_t=' + Date.now() + '&_r=' + Math.random() + '&_cb=' + performance.now();
     script.onerror = function() {
       console.error('❌ Failed to load messages.js, trying again...');
       setTimeout(() => {
         const retry = document.createElement('script');
         retry.type = 'module';
-        retry.src = './js/messages.js?v=20250123-9&_t=' + Date.now() + '&_r=' + Math.random();
+        retry.src = './js/messages.js?v=20250123-10&_t=' + Date.now() + '&_r=' + Math.random();
         document.head.appendChild(retry);
       }, 1000);
     };
