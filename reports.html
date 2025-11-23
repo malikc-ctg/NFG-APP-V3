@@ -3580,7 +3580,7 @@
         // Fetch all users
         const { data: users, error: usersError } = await supabase
           .from('user_profiles')
-          .select('id, full_name, email, role, status, created_at, profile_picture_url')
+          .select('id, full_name, email, role, status, created_at, profile_picture')
           .order('created_at', { ascending: false });
         
         if (usersError) {
@@ -3853,7 +3853,7 @@
         const initials = getInitials(emp.full_name || emp.email);
         const roleBadge = getRoleBadge(emp.role);
         const statusBadge = getStatusBadge(emp.status);
-        const avatarUrl = emp.profile_picture_url || '';
+        const avatarUrl = emp.profile_picture || '';
         
         return `
           <tr class="hover:bg-nfglight dark:hover:bg-gray-700 cursor-pointer" data-employee-id="${emp.id}">
@@ -4024,7 +4024,7 @@
       // Render active workers
       workingListEl.innerHTML = activeEmployees.map(emp => {
         const initials = getInitials(emp.full_name || emp.email);
-        const avatarUrl = emp.profile_picture_url || '';
+        const avatarUrl = emp.profile_picture || '';
         const activeJobs = emp.activeJobs || [];
         
         return `
@@ -4124,7 +4124,7 @@
         // Populate modal header
         const headerEl = document.getElementById('employee-modal-header');
         const initials = getInitials(employee.full_name || employee.email);
-        const avatarUrl = employee.profile_picture_url || '';
+        const avatarUrl = employee.profile_picture || '';
         
         headerEl.innerHTML = `
           ${avatarUrl 
