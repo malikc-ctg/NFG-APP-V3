@@ -3632,6 +3632,19 @@
         console.error('[Team] Error fetching jobs:', jobsError);
       }
       
+      // Fetch active jobs (in-progress with timer running)
+      const { data: activeJobs, error: activeJobsError } = await supabase
+        .from('jobs')
+        .select('id, title, assigned_worker_id, status, work_started_at, work_ended_at, total_duration, site_id, sites(name)')
+        .in('assigned_worker_id', userIds)
+        .eq('status', 'in-progress')
+        .not('work_started_at', 'is', null)
+        .is('work_ended_at', null);
+      
+      if (activeJobsError) {
+        console.error('[Team] Error fetching active jobs:', activeJobsError);
+      }
+      
       // Fetch site assignments (from worker_site_assignments or sites.assigned_worker_id)
       const { data: sites, error: sitesError } = await supabase
         .from('sites')
@@ -3652,14 +3665,62 @@
         const userSites = sites?.filter(s => s.assigned_worker_id === user.id) || [];
         const sitesAssigned = userSites.length;
         
+        // Get active jobs for this user
+        const userActiveJobs = activeJobs?.filter(j => j.assigned_worker_id === user.id) || [];
+        const activeJobsWithTimers = userActiveJobs.map(job => {
+          const startTime = new Date(job.work_started_at);
+          const now = new Date();
+          const elapsedSeconds = Math.floor((now - startTime) / 1000);
+          
+          return {
+            id: job.id,
+            title: job.title || 'Untitled Job',
+            site_id: job.site_id,
+            site_name: job.sites?.name || 'No site',
+            work_started_at: job.work_started_at,
+            work_ended_at: job.work_ended_at,
+            elapsed_seconds: elapsedSeconds,
+            elapsed_display: formatElapsedTime(elapsedSeconds),
+            is_active: !job.work_ended_at
+          };
+        });
+        
         return {
           ...user,
           jobsAssigned,
           jobsCompleted,
           completionRate,
-          sitesAssigned
+          sitesAssigned,
+          activeJobs: activeJobsWithTimers,
+          activeJobsCount: activeJobsWithTimers.length
         };
       });
+    }
+    
+    function formatElapsedTime(seconds) {
+      if (!seconds || seconds < 0) return '0:00:00';
+      
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      
+      if (hours > 0) {
+        return `${hours}h ${minutes}m ${secs}s`;
+      } else if (minutes > 0) {
+        return `${minutes}m ${secs}s`;
+      } else {
+        return `${secs}s`;
+      }
+    }
+    
+    function calculateElapsedTime(workStartedAt) {
+      if (!workStartedAt) return 0;
+      
+      const startTime = new Date(workStartedAt);
+      const now = new Date();
+      const elapsed = Math.floor((now - startTime) / 1000);
+      
+      return elapsed >= 0 ? elapsed : 0;
     }
     
     function updateTeamSummaryCards(total, active, pending, staff, admin, client, jobs) {
