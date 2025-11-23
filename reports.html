@@ -4425,7 +4425,8 @@
     };
     // ========== END PHASE 6 ==========
     
-    async function viewEmployeeDetails(employeeId) {
+    // Make viewEmployeeDetails globally accessible for onclick handlers
+    window.viewEmployeeDetails = async function(employeeId) {
       try {
         const employee = allTeamEmployees.find(emp => emp.id === employeeId);
         if (!employee) {
