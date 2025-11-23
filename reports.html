@@ -2337,13 +2337,16 @@
             loadExpensesData();
           } else if (targetTab === 'team') {
             loadTeamData();
+            // Subscribe to realtime updates when Team tab is opened
+            subscribeToJobChanges();
             // Start timers when Team tab is opened
             setTimeout(() => {
               startActiveJobTimers();
             }, 500);
           } else {
-            // Stop timers when switching away from Team tab
+            // Stop timers and unsubscribe when switching away from Team tab
             stopActiveJobTimers();
+            unsubscribeFromJobChanges();
           }
           
           // Recreate icons after tab switch
@@ -4098,12 +4101,149 @@
       }
     }
     
+    // ========== PHASE 5: SUPABASE REALTIME SYNC ==========
+    let jobsRealtimeChannel = null;
+    
+    function subscribeToJobChanges() {
+      // Unsubscribe from existing channel if any
+      if (jobsRealtimeChannel) {
+        supabase.removeChannel(jobsRealtimeChannel);
+      }
+      
+      // Create new channel for job changes
+      jobsRealtimeChannel = supabase
+        .channel('team-active-jobs-realtime')
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'jobs',
+          filter: 'status=eq.in-progress'
+        }, async (payload) => {
+          await handleJobUpdate(payload.new);
+        })
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'jobs'
+        }, async (payload) => {
+          // Also listen for status changes (job becoming in-progress or completed)
+          const oldStatus = payload.old?.status;
+          const newStatus = payload.new?.status;
+          
+          // If status changed to/from in-progress, or work timer started/stopped
+          if (oldStatus !== newStatus || 
+              payload.old?.work_started_at !== payload.new?.work_started_at ||
+              payload.old?.work_ended_at !== payload.new?.work_ended_at) {
+            await handleJobUpdate(payload.new);
+          }
+        })
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'jobs',
+          filter: 'status=eq.in-progress'
+        }, async (payload) => {
+          await handleJobUpdate(payload.new);
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log('[Team] Realtime subscription active for job changes');
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error('[Team] Realtime subscription error');
+          }
+        });
+    }
+    
+    function unsubscribeFromJobChanges() {
+      if (jobsRealtimeChannel) {
+        supabase.removeChannel(jobsRealtimeChannel);
+        jobsRealtimeChannel = null;
+        console.log('[Team] Realtime subscription removed');
+      }
+    }
+    
+    async function handleJobUpdate(job) {
+      // Only process if job has assigned_worker_id
+      if (!job?.assigned_worker_id) return;
+      
+      // Find the affected employee
+      const affectedEmployee = allTeamEmployees.find(emp => emp.id === job.assigned_worker_id);
+      if (!affectedEmployee) return;
+      
+      // Reload team data to get fresh active jobs
+      // Use debounce to avoid too many refreshes
+      if (!handleJobUpdate.refreshTimer) {
+        handleJobUpdate.refreshTimer = setTimeout(async () => {
+          await refreshEmployeeActiveJobs(job.assigned_worker_id);
+          handleJobUpdate.refreshTimer = null;
+        }, 500);
+      }
+    }
+    
+    // Debounce timer for refresh
+    handleJobUpdate.refreshTimer = null;
+    
+    async function refreshEmployeeActiveJobs(workerId) {
+      try {
+        // Fetch fresh active jobs for this worker
+        const { data: activeJobs, error } = await supabase
+          .from('jobs')
+          .select('id, title, assigned_worker_id, status, work_started_at, work_ended_at, total_duration, site_id, sites(name)')
+          .eq('assigned_worker_id', workerId)
+          .eq('status', 'in-progress')
+          .not('work_started_at', 'is', null)
+          .is('work_ended_at', null);
+        
+        if (error) {
+          console.error('[Team] Error refreshing active jobs:', error);
+          return;
+        }
+        
+        // Update the employee's active jobs
+        const employee = allTeamEmployees.find(emp => emp.id === workerId);
+        if (!employee) return;
+        
+        // Calculate elapsed times
+        const activeJobsWithTimers = (activeJobs || []).map(job => {
+          const startTime = new Date(job.work_started_at);
+          const now = new Date();
+          const elapsedSeconds = Math.floor((now - startTime) / 1000);
+          
+          return {
+            id: job.id,
+            title: job.title || 'Untitled Job',
+            site_id: job.site_id,
+            site_name: job.sites?.name || 'No site',
+            work_started_at: job.work_started_at,
+            work_ended_at: job.work_ended_at,
+            elapsed_seconds: elapsedSeconds,
+            elapsed_display: formatElapsedTime(elapsedSeconds),
+            is_active: !job.work_ended_at
+          };
+        });
+        
+        // Update employee data
+        employee.activeJobs = activeJobsWithTimers;
+        employee.activeJobsCount = activeJobsWithTimers.length;
+        
+        // Refresh the display
+        applyTeamFilters();
+        renderCurrentlyWorkingOn(allTeamEmployees);
+        
+        console.log('[Team] Updated active jobs for employee:', workerId, activeJobsWithTimers.length);
+      } catch (error) {
+        console.error('[Team] Error in refreshEmployeeActiveJobs:', error);
+      }
+    }
+    // ========== END PHASE 5 ==========
+    
     let teamRoleChart = null;
     
     // Clean up timers when tab changes
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         stopActiveJobTimers();
+        // Keep realtime subscription active in background
       } else {
         // Restart timers when tab becomes visible
         const workingListEl = document.getElementById('currently-working-list');
@@ -4111,6 +4251,12 @@
           startActiveJobTimers();
         }
       }
+    });
+    
+    // Clean up on page unload
+    window.addEventListener('beforeunload', () => {
+      unsubscribeFromJobChanges();
+      stopActiveJobTimers();
     });
     
     async function viewEmployeeDetails(employeeId) {
