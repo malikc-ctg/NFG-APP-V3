@@ -242,8 +242,8 @@
 ╠═══════════════════════════════════════════════════════╣
 ║                                                       ║
 ║  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ║
-║  │  STARTER    │  │PROFESSIONAL │  │   BUSINESS  │  ║
-║  │   $89/mo    │  │  $179/mo    │  │   $299/mo   │  ║
+║  │  STARTER    │  │PROFESSIONAL │  │  ENTERPRISE │  ║
+║  │   $99/mo    │  │  $149/mo    │  │   $599/mo   │  ║
 ║  │             │  │   ⭐ POPULAR│  │             │  ║
 ║  │  5 users    │  │   20 users  │  │   50 users  │  ║
 ║  │  3 sites    │  │  Unlimited  │  │  Unlimited  │  ║
