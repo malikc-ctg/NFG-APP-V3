@@ -1212,6 +1212,17 @@
               </div>
             </div>
 
+            <!-- Active Work Section -->
+            <div>
+              <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-2">
+                <i data-lucide="clock" class="w-4 h-4"></i>
+                Active Work
+              </h3>
+              <div id="emp-detail-active-jobs" class="space-y-3">
+                <p class="text-sm text-gray-500 dark:text-gray-400">Loading...</p>
+              </div>
+            </div>
+
             <!-- Recent Jobs -->
             <div>
               <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Recent Jobs</h3>
@@ -4230,6 +4241,17 @@
         applyTeamFilters();
         renderCurrentlyWorkingOn(allTeamEmployees);
         
+        // If modal is open for this employee, refresh it
+        const modal = document.getElementById('employee-details-modal');
+        if (modal && !modal.classList.contains('hidden')) {
+          // Check if modal is showing this employee
+          const modalHeader = document.getElementById('employee-modal-header');
+          if (modalHeader && employee) {
+            // Refresh active work section in modal
+            renderEmployeeActiveWork(employee);
+          }
+        }
+        
         console.log('[Team] Updated active jobs for employee:', workerId, activeJobsWithTimers.length);
       } catch (error) {
         console.error('[Team] Error in refreshEmployeeActiveJobs:', error);
@@ -4258,6 +4280,150 @@
       unsubscribeFromJobChanges();
       stopActiveJobTimers();
     });
+    
+    // ========== PHASE 6: ENHANCED EMPLOYEE DETAILS MODAL ==========
+    let modalTimerInterval = null;
+    
+    function renderEmployeeActiveWork(employee) {
+      const activeJobsEl = document.getElementById('emp-detail-active-jobs');
+      if (!activeJobsEl) return;
+      
+      const activeJobs = employee.activeJobs || [];
+      
+      if (activeJobs.length === 0) {
+        activeJobsEl.innerHTML = `
+          <div class="text-center py-6 text-gray-500 dark:text-gray-400 bg-nfglight dark:bg-gray-700 rounded-xl">
+            <i data-lucide="check-circle" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+            <p class="text-sm">No active work</p>
+          </div>
+        `;
+        if (window.lucide) lucide.createIcons();
+        
+        // Stop modal timers if no active jobs
+        stopModalTimers();
+        return;
+      }
+      
+      // Get current user role to check if they can end work
+      const canEndWork = currentUserProfile && (currentUserProfile.role === 'admin' || currentUserProfile.role === 'super_admin');
+      
+      activeJobsEl.innerHTML = activeJobs.map(job => `
+        <div class="bg-nfglight dark:bg-gray-700 rounded-xl p-4 border border-nfgray dark:border-gray-600">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex-1 min-w-0">
+              <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-1">${job.title}</h4>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                <i data-lucide="map-pin" class="w-3 h-3 inline mr-1"></i>
+                ${job.site_name}
+              </p>
+              <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="clock" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
+                  <span class="text-nfgblue dark:text-blue-400 font-mono text-sm font-semibold" 
+                        data-modal-job-timer="${job.id}" 
+                        data-modal-start-time="${job.work_started_at}">
+                    ⏱️ ${job.elapsed_display}
+                  </span>
+                </div>
+                <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                  In Progress
+                </span>
+              </div>
+            </div>
+            <div class="flex flex-col gap-2">
+              <button 
+                onclick="viewJobFromModal('${job.id}')"
+                class="px-3 py-1.5 rounded-lg bg-nfgblue text-white hover:bg-nfgdark text-xs flex items-center gap-2 transition-colors"
+                title="View Job Details"
+              >
+                <i data-lucide="eye" class="w-3 h-3"></i>
+                View Job
+              </button>
+              ${canEndWork ? `
+                <button 
+                  onclick="endWorkFromModal('${job.id}', '${employee.id}')"
+                  class="px-3 py-1.5 rounded-lg border border-orange-300 dark:border-orange-700 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-xs flex items-center gap-2 transition-colors"
+                  title="End Work (Admin Only)"
+                >
+                  <i data-lucide="square" class="w-3 h-3"></i>
+                  End Work
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+      
+      // Recreate icons
+      if (window.lucide) lucide.createIcons();
+      
+      // Start modal timer updates
+      startModalTimers();
+    }
+    
+    function startModalTimers() {
+      // Clear existing interval
+      if (modalTimerInterval) {
+        clearInterval(modalTimerInterval);
+      }
+      
+      // Update all modal job timers every second
+      modalTimerInterval = setInterval(() => {
+        document.querySelectorAll('[data-modal-job-timer]').forEach(timerEl => {
+          const startTime = timerEl.getAttribute('data-modal-start-time');
+          if (!startTime) return;
+          
+          const elapsed = calculateElapsedTime(startTime);
+          const formatted = formatElapsedTime(elapsed);
+          timerEl.textContent = `⏱️ ${formatted}`;
+        });
+      }, 1000);
+    }
+    
+    function stopModalTimers() {
+      if (modalTimerInterval) {
+        clearInterval(modalTimerInterval);
+        modalTimerInterval = null;
+      }
+    }
+    
+    // Global functions for modal actions (called from onclick)
+    window.viewJobFromModal = async function(jobId) {
+      // Navigate to jobs page and open the job
+      window.location.href = `jobs.html?job=${jobId}`;
+    };
+    
+    window.endWorkFromModal = async function(jobId, employeeId) {
+      if (!confirm('Are you sure you want to end work on this job? This will stop the timer.')) {
+        return;
+      }
+      
+      try {
+        const { error } = await supabase
+          .from('jobs')
+          .update({
+            work_ended_at: new Date().toISOString(),
+            status: 'completed'
+          })
+          .eq('id', jobId);
+        
+        if (error) throw error;
+        
+        // Refresh employee data and active work
+        const employee = allTeamEmployees.find(emp => emp.id === employeeId);
+        if (employee) {
+          await refreshEmployeeActiveJobs(employeeId);
+          renderEmployeeActiveWork(employee);
+        }
+        
+        // Show success message
+        alert('Work ended successfully');
+      } catch (error) {
+        console.error('[Team] Error ending work:', error);
+        alert('Failed to end work. Please try again.');
+      }
+    };
+    // ========== END PHASE 6 ==========
     
     async function viewEmployeeDetails(employeeId) {
       try {
@@ -4296,6 +4462,9 @@
         // Update role and status badges
         document.getElementById('emp-detail-role-badge').innerHTML = getRoleBadge(employee.role);
         document.getElementById('emp-detail-status-badge').innerHTML = getStatusBadge(employee.status);
+        
+        // Render active work section
+        renderEmployeeActiveWork(employee);
         
         // Fetch recent jobs
         const { data: recentJobs, error: jobsError } = await supabase
@@ -4336,10 +4505,21 @@
         document.getElementById('employee-details-modal').classList.remove('hidden');
         document.getElementById('employee-details-modal').classList.add('flex');
         
-        // Close button
-        document.getElementById('close-employee-modal').onclick = () => {
+        // Close button handler
+        const closeModal = () => {
+          stopModalTimers();
           document.getElementById('employee-details-modal').classList.add('hidden');
           document.getElementById('employee-details-modal').classList.remove('flex');
+        };
+        
+        document.getElementById('close-employee-modal').onclick = closeModal;
+        
+        // Also close when clicking backdrop (outside modal content)
+        const modal = document.getElementById('employee-details-modal');
+        modal.onclick = (e) => {
+          if (e.target === modal) {
+            closeModal();
+          }
         };
         
         // Recreate icons
