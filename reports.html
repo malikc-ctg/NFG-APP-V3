@@ -1031,6 +1031,76 @@
           </div>
         </div>
 
+        <!-- Top Performers Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Most Jobs Completed -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <div class="flex items-center justify-between mb-2">
+              <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <i data-lucide="award" class="w-5 h-5 text-green-600 dark:text-green-400"></i>
+              </div>
+            </div>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Most Jobs Completed</p>
+            <p id="top-performer-jobs" class="text-lg font-semibold text-nfgblue dark:text-blue-400 mt-1">-</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" id="top-performer-jobs-count">0 jobs</p>
+          </div>
+
+          <!-- Most Active -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <div class="flex items-center justify-between mb-2">
+              <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <i data-lucide="activity" class="w-5 h-5 text-blue-600 dark:text-blue-400"></i>
+              </div>
+            </div>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Most Active</p>
+            <p id="top-performer-active" class="text-lg font-semibold text-nfgblue dark:text-blue-400 mt-1">-</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" id="top-performer-active-info">Recently active</p>
+          </div>
+
+          <!-- Most Sites -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <div class="flex items-center justify-between mb-2">
+              <div class="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                <i data-lucide="map-pin" class="w-5 h-5 text-purple-600 dark:text-purple-400"></i>
+              </div>
+            </div>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Most Sites</p>
+            <p id="top-performer-sites" class="text-lg font-semibold text-nfgblue dark:text-blue-400 mt-1">-</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" id="top-performer-sites-count">0 sites</p>
+          </div>
+
+          <!-- Best Completion Rate -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <div class="flex items-center justify-between mb-2">
+              <div class="w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center">
+                <i data-lucide="trending-up" class="w-5 h-5 text-teal-600 dark:text-teal-400"></i>
+              </div>
+            </div>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Best Completion Rate</p>
+            <p id="top-performer-rate" class="text-lg font-semibold text-nfgblue dark:text-blue-400 mt-1">-</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" id="top-performer-rate-percent">0%</p>
+          </div>
+        </div>
+
+        <!-- Performance Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <!-- Jobs by Employee Chart -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-6 shadow-nfg">
+            <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-4">Jobs by Employee</h3>
+            <div style="height: 300px; position: relative;">
+              <canvas id="team-jobs-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Role Distribution Chart -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-6 shadow-nfg">
+            <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-4">Role Distribution</h3>
+            <div style="height: 300px; position: relative;">
+              <canvas id="team-role-chart"></canvas>
+            </div>
+          </div>
+        </div>
+
         <!-- Employee Performance Table -->
         <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg overflow-hidden">
           <div class="p-4 border-b border-nfgray">
@@ -1075,6 +1145,83 @@
         </div>
       </div>
       <!-- END Team Tab Content -->
+
+      <!-- Employee Details Modal -->
+      <div id="employee-details-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div class="sticky top-0 bg-white dark:bg-gray-800 border-b border-nfgray p-4 flex items-center justify-between z-10">
+            <h2 class="text-xl font-semibold text-nfgblue dark:text-blue-400">Employee Details</h2>
+            <button id="close-employee-modal" class="p-2 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg">
+              <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+          </div>
+          
+          <div class="p-6 space-y-6">
+            <!-- Employee Header -->
+            <div id="employee-modal-header" class="flex items-center gap-4 pb-4 border-b border-nfgray">
+              <!-- Will be populated by JavaScript -->
+            </div>
+
+            <!-- Statistics Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div class="bg-nfglight dark:bg-gray-700 rounded-xl p-4">
+                <p class="text-sm text-gray-500 dark:text-gray-400">Jobs Assigned</p>
+                <p id="emp-detail-jobs-assigned" class="text-2xl font-bold text-nfgblue dark:text-blue-400 mt-1">0</p>
+              </div>
+              <div class="bg-nfglight dark:bg-gray-700 rounded-xl p-4">
+                <p class="text-sm text-gray-500 dark:text-gray-400">Jobs Completed</p>
+                <p id="emp-detail-jobs-completed" class="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">0</p>
+              </div>
+              <div class="bg-nfglight dark:bg-gray-700 rounded-xl p-4">
+                <p class="text-sm text-gray-500 dark:text-gray-400">Completion Rate</p>
+                <p id="emp-detail-completion-rate" class="text-2xl font-bold text-teal-600 dark:text-teal-400 mt-1">0%</p>
+              </div>
+              <div class="bg-nfglight dark:bg-gray-700 rounded-xl p-4">
+                <p class="text-sm text-gray-500 dark:text-gray-400">Sites Assigned</p>
+                <p id="emp-detail-sites" class="text-2xl font-bold text-purple-600 dark:text-purple-400 mt-1">0</p>
+              </div>
+            </div>
+
+            <!-- Employee Info -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Contact Information</h3>
+                <div class="space-y-2">
+                  <p id="emp-detail-email" class="text-sm text-gray-900 dark:text-gray-100"></p>
+                  <p id="emp-detail-phone" class="text-sm text-gray-900 dark:text-gray-100"></p>
+                </div>
+              </div>
+              <div>
+                <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Role & Status</h3>
+                <div class="space-y-2">
+                  <div id="emp-detail-role-badge"></div>
+                  <div id="emp-detail-status-badge"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recent Jobs -->
+            <div>
+              <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Recent Jobs</h3>
+              <div id="emp-detail-recent-jobs" class="space-y-2">
+                <p class="text-sm text-gray-500 dark:text-gray-400">Loading...</p>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-3 pt-4 border-t border-nfgray">
+              <button id="emp-detail-message-btn" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark text-sm flex items-center gap-2">
+                <i data-lucide="message-circle" class="w-4 h-4"></i>
+                Send Message
+              </button>
+              <button id="emp-detail-view-profile-btn" class="px-4 py-2 rounded-xl border border-nfgray dark:border-gray-600 hover:bg-nfglight dark:hover:bg-gray-700 text-sm flex items-center gap-2">
+                <i data-lucide="user" class="w-4 h-4"></i>
+                View Full Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   </div>
 
@@ -3455,6 +3602,12 @@
         // Apply filters and render table
         applyTeamFilters();
         
+        // Update top performers
+        updateTopPerformers(employeesWithStats);
+        
+        // Render charts
+        renderTeamCharts(employeesWithStats);
+        
         console.log('[Team] Team data loaded:', {
           total: totalEmployees,
           active: activeEmployees,
@@ -3692,10 +3845,275 @@
       return badges[status] || '<span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">' + (status || 'Unknown') + '</span>';
     }
     
-    function viewEmployeeDetails(employeeId) {
-      // TODO: Phase 3 - Employee details modal
-      console.log('[Team] View employee details:', employeeId);
-      // For now, just log - will implement modal in Phase 3
+    let teamJobsChart = null;
+    let teamRoleChart = null;
+    
+    async function viewEmployeeDetails(employeeId) {
+      try {
+        const employee = allTeamEmployees.find(emp => emp.id === employeeId);
+        if (!employee) {
+          console.error('[Team] Employee not found:', employeeId);
+          return;
+        }
+        
+        // Populate modal header
+        const headerEl = document.getElementById('employee-modal-header');
+        const initials = getInitials(employee.full_name || employee.email);
+        const avatarUrl = employee.profile_picture_url || '';
+        
+        headerEl.innerHTML = `
+          ${avatarUrl 
+            ? `<img src="${avatarUrl}" alt="${employee.full_name || employee.email}" class="w-16 h-16 rounded-full object-cover">`
+            : `<div class="w-16 h-16 rounded-full bg-nfgblue dark:bg-blue-600 flex items-center justify-center text-white text-xl font-medium">${initials}</div>`
+          }
+          <div>
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100">${employee.full_name || 'No name'}</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400">${employee.email}</p>
+          </div>
+        `;
+        
+        // Update statistics
+        document.getElementById('emp-detail-jobs-assigned').textContent = employee.jobsAssigned || 0;
+        document.getElementById('emp-detail-jobs-completed').textContent = employee.jobsCompleted || 0;
+        document.getElementById('emp-detail-completion-rate').textContent = (employee.completionRate || 0) + '%';
+        document.getElementById('emp-detail-sites').textContent = employee.sitesAssigned || 0;
+        
+        // Update contact info
+        document.getElementById('emp-detail-email').textContent = employee.email || 'No email';
+        document.getElementById('emp-detail-phone').textContent = employee.phone || 'No phone number';
+        
+        // Update role and status badges
+        document.getElementById('emp-detail-role-badge').innerHTML = getRoleBadge(employee.role);
+        document.getElementById('emp-detail-status-badge').innerHTML = getStatusBadge(employee.status);
+        
+        // Fetch recent jobs
+        const { data: recentJobs, error: jobsError } = await supabase
+          .from('jobs')
+          .select('id, title, status, created_at, sites(name)')
+          .eq('assigned_worker_id', employeeId)
+          .order('created_at', { ascending: false })
+          .limit(5);
+        
+        const recentJobsEl = document.getElementById('emp-detail-recent-jobs');
+        if (recentJobs && recentJobs.length > 0) {
+          recentJobsEl.innerHTML = recentJobs.map(job => `
+            <div class="flex items-center justify-between p-3 bg-nfglight dark:bg-gray-700 rounded-lg">
+              <div>
+                <p class="text-sm font-medium text-gray-900 dark:text-gray-100">${job.title || 'Untitled Job'}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">${job.sites?.name || 'No site'} • ${new Date(job.created_at).toLocaleDateString()}</p>
+              </div>
+              <span class="px-2 py-1 text-xs font-medium rounded-full ${getJobStatusBadgeClass(job.status)}">${job.status || 'pending'}</span>
+            </div>
+          `).join('');
+        } else {
+          recentJobsEl.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">No recent jobs</p>';
+        }
+        
+        // Set up action buttons
+        const messageBtn = document.getElementById('emp-detail-message-btn');
+        const profileBtn = document.getElementById('emp-detail-view-profile-btn');
+        
+        messageBtn.onclick = () => {
+          window.location.href = `messages.html?user=${employeeId}`;
+        };
+        
+        profileBtn.onclick = () => {
+          window.location.href = `settings.html#user-${employeeId}`;
+        };
+        
+        // Show modal
+        document.getElementById('employee-details-modal').classList.remove('hidden');
+        document.getElementById('employee-details-modal').classList.add('flex');
+        
+        // Close button
+        document.getElementById('close-employee-modal').onclick = () => {
+          document.getElementById('employee-details-modal').classList.add('hidden');
+          document.getElementById('employee-details-modal').classList.remove('flex');
+        };
+        
+        // Recreate icons
+        setTimeout(() => {
+          if (window.lucide) lucide.createIcons();
+        }, 100);
+        
+      } catch (error) {
+        console.error('[Team] Error loading employee details:', error);
+      }
+    }
+    
+    function getJobStatusBadgeClass(status) {
+      const classes = {
+        'completed': 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300',
+        'in-progress': 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
+        'pending': 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300',
+        'cancelled': 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+      };
+      return classes[status] || 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300';
+    }
+    
+    function updateTopPerformers(employees) {
+      if (!employees || employees.length === 0) return;
+      
+      // Most jobs completed
+      const mostJobs = employees.reduce((max, emp) => 
+        (emp.jobsCompleted || 0) > (max.jobsCompleted || 0) ? emp : max, employees[0]);
+      document.getElementById('top-performer-jobs').textContent = mostJobs.full_name || mostJobs.email || 'N/A';
+      document.getElementById('top-performer-jobs-count').textContent = `${mostJobs.jobsCompleted || 0} jobs completed`;
+      
+      // Most active (most recent jobs)
+      const mostActive = employees.reduce((max, emp) => 
+        (emp.jobsAssigned || 0) > (max.jobsAssigned || 0) ? emp : max, employees[0]);
+      document.getElementById('top-performer-active').textContent = mostActive.full_name || mostActive.email || 'N/A';
+      document.getElementById('top-performer-active-info').textContent = `${mostActive.jobsAssigned || 0} jobs assigned`;
+      
+      // Most sites
+      const mostSites = employees.reduce((max, emp) => 
+        (emp.sitesAssigned || 0) > (max.sitesAssigned || 0) ? emp : max, employees[0]);
+      document.getElementById('top-performer-sites').textContent = mostSites.full_name || mostSites.email || 'N/A';
+      document.getElementById('top-performer-sites-count').textContent = `${mostSites.sitesAssigned || 0} sites`;
+      
+      // Best completion rate (with at least 5 jobs)
+      const withJobs = employees.filter(emp => (emp.jobsAssigned || 0) >= 5);
+      if (withJobs.length > 0) {
+        const bestRate = withJobs.reduce((max, emp) => 
+          (emp.completionRate || 0) > (max.completionRate || 0) ? emp : max, withJobs[0]);
+        document.getElementById('top-performer-rate').textContent = bestRate.full_name || bestRate.email || 'N/A';
+        document.getElementById('top-performer-rate-percent').textContent = `${bestRate.completionRate || 0}% completion rate`;
+      } else {
+        document.getElementById('top-performer-rate').textContent = 'N/A';
+        document.getElementById('top-performer-rate-percent').textContent = 'Need 5+ jobs';
+      }
+    }
+    
+    function renderTeamCharts(employees) {
+      // Jobs by Employee Chart
+      const jobsCtx = document.getElementById('team-jobs-chart');
+      if (jobsCtx && employees.length > 0) {
+        // Get top 10 employees by jobs assigned
+        const topEmployees = [...employees]
+          .sort((a, b) => (b.jobsAssigned || 0) - (a.jobsAssigned || 0))
+          .slice(0, 10);
+        
+        if (teamJobsChart) {
+          teamJobsChart.destroy();
+        }
+        
+        const isDark = document.documentElement.classList.contains('dark');
+        const colors = {
+          text: isDark ? '#E5E7EB' : '#1F2937',
+          grid: isDark ? '#374151' : '#E5E7EB',
+          border: '#0D47A1',
+          background: 'rgba(13, 71, 161, 0.1)',
+          tooltipBg: isDark ? '#1F2937' : '#FFFFFF',
+          tooltipBorder: isDark ? '#374151' : '#E5E7EB'
+        };
+        
+        teamJobsChart = new Chart(jobsCtx, {
+          type: 'bar',
+          data: {
+            labels: topEmployees.map(emp => emp.full_name || emp.email || 'Unknown'),
+            datasets: [{
+              label: 'Jobs Assigned',
+              data: topEmployees.map(emp => emp.jobsAssigned || 0),
+              backgroundColor: colors.background,
+              borderColor: colors.border,
+              borderWidth: 2
+            }, {
+              label: 'Jobs Completed',
+              data: topEmployees.map(emp => emp.jobsCompleted || 0),
+              backgroundColor: 'rgba(34, 197, 94, 0.2)',
+              borderColor: '#22C55E',
+              borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                labels: { color: colors.text }
+              },
+              tooltip: {
+                backgroundColor: colors.tooltipBg,
+                borderColor: colors.tooltipBorder,
+                borderWidth: 1,
+                titleColor: colors.text,
+                bodyColor: colors.text
+              }
+            },
+            scales: {
+              x: {
+                ticks: { color: colors.text },
+                grid: { color: colors.grid }
+              },
+              y: {
+                beginAtZero: true,
+                ticks: { color: colors.text },
+                grid: { color: colors.grid }
+              }
+            }
+          }
+        });
+      }
+      
+      // Role Distribution Chart
+      const roleCtx = document.getElementById('team-role-chart');
+      if (roleCtx && employees.length > 0) {
+        const roleCounts = {
+          admin: employees.filter(emp => emp.role === 'admin' || emp.role === 'super_admin').length,
+          staff: employees.filter(emp => emp.role === 'staff').length,
+          client: employees.filter(emp => emp.role === 'client').length
+        };
+        
+        if (teamRoleChart) {
+          teamRoleChart.destroy();
+        }
+        
+        const isDark = document.documentElement.classList.contains('dark');
+        const colors = {
+          text: isDark ? '#E5E7EB' : '#1F2937',
+          tooltipBg: isDark ? '#1F2937' : '#FFFFFF',
+          tooltipBorder: isDark ? '#374151' : '#E5E7EB'
+        };
+        
+        teamRoleChart = new Chart(roleCtx, {
+          type: 'doughnut',
+          data: {
+            labels: ['Admin', 'Staff', 'Client'],
+            datasets: [{
+              data: [roleCounts.admin, roleCounts.staff, roleCounts.client],
+              backgroundColor: [
+                'rgba(13, 71, 161, 0.8)',
+                'rgba(34, 197, 94, 0.8)',
+                'rgba(99, 102, 241, 0.8)'
+              ],
+              borderColor: [
+                '#0D47A1',
+                '#22C55E',
+                '#6366F1'
+              ],
+              borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { color: colors.text }
+              },
+              tooltip: {
+                backgroundColor: colors.tooltipBg,
+                borderColor: colors.tooltipBorder,
+                borderWidth: 1,
+                titleColor: colors.text,
+                bodyColor: colors.text
+              }
+            }
+          }
+        });
+      }
     }
     
     // Initialize team filters and sorting
