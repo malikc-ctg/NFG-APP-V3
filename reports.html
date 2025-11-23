@@ -232,6 +232,14 @@
             <i data-lucide="receipt" class="w-4 h-4 inline mr-2"></i>
             Expenses
           </button>
+          <button 
+            id="tab-team" 
+            class="tab-btn px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-nfgblue hover:border-gray-300 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
+            data-tab="team"
+          >
+            <i data-lucide="users" class="w-4 h-4 inline mr-2"></i>
+            Team
+          </button>
         </nav>
       </div>
 
@@ -880,6 +888,119 @@
         </div>
       </div>
       <!-- END Expenses Tab Content -->
+
+      <!-- Team Tab Content -->
+      <div id="tab-content-team" class="tab-content hidden space-y-6">
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <!-- Total Employees -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Total Employees</p>
+                <p id="team-total-employees" class="text-2xl font-bold text-nfgblue dark:text-blue-400 mt-1">0</p>
+              </div>
+              <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <i data-lucide="users" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Employees -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Active</p>
+                <p id="team-active-employees" class="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">0</p>
+              </div>
+              <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <i data-lucide="user-check" class="w-5 h-5 text-green-600 dark:text-green-400"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pending Invitations -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Pending</p>
+                <p id="team-pending-employees" class="text-2xl font-bold text-orange-600 dark:text-orange-400 mt-1">0</p>
+              </div>
+              <div class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                <i data-lucide="user-plus" class="w-5 h-5 text-orange-600 dark:text-orange-400"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Staff Count -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Staff</p>
+                <p id="team-staff-count" class="text-2xl font-bold text-purple-600 dark:text-purple-400 mt-1">0</p>
+              </div>
+              <div class="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                <i data-lucide="briefcase" class="w-5 h-5 text-purple-600 dark:text-purple-400"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Role Breakdown Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Admins -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Admins</p>
+                <p id="team-admin-count" class="text-xl font-bold text-nfgblue dark:text-blue-400 mt-1">0</p>
+              </div>
+              <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <i data-lucide="shield" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Clients -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Clients</p>
+                <p id="team-client-count" class="text-xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">0</p>
+              </div>
+              <div class="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                <i data-lucide="user" class="w-5 h-5 text-indigo-600 dark:text-indigo-400"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Total Jobs Assigned -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Total Jobs Assigned</p>
+                <p id="team-total-jobs" class="text-xl font-bold text-teal-600 dark:text-teal-400 mt-1">0</p>
+              </div>
+              <div class="w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center">
+                <i data-lucide="clipboard-list" class="w-5 h-5 text-teal-600 dark:text-teal-400"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Employee Performance Table (Placeholder) -->
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg overflow-hidden">
+          <div class="p-4 border-b border-nfgray">
+            <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Employee Performance</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">View employee statistics and performance metrics</p>
+          </div>
+          <div class="p-8 text-center">
+            <i data-lucide="users" class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4"></i>
+            <p class="text-gray-500 dark:text-gray-400">Employee table coming in Phase 2</p>
+          </div>
+        </div>
+      </div>
+      <!-- END Team Tab Content -->
     </main>
   </div>
 
@@ -1981,6 +2102,8 @@
             loadBillingData();
           } else if (targetTab === 'expenses') {
             loadExpensesData();
+          } else if (targetTab === 'team') {
+            loadTeamData();
           }
           
           // Recreate icons after tab switch
@@ -3198,6 +3321,81 @@
       dateTo: '',
       search: ''
     };
+
+    // ========== TEAM FUNCTIONS ==========
+    
+    async function loadTeamData() {
+      try {
+        console.log('[Team] Loading team data...');
+        
+        // Fetch all users
+        const { data: users, error: usersError } = await supabase
+          .from('user_profiles')
+          .select('id, full_name, email, role, status, created_at')
+          .order('created_at', { ascending: false });
+        
+        if (usersError) {
+          console.error('[Team] Error fetching users:', usersError);
+          return;
+        }
+        
+        if (!users || users.length === 0) {
+          console.log('[Team] No users found');
+          updateTeamSummaryCards(0, 0, 0, 0, 0, 0, 0);
+          return;
+        }
+        
+        // Calculate statistics
+        const totalEmployees = users.length;
+        const activeEmployees = users.filter(u => u.status === 'active').length;
+        const pendingEmployees = users.filter(u => u.status === 'pending' || !u.status).length;
+        const staffCount = users.filter(u => u.role === 'staff').length;
+        const adminCount = users.filter(u => u.role === 'admin' || u.role === 'super_admin').length;
+        const clientCount = users.filter(u => u.role === 'client').length;
+        
+        // Count total jobs assigned (fetch jobs and count unique assigned_worker_id)
+        const { data: jobs, error: jobsError } = await supabase
+          .from('jobs')
+          .select('assigned_worker_id')
+          .not('assigned_worker_id', 'is', null);
+        
+        const totalJobsAssigned = jobs ? jobs.length : 0;
+        
+        // Update summary cards
+        updateTeamSummaryCards(totalEmployees, activeEmployees, pendingEmployees, staffCount, adminCount, clientCount, totalJobsAssigned);
+        
+        console.log('[Team] Team data loaded:', {
+          total: totalEmployees,
+          active: activeEmployees,
+          pending: pendingEmployees,
+          staff: staffCount,
+          admin: adminCount,
+          client: clientCount,
+          jobs: totalJobsAssigned
+        });
+        
+      } catch (error) {
+        console.error('[Team] Error loading team data:', error);
+      }
+    }
+    
+    function updateTeamSummaryCards(total, active, pending, staff, admin, client, jobs) {
+      const totalEl = document.getElementById('team-total-employees');
+      const activeEl = document.getElementById('team-active-employees');
+      const pendingEl = document.getElementById('team-pending-employees');
+      const staffEl = document.getElementById('team-staff-count');
+      const adminEl = document.getElementById('team-admin-count');
+      const clientEl = document.getElementById('team-client-count');
+      const jobsEl = document.getElementById('team-total-jobs');
+      
+      if (totalEl) totalEl.textContent = total;
+      if (activeEl) activeEl.textContent = active;
+      if (pendingEl) pendingEl.textContent = pending;
+      if (staffEl) staffEl.textContent = staff;
+      if (adminEl) adminEl.textContent = admin;
+      if (clientEl) clientEl.textContent = client;
+      if (jobsEl) jobsEl.textContent = jobs;
+    }
 
     async function loadExpensesData(showToast = false) {
       try {
