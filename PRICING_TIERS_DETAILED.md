@@ -1,6 +1,6 @@
 # 💰 NFG App - Detailed Pricing Tiers & Features
 
-## **Tier 1: Starter** - **$89/month**
+## **Tier 1: Starter** - **$99/month**
 
 ### **User Limits:**
 - ✅ Up to **5 users**
@@ -89,7 +89,7 @@
 
 ---
 
-## **Tier 2: Professional** - **$179/month** ⭐ BEST VALUE
+## **Tier 2: Professional** - **$149/month** ⭐ BEST VALUE
 
 ### **User Limits:**
 - ✅ Up to **20 users**
@@ -194,7 +194,7 @@
 
 ---
 
-## **Tier 3: Enterprise** - **$299/month**
+## **Tier 3: Enterprise** - **$599/month**
 
 ### **User Limits:**
 - ✅ Up to **50 users**
@@ -311,14 +311,14 @@
 ## 💰 Pricing Summary
 
 ### **Monthly Plans:**
-- **Starter:** $89/month
-- **Professional:** $179/month ⭐
-- **Enterprise:** $299/month
+- **Starter:** $99/month
+- **Professional:** $149/month ⭐
+- **Enterprise:** $599/month
 
-### **Annual Plans (11% discount):**
-- **Starter:** $79/month ($948/year)
-- **Professional:** $159/month ($1,908/year)
-- **Enterprise:** $269/month ($3,228/year)
+### **Annual Plans (10% discount):**
+- **Starter:** $89/month ($1,068/year)
+- **Professional:** $134/month ($1,608/year)
+- **Enterprise:** $539/month ($6,468/year)
 
 ### **White-Label Add-On (Enterprise Only):**
 - **+$149/month** (on top of Enterprise)
@@ -326,27 +326,27 @@
 - **Annual:** $139/month (setup fee waived)
 
 ### **Total with White-Label:**
-- **Enterprise + White-Label:** $448/month + $499 setup
-- **Annual:** $408/month ($4,896/year) - setup fee waived
+- **Enterprise + White-Label:** $748/month + $499 setup
+- **Annual:** $674/month ($8,088/year) - setup fee waived
 
 ---
 
 ## 🎯 Recommended for Each Customer Type
 
-### **Starter ($89/month):**
+### **Starter ($99/month):**
 - ✅ Small facilities companies (1-10 staff)
 - ✅ Starting out
 - ✅ Limited sites
 - ✅ Basic needs only
 
-### **Professional ($179/month):** ⭐
+### **Professional ($149/month):** ⭐
 - ✅ Growing companies (11-50 staff)
 - ✅ Multiple sites
 - ✅ Need advanced features (billing, inventory, messaging)
 - ✅ Need reporting & analytics
 - ✅ **Best value** - covers 90% of use cases
 
-### **Enterprise ($299/month):**
+### **Enterprise ($599/month):**
 - ✅ Established companies (51-200 staff)
 - ✅ Need QuickBooks integration
 - ✅ Need API access
@@ -364,10 +364,10 @@
 ## 📈 Upgrade Path
 
 ### **Typical Journey:**
-1. **Start:** Starter ($89) - small team, testing platform
-2. **Grow:** Professional ($179) - need advanced features
-3. **Scale:** Enterprise ($299) - need integrations
-4. **Resell:** Enterprise + White-Label ($448) - rebranding for clients
+1. **Start:** Starter ($99) - small team, testing platform
+2. **Grow:** Professional ($149) - need advanced features
+3. **Scale:** Enterprise ($599) - need integrations
+4. **Resell:** Enterprise + White-Label ($748) - rebranding for clients
 
 ---
 

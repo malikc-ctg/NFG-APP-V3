@@ -2,7 +2,7 @@
 
 ## 🎯 Recommended Pricing Tiers
 
-### **Tier 1: Starter** - **$89/month** ⭐ (RECOMMENDED START)
+### **Tier 1: Starter** - **$99/month** ⭐ (RECOMMENDED START)
 - **Target:** Small facilities management companies (1-10 users)
 - **Included:**
   - Up to **5 users**
@@ -12,9 +12,9 @@
   - Email support
   - PWA access
   - 5GB storage
-- **Annual Plan:** $79/month (billed annually) = **$948/year** (11% discount)
+- **Annual Plan:** $89/month (billed annually) = **$1,068/year** (10% discount)
 
-### **Tier 2: Professional** - **$179/month** ⭐⭐ (BEST VALUE)
+### **Tier 2: Professional** - **$149/month** ⭐⭐ (BEST VALUE)
 - **Target:** Growing companies (11-50 users)
 - **Included:**
   - Up to **20 users**
@@ -26,9 +26,9 @@
   - 25GB storage
   - Bulk operations
   - Export capabilities
-- **Annual Plan:** $159/month (billed annually) = **$1,908/year** (11% discount)
+- **Annual Plan:** $134/month (billed annually) = **$1,608/year** (10% discount)
 
-### **Tier 3: Business** - **$299/month** ⭐⭐⭐
+### **Tier 3: Enterprise** - **$599/month** ⭐⭐⭐
 - **Target:** Established companies (51-200 users)
 - **Included:**
   - Up to **50 users**
@@ -42,7 +42,7 @@
   - 100GB storage
   - White-label options
   - Custom integrations
-- **Annual Plan:** $269/month (billed annually) = **$3,228/year** (10% discount)
+- **Annual Plan:** $539/month (billed annually) = **$6,468/year** (10% discount)
 
 ### **Tier 4: Enterprise** - **Custom Pricing** ($500-$2,000+/month)
 - **Target:** Large enterprises (200+ users)
@@ -86,7 +86,7 @@
 
 ## 💡 Pricing Strategy Rationale
 
-### **Why $89 Starter Tier?**
+### **Why $99 Starter Tier?**
 
 **Competitive Analysis:**
 - **ServiceTitan:** $50-$200/user/month → $250-$1,000/month for 5 users
@@ -98,23 +98,24 @@
 - ✅ **More affordable** than ServiceTitan/FieldPulse (per-user pricing)
 - ✅ **Better value** than Jobber (you have more features)
 - ✅ **Competitive** with Housecall Pro
-- ✅ **Attractive** entry point at $89
+- ✅ **Attractive** entry point at $99
 
-### **Why $179 Professional Tier?**
+### **Why $149 Professional Tier?**
 
 - ✅ **Sweet spot** for most facilities management companies
 - ✅ **20 users** covers typical team size
 - ✅ **All features** = best value proposition
-- ✅ **$8.95/user/month** effective rate (very competitive)
+- ✅ **$7.45/user/month** effective rate (very competitive)
 - ✅ **Anchor pricing** makes Starter look affordable
 
-### **Why $299 Business Tier?**
+### **Why $599 Enterprise Tier?**
 
-- ✅ **Mid-market** positioning
+- ✅ **Premium** positioning for established companies
 - ✅ **50 users** for growing companies
 - ✅ **Advanced features** justify premium
-- ✅ **$5.98/user/month** effective rate (excellent value)
+- ✅ **$11.98/user/month** effective rate (excellent value for enterprise)
 - ✅ **API access** attracts developers/agencies
+- ✅ **White-label options** for resellers
 
 ---
 
@@ -191,15 +192,15 @@
 
 ### **3. Feature Comparison Table**
 ```
-| Feature           | Starter | Professional | Business |
-|-------------------|---------|--------------|----------|
-| Users             | 5       | 20           | 50       |
-| Sites             | 3       | Unlimited    | Unlimited|
-| Time Tracking     | ✅      | ✅           | ✅       |
-| Billing           | ❌      | ✅           | ✅       |
-| API Access        | ❌      | ❌           | ✅       |
-| Price             | $89     | $179         | $299     |
-| Per User/Month    | $17.80  | $8.95        | $5.98    |
+| Feature           | Starter | Professional | Enterprise |
+|-------------------|---------|--------------|------------|
+| Users             | 5       | 20           | 50         |
+| Sites             | 3       | Unlimited    | Unlimited  |
+| Time Tracking     | ✅      | ✅           | ✅         |
+| Billing           | ❌      | ✅           | ✅         |
+| API Access        | ❌      | ❌           | ✅         |
+| Price             | $99     | $149         | $599       |
+| Per User/Month    | $19.80  | $7.45        | $11.98     |
 ```
 
 ### **4. Annual Discount**
@@ -213,17 +214,17 @@
 
 ### **Launch Pricing (First 100 customers):**
 
-**Tier 1: Starter** - **$69/month** (Early Bird: 22% off)
+**Tier 1: Starter** - **$79/month** (Early Bird: 20% off)
 - **Limited time offer:** First 100 customers get $20/month off
-- **Regular price after:** $89/month
+- **Regular price after:** $99/month
 
-**Tier 2: Professional** - **$149/month** (Early Bird: 17% off)
+**Tier 2: Professional** - **$119/month** (Early Bird: 20% off)
 - **Limited time offer:** First 100 customers get $30/month off
-- **Regular price after:** $179/month
+- **Regular price after:** $149/month
 
-**Tier 3: Business** - **$249/month** (Early Bird: 17% off)
-- **Limited time offer:** First 100 customers get $50/month off
-- **Regular price after:** $299/month
+**Tier 3: Enterprise** - **$479/month** (Early Bird: 20% off)
+- **Limited time offer:** First 100 customers get $120/month off
+- **Regular price after:** $599/month
 
 **Why Launch Discount:**
 - ✅ Get initial customers quickly
@@ -250,7 +251,7 @@
 ║  │ [Get Started]│  │ [Get Started]│ │ [Get Started]│  ║
 ║  └─────────────┘  └─────────────┘  └─────────────┘  ║
 ║                                                       ║
-║  💰 Save 11% with annual billing                    ║
+║  💰 Save 10% with annual billing                    ║
 ╚═══════════════════════════════════════════════════════╝
 ```
 
@@ -260,24 +261,21 @@
 
 ### **Start with these prices:**
 
-1. **Starter: $89/month**
+1. **Starter: $99/month**
    - Perfect entry point
    - Competitive with market
    - Low barrier to entry
 
-2. **Professional: $179/month** ⭐ BEST VALUE
+2. **Professional: $149/month** ⭐ BEST VALUE
    - Highlight as "Most Popular"
    - Best per-user value
    - Target this tier hard
 
-3. **Business: $299/month**
+3. **Enterprise: $599/month**
    - Premium positioning
    - Advanced features justify price
    - Natural upgrade path
-
-4. **Enterprise: Custom** ($500+)
-   - For large companies
-   - Negotiate based on needs
+   - White-label options available
 
 ### **Launch Strategy:**
 - **First 50 customers:** 20% off forever (early adopter pricing)
@@ -295,11 +293,11 @@
 
 | Platform | Pricing | Users | Your Price | Your Value |
 |----------|---------|-------|------------|------------|
-| **ServiceTitan** | $50-$200/user | 5 users = $250-$1,000 | $89 | **64-89% cheaper** |
-| **FieldPulse** | $89-$199/user | 5 users = $445-$995 | $89 | **80-91% cheaper** |
-| **Jobber** | $129-$229/mo | Unlimited | $89 | **22-61% cheaper** |
-| **Housecall Pro** | $49-$169/user | 5 users = $245-$845 | $89 | **11-64% cheaper** |
-| **FieldEdge** | $150-$250/user | 5 users = $750-$1,250 | $89 | **88-93% cheaper** |
+| **ServiceTitan** | $50-$200/user | 5 users = $250-$1,000 | $99 | **60-90% cheaper** |
+| **FieldPulse** | $89-$199/user | 5 users = $445-$995 | $99 | **78-90% cheaper** |
+| **Jobber** | $129-$229/mo | Unlimited | $99 | **23-57% cheaper** |
+| **Housecall Pro** | $49-$169/user | 5 users = $245-$845 | $99 | **10-60% cheaper** |
+| **FieldEdge** | $150-$250/user | 5 users = $750-$1,250 | $99 | **87-92% cheaper** |
 
 **✅ Your pricing is VERY competitive!**
 
@@ -309,12 +307,11 @@
 
 ### **Recommended Monthly Prices:**
 
-| Tier | Monthly | Annual (11% off) | Best For |
+| Tier | Monthly | Annual (10% off) | Best For |
 |------|---------|------------------|----------|
-| **Starter** | **$89** | **$79/mo** ($948/yr) | Small teams (1-10 users) |
-| **Professional** | **$179** | **$159/mo** ($1,908/yr) | Growing teams (11-50 users) |
-| **Business** | **$299** | **$269/mo** ($3,228/yr) | Established companies (51-200 users) |
-| **Enterprise** | **Custom** ($500+) | **Custom** | Large enterprises (200+ users) |
+| **Starter** | **$99** | **$89/mo** ($1,068/yr) | Small teams (1-10 users) |
+| **Professional** | **$149** | **$134/mo** ($1,608/yr) | Growing teams (11-50 users) |
+| **Enterprise** | **$599** | **$539/mo** ($6,468/yr) | Established companies (51-200 users) |
 
 ### **Add-Ons:**
 - Additional users: **$10/user/month**
@@ -328,9 +325,9 @@
 
 **Price your app at:**
 
-1. **$89/month** - Starter (5 users, 3 sites)
-2. **$179/month** - Professional (20 users, unlimited) ⭐ **Target this**
-3. **$299/month** - Business (50 users, all features)
+1. **$99/month** - Starter (5 users, 3 sites)
+2. **$149/month** - Professional (20 users, unlimited) ⭐ **Target this**
+3. **$599/month** - Enterprise (50 users, all features)
 
 **This pricing is:**
 - ✅ **Competitive** with market leaders
