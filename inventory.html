@@ -1508,7 +1508,7 @@
               quantity_change: updateType === 'set' ? newQuantity - (item.quantity || 0) : parseInt(amount, 10),
               quantity_before: item.quantity || 0,
               quantity_after: newQuantity,
-              created_by: user.id
+              user_id: user.id
             });
           
           updates.push({ siteId, itemId, newQuantity });
