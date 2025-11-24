@@ -144,14 +144,19 @@ async function fetchSiteInventory() {
         site_id,
         item_id,
         quantity,
+        unit_cost,
         location_notes,
         last_restocked_at,
         updated_at,
         sites:sites(name),
         inventory_items:inventory_items(
+          id,
           name,
           unit,
           low_stock_threshold,
+          unit_cost,
+          average_cost,
+          last_purchase_cost,
           inventory_categories:inventory_categories(name, icon)
         )
       `);
@@ -170,6 +175,9 @@ async function fetchSiteInventory() {
             ? 'warning'
             : 'ok';
       
+      // Determine unit cost (site-specific cost, or item average cost, or item unit cost)
+      const unitCost = record.unit_cost || item.average_cost || item.unit_cost || null;
+      
       return {
         id: record.id,
         site_id: record.site_id,
@@ -178,6 +186,9 @@ async function fetchSiteInventory() {
         item_name: item.name || 'Unknown Item',
         unit: item.unit || '',
         quantity: record.quantity || 0,
+        unit_cost: unitCost,
+        item_average_cost: item.average_cost,
+        item_unit_cost: item.unit_cost,
         location_notes: record.location_notes,
         last_restocked_at: record.last_restocked_at,
         updated_at: record.updated_at,
@@ -250,7 +261,7 @@ async function renderInventory() {
     if (filtered.length === 0) {
       tableBody.innerHTML = `
         <tr>
-          <td colspan="6" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+          <td colspan="7" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
             <i data-lucide="package-x" class="w-12 h-12 mx-auto text-gray-300 mb-2"></i>
             <p>No inventory items found</p>
           </td>
@@ -336,6 +347,12 @@ async function renderInventory() {
             <div class="font-semibold text-nfgblue dark:text-blue-400 ${isLowStock ? 'text-lg' : ''}">${item.quantity}</div>
             <div class="text-xs text-gray-500 dark:text-gray-400">${item.unit}</div>
           </td>
+          <td class="px-4 py-3 text-center hidden lg:table-cell">
+            ${item.unit_cost ? `
+              <div class="text-sm font-medium text-gray-700 dark:text-gray-300">${formatCurrency(item.unit_cost)}</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">per ${item.unit}</div>
+            ` : '<span class="text-xs text-gray-400 dark:text-gray-500">N/A</span>'}
+          </td>
           <td class="px-4 py-3 text-center">
             <span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${status.color} tooltip-wrapper" data-tooltip="${statusTooltips[item.stock_status] || statusTooltips['ok']}" data-tooltip-position="left">
               <i data-lucide="${status.icon}" class="w-3 h-3"></i>
@@ -399,10 +416,23 @@ function updateSummaryCards(siteInventory) {
   const outOfStockCount = siteInventory.filter(item => item.stock_status === 'out').length;
   const uniqueSites = new Set(siteInventory.map(item => item.site_id)).size;
   
+  // Calculate total inventory value
+  const totalInventoryValue = siteInventory.reduce((total, item) => {
+    const unitCost = item.unit_cost || 0;
+    const quantity = item.quantity || 0;
+    return total + (unitCost * quantity);
+  }, 0);
+  
   document.getElementById('total-items-count').textContent = totalItems;
   document.getElementById('low-stock-summary-count').textContent = lowStockCount;
   document.getElementById('out-of-stock-count').textContent = outOfStockCount;
   document.getElementById('active-sites-count').textContent = uniqueSites;
+  
+  // Update inventory value if element exists
+  const inventoryValueEl = document.getElementById('total-inventory-value');
+  if (inventoryValueEl) {
+    inventoryValueEl.textContent = formatCurrency(totalInventoryValue);
+  }
 }
 
 // Update low stock alerts banner
@@ -1498,12 +1528,16 @@ async function markPurchaseOrderReceived(poId) {
       const newQty = currentQty + (item.quantity_ordered || 0);
       const now = new Date().toISOString();
       
+      // Get cost per unit from PO item if available
+      const unitCost = item.cost_per_unit || null;
+      
       await supabase
         .from('site_inventory')
         .upsert({
           site_id: po.site_id,
           item_id: item.item_id,
           quantity: newQty,
+          unit_cost: unitCost, // Save cost when receiving
           updated_at: now,
           last_restocked_at: now
         }, { onConflict: 'site_id,item_id' });
