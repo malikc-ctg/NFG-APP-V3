@@ -15,6 +15,8 @@ let columnMapping = {};
 let validationResults = null;
 let currentStep = 1;
 let existingSites = [];
+let existingWorkers = []; // For jobs import - worker lookup by email
+let existingJobs = []; // For jobs import - optional duplicate checking
 
 // Step indicator elements (will be queried after DOM ready)
 let stepIndicators = null;
@@ -34,6 +36,18 @@ const FIELD_DEFINITIONS = {
     status: { label: 'Status', required: false, type: 'text', default: 'Active' },
     square_footage: { label: 'Square Footage', required: false, type: 'number' },
     deal_value: { label: 'Deal Value', required: false, type: 'number' }
+  },
+  jobs: {
+    title: { label: 'Job Title', required: true, type: 'text' },
+    site_name: { label: 'Site Name', required: true, type: 'text', lookup: 'site' },
+    scheduled_date: { label: 'Scheduled Date', required: false, type: 'date' },
+    status: { label: 'Status', required: false, type: 'text', default: 'pending' },
+    worker_email: { label: 'Worker Email', required: false, type: 'email', lookup: 'worker' },
+    priority: { label: 'Priority', required: false, type: 'text', default: 'medium' },
+    job_type: { label: 'Job Type', required: false, type: 'text', default: 'cleaning' },
+    description: { label: 'Description', required: false, type: 'text' },
+    notes: { label: 'Notes', required: false, type: 'text' },
+    estimated_hours: { label: 'Estimated Hours', required: false, type: 'number' }
   }
 };
 
@@ -110,6 +124,72 @@ const COLUMN_MAPPINGS = {
     'deal_value': 'deal_value',
     'value': 'deal_value',
     'contract value': 'deal_value'
+  },
+  jobs: {
+    // Title variations
+    'title': 'title',
+    'job title': 'title',
+    'job_title': 'title',
+    'job name': 'title',
+    'name': 'title',
+    'job': 'title',
+    
+    // Site name variations
+    'site name': 'site_name',
+    'site_name': 'site_name',
+    'site': 'site_name',
+    'location': 'site_name',
+    'client name': 'site_name',
+    'client': 'site_name',
+    
+    // Scheduled date variations
+    'scheduled date': 'scheduled_date',
+    'scheduled_date': 'scheduled_date',
+    'date': 'scheduled_date',
+    'schedule date': 'scheduled_date',
+    'scheduled for': 'scheduled_date',
+    'due date': 'scheduled_date',
+    'due_date': 'scheduled_date',
+    
+    // Status variations
+    'status': 'status',
+    'job status': 'status',
+    'state': 'status',
+    
+    // Worker email variations
+    'worker email': 'worker_email',
+    'worker_email': 'worker_email',
+    'assigned to': 'worker_email',
+    'assigned_to': 'worker_email',
+    'worker': 'worker_email',
+    'employee email': 'worker_email',
+    'employee_email': 'worker_email',
+    'assigned worker': 'worker_email',
+    
+    // Priority variations
+    'priority': 'priority',
+    'job priority': 'priority',
+    'urgency': 'priority',
+    
+    // Job type variations
+    'job type': 'job_type',
+    'job_type': 'job_type',
+    'type': 'job_type',
+    'category': 'job_type',
+    
+    // Description/Notes variations
+    'description': 'description',
+    'desc': 'description',
+    'notes': 'notes',
+    'note': 'notes',
+    'comments': 'notes',
+    
+    // Estimated hours variations
+    'estimated hours': 'estimated_hours',
+    'estimated_hours': 'estimated_hours',
+    'hours': 'estimated_hours',
+    'estimated time': 'estimated_hours',
+    'duration': 'estimated_hours'
   }
 };
 
@@ -286,7 +366,7 @@ function openImportModal() {
   currentStep = 1;
   updateStepIndicator();
   
-  // Load existing sites for validation
+  // Load existing sites for validation (always needed)
   loadExistingSites();
   
   console.log('✅ Modal opened successfully');
@@ -348,6 +428,11 @@ function selectImportType(type) {
   const templateBtn = document.getElementById('download-template-btn');
   if (templateBtn) {
     templateBtn.href = `#template-${type}`;
+  }
+  
+  // Load additional data needed for validation
+  if (type === 'jobs') {
+    loadExistingWorkers();
   }
   
   toast.success(`Selected: ${type.charAt(0).toUpperCase() + type.slice(1)} import`);
@@ -545,54 +630,175 @@ async function validateImportData() {
       }
     });
     
-    // Validate site name uniqueness (check against existing sites)
-    if (mappedRow.name) {
-      const siteName = String(mappedRow.name).trim();
-      const isDuplicate = existingSites.some(site => site.name.toLowerCase() === siteName.toLowerCase());
-      
-      // Check for duplicates within the import
-      const duplicateInImport = csvData.slice(0, index).some((otherRow, otherIndex) => {
-        const otherMappedRow = {};
-        Object.keys(columnMapping).forEach(header => {
-          const field = columnMapping[header];
-          if (field) otherMappedRow[field] = otherRow[header];
+    // Import-type specific validation
+    if (currentImportType === 'sites') {
+      // Validate site name uniqueness (check against existing sites)
+      if (mappedRow.name) {
+        const siteName = String(mappedRow.name).trim();
+        const isDuplicate = existingSites.some(site => site.name.toLowerCase() === siteName.toLowerCase());
+        
+        // Check for duplicates within the import
+        const duplicateInImport = csvData.slice(0, index).some((otherRow, otherIndex) => {
+          const otherMappedRow = {};
+          Object.keys(columnMapping).forEach(header => {
+            const field = columnMapping[header];
+            if (field) otherMappedRow[field] = otherRow[header];
+          });
+          return otherMappedRow.name && String(otherMappedRow.name).trim().toLowerCase() === siteName.toLowerCase();
         });
-        return otherMappedRow.name && String(otherMappedRow.name).trim().toLowerCase() === siteName.toLowerCase();
-      });
+        
+        if (duplicateInImport) {
+          rowErrors.push(`Duplicate site name in CSV: "${siteName}"`);
+        } else if (isDuplicate) {
+          rowWarnings.push(`Site name already exists: "${siteName}"`);
+        }
+      }
       
-      if (duplicateInImport) {
-        rowErrors.push(`Duplicate site name in CSV: "${siteName}"`);
-      } else if (isDuplicate) {
-        rowWarnings.push(`Site name already exists: "${siteName}"`);
+      // Validate email format if provided
+      if (mappedRow.contact_email && mappedRow.contact_email.trim()) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(mappedRow.contact_email.trim())) {
+          rowWarnings.push(`Invalid email format: "${mappedRow.contact_email}"`);
+        }
       }
-    }
-    
-    // Validate email format if provided
-    if (mappedRow.contact_email && mappedRow.contact_email.trim()) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(mappedRow.contact_email.trim())) {
-        rowWarnings.push(`Invalid email format: "${mappedRow.contact_email}"`);
+      
+      // Validate status if provided
+      if (mappedRow.status && mappedRow.status.trim()) {
+        const validStatuses = ['Active', 'In Setup', 'Paused', 'Inactive'];
+        if (!validStatuses.includes(mappedRow.status.trim())) {
+          rowWarnings.push(`Invalid status: "${mappedRow.status}". Will default to "Active"`);
+          mappedRow.status = 'Active';
+        }
       }
-    }
-    
-    // Validate status if provided
-    if (mappedRow.status && mappedRow.status.trim()) {
-      const validStatuses = ['Active', 'In Setup', 'Paused', 'Inactive'];
-      if (!validStatuses.includes(mappedRow.status.trim())) {
-        rowWarnings.push(`Invalid status: "${mappedRow.status}". Will default to "Active"`);
-        mappedRow.status = 'Active';
+      
+      // Validate numeric fields
+      if (mappedRow.square_footage && isNaN(Number(mappedRow.square_footage))) {
+        rowWarnings.push(`Invalid square footage: "${mappedRow.square_footage}"`);
+        delete mappedRow.square_footage;
       }
-    }
-    
-    // Validate numeric fields
-    if (mappedRow.square_footage && isNaN(Number(mappedRow.square_footage))) {
-      rowWarnings.push(`Invalid square footage: "${mappedRow.square_footage}"`);
-      delete mappedRow.square_footage;
-    }
-    
-    if (mappedRow.deal_value && isNaN(Number(mappedRow.deal_value))) {
-      rowWarnings.push(`Invalid deal value: "${mappedRow.deal_value}"`);
-      delete mappedRow.deal_value;
+      
+      if (mappedRow.deal_value && isNaN(Number(mappedRow.deal_value))) {
+        rowWarnings.push(`Invalid deal value: "${mappedRow.deal_value}"`);
+        delete mappedRow.deal_value;
+      }
+    } else if (currentImportType === 'jobs') {
+      // Jobs-specific validation
+      
+      // Validate site lookup
+      if (mappedRow.site_name) {
+        const siteName = String(mappedRow.site_name).trim();
+        const site = findSiteByName(siteName);
+        
+        if (!site) {
+          rowErrors.push(`Site not found: "${siteName}". Please create the site first or check the site name.`);
+        } else {
+          // Replace site_name with site_id for import
+          mappedRow.site_id = site.id;
+          delete mappedRow.site_name;
+        }
+      }
+      
+      // Validate worker email lookup
+      if (mappedRow.worker_email && mappedRow.worker_email.trim()) {
+        const email = String(mappedRow.worker_email).trim().toLowerCase();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        
+        if (!emailRegex.test(email)) {
+          rowWarnings.push(`Invalid email format: "${mappedRow.worker_email}"`);
+        } else {
+          const worker = findWorkerByEmail(email);
+          if (!worker) {
+            rowWarnings.push(`Worker not found: "${email}". Job will be imported without assignment.`);
+          } else {
+            // Replace worker_email with assigned_worker_id
+            mappedRow.assigned_worker_id = worker.id;
+            delete mappedRow.worker_email;
+          }
+        }
+      }
+      
+      // Parse and validate scheduled date
+      if (mappedRow.scheduled_date && mappedRow.scheduled_date.trim()) {
+        const parsedDate = parseDate(mappedRow.scheduled_date);
+        if (!parsedDate) {
+          rowWarnings.push(`Invalid date format: "${mappedRow.scheduled_date}". Supported formats: YYYY-MM-DD, MM/DD/YYYY, DD/MM/YYYY`);
+        } else {
+          mappedRow.scheduled_date = parsedDate;
+          
+          // Warning if date is in the past (historical jobs are okay)
+          const dateObj = new Date(parsedDate);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          if (dateObj < today) {
+            rowWarnings.push(`Date is in the past: "${parsedDate}"`);
+          }
+        }
+      }
+      
+      // Validate status
+      if (mappedRow.status && mappedRow.status.trim()) {
+        const validStatuses = ['pending', 'in-progress', 'completed', 'cancelled'];
+        const normalizedStatus = mappedRow.status.trim().toLowerCase().replace(' ', '-');
+        
+        if (!validStatuses.includes(normalizedStatus)) {
+          rowWarnings.push(`Invalid status: "${mappedRow.status}". Will default to "pending"`);
+          mappedRow.status = 'pending';
+        } else {
+          mappedRow.status = normalizedStatus;
+        }
+      } else {
+        mappedRow.status = 'pending'; // Default
+      }
+      
+      // Validate priority
+      if (mappedRow.priority && mappedRow.priority.trim()) {
+        const validPriorities = ['low', 'medium', 'high', 'urgent'];
+        const normalizedPriority = mappedRow.priority.trim().toLowerCase();
+        
+        if (!validPriorities.includes(normalizedPriority)) {
+          rowWarnings.push(`Invalid priority: "${mappedRow.priority}". Will default to "medium"`);
+          mappedRow.priority = 'medium';
+        } else {
+          mappedRow.priority = normalizedPriority;
+        }
+      } else {
+        mappedRow.priority = 'medium'; // Default
+      }
+      
+      // Validate job_type
+      if (mappedRow.job_type && mappedRow.job_type.trim()) {
+        const validJobTypes = ['cleaning', 'maintenance', 'repair', 'inspection', 'emergency'];
+        const normalizedJobType = mappedRow.job_type.trim().toLowerCase();
+        
+        if (!validJobTypes.includes(normalizedJobType)) {
+          rowWarnings.push(`Invalid job type: "${mappedRow.job_type}". Will default to "cleaning"`);
+          mappedRow.job_type = 'cleaning';
+        } else {
+          mappedRow.job_type = normalizedJobType;
+        }
+      } else {
+        mappedRow.job_type = 'cleaning'; // Default
+      }
+      
+      // Validate estimated_hours
+      if (mappedRow.estimated_hours && mappedRow.estimated_hours.toString().trim()) {
+        const hours = Number(mappedRow.estimated_hours);
+        if (isNaN(hours) || hours < 0) {
+          rowWarnings.push(`Invalid estimated hours: "${mappedRow.estimated_hours}"`);
+          delete mappedRow.estimated_hours;
+        } else {
+          mappedRow.estimated_hours = hours;
+        }
+      }
+      
+      // Merge description and notes if both exist
+      if (mappedRow.notes && mappedRow.description) {
+        mappedRow.description = `${mappedRow.description}\n\n${mappedRow.notes}`;
+        delete mappedRow.notes;
+      } else if (mappedRow.notes && !mappedRow.description) {
+        mappedRow.description = mappedRow.notes;
+        delete mappedRow.notes;
+      }
     }
     
     if (rowErrors.length > 0) {
@@ -744,7 +950,8 @@ function goToNextStep() {
     }
     
     // Show confirmation
-    const confirmMessage = `Import ${validationResults.valid.length} site(s)?\n\n${validationResults.warnings.length > 0 ? `⚠️ ${validationResults.warnings.length} row(s) have warnings.\n\n` : ''}`;
+    const itemType = currentImportType === 'sites' ? 'site(s)' : 'job(s)';
+    const confirmMessage = `Import ${validationResults.valid.length} ${itemType}?\n\n${validationResults.warnings.length > 0 ? `⚠️ ${validationResults.warnings.length} row(s) have warnings.\n\n` : ''}`;
     showConfirm('Confirm Import', confirmMessage).then(confirmed => {
       if (confirmed) {
         startImport();
@@ -843,7 +1050,7 @@ async function startImport() {
   }
   
   const currentUserId = user.id;
-  console.log('📥 Importing sites for user:', currentUserId);
+  console.log(`📥 Importing ${currentImportType} for user:`, currentUserId);
   
   goToStep(5);
   
@@ -860,38 +1067,69 @@ async function startImport() {
   for (let i = 0; i < validRows.length; i += BATCH_SIZE) {
     const batch = validRows.slice(i, i + BATCH_SIZE);
     
-    // Prepare batch data
+    // Prepare batch data based on import type
     const batchData = batch.map(row => {
-      const site = { ...row.mapped };
+      const item = { ...row.mapped };
       
-      // Set defaults
-      if (!site.status) site.status = 'Active';
+      if (currentImportType === 'sites') {
+        // Sites import
+        // Set defaults
+        if (!item.status) item.status = 'Active';
+        
+        // CRITICAL: Set created_by for multi-tenancy!
+        item.created_by = currentUserId;
+        
+        // Clean up data
+        Object.keys(item).forEach(key => {
+          if (item[key] === '' || item[key] === null || item[key] === undefined) {
+            delete item[key];
+          } else if (typeof item[key] === 'string') {
+            item[key] = item[key].trim();
+          }
+        });
+        
+        // Ensure created_by is always set (don't delete it)
+        item.created_by = currentUserId;
+      } else if (currentImportType === 'jobs') {
+        // Jobs import
+        // Set defaults
+        if (!item.status) item.status = 'pending';
+        if (!item.priority) item.priority = 'medium';
+        if (!item.job_type) item.job_type = 'cleaning';
+        
+        // CRITICAL: Set created_by and user_id for multi-tenancy!
+        item.created_by = currentUserId;
+        item.user_id = currentUserId;
+        
+        // Clean up data
+        Object.keys(item).forEach(key => {
+          if (item[key] === '' || item[key] === null || item[key] === undefined) {
+            // Don't delete assigned_worker_id if it's null (that's valid)
+            if (key !== 'assigned_worker_id' && key !== 'created_by' && key !== 'user_id') {
+              delete item[key];
+            }
+          } else if (typeof item[key] === 'string') {
+            item[key] = item[key].trim();
+          }
+        });
+        
+        // Ensure created_by and user_id are always set
+        item.created_by = currentUserId;
+        item.user_id = currentUserId;
+      }
       
-      // CRITICAL: Set created_by for multi-tenancy!
-      site.created_by = currentUserId;
-      
-      // Clean up data
-      Object.keys(site).forEach(key => {
-        if (site[key] === '' || site[key] === null || site[key] === undefined) {
-          delete site[key];
-        } else if (typeof site[key] === 'string') {
-          site[key] = site[key].trim();
-        }
-      });
-      
-      // Ensure created_by is always set (don't delete it)
-      site.created_by = currentUserId;
-      
-      return site;
+      return item;
     });
     
-    console.log('📦 Batch data prepared:', batchData.map(s => ({ name: s.name, created_by: s.created_by })));
+    console.log(`📦 Batch data prepared:`, batchData.length, currentImportType);
     
     try {
       // Insert batch
-      console.log('💾 Inserting batch:', batchData.length, 'sites');
+      const tableName = currentImportType === 'sites' ? 'sites' : 'jobs';
+      console.log(`💾 Inserting batch:`, batchData.length, tableName);
+      
       const { data, error } = await supabase
-        .from('sites')
+        .from(tableName)
         .insert(batchData)
         .select();
       
@@ -907,7 +1145,9 @@ async function startImport() {
           });
         });
       } else {
-        console.log(`✅ Successfully imported ${data.length} sites:`, data.map(s => s.name));
+        const itemName = currentImportType === 'sites' ? 'sites' : 'jobs';
+        const nameField = currentImportType === 'sites' ? 'name' : 'title';
+        console.log(`✅ Successfully imported ${data.length} ${itemName}:`, data.map(item => item[nameField]));
         imported += data.length;
       }
       
@@ -966,9 +1206,9 @@ async function renderImportResults(imported, failed, failedRows) {
     </div>
     ${imported > 0 ? `
       <div class="flex justify-center mt-6">
-        <button id="view-sites-after-import-btn" class="px-6 py-3 bg-nfgblue dark:bg-blue-900 text-white rounded-xl hover:bg-nfgdark transition inline-flex items-center gap-2 font-medium">
-          <i data-lucide="building-2" class="w-5 h-5"></i>
-          View Imported Sites
+        <button id="view-imported-items-btn" class="px-6 py-3 bg-nfgblue dark:bg-blue-900 text-white rounded-xl hover:bg-nfgdark transition inline-flex items-center gap-2 font-medium">
+          <i data-lucide="${currentImportType === 'sites' ? 'building-2' : 'clipboard-list'}" class="w-5 h-5"></i>
+          View Imported ${currentImportType === 'sites' ? 'Sites' : 'Jobs'}
         </button>
       </div>
     ` : ''}
@@ -983,26 +1223,49 @@ async function renderImportResults(imported, failed, failedRows) {
   
   // Show success message
   if (imported > 0) {
-    toast.success(`Import complete! ${imported} site(s) imported successfully.`);
+    const itemType = currentImportType === 'sites' ? 'site(s)' : 'job(s)';
+    toast.success(`Import complete! ${imported} ${itemType} imported successfully.`);
   }
   
-  // Refresh sites list if sites page is open
-  await refreshSitesList();
+  // Refresh list if page is open
+  if (currentImportType === 'sites') {
+    await refreshSitesList();
+  } else if (currentImportType === 'jobs') {
+    // Refresh jobs list if jobs page is open
+    if (window.location.pathname.includes('jobs.html') && typeof window.renderJobs === 'function') {
+      await window.renderJobs();
+    }
+  }
   
-  // Add click handler for "View Sites" button
-  const viewSitesBtn = document.getElementById('view-sites-after-import-btn');
-  if (viewSitesBtn) {
-    viewSitesBtn.addEventListener('click', async () => {
-      // If already on sites page, just refresh and close modal
-      if (window.location.pathname.includes('sites.html')) {
-        if (typeof window.loadAndRenderSites === 'function') {
-          await window.loadAndRenderSites();
-          toast.success('Sites refreshed!');
+  // Add click handler for "View Imported" button
+  const viewBtn = document.getElementById('view-imported-items-btn');
+  if (viewBtn) {
+    viewBtn.addEventListener('click', async () => {
+      if (currentImportType === 'sites') {
+        // If already on sites page, just refresh and close modal
+        if (window.location.pathname.includes('sites.html')) {
+          if (typeof window.loadAndRenderSites === 'function') {
+            await window.loadAndRenderSites();
+            toast.success('Sites refreshed!');
+          }
+          closeImportModal();
+        } else {
+          // Navigate to sites page
+          window.location.href = './sites.html';
         }
-        closeImportModal();
-      } else {
-        // Navigate to sites page
-        window.location.href = './sites.html';
+      } else if (currentImportType === 'jobs') {
+        // If already on jobs page, just refresh and close modal
+        if (window.location.pathname.includes('jobs.html')) {
+          // Trigger jobs refresh if available
+          if (typeof window.renderJobs === 'function') {
+            await window.renderJobs();
+            toast.success('Jobs refreshed!');
+          }
+          closeImportModal();
+        } else {
+          // Navigate to jobs page
+          window.location.href = './jobs.html';
+        }
       }
     });
   }
@@ -1108,6 +1371,117 @@ async function loadExistingSites() {
   } catch (error) {
     console.error('Exception loading existing sites:', error);
   }
+}
+
+// Load existing workers (user_profiles) for jobs import
+async function loadExistingWorkers() {
+  try {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('id, email, full_name');
+    
+    if (error) {
+      console.error('Error loading existing workers:', error);
+      return;
+    }
+    
+    existingWorkers = data || [];
+    console.log(`Loaded ${existingWorkers.length} existing workers for validation`);
+  } catch (error) {
+    console.error('Exception loading existing workers:', error);
+  }
+}
+
+// Find site by name (fuzzy matching)
+function findSiteByName(siteName) {
+  if (!siteName || !existingSites.length) return null;
+  
+  const normalized = String(siteName).trim().toLowerCase();
+  
+  // Exact match first
+  let site = existingSites.find(s => s.name.toLowerCase() === normalized);
+  if (site) return site;
+  
+  // Partial match
+  site = existingSites.find(s => s.name.toLowerCase().includes(normalized) || normalized.includes(s.name.toLowerCase()));
+  if (site) return site;
+  
+  return null;
+}
+
+// Find worker by email
+function findWorkerByEmail(email) {
+  if (!email || !existingWorkers.length) return null;
+  
+  const normalized = String(email).trim().toLowerCase();
+  
+  return existingWorkers.find(w => w.email && w.email.toLowerCase() === normalized) || null;
+}
+
+// Parse date from multiple formats
+function parseDate(dateString) {
+  if (!dateString || String(dateString).trim() === '') return null;
+  
+  const str = String(dateString).trim();
+  
+  // Try different date formats
+  const formats = [
+    // YYYY-MM-DD (ISO)
+    /^(\d{4})-(\d{2})-(\d{2})$/,
+    // MM/DD/YYYY
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
+    // DD/MM/YYYY
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
+    // MM-DD-YYYY
+    /^(\d{1,2})-(\d{1,2})-(\d{4})$/,
+    // DD-MM-YYYY
+    /^(\d{1,2})-(\d{1,2})-(\d{4})$/,
+    // YYYY/MM/DD
+    /^(\d{4})\/(\d{2})\/(\d{2})$/
+  ];
+  
+  // Try ISO format first (most common for exports)
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+    const date = new Date(str.split(' ')[0]); // Handle datetime strings
+    if (!isNaN(date.getTime())) {
+      return date.toISOString().split('T')[0]; // Return YYYY-MM-DD format
+    }
+  }
+  
+  // Try MM/DD/YYYY format
+  const mmddyyyy = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (mmddyyyy) {
+    const month = mmddyyyy[1].padStart(2, '0');
+    const day = mmddyyyy[2].padStart(2, '0');
+    const year = mmddyyyy[3];
+    const date = new Date(`${year}-${month}-${day}`);
+    if (!isNaN(date.getTime())) {
+      return date.toISOString().split('T')[0];
+    }
+  }
+  
+  // Try DD/MM/YYYY format (if month > 12, it's probably DD/MM)
+  const ddmmyyyy = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (ddmmyyyy) {
+    const day = ddmmyyyy[1].padStart(2, '0');
+    const month = ddmmyyyy[2].padStart(2, '0');
+    const year = ddmmyyyy[3];
+    // If first part > 12, it's probably day
+    if (parseInt(ddmmyyyy[1]) > 12) {
+      const date = new Date(`${year}-${month}-${day}`);
+      if (!isNaN(date.getTime())) {
+        return date.toISOString().split('T')[0];
+      }
+    }
+  }
+  
+  // Try native Date parsing as fallback
+  const date = new Date(str);
+  if (!isNaN(date.getTime())) {
+    return date.toISOString().split('T')[0];
+  }
+  
+  return null; // Invalid date
 }
 
 // Download template
