@@ -1486,9 +1486,9 @@
             return;
           }
           
-          // Update the quantity in inventory_item_sites table
+          // Update the quantity in site_inventory table
           const { error } = await supabaseClient
-            .from('inventory_item_sites')
+            .from('site_inventory')
             .update({ quantity: newQuantity })
             .eq('site_id', siteId)
             .eq('item_id', itemId);
