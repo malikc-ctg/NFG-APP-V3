@@ -525,6 +525,9 @@
           <button class="inventory-view-tab flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-nfgblue hover:bg-white/70 transition" data-view="suppliers">
             Suppliers &amp; Orders
           </button>
+          <button class="inventory-view-tab flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-nfgblue hover:bg-white/70 transition" data-view="transfers">
+            Transfers
+          </button>
         </div>
         <div id="history-inline-actions" class="hidden sm:flex items-center gap-2">
           <button id="history-refresh-btn" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 text-sm font-medium transition">
@@ -773,6 +776,80 @@
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transfers View -->
+      <div id="transfers-view" class="hidden space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Inventory Transfers</h2>
+            <p class="text-sm text-gray-500 mt-1">Transfer items between sites</p>
+          </div>
+          <button id="create-transfer-btn" class="px-4 py-2 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark transition inline-flex items-center gap-2">
+            <i data-lucide="plus" class="w-5 h-5"></i>
+            Create Transfer
+          </button>
+        </div>
+
+        <!-- Transfer Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Pending</p>
+            <p id="transfers-pending-count" class="text-2xl font-semibold text-orange-600 dark:text-orange-400">0</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Approved</p>
+            <p id="transfers-approved-count" class="text-2xl font-semibold text-blue-600 dark:text-blue-400">0</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <p class="text-sm text-gray-500 dark:text-gray-400">In Transit</p>
+            <p id="transfers-in-transit-count" class="text-2xl font-semibold text-purple-600 dark:text-purple-400">0</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Completed</p>
+            <p id="transfers-completed-count" class="text-2xl font-semibold text-green-600 dark:text-green-400">0</p>
+          </div>
+        </div>
+
+        <!-- Transfers Table -->
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">All Transfers</h3>
+            <div class="flex flex-wrap items-center gap-2">
+              <select id="transfers-status-filter" class="border border-nfgray rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none">
+                <option value="all">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="in-transit">In Transit</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+              <button id="transfers-refresh-btn" class="px-3 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 text-sm">
+                Refresh
+              </button>
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-nfglight/50 border-b border-nfgray dark:border-gray-700">
+                <tr>
+                  <th class="px-3 py-2 text-left font-medium text-nfgblue dark:text-blue-400">Transfer #</th>
+                  <th class="px-3 py-2 text-left font-medium text-nfgblue dark:text-blue-400">From Site</th>
+                  <th class="px-3 py-2 text-left font-medium text-nfgblue dark:text-blue-400">To Site</th>
+                  <th class="px-3 py-2 text-center font-medium text-nfgblue dark:text-blue-400">Items</th>
+                  <th class="px-3 py-2 text-center font-medium text-nfgblue dark:text-blue-400">Status</th>
+                  <th class="px-3 py-2 text-left font-medium text-nfgblue dark:text-blue-400">Requested</th>
+                  <th class="px-3 py-2 text-center font-medium text-nfgblue dark:text-blue-400">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="transfers-table-body">
+                <tr>
+                  <td colspan="7" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No transfers yet</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

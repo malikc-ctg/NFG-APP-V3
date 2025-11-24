@@ -528,6 +528,7 @@ function initInventoryViewTabs() {
   const desktopHistoryActions = document.getElementById('history-inline-actions');
   const suppliersView = document.getElementById('suppliers-view');
   const suppliersActions = document.getElementById('suppliers-inline-actions');
+  const transfersView = document.getElementById('transfers-view');
   
   if (!tabs.length || !inventoryView || !historyView) return;
   
@@ -565,6 +566,7 @@ function initInventoryViewTabs() {
       } else if (view === 'suppliers') {
         inventoryView.classList.add('hidden');
         historyView.classList.add('hidden');
+        transfersView?.classList.add('hidden');
         suppliersView?.classList.remove('hidden');
         desktopHistoryActions?.classList.add('hidden');
         suppliersActions?.classList.remove('hidden');
@@ -572,9 +574,21 @@ function initInventoryViewTabs() {
         if (!suppliersViewInitialized) {
           await initSuppliersView();
         }
+      } else if (view === 'transfers') {
+        inventoryView.classList.add('hidden');
+        historyView.classList.add('hidden');
+        suppliersView?.classList.add('hidden');
+        transfersView?.classList.remove('hidden');
+        desktopHistoryActions?.classList.add('hidden');
+        suppliersActions?.classList.add('hidden');
+        
+        if (!transfersViewInitialized) {
+          await initTransfersView();
+        }
       } else {
         historyView.classList.add('hidden');
         suppliersView?.classList.add('hidden');
+        transfersView?.classList.add('hidden');
         inventoryView.classList.remove('hidden');
         desktopHistoryActions?.classList.add('hidden');
         suppliersActions?.classList.add('hidden');
