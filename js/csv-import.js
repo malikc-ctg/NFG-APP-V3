@@ -17,6 +17,9 @@ let currentStep = 1;
 let existingSites = [];
 let existingWorkers = []; // For jobs import - worker lookup by email
 let existingJobs = []; // For jobs import - optional duplicate checking
+let existingInventoryItems = []; // For inventory stock import - item lookup
+let existingCategories = []; // For inventory items import - category lookup
+let existingInventoryStock = []; // For inventory stock import - duplicate checking
 
 // Step indicator elements (will be queried after DOM ready)
 let stepIndicators = null;
@@ -48,6 +51,20 @@ const FIELD_DEFINITIONS = {
     description: { label: 'Description', required: false, type: 'text' },
     notes: { label: 'Notes', required: false, type: 'text' },
     estimated_hours: { label: 'Estimated Hours', required: false, type: 'number' }
+  },
+  inventory_items: {
+    name: { label: 'Item Name', required: true, type: 'text' },
+    category_name: { label: 'Category', required: false, type: 'text', lookup: 'category' },
+    unit: { label: 'Unit', required: false, type: 'text', default: 'pieces' },
+    low_stock_threshold: { label: 'Low Stock Threshold', required: false, type: 'number', default: 5 },
+    reorder_quantity: { label: 'Reorder Quantity', required: false, type: 'number', default: 20 },
+    notes: { label: 'Notes', required: false, type: 'text' }
+  },
+  inventory_stock: {
+    site_name: { label: 'Site Name', required: true, type: 'text', lookup: 'site' },
+    item_name: { label: 'Item Name', required: true, type: 'text', lookup: 'item' },
+    quantity: { label: 'Quantity', required: true, type: 'number' },
+    location_notes: { label: 'Location Notes', required: false, type: 'text' }
   }
 };
 
@@ -190,6 +207,76 @@ const COLUMN_MAPPINGS = {
     'hours': 'estimated_hours',
     'estimated time': 'estimated_hours',
     'duration': 'estimated_hours'
+  },
+  inventory_items: {
+    // Item name variations
+    'item name': 'name',
+    'item_name': 'name',
+    'name': 'name',
+    'product name': 'name',
+    'product': 'name',
+    'item': 'name',
+    
+    // Category variations
+    'category': 'category_name',
+    'category_name': 'category_name',
+    'category name': 'category_name',
+    'type': 'category_name',
+    'item type': 'category_name',
+    
+    // Unit variations
+    'unit': 'unit',
+    'unit of measure': 'unit',
+    'uom': 'unit',
+    'measurement': 'unit',
+    
+    // Low stock threshold variations
+    'low stock threshold': 'low_stock_threshold',
+    'low_stock_threshold': 'low_stock_threshold',
+    'low stock': 'low_stock_threshold',
+    'minimum stock': 'low_stock_threshold',
+    'reorder point': 'low_stock_threshold',
+    
+    // Reorder quantity variations
+    'reorder quantity': 'reorder_quantity',
+    'reorder_quantity': 'reorder_quantity',
+    'reorder qty': 'reorder_quantity',
+    'order quantity': 'reorder_quantity',
+    
+    // Notes variations
+    'notes': 'notes',
+    'note': 'notes',
+    'description': 'notes',
+    'comments': 'notes'
+  },
+  inventory_stock: {
+    // Site name variations
+    'site name': 'site_name',
+    'site_name': 'site_name',
+    'site': 'site_name',
+    'location': 'site_name',
+    'location name': 'site_name',
+    
+    // Item name variations
+    'item name': 'item_name',
+    'item_name': 'item_name',
+    'item': 'item_name',
+    'product name': 'item_name',
+    'product': 'item_name',
+    
+    // Quantity variations
+    'quantity': 'quantity',
+    'qty': 'quantity',
+    'stock': 'quantity',
+    'stock level': 'quantity',
+    'amount': 'quantity',
+    
+    // Location notes variations
+    'location notes': 'location_notes',
+    'location_notes': 'location_notes',
+    'location': 'location_notes',
+    'storage location': 'location_notes',
+    'bin location': 'location_notes'
   }
 };
 
@@ -433,9 +520,14 @@ function selectImportType(type) {
   // Load additional data needed for validation
   if (type === 'jobs') {
     loadExistingWorkers();
+  } else if (type === 'inventory_items') {
+    loadExistingCategories();
+  } else if (type === 'inventory_stock') {
+    loadExistingInventoryItems();
+    loadExistingInventoryStock();
   }
   
-  toast.success(`Selected: ${type.charAt(0).toUpperCase() + type.slice(1)} import`);
+  toast.success(`Selected: ${type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ')} import`);
 }
 
 // Handle file selection
@@ -799,6 +891,136 @@ async function validateImportData() {
         mappedRow.description = mappedRow.notes;
         delete mappedRow.notes;
       }
+    } else if (currentImportType === 'inventory_items') {
+      // Inventory items-specific validation
+      
+      // Validate item name uniqueness
+      if (mappedRow.name) {
+        const itemName = String(mappedRow.name).trim();
+        
+        // Check for duplicates within the import
+        const duplicateInImport = csvData.slice(0, index).some((otherRow, otherIndex) => {
+          const otherMappedRow = {};
+          Object.keys(columnMapping).forEach(header => {
+            const field = columnMapping[header];
+            if (field) otherMappedRow[field] = otherRow[header];
+          });
+          return otherMappedRow.name && String(otherMappedRow.name).trim().toLowerCase() === itemName.toLowerCase();
+        });
+        
+        if (duplicateInImport) {
+          rowErrors.push(`Duplicate item name in CSV: "${itemName}"`);
+        }
+        
+        // Check against existing items (warning, not error - can have duplicates)
+        const existingItem = existingInventoryItems.find(i => i.name.toLowerCase() === itemName.toLowerCase());
+        if (existingItem) {
+          rowWarnings.push(`Item name already exists: "${itemName}"`);
+        }
+      }
+      
+      // Validate category lookup
+      if (mappedRow.category_name && mappedRow.category_name.trim()) {
+        const categoryName = String(mappedRow.category_name).trim();
+        const category = findCategoryByName(categoryName);
+        
+        if (!category) {
+          rowWarnings.push(`Category not found: "${categoryName}". Will create new category.`);
+          // Keep category_name for creation during import
+        } else {
+          // Replace category_name with category_id
+          mappedRow.category_id = category.id;
+          delete mappedRow.category_name;
+        }
+      }
+      
+      // Validate unit
+      if (mappedRow.unit && mappedRow.unit.trim()) {
+        const unit = String(mappedRow.unit).trim().toLowerCase();
+        // Common units: pieces, bottles, boxes, rolls, liters, gallons, pounds, kg, etc.
+        // No strict validation, just normalize
+        mappedRow.unit = unit;
+      } else {
+        mappedRow.unit = 'pieces'; // Default
+      }
+      
+      // Validate numeric fields
+      if (mappedRow.low_stock_threshold !== undefined && mappedRow.low_stock_threshold !== null && mappedRow.low_stock_threshold !== '') {
+        const threshold = Number(mappedRow.low_stock_threshold);
+        if (isNaN(threshold) || threshold < 0) {
+          rowWarnings.push(`Invalid low stock threshold: "${mappedRow.low_stock_threshold}". Will default to 5`);
+          mappedRow.low_stock_threshold = 5;
+        } else {
+          mappedRow.low_stock_threshold = Math.floor(threshold);
+        }
+      } else {
+        mappedRow.low_stock_threshold = 5; // Default
+      }
+      
+      if (mappedRow.reorder_quantity !== undefined && mappedRow.reorder_quantity !== null && mappedRow.reorder_quantity !== '') {
+        const qty = Number(mappedRow.reorder_quantity);
+        if (isNaN(qty) || qty < 0) {
+          rowWarnings.push(`Invalid reorder quantity: "${mappedRow.reorder_quantity}". Will default to 20`);
+          mappedRow.reorder_quantity = 20;
+        } else {
+          mappedRow.reorder_quantity = Math.floor(qty);
+        }
+      } else {
+        mappedRow.reorder_quantity = 20; // Default
+      }
+    } else if (currentImportType === 'inventory_stock') {
+      // Inventory stock-specific validation
+      
+      // Validate site lookup
+      if (mappedRow.site_name) {
+        const siteName = String(mappedRow.site_name).trim();
+        const site = findSiteByName(siteName);
+        
+        if (!site) {
+          rowErrors.push(`Site not found: "${siteName}". Please create the site first or check the site name.`);
+        } else {
+          // Replace site_name with site_id
+          mappedRow.site_id = site.id;
+          delete mappedRow.site_name;
+        }
+      }
+      
+      // Validate item lookup
+      if (mappedRow.item_name) {
+        const itemName = String(mappedRow.item_name).trim();
+        const item = findInventoryItemByName(itemName);
+        
+        if (!item) {
+          rowErrors.push(`Item not found: "${itemName}". Please create the item first or check the item name.`);
+        } else {
+          // Replace item_name with item_id
+          mappedRow.item_id = item.id;
+          delete mappedRow.item_name;
+        }
+      }
+      
+      // Validate quantity
+      if (mappedRow.quantity !== undefined && mappedRow.quantity !== null && mappedRow.quantity !== '') {
+        const qty = Number(mappedRow.quantity);
+        if (isNaN(qty) || qty < 0) {
+          rowErrors.push(`Invalid quantity: "${mappedRow.quantity}". Must be a number >= 0`);
+        } else {
+          mappedRow.quantity = Math.floor(qty);
+        }
+      } else {
+        rowErrors.push(`Missing required field: Quantity`);
+      }
+      
+      // Check for duplicate site+item combination
+      if (mappedRow.site_id && mappedRow.item_id) {
+        const duplicate = existingInventoryStock.find(s => 
+          s.site_id === mappedRow.site_id && s.item_id === mappedRow.item_id
+        );
+        
+        if (duplicate) {
+          rowWarnings.push(`Stock entry already exists for this site+item. Will update quantity.`);
+        }
+      }
     }
     
     if (rowErrors.length > 0) {
@@ -950,7 +1172,19 @@ function goToNextStep() {
     }
     
     // Show confirmation
-    const itemType = currentImportType === 'sites' ? 'site(s)' : 'job(s)';
+    let itemType;
+    if (currentImportType === 'sites') {
+      itemType = 'site(s)';
+    } else if (currentImportType === 'jobs') {
+      itemType = 'job(s)';
+    } else if (currentImportType === 'inventory_items') {
+      itemType = 'inventory item(s)';
+    } else if (currentImportType === 'inventory_stock') {
+      itemType = 'stock entr(ies)';
+    } else {
+      itemType = 'item(s)';
+    }
+    
     const confirmMessage = `Import ${validationResults.valid.length} ${itemType}?\n\n${validationResults.warnings.length > 0 ? `⚠️ ${validationResults.warnings.length} row(s) have warnings.\n\n` : ''}`;
     showConfirm('Confirm Import', confirmMessage).then(confirmed => {
       if (confirmed) {
@@ -1116,6 +1350,48 @@ async function startImport() {
         // Ensure created_by and user_id are always set
         item.created_by = currentUserId;
         item.user_id = currentUserId;
+      } else if (currentImportType === 'inventory_items') {
+        // Inventory items import
+        // Set defaults
+        if (!item.unit) item.unit = 'pieces';
+        if (!item.low_stock_threshold) item.low_stock_threshold = 5;
+        if (!item.reorder_quantity) item.reorder_quantity = 20;
+        
+        // CRITICAL: Set created_by for multi-tenancy!
+        item.created_by = currentUserId;
+        
+        // Handle category creation if needed
+        if (item.category_name && !item.category_id) {
+          // Will create category during import
+        }
+        
+        // Clean up data
+        Object.keys(item).forEach(key => {
+          if (item[key] === '' || item[key] === null || item[key] === undefined) {
+            if (key !== 'category_id' && key !== 'created_by') {
+              delete item[key];
+            }
+          } else if (typeof item[key] === 'string') {
+            item[key] = item[key].trim();
+          }
+        });
+        
+        // Ensure created_by is always set
+        item.created_by = currentUserId;
+      } else if (currentImportType === 'inventory_stock') {
+        // Inventory stock import
+        // No defaults needed - quantity is required
+        
+        // Clean up data
+        Object.keys(item).forEach(key => {
+          if (item[key] === '' || item[key] === null || item[key] === undefined) {
+            if (key !== 'site_id' && key !== 'item_id' && key !== 'quantity') {
+              delete item[key];
+            }
+          } else if (typeof item[key] === 'string') {
+            item[key] = item[key].trim();
+          }
+        });
       }
       
       return item;
@@ -1124,14 +1400,96 @@ async function startImport() {
     console.log(`📦 Batch data prepared:`, batchData.length, currentImportType);
     
     try {
+      // Handle inventory items with category creation
+      if (currentImportType === 'inventory_items') {
+        // First, create any missing categories
+        const categoryMap = new Map(); // category_name -> category_id
+        
+        for (const item of batchData) {
+          if (item.category_name && !item.category_id) {
+            const categoryName = item.category_name.trim();
+            
+            // Check if we already created this category in this batch
+            if (!categoryMap.has(categoryName)) {
+              // Check if category exists
+              const existingCategory = await supabase
+                .from('inventory_categories')
+                .select('id')
+                .eq('name', categoryName)
+                .single();
+              
+              if (existingCategory.data) {
+                categoryMap.set(categoryName, existingCategory.data.id);
+              } else {
+                // Create new category
+                const { data: newCategory, error: catError } = await supabase
+                  .from('inventory_categories')
+                  .insert({ name: categoryName })
+                  .select('id')
+                  .single();
+                
+                if (catError) {
+                  console.error('Error creating category:', catError);
+                  // Continue without category
+                } else {
+                  categoryMap.set(categoryName, newCategory.id);
+                }
+              }
+            }
+            
+            item.category_id = categoryMap.get(categoryName);
+            delete item.category_name;
+          }
+        }
+      }
+      
       // Insert batch
-      const tableName = currentImportType === 'sites' ? 'sites' : 'jobs';
+      let tableName;
+      let itemName;
+      let nameField;
+      
+      if (currentImportType === 'sites') {
+        tableName = 'sites';
+        itemName = 'sites';
+        nameField = 'name';
+      } else if (currentImportType === 'jobs') {
+        tableName = 'jobs';
+        itemName = 'jobs';
+        nameField = 'title';
+      } else if (currentImportType === 'inventory_items') {
+        tableName = 'inventory_items';
+        itemName = 'inventory items';
+        nameField = 'name';
+      } else if (currentImportType === 'inventory_stock') {
+        tableName = 'site_inventory';
+        itemName = 'stock entries';
+        nameField = 'quantity';
+      }
+      
       console.log(`💾 Inserting batch:`, batchData.length, tableName);
       
-      const { data, error } = await supabase
-        .from(tableName)
-        .insert(batchData)
-        .select();
+      let data, error;
+      
+      if (currentImportType === 'inventory_stock') {
+        // Use upsert for inventory stock (update if exists, insert if not)
+        // Upsert on unique constraint: (site_id, item_id)
+        const { data: upsertData, error: upsertError } = await supabase
+          .from(tableName)
+          .upsert(batchData, { onConflict: 'site_id,item_id' })
+          .select();
+        
+        data = upsertData;
+        error = upsertError;
+      } else {
+        // Regular insert for other types
+        const { data: insertData, error: insertError } = await supabase
+          .from(tableName)
+          .insert(batchData)
+          .select();
+        
+        data = insertData;
+        error = insertError;
+      }
       
       if (error) {
         console.error('❌ Batch import error:', error);
@@ -1145,9 +1503,32 @@ async function startImport() {
           });
         });
       } else {
-        const itemName = currentImportType === 'sites' ? 'sites' : 'jobs';
-        const nameField = currentImportType === 'sites' ? 'name' : 'title';
-        console.log(`✅ Successfully imported ${data.length} ${itemName}:`, data.map(item => item[nameField]));
+        // For inventory stock, also create transaction records
+        if (currentImportType === 'inventory_stock' && data && data.length > 0) {
+          const transactionRecords = data.map(stock => ({
+            item_id: stock.item_id,
+            site_id: stock.site_id,
+            transaction_type: 'restock',
+            quantity_change: stock.quantity,
+            quantity_before: 0, // We don't know the previous quantity
+            quantity_after: stock.quantity,
+            user_id: currentUserId,
+            notes: 'Imported via CSV'
+          }));
+          
+          // Insert transaction records (ignore errors - transactions are optional)
+          await supabase
+            .from('inventory_transactions')
+            .insert(transactionRecords)
+            .then(({ error: transError }) => {
+              if (transError) {
+                console.warn('Could not create transaction records:', transError);
+              }
+            });
+        }
+        
+        console.log(`✅ Successfully imported ${data.length} ${itemName}:`, 
+          data.map(item => item[nameField] || `${item.site_id}/${item.item_id}`));
         imported += data.length;
       }
       
@@ -1207,8 +1588,8 @@ async function renderImportResults(imported, failed, failedRows) {
     ${imported > 0 ? `
       <div class="flex justify-center mt-6">
         <button id="view-imported-items-btn" class="px-6 py-3 bg-nfgblue dark:bg-blue-900 text-white rounded-xl hover:bg-nfgdark transition inline-flex items-center gap-2 font-medium">
-          <i data-lucide="${currentImportType === 'sites' ? 'building-2' : 'clipboard-list'}" class="w-5 h-5"></i>
-          View Imported ${currentImportType === 'sites' ? 'Sites' : 'Jobs'}
+          <i data-lucide="${currentImportType === 'sites' ? 'building-2' : currentImportType === 'jobs' ? 'clipboard-list' : currentImportType === 'inventory_items' ? 'package' : 'layers'}" class="w-5 h-5"></i>
+          View Imported ${currentImportType === 'sites' ? 'Sites' : currentImportType === 'jobs' ? 'Jobs' : currentImportType === 'inventory_items' ? 'Items' : 'Stock'}
         </button>
       </div>
     ` : ''}
@@ -1223,7 +1604,18 @@ async function renderImportResults(imported, failed, failedRows) {
   
   // Show success message
   if (imported > 0) {
-    const itemType = currentImportType === 'sites' ? 'site(s)' : 'job(s)';
+    let itemType;
+    if (currentImportType === 'sites') {
+      itemType = 'site(s)';
+    } else if (currentImportType === 'jobs') {
+      itemType = 'job(s)';
+    } else if (currentImportType === 'inventory_items') {
+      itemType = 'inventory item(s)';
+    } else if (currentImportType === 'inventory_stock') {
+      itemType = 'stock entr(ies)';
+    } else {
+      itemType = 'item(s)';
+    }
     toast.success(`Import complete! ${imported} ${itemType} imported successfully.`);
   }
   
@@ -1234,6 +1626,15 @@ async function renderImportResults(imported, failed, failedRows) {
     // Refresh jobs list if jobs page is open
     if (window.location.pathname.includes('jobs.html') && typeof window.renderJobs === 'function') {
       await window.renderJobs();
+    }
+  } else if (currentImportType === 'inventory_items' || currentImportType === 'inventory_stock') {
+    // Refresh inventory if inventory page is open
+    if (window.location.pathname.includes('inventory.html')) {
+      // Trigger inventory refresh if available
+      if (typeof window.loadInventory === 'function') {
+        await window.loadInventory();
+        toast.success('Inventory refreshed!');
+      }
     }
   }
   
@@ -1265,6 +1666,19 @@ async function renderImportResults(imported, failed, failedRows) {
         } else {
           // Navigate to jobs page
           window.location.href = './jobs.html';
+        }
+      } else if (currentImportType === 'inventory_items' || currentImportType === 'inventory_stock') {
+        // Navigate to inventory page
+        if (window.location.pathname.includes('inventory.html')) {
+          // If already on inventory page, just refresh and close modal
+          if (typeof window.loadInventory === 'function') {
+            await window.loadInventory();
+            toast.success('Inventory refreshed!');
+          }
+          closeImportModal();
+        } else {
+          // Navigate to inventory page
+          window.location.href = './inventory.html';
         }
       }
     });
