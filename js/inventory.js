@@ -16,6 +16,7 @@ let inventoryItemsCache = [];
 let suppliersViewInitialized = false;
 let transfersViewInitialized = false;
 let transfersList = [];
+let allTransfersCache = [];
 let poItemRowId = 0;
 let supplierPerformance = {};
 let usageTrends = {};
@@ -898,6 +899,13 @@ async function initSuppliersView() {
   suppliersViewInitialized = true;
 }
 
+async function initTransfersView() {
+  if (transfersViewInitialized) return;
+  await loadTransfers();
+  attachTransferListeners();
+  transfersViewInitialized = true;
+}
+
 async function populatePOSiteOptions() {
   const siteSelect = document.getElementById('po-site');
   if (!siteSelect) return;
@@ -1468,6 +1476,150 @@ async function checkLowStock() {
     console.error('Error checking low stock:', error);
     return { count: 0, items: [], error: error.message };
   }
+}
+
+// Load transfers
+async function loadTransfers(showToast = false) {
+  try {
+    const { data, error } = await supabase
+      .from('inventory_transfers_with_details')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    transfersList = data || [];
+    allTransfersCache = [...transfersList]; // Cache for filtering
+    renderTransfers();
+    updateTransferSummaryCards();
+    
+    if (showToast) {
+      toast.success('Transfers refreshed', 'Success');
+    }
+  } catch (error) {
+    console.error('Failed to load transfers:', error);
+    toast.error('Failed to load transfers', 'Error');
+    transfersList = [];
+    renderTransfers();
+  }
+}
+
+// Render transfers table
+function renderTransfers() {
+  const tableBody = document.getElementById('transfers-table-body');
+  if (!tableBody) return;
+  
+  if (!transfersList || transfersList.length === 0) {
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="7" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+          No transfers yet. Click "Create Transfer" to get started.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+  
+  const statusConfig = {
+    'pending': { color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', label: 'Pending' },
+    'approved': { color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', label: 'Approved' },
+    'in-transit': { color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400', label: 'In Transit' },
+    'completed': { color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', label: 'Completed' },
+    'cancelled': { color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', label: 'Cancelled' }
+  };
+  
+  tableBody.innerHTML = transfersList.map(transfer => {
+    const status = statusConfig[transfer.status] || statusConfig['pending'];
+    const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
+    
+    return `
+      <tr class="hover:bg-nfglight/30 transition">
+        <td class="px-3 py-2 font-medium text-nfgblue dark:text-blue-400">${transfer.transfer_number}</td>
+        <td class="px-3 py-2">${sanitizeText(transfer.from_site_name || 'Unknown')}</td>
+        <td class="px-3 py-2">${sanitizeText(transfer.to_site_name || 'Unknown')}</td>
+        <td class="px-3 py-2 text-center">${transfer.total_items || 0}</td>
+        <td class="px-3 py-2 text-center">
+          <span class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium ${status.color}">
+            ${status.label}
+          </span>
+        </td>
+        <td class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+          ${transfer.requested_at ? new Date(transfer.requested_at).toLocaleDateString() : '—'}
+        </td>
+        <td class="px-3 py-2 text-center">
+          <div class="flex items-center justify-center gap-1">
+            <button onclick="viewTransferDetails(${transfer.id})" 
+                    class="p-1.5 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 text-nfgblue dark:text-blue-400 transition" 
+                    data-tooltip="View details" data-tooltip-position="top">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+            ${transfer.status === 'pending' && !isStaff ? `
+              <button onclick="approveTransfer(${transfer.id})" 
+                      class="p-1.5 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/30 text-green-600 dark:text-green-400 transition" 
+                      data-tooltip="Approve transfer" data-tooltip-position="top">
+                <i data-lucide="check" class="w-4 h-4"></i>
+              </button>
+              <button onclick="cancelTransfer(${transfer.id})" 
+                      class="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition" 
+                      data-tooltip="Cancel transfer" data-tooltip-position="top">
+                <i data-lucide="x" class="w-4 h-4"></i>
+              </button>
+            ` : ''}
+            ${transfer.status === 'approved' && !isStaff ? `
+              <button onclick="completeTransfer(${transfer.id})" 
+                      class="p-1.5 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/30 text-green-600 dark:text-green-400 transition" 
+                      data-tooltip="Complete transfer" data-tooltip-position="top">
+                <i data-lucide="check-circle" class="w-4 h-4"></i>
+              </button>
+            ` : ''}
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+  
+  if (window.lucide) lucide.createIcons();
+}
+
+// Update transfer summary cards
+function updateTransferSummaryCards() {
+  const pending = transfersList.filter(t => t.status === 'pending').length;
+  const approved = transfersList.filter(t => t.status === 'approved').length;
+  const inTransit = transfersList.filter(t => t.status === 'in-transit').length;
+  const completed = transfersList.filter(t => t.status === 'completed').length;
+  
+  document.getElementById('transfers-pending-count').textContent = pending;
+  document.getElementById('transfers-approved-count').textContent = approved;
+  document.getElementById('transfers-in-transit-count').textContent = inTransit;
+  document.getElementById('transfers-completed-count').textContent = completed;
+}
+
+// Attach transfer view event listeners
+function attachTransferListeners() {
+  // Refresh button
+  document.getElementById('transfers-refresh-btn')?.addEventListener('click', async () => {
+    await loadTransfers(true);
+  });
+  
+  // Create transfer button
+  document.getElementById('create-transfer-btn')?.addEventListener('click', () => {
+    openTransferModal();
+  });
+  
+  // Status filter
+  document.getElementById('transfers-status-filter')?.addEventListener('change', (e) => {
+    filterTransfers(e.target.value);
+  });
+}
+
+// Filter transfers by status
+function filterTransfers(status) {
+  if (status === 'all') {
+    transfersList = [...allTransfersCache || []];
+  } else {
+    transfersList = (allTransfersCache || []).filter(t => t.status === status);
+  }
+  renderTransfers();
 }
 
 // Initialize automated low stock checking
