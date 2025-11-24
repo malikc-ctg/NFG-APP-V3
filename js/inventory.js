@@ -14,6 +14,8 @@ let suppliersList = [];
 let purchaseOrdersList = [];
 let inventoryItemsCache = [];
 let suppliersViewInitialized = false;
+let transfersViewInitialized = false;
+let transfersList = [];
 let poItemRowId = 0;
 let supplierPerformance = {};
 let usageTrends = {};
@@ -369,6 +371,12 @@ async function renderInventory() {
                       class="p-1.5 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 text-nfgblue dark:text-blue-400 transition" data-tooltip="View transaction history for this item" data-tooltip-position="top">
                 <i data-lucide="history" class="w-4 h-4"></i>
               </button>
+              ${isLowStock && canBulkOperate ? `
+                <button onclick="createPOFromLowStockItem(${item.item_id}, ${item.site_id}, ${item.reorder_quantity || item.low_stock_threshold * 4 || 20})" 
+                        class="p-1.5 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 text-green-600 dark:text-green-400 transition" data-tooltip="Create PO for this low stock item" data-tooltip-position="top">
+                  <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+                </button>
+              ` : ''}
             </div>
           </td>
         </tr>
@@ -491,6 +499,11 @@ function updateLowStockAlerts(siteInventory) {
 document.getElementById('dismiss-low-stock-alert')?.addEventListener('click', () => {
   document.getElementById('low-stock-alerts').classList.add('hidden');
   localStorage.setItem('inventory-low-stock-dismissed', Date.now().toString());
+});
+
+// Create PO from all low stock items
+document.getElementById('create-po-from-low-stock-btn')?.addEventListener('click', async () => {
+  await createPOFromLowStockItems();
 });
 
 // Manage stock (open modal)
@@ -1306,6 +1319,183 @@ function openPurchaseOrderModal(prefSupplierId = null) {
   modal.classList.remove('hidden');
   modal.classList.add('flex');
   if (window.lucide) window.lucide.createIcons();
+}
+
+// Create PO from low stock items
+async function createPOFromLowStockItems() {
+  try {
+    // Get current inventory to find low stock items
+    const siteInventory = await fetchSiteInventory();
+    const lowStockItems = siteInventory.filter(item => 
+      item.stock_status === 'low' || item.stock_status === 'out'
+    );
+    
+    if (lowStockItems.length === 0) {
+      toast.error('No low stock items found');
+      return;
+    }
+    
+    // Group by item_id to avoid duplicates (take highest reorder quantity needed)
+    const itemMap = new Map();
+    lowStockItems.forEach(item => {
+      const existing = itemMap.get(item.item_id);
+      const needed = item.low_stock_threshold * 4 - item.quantity; // Suggested reorder quantity
+      const reorderQty = Math.max(needed, item.reorder_quantity || item.low_stock_threshold * 4 || 20);
+      
+      if (!existing || reorderQty > existing.reorder_quantity) {
+        itemMap.set(item.item_id, {
+          item_id: item.item_id,
+          item_name: item.item_name,
+          reorder_quantity: reorderQty,
+          site_id: item.site_id,
+          site_name: item.site_name,
+          current_qty: item.quantity,
+          preferred_supplier_id: null
+        });
+      }
+    });
+    
+    const itemsToAdd = Array.from(itemMap.values());
+    
+    // Open PO modal
+    openPurchaseOrderModal();
+    
+    // Wait a bit for modal to render
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Pre-select first item's site
+    if (itemsToAdd.length > 0 && itemsToAdd[0].site_id) {
+      const siteSelect = document.getElementById('po-site');
+      if (siteSelect) {
+        siteSelect.value = itemsToAdd[0].site_id;
+      }
+    }
+    
+    // Add items to PO form
+    for (const item of itemsToAdd) {
+      await addPOItemRow({
+        item_id: item.item_id,
+        quantity: item.reorder_quantity
+      });
+    }
+    
+    toast.success(`Added ${itemsToAdd.length} low stock item(s) to purchase order`, 'Low Stock Items Added');
+  } catch (error) {
+    console.error('Error creating PO from low stock:', error);
+    toast.error('Failed to create PO from low stock items');
+  }
+}
+
+// Create PO from single low stock item
+async function createPOFromLowStockItem(itemId, siteId, suggestedQty) {
+  try {
+    // Get item details
+    const { data: item, error } = await supabase
+      .from('inventory_items')
+      .select('id, name, reorder_quantity, low_stock_threshold')
+      .eq('id', itemId)
+      .single();
+    
+    if (error || !item) {
+      toast.error('Item not found');
+      return;
+    }
+    
+    // Open PO modal
+    openPurchaseOrderModal();
+    
+    // Wait for modal to render
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Set site
+    const siteSelect = document.getElementById('po-site');
+    if (siteSelect && siteId) {
+      siteSelect.value = siteId;
+    }
+    
+    // Add item to PO
+    const reorderQty = suggestedQty || item.reorder_quantity || item.low_stock_threshold * 4 || 20;
+    await addPOItemRow({
+      item_id: itemId,
+      quantity: reorderQty
+    });
+    
+    toast.success(`Added "${item.name}" to purchase order`, 'Item Added');
+  } catch (error) {
+    console.error('Error creating PO from low stock item:', error);
+    toast.error('Failed to add item to purchase order');
+  }
+}
+
+// Automated low stock detection
+async function checkLowStock() {
+  try {
+    const siteInventory = await fetchSiteInventory();
+    const lowStockItems = siteInventory.filter(item => 
+      item.stock_status === 'low' || item.stock_status === 'out'
+    );
+    
+    if (lowStockItems.length === 0) {
+      return { count: 0, items: [] };
+    }
+    
+    // Get last alert timestamp
+    const lastAlert = localStorage.getItem('low-stock-last-alert');
+    const lastAlertTime = lastAlert ? parseInt(lastAlert) : 0;
+    const now = Date.now();
+    const sixHours = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
+    
+    // Only alert if it's been more than 6 hours since last alert
+    if (now - lastAlertTime < sixHours) {
+      return { count: lowStockItems.length, items: lowStockItems, alerted: false };
+    }
+    
+    // Store alert timestamp
+    localStorage.setItem('low-stock-last-alert', now.toString());
+    
+    // Check if we should send notifications
+    const shouldNotify = lowStockItems.length > 0;
+    
+    return {
+      count: lowStockItems.length,
+      items: lowStockItems,
+      alerted: shouldNotify,
+      timestamp: now
+    };
+  } catch (error) {
+    console.error('Error checking low stock:', error);
+    return { count: 0, items: [], error: error.message };
+  }
+}
+
+// Initialize automated low stock checking
+function initLowStockChecking() {
+  // Check immediately on load
+  checkLowStock().then(result => {
+    if (result.alerted && result.count > 0) {
+      console.log(`🔔 Low stock detected: ${result.count} items`);
+      // Update low stock alerts banner if on inventory page
+      if (window.location.pathname.includes('inventory.html')) {
+        renderInventory().catch(err => console.error('Error refreshing inventory:', err));
+      }
+    }
+  });
+  
+  // Check every 6 hours
+  setInterval(() => {
+    checkLowStock().then(result => {
+      if (result.alerted && result.count > 0) {
+        console.log(`🔔 Low stock detected: ${result.count} items`);
+        // Show notification if not on inventory page
+        if (!window.location.pathname.includes('inventory.html')) {
+          toast.info(`${result.count} item(s) are running low on stock. Click to view.`, 'Low Stock Alert', {
+            duration: 10000,
+            onClick: () => window.location.href = './inventory.html'
+          });
+        }
+      }
+    });
+  }, 6 * 60 * 60 * 1000); // 6 hours
 }
 
 async function addPOItemRow(defaults = {}) {
@@ -2411,6 +2601,7 @@ document.getElementById('po-doc-form')?.addEventListener('submit', uploadPurchas
 
 window.editSupplier = (supplierId) => openSupplierModal(supplierId);
 window.createPOForSupplier = (supplierId) => openPurchaseOrderModal(supplierId);
+window.createPOFromLowStockItem = (itemId, siteId, suggestedQty) => createPOFromLowStockItem(itemId, siteId, suggestedQty);
 window.markPurchaseOrderReceived = (poId) => markPurchaseOrderReceived(poId);
 window.cancelPurchaseOrder = (poId) => cancelPurchaseOrder(poId);
 window.emailPurchaseOrder = (poId) => emailPurchaseOrder(poId);

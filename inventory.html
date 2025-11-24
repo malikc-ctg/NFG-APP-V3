@@ -443,9 +443,13 @@
               <p class="text-sm text-orange-700 dark:text-orange-300 mb-2">
                 <span id="low-stock-count">0</span> item(s) are running low on stock and need to be restocked.
               </p>
-              <div id="low-stock-items-list" class="flex flex-wrap gap-2">
+              <div id="low-stock-items-list" class="flex flex-wrap gap-2 mb-3">
                 <!-- Populated by JS -->
               </div>
+              <button id="create-po-from-low-stock-btn" class="mt-2 px-4 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium transition inline-flex items-center gap-2">
+                <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+                Create PO for All Low Stock Items
+              </button>
             </div>
           </div>
           <button id="dismiss-low-stock-alert" class="flex-shrink-0 p-1 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-800/50 text-orange-600 dark:text-orange-400">
