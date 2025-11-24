@@ -104,7 +104,7 @@ LEFT JOIN suppliers s ON i.preferred_supplier_id = s.id
 LEFT JOIN site_inventory si ON i.id = si.item_id
 GROUP BY i.id, i.name, i.unit, i.low_stock_threshold, i.reorder_quantity,
          i.unit_cost, i.last_purchase_cost, i.average_cost, i.preferred_supplier_id,
-         s.name, c.name, c.icon, i.created_at, i.updated_at
+         s.name, c.name, c.icon, c.sort_order, i.created_at, i.updated_at
 ORDER BY c.sort_order, i.name;
 
 -- ============================================
