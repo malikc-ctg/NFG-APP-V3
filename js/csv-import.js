@@ -17,9 +17,10 @@ let currentStep = 1;
 let existingSites = [];
 let existingWorkers = []; // For jobs import - worker lookup by email
 let existingJobs = []; // For jobs import - optional duplicate checking
-let existingInventoryItems = []; // For inventory stock import - item lookup
-let existingCategories = []; // For inventory items import - category lookup
-let existingInventoryStock = []; // For inventory stock import - duplicate checking
+let existingInventoryItems = []; // For inventory import - item lookup
+let existingCategories = []; // For inventory import - category lookup
+let existingInventoryStock = []; // For inventory import - duplicate checking
+let existingSuppliers = []; // For inventory import - supplier lookup
 
 // Step indicator elements (will be queried after DOM ready)
 let stepIndicators = null;
@@ -52,19 +53,15 @@ const FIELD_DEFINITIONS = {
     notes: { label: 'Notes', required: false, type: 'text' },
     estimated_hours: { label: 'Estimated Hours', required: false, type: 'number' }
   },
-  inventory_items: {
-    name: { label: 'Item Name', required: true, type: 'text' },
-    category_name: { label: 'Category', required: false, type: 'text', lookup: 'category' },
-    unit: { label: 'Unit', required: false, type: 'text', default: 'pieces' },
-    low_stock_threshold: { label: 'Low Stock Threshold', required: false, type: 'number', default: 5 },
-    reorder_quantity: { label: 'Reorder Quantity', required: false, type: 'number', default: 20 },
-    notes: { label: 'Notes', required: false, type: 'text' }
-  },
-  inventory_stock: {
-    site_name: { label: 'Site Name', required: true, type: 'text', lookup: 'site' },
-    item_name: { label: 'Item Name', required: true, type: 'text', lookup: 'item' },
+  inventory: {
+    item_id: { label: 'Item ID', required: false, type: 'number' },
+    site_name: { label: 'Site', required: true, type: 'text', lookup: 'site' },
+    item_name: { label: 'Item Name', required: true, type: 'text' },
+    description: { label: 'Description', required: false, type: 'text' },
     quantity: { label: 'Quantity', required: true, type: 'number' },
-    location_notes: { label: 'Location Notes', required: false, type: 'text' }
+    units: { label: 'Units', required: false, type: 'text', default: 'pieces' },
+    reorder_point: { label: 'Reorder Point', required: false, type: 'number', default: 5 },
+    supplier: { label: 'Supplier', required: false, type: 'text', lookup: 'supplier' }
   }
 };
 
@@ -208,48 +205,13 @@ const COLUMN_MAPPINGS = {
     'estimated time': 'estimated_hours',
     'duration': 'estimated_hours'
   },
-  inventory_items: {
-    // Item name variations
-    'item name': 'name',
-    'item_name': 'name',
-    'name': 'name',
-    'product name': 'name',
-    'product': 'name',
-    'item': 'name',
+  inventory: {
+    // Item ID variations
+    'item id': 'item_id',
+    'item_id': 'item_id',
+    'id': 'item_id',
+    'item number': 'item_id',
     
-    // Category variations
-    'category': 'category_name',
-    'category_name': 'category_name',
-    'category name': 'category_name',
-    'type': 'category_name',
-    'item type': 'category_name',
-    
-    // Unit variations
-    'unit': 'unit',
-    'unit of measure': 'unit',
-    'uom': 'unit',
-    'measurement': 'unit',
-    
-    // Low stock threshold variations
-    'low stock threshold': 'low_stock_threshold',
-    'low_stock_threshold': 'low_stock_threshold',
-    'low stock': 'low_stock_threshold',
-    'minimum stock': 'low_stock_threshold',
-    'reorder point': 'low_stock_threshold',
-    
-    // Reorder quantity variations
-    'reorder quantity': 'reorder_quantity',
-    'reorder_quantity': 'reorder_quantity',
-    'reorder qty': 'reorder_quantity',
-    'order quantity': 'reorder_quantity',
-    
-    // Notes variations
-    'notes': 'notes',
-    'note': 'notes',
-    'description': 'notes',
-    'comments': 'notes'
-  },
-  inventory_stock: {
     // Site name variations
     'site name': 'site_name',
     'site_name': 'site_name',
@@ -260,9 +222,17 @@ const COLUMN_MAPPINGS = {
     // Item name variations
     'item name': 'item_name',
     'item_name': 'item_name',
-    'item': 'item_name',
+    'name': 'item_name',
     'product name': 'item_name',
     'product': 'item_name',
+    'item': 'item_name',
+    
+    // Description variations
+    'description': 'description',
+    'desc': 'description',
+    'notes': 'description',
+    'note': 'description',
+    'comments': 'description',
     
     // Quantity variations
     'quantity': 'quantity',
@@ -271,12 +241,26 @@ const COLUMN_MAPPINGS = {
     'stock level': 'quantity',
     'amount': 'quantity',
     
-    // Location notes variations
-    'location notes': 'location_notes',
-    'location_notes': 'location_notes',
-    'location': 'location_notes',
-    'storage location': 'location_notes',
-    'bin location': 'location_notes'
+    // Units variations
+    'units': 'units',
+    'unit': 'units',
+    'unit of measure': 'units',
+    'uom': 'units',
+    'measurement': 'units',
+    
+    // Reorder point variations
+    'reorder point': 'reorder_point',
+    'reorder_point': 'reorder_point',
+    'reorder point': 'reorder_point',
+    'low stock threshold': 'reorder_point',
+    'low stock': 'reorder_point',
+    'minimum stock': 'reorder_point',
+    
+    // Supplier variations
+    'supplier': 'supplier',
+    'supplier name': 'supplier',
+    'vendor': 'supplier',
+    'vendor name': 'supplier'
   }
 };
 
@@ -520,11 +504,10 @@ function selectImportType(type) {
   // Load additional data needed for validation
   if (type === 'jobs') {
     loadExistingWorkers();
-  } else if (type === 'inventory_items') {
-    loadExistingCategories();
-  } else if (type === 'inventory_stock') {
+  } else if (type === 'inventory') {
     loadExistingInventoryItems();
     loadExistingInventoryStock();
+    loadExistingSuppliers();
   }
   
   toast.success(`Selected: ${type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ')} import`);
@@ -891,87 +874,10 @@ async function validateImportData() {
         mappedRow.description = mappedRow.notes;
         delete mappedRow.notes;
       }
-    } else if (currentImportType === 'inventory_items') {
-      // Inventory items-specific validation
+    } else if (currentImportType === 'inventory') {
+      // Inventory import - handles items, stock, and suppliers
       
-      // Validate item name uniqueness
-      if (mappedRow.name) {
-        const itemName = String(mappedRow.name).trim();
-        
-        // Check for duplicates within the import
-        const duplicateInImport = csvData.slice(0, index).some((otherRow, otherIndex) => {
-          const otherMappedRow = {};
-          Object.keys(columnMapping).forEach(header => {
-            const field = columnMapping[header];
-            if (field) otherMappedRow[field] = otherRow[header];
-          });
-          return otherMappedRow.name && String(otherMappedRow.name).trim().toLowerCase() === itemName.toLowerCase();
-        });
-        
-        if (duplicateInImport) {
-          rowErrors.push(`Duplicate item name in CSV: "${itemName}"`);
-        }
-        
-        // Check against existing items (warning, not error - can have duplicates)
-        const existingItem = existingInventoryItems.find(i => i.name.toLowerCase() === itemName.toLowerCase());
-        if (existingItem) {
-          rowWarnings.push(`Item name already exists: "${itemName}"`);
-        }
-      }
-      
-      // Validate category lookup
-      if (mappedRow.category_name && mappedRow.category_name.trim()) {
-        const categoryName = String(mappedRow.category_name).trim();
-        const category = findCategoryByName(categoryName);
-        
-        if (!category) {
-          rowWarnings.push(`Category not found: "${categoryName}". Will create new category.`);
-          // Keep category_name for creation during import
-        } else {
-          // Replace category_name with category_id
-          mappedRow.category_id = category.id;
-          delete mappedRow.category_name;
-        }
-      }
-      
-      // Validate unit
-      if (mappedRow.unit && mappedRow.unit.trim()) {
-        const unit = String(mappedRow.unit).trim().toLowerCase();
-        // Common units: pieces, bottles, boxes, rolls, liters, gallons, pounds, kg, etc.
-        // No strict validation, just normalize
-        mappedRow.unit = unit;
-      } else {
-        mappedRow.unit = 'pieces'; // Default
-      }
-      
-      // Validate numeric fields
-      if (mappedRow.low_stock_threshold !== undefined && mappedRow.low_stock_threshold !== null && mappedRow.low_stock_threshold !== '') {
-        const threshold = Number(mappedRow.low_stock_threshold);
-        if (isNaN(threshold) || threshold < 0) {
-          rowWarnings.push(`Invalid low stock threshold: "${mappedRow.low_stock_threshold}". Will default to 5`);
-          mappedRow.low_stock_threshold = 5;
-        } else {
-          mappedRow.low_stock_threshold = Math.floor(threshold);
-        }
-      } else {
-        mappedRow.low_stock_threshold = 5; // Default
-      }
-      
-      if (mappedRow.reorder_quantity !== undefined && mappedRow.reorder_quantity !== null && mappedRow.reorder_quantity !== '') {
-        const qty = Number(mappedRow.reorder_quantity);
-        if (isNaN(qty) || qty < 0) {
-          rowWarnings.push(`Invalid reorder quantity: "${mappedRow.reorder_quantity}". Will default to 20`);
-          mappedRow.reorder_quantity = 20;
-        } else {
-          mappedRow.reorder_quantity = Math.floor(qty);
-        }
-      } else {
-        mappedRow.reorder_quantity = 20; // Default
-      }
-    } else if (currentImportType === 'inventory_stock') {
-      // Inventory stock-specific validation
-      
-      // Validate site lookup
+      // Validate site lookup (required)
       if (mappedRow.site_name) {
         const siteName = String(mappedRow.site_name).trim();
         const site = findSiteByName(siteName);
@@ -985,21 +891,40 @@ async function validateImportData() {
         }
       }
       
-      // Validate item lookup
-      if (mappedRow.item_name) {
-        const itemName = String(mappedRow.item_name).trim();
-        const item = findInventoryItemByName(itemName);
-        
-        if (!item) {
-          rowErrors.push(`Item not found: "${itemName}". Please create the item first or check the item name.`);
+      // Validate item_id if provided (optional - if provided, use existing item)
+      if (mappedRow.item_id !== undefined && mappedRow.item_id !== null && mappedRow.item_id !== '') {
+        const itemId = Number(mappedRow.item_id);
+        if (isNaN(itemId) || itemId <= 0) {
+          rowWarnings.push(`Invalid item_id: "${mappedRow.item_id}". Will create new item instead.`);
+          delete mappedRow.item_id;
         } else {
-          // Replace item_name with item_id
-          mappedRow.item_id = item.id;
-          delete mappedRow.item_name;
+          // Check if item exists
+          const existingItem = existingInventoryItems.find(i => i.id === itemId);
+          if (!existingItem) {
+            rowWarnings.push(`Item ID ${itemId} not found. Will create new item instead.`);
+            delete mappedRow.item_id;
+          }
         }
       }
       
-      // Validate quantity
+      // Validate item_name (required)
+      if (!mappedRow.item_name || String(mappedRow.item_name).trim() === '') {
+        rowErrors.push(`Missing required field: Item Name`);
+      } else {
+        const itemName = String(mappedRow.item_name).trim();
+        
+        // If item_id not provided, check if item with this name exists
+        if (!mappedRow.item_id) {
+          const existingItem = findInventoryItemByName(itemName);
+          if (existingItem) {
+            // Use existing item
+            mappedRow.item_id = existingItem.id;
+            rowWarnings.push(`Item "${itemName}" already exists. Will use existing item (ID: ${existingItem.id}).`);
+          }
+        }
+      }
+      
+      // Validate quantity (required)
       if (mappedRow.quantity !== undefined && mappedRow.quantity !== null && mappedRow.quantity !== '') {
         const qty = Number(mappedRow.quantity);
         if (isNaN(qty) || qty < 0) {
@@ -1009,6 +934,41 @@ async function validateImportData() {
         }
       } else {
         rowErrors.push(`Missing required field: Quantity`);
+      }
+      
+      // Validate units (optional, default: pieces)
+      if (mappedRow.units && mappedRow.units.trim()) {
+        mappedRow.units = String(mappedRow.units).trim().toLowerCase();
+      } else {
+        mappedRow.units = 'pieces'; // Default
+      }
+      
+      // Validate reorder_point (optional, default: 5)
+      if (mappedRow.reorder_point !== undefined && mappedRow.reorder_point !== null && mappedRow.reorder_point !== '') {
+        const reorderPoint = Number(mappedRow.reorder_point);
+        if (isNaN(reorderPoint) || reorderPoint < 0) {
+          rowWarnings.push(`Invalid reorder point: "${mappedRow.reorder_point}". Will default to 5`);
+          mappedRow.reorder_point = 5;
+        } else {
+          mappedRow.reorder_point = Math.floor(reorderPoint);
+        }
+      } else {
+        mappedRow.reorder_point = 5; // Default
+      }
+      
+      // Validate supplier (optional - will create if doesn't exist)
+      if (mappedRow.supplier && mappedRow.supplier.trim()) {
+        const supplierName = String(mappedRow.supplier).trim();
+        const supplier = findSupplierByName(supplierName);
+        
+        if (!supplier) {
+          // Will create supplier during import
+          rowWarnings.push(`Supplier "${supplierName}" not found. Will create new supplier.`);
+        } else {
+          // Store supplier_id for linking
+          mappedRow.supplier_id = supplier.id;
+        }
+        // Keep supplier name for creation if needed
       }
       
       // Check for duplicate site+item combination
@@ -1350,48 +1310,44 @@ async function startImport() {
         // Ensure created_by and user_id are always set
         item.created_by = currentUserId;
         item.user_id = currentUserId;
-      } else if (currentImportType === 'inventory_items') {
-        // Inventory items import
-        // Set defaults
-        if (!item.unit) item.unit = 'pieces';
-        if (!item.low_stock_threshold) item.low_stock_threshold = 5;
-        if (!item.reorder_quantity) item.reorder_quantity = 20;
+      } else if (currentImportType === 'inventory') {
+        // Combined inventory import - handles items, stock, and suppliers
+        // Store original data for later processing
+        const originalData = { ...item };
         
-        // CRITICAL: Set created_by for multi-tenancy!
-        item.created_by = currentUserId;
+        // Prepare inventory item data
+        const itemData = {
+          name: item.item_name,
+          unit: item.units || 'pieces',
+          low_stock_threshold: item.reorder_point || 5,
+          notes: item.description || null,
+          created_by: currentUserId
+        };
         
-        // Handle category creation if needed
-        if (item.category_name && !item.category_id) {
-          // Will create category during import
-        }
-        
-        // Clean up data
-        Object.keys(item).forEach(key => {
-          if (item[key] === '' || item[key] === null || item[key] === undefined) {
-            if (key !== 'category_id' && key !== 'created_by') {
-              delete item[key];
+        // Clean up item data
+        Object.keys(itemData).forEach(key => {
+          if (itemData[key] === '' || itemData[key] === null || itemData[key] === undefined) {
+            if (key !== 'created_by') {
+              delete itemData[key];
             }
-          } else if (typeof item[key] === 'string') {
-            item[key] = item[key].trim();
+          } else if (typeof itemData[key] === 'string') {
+            itemData[key] = itemData[key].trim();
           }
         });
         
-        // Ensure created_by is always set
-        item.created_by = currentUserId;
-      } else if (currentImportType === 'inventory_stock') {
-        // Inventory stock import
-        // No defaults needed - quantity is required
+        // Store item data and other fields for processing
+        item._itemData = itemData;
+        item._originalData = originalData;
+        item._supplierName = item.supplier;
         
-        // Clean up data
-        Object.keys(item).forEach(key => {
-          if (item[key] === '' || item[key] === null || item[key] === undefined) {
-            if (key !== 'site_id' && key !== 'item_id' && key !== 'quantity') {
-              delete item[key];
-            }
-          } else if (typeof item[key] === 'string') {
-            item[key] = item[key].trim();
-          }
-        });
+        // Keep only site_id, item_id, quantity for stock
+        const stockData = {
+          site_id: item.site_id,
+          item_id: item.item_id, // Will be set after item creation/update
+          quantity: item.quantity
+        };
+        
+        item._stockData = stockData;
       }
       
       return item;
@@ -1400,88 +1356,162 @@ async function startImport() {
     console.log(`📦 Batch data prepared:`, batchData.length, currentImportType);
     
     try {
-      // Handle inventory items with category creation
-      if (currentImportType === 'inventory_items') {
-        // First, create any missing categories
-        const categoryMap = new Map(); // category_name -> category_id
+      let data, error;
+      
+      if (currentImportType === 'inventory') {
+        // Combined inventory import - process items, stock, and suppliers
+        const supplierMap = new Map(); // supplier_name -> supplier_id
+        const itemMap = new Map(); // item_name -> item_id (for batch)
         
+        // Step 1: Create/update suppliers
         for (const item of batchData) {
-          if (item.category_name && !item.category_id) {
-            const categoryName = item.category_name.trim();
+          if (item._supplierName && item._supplierName.trim()) {
+            const supplierName = item._supplierName.trim();
             
-            // Check if we already created this category in this batch
-            if (!categoryMap.has(categoryName)) {
-              // Check if category exists
-              const existingCategory = await supabase
-                .from('inventory_categories')
-                .select('id')
-                .eq('name', categoryName)
-                .single();
+            if (!supplierMap.has(supplierName)) {
+              // Check if supplier exists
+              const existingSupplier = findSupplierByName(supplierName);
               
-              if (existingCategory.data) {
-                categoryMap.set(categoryName, existingCategory.data.id);
+              if (existingSupplier) {
+                supplierMap.set(supplierName, existingSupplier.id);
               } else {
-                // Create new category
-                const { data: newCategory, error: catError } = await supabase
-                  .from('inventory_categories')
-                  .insert({ name: categoryName })
+                // Create new supplier (active by default)
+                const { data: newSupplier, error: supError } = await supabase
+                  .from('suppliers')
+                  .insert({ 
+                    name: supplierName,
+                    is_active: true
+                  })
                   .select('id')
                   .single();
                 
-                if (catError) {
-                  console.error('Error creating category:', catError);
-                  // Continue without category
+                if (supError) {
+                  console.error('Error creating supplier:', supError);
                 } else {
-                  categoryMap.set(categoryName, newCategory.id);
+                  supplierMap.set(supplierName, newSupplier.id);
+                  console.log(`✅ Created supplier: ${supplierName}`);
                 }
               }
             }
-            
-            item.category_id = categoryMap.get(categoryName);
-            delete item.category_name;
           }
         }
-      }
-      
-      // Insert batch
-      let tableName;
-      let itemName;
-      let nameField;
-      
-      if (currentImportType === 'sites') {
-        tableName = 'sites';
-        itemName = 'sites';
-        nameField = 'name';
-      } else if (currentImportType === 'jobs') {
-        tableName = 'jobs';
-        itemName = 'jobs';
-        nameField = 'title';
-      } else if (currentImportType === 'inventory_items') {
-        tableName = 'inventory_items';
-        itemName = 'inventory items';
-        nameField = 'name';
-      } else if (currentImportType === 'inventory_stock') {
-        tableName = 'site_inventory';
-        itemName = 'stock entries';
-        nameField = 'quantity';
-      }
-      
-      console.log(`💾 Inserting batch:`, batchData.length, tableName);
-      
-      let data, error;
-      
-      if (currentImportType === 'inventory_stock') {
-        // Use upsert for inventory stock (update if exists, insert if not)
-        // Upsert on unique constraint: (site_id, item_id)
-        const { data: upsertData, error: upsertError } = await supabase
-          .from(tableName)
-          .upsert(batchData, { onConflict: 'site_id,item_id' })
+        
+        // Step 2: Create/update inventory items
+        for (const item of batchData) {
+          let itemId = item._originalData.item_id;
+          
+          if (!itemId) {
+            // Check if item exists by name
+            const existingItem = findInventoryItemByName(item._itemData.name);
+            if (existingItem) {
+              itemId = existingItem.id;
+            } else {
+              // Create new item
+              const { data: newItem, error: itemError } = await supabase
+                .from('inventory_items')
+                .insert(item._itemData)
+                .select('id')
+                .single();
+              
+              if (itemError) {
+                console.error('Error creating item:', itemError);
+                throw new Error(`Failed to create item: ${item._itemData.name}`);
+              } else {
+                itemId = newItem.id;
+                console.log(`✅ Created item: ${item._itemData.name} (ID: ${itemId})`);
+              }
+            }
+          } else {
+            // Update existing item
+            const { error: updateError } = await supabase
+              .from('inventory_items')
+              .update(item._itemData)
+              .eq('id', itemId);
+            
+            if (updateError) {
+              console.error('Error updating item:', updateError);
+            }
+          }
+          
+          // Store item_id for stock creation
+          item._stockData.item_id = itemId;
+          
+          // Step 3: Link supplier to item if supplier exists
+          if (item._supplierName && supplierMap.has(item._supplierName)) {
+            const supplierId = supplierMap.get(item._supplierName);
+            
+            // Check if link already exists
+            const { data: existingLink } = await supabase
+              .from('inventory_item_suppliers')
+              .select('id')
+              .eq('item_id', itemId)
+              .eq('supplier_id', supplierId)
+              .single();
+            
+            if (!existingLink) {
+              // Create supplier-item link
+              await supabase
+                .from('inventory_item_suppliers')
+                .insert({
+                  item_id: itemId,
+                  supplier_id: supplierId,
+                  is_primary: true // First supplier is primary
+                });
+            }
+          }
+        }
+        
+        // Step 4: Create/update site inventory (stock)
+        const stockDataArray = batchData.map(item => item._stockData);
+        
+        const { data: stockData, error: stockError } = await supabase
+          .from('site_inventory')
+          .upsert(stockDataArray, { onConflict: 'site_id,item_id' })
           .select();
         
-        data = upsertData;
-        error = upsertError;
+        data = stockData;
+        error = stockError;
+        
+        // Step 5: Create transaction records
+        if (!error && data && data.length > 0) {
+          const transactionRecords = data.map(stock => ({
+            item_id: stock.item_id,
+            site_id: stock.site_id,
+            transaction_type: 'restock',
+            quantity_change: stock.quantity,
+            quantity_before: 0,
+            quantity_after: stock.quantity,
+            user_id: currentUserId,
+            notes: 'Imported via CSV'
+          }));
+          
+          await supabase
+            .from('inventory_transactions')
+            .insert(transactionRecords)
+            .then(({ error: transError }) => {
+              if (transError) {
+                console.warn('Could not create transaction records:', transError);
+              }
+            });
+        }
       } else {
-        // Regular insert for other types
+        // Regular import for other types
+        let tableName;
+        let itemName;
+        let nameField;
+        
+        if (currentImportType === 'sites') {
+          tableName = 'sites';
+          itemName = 'sites';
+          nameField = 'name';
+        } else if (currentImportType === 'jobs') {
+          tableName = 'jobs';
+          itemName = 'jobs';
+          nameField = 'title';
+        }
+        
+        console.log(`💾 Inserting batch:`, batchData.length, tableName);
+        
         const { data: insertData, error: insertError } = await supabase
           .from(tableName)
           .insert(batchData)
@@ -1503,32 +1533,14 @@ async function startImport() {
           });
         });
       } else {
-        // For inventory stock, also create transaction records
-        if (currentImportType === 'inventory_stock' && data && data.length > 0) {
-          const transactionRecords = data.map(stock => ({
-            item_id: stock.item_id,
-            site_id: stock.site_id,
-            transaction_type: 'restock',
-            quantity_change: stock.quantity,
-            quantity_before: 0, // We don't know the previous quantity
-            quantity_after: stock.quantity,
-            user_id: currentUserId,
-            notes: 'Imported via CSV'
-          }));
-          
-          // Insert transaction records (ignore errors - transactions are optional)
-          await supabase
-            .from('inventory_transactions')
-            .insert(transactionRecords)
-            .then(({ error: transError }) => {
-              if (transError) {
-                console.warn('Could not create transaction records:', transError);
-              }
-            });
-        }
+        const itemName = currentImportType === 'sites' ? 'sites' : 
+                        currentImportType === 'jobs' ? 'jobs' : 
+                        currentImportType === 'inventory' ? 'inventory entries' : 'items';
+        const nameField = currentImportType === 'sites' ? 'name' : 
+                         currentImportType === 'jobs' ? 'title' : 
+                         'quantity';
         
-        console.log(`✅ Successfully imported ${data.length} ${itemName}:`, 
-          data.map(item => item[nameField] || `${item.site_id}/${item.item_id}`));
+        console.log(`✅ Successfully imported ${data.length} ${itemName}`);
         imported += data.length;
       }
       
@@ -1588,8 +1600,8 @@ async function renderImportResults(imported, failed, failedRows) {
     ${imported > 0 ? `
       <div class="flex justify-center mt-6">
         <button id="view-imported-items-btn" class="px-6 py-3 bg-nfgblue dark:bg-blue-900 text-white rounded-xl hover:bg-nfgdark transition inline-flex items-center gap-2 font-medium">
-          <i data-lucide="${currentImportType === 'sites' ? 'building-2' : currentImportType === 'jobs' ? 'clipboard-list' : currentImportType === 'inventory_items' ? 'package' : 'layers'}" class="w-5 h-5"></i>
-          View Imported ${currentImportType === 'sites' ? 'Sites' : currentImportType === 'jobs' ? 'Jobs' : currentImportType === 'inventory_items' ? 'Items' : 'Stock'}
+          <i data-lucide="${currentImportType === 'sites' ? 'building-2' : currentImportType === 'jobs' ? 'clipboard-list' : 'package'}" class="w-5 h-5"></i>
+          View Imported ${currentImportType === 'sites' ? 'Sites' : currentImportType === 'jobs' ? 'Jobs' : 'Inventory'}
         </button>
       </div>
     ` : ''}
@@ -1609,10 +1621,8 @@ async function renderImportResults(imported, failed, failedRows) {
       itemType = 'site(s)';
     } else if (currentImportType === 'jobs') {
       itemType = 'job(s)';
-    } else if (currentImportType === 'inventory_items') {
-      itemType = 'inventory item(s)';
-    } else if (currentImportType === 'inventory_stock') {
-      itemType = 'stock entr(ies)';
+    } else if (currentImportType === 'inventory') {
+      itemType = 'inventory entr(ies)';
     } else {
       itemType = 'item(s)';
     }
@@ -1627,7 +1637,7 @@ async function renderImportResults(imported, failed, failedRows) {
     if (window.location.pathname.includes('jobs.html') && typeof window.renderJobs === 'function') {
       await window.renderJobs();
     }
-  } else if (currentImportType === 'inventory_items' || currentImportType === 'inventory_stock') {
+  } else if (currentImportType === 'inventory') {
     // Refresh inventory if inventory page is open
     if (window.location.pathname.includes('inventory.html')) {
       // Trigger inventory refresh if available
@@ -1667,7 +1677,7 @@ async function renderImportResults(imported, failed, failedRows) {
           // Navigate to jobs page
           window.location.href = './jobs.html';
         }
-      } else if (currentImportType === 'inventory_items' || currentImportType === 'inventory_stock') {
+      } else if (currentImportType === 'inventory') {
         // Navigate to inventory page
         if (window.location.pathname.includes('inventory.html')) {
           // If already on inventory page, just refresh and close modal
@@ -1926,6 +1936,45 @@ async function loadExistingInventoryStock() {
     console.log(`Loaded ${existingInventoryStock.length} existing stock entries for validation`);
   } catch (error) {
     console.error('Exception loading existing inventory stock:', error);
+  }
+}
+
+// Find supplier by name (fuzzy matching)
+function findSupplierByName(supplierName) {
+  if (!supplierName || !existingSuppliers.length) return null;
+  
+  const normalized = String(supplierName).trim().toLowerCase();
+  
+  // Exact match first
+  let supplier = existingSuppliers.find(s => s.name.toLowerCase() === normalized);
+  if (supplier) return supplier;
+  
+  // Partial match
+  supplier = existingSuppliers.find(s => 
+    s.name.toLowerCase().includes(normalized) || 
+    normalized.includes(s.name.toLowerCase())
+  );
+  if (supplier) return supplier;
+  
+  return null;
+}
+
+// Load existing suppliers for inventory import
+async function loadExistingSuppliers() {
+  try {
+    const { data, error } = await supabase
+      .from('suppliers')
+      .select('id, name');
+    
+    if (error) {
+      console.error('Error loading existing suppliers:', error);
+      return;
+    }
+    
+    existingSuppliers = data || [];
+    console.log(`Loaded ${existingSuppliers.length} existing suppliers for validation`);
+  } catch (error) {
+    console.error('Exception loading existing suppliers:', error);
   }
 }
 
