@@ -1832,6 +1832,103 @@ function findWorkerByEmail(email) {
   return existingWorkers.find(w => w.email && w.email.toLowerCase() === normalized) || null;
 }
 
+// Find category by name (fuzzy matching)
+function findCategoryByName(categoryName) {
+  if (!categoryName || !existingCategories.length) return null;
+  
+  const normalized = String(categoryName).trim().toLowerCase();
+  
+  // Exact match first
+  let category = existingCategories.find(c => c.name.toLowerCase() === normalized);
+  if (category) return category;
+  
+  // Partial match
+  category = existingCategories.find(c => 
+    c.name.toLowerCase().includes(normalized) || 
+    normalized.includes(c.name.toLowerCase())
+  );
+  if (category) return category;
+  
+  return null;
+}
+
+// Find inventory item by name (fuzzy matching)
+function findInventoryItemByName(itemName) {
+  if (!itemName || !existingInventoryItems.length) return null;
+  
+  const normalized = String(itemName).trim().toLowerCase();
+  
+  // Exact match first
+  let item = existingInventoryItems.find(i => i.name.toLowerCase() === normalized);
+  if (item) return item;
+  
+  // Partial match
+  item = existingInventoryItems.find(i => 
+    i.name.toLowerCase().includes(normalized) || 
+    normalized.includes(i.name.toLowerCase())
+  );
+  if (item) return item;
+  
+  return null;
+}
+
+// Load existing categories for inventory items import
+async function loadExistingCategories() {
+  try {
+    const { data, error } = await supabase
+      .from('inventory_categories')
+      .select('id, name');
+    
+    if (error) {
+      console.error('Error loading existing categories:', error);
+      return;
+    }
+    
+    existingCategories = data || [];
+    console.log(`Loaded ${existingCategories.length} existing categories for validation`);
+  } catch (error) {
+    console.error('Exception loading existing categories:', error);
+  }
+}
+
+// Load existing inventory items for stock import
+async function loadExistingInventoryItems() {
+  try {
+    const { data, error } = await supabase
+      .from('inventory_items')
+      .select('id, name');
+    
+    if (error) {
+      console.error('Error loading existing inventory items:', error);
+      return;
+    }
+    
+    existingInventoryItems = data || [];
+    console.log(`Loaded ${existingInventoryItems.length} existing inventory items for validation`);
+  } catch (error) {
+    console.error('Exception loading existing inventory items:', error);
+  }
+}
+
+// Load existing inventory stock for duplicate checking
+async function loadExistingInventoryStock() {
+  try {
+    const { data, error } = await supabase
+      .from('site_inventory')
+      .select('site_id, item_id, quantity');
+    
+    if (error) {
+      console.error('Error loading existing inventory stock:', error);
+      return;
+    }
+    
+    existingInventoryStock = data || [];
+    console.log(`Loaded ${existingInventoryStock.length} existing stock entries for validation`);
+  } catch (error) {
+    console.error('Exception loading existing inventory stock:', error);
+  }
+}
+
 // Parse date from multiple formats
 function parseDate(dateString) {
   if (!dateString || String(dateString).trim() === '') return null;
