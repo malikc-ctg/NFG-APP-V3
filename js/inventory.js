@@ -1339,8 +1339,10 @@ async function createPOFromLowStockItems() {
     const itemMap = new Map();
     lowStockItems.forEach(item => {
       const existing = itemMap.get(item.item_id);
-      const needed = item.low_stock_threshold * 4 - item.quantity; // Suggested reorder quantity
-      const reorderQty = Math.max(needed, item.reorder_quantity || item.low_stock_threshold * 4 || 20);
+      // Calculate suggested reorder quantity: enough to reach threshold * 4, but at least reorder_quantity
+      const targetStock = item.low_stock_threshold * 4;
+      const needed = Math.max(targetStock - item.quantity, item.reorder_quantity || item.low_stock_threshold * 4 || 20);
+      const reorderQty = Math.max(needed, 20); // Minimum 20 units
       
       if (!existing || reorderQty > existing.reorder_quantity) {
         itemMap.set(item.item_id, {
@@ -2747,6 +2749,9 @@ async function init() {
   
   initInventoryViewTabs();
   fetchUsageTrends().catch((error) => console.warn('Usage trend preload failed:', error));
+  
+  // Initialize automated low stock checking
+  initLowStockChecking();
   
   // Initialize custom dropdowns after DOM is ready
   if (window.initCustomDropdowns) {
