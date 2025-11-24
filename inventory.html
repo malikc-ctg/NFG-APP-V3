@@ -1478,7 +1478,7 @@
             newQuantity = Math.max(0, (item.quantity || 0) + parseInt(amount, 10));
           }
           
-          // Update inventory_item_sites table (or inventory_with_categories view)
+          // Update site_inventory table
           // First, get the current user
           const { data: { user } } = await supabaseClient.auth.getUser();
           if (!user) {
