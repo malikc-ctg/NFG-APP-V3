@@ -1488,7 +1488,7 @@ async function loadTransfers(showToast = false) {
       const result = await supabase
         .from('inventory_transfers_with_details')
         .select('*')
-        .order('requested_at', { ascending: false });
+        .order('created_at', { ascending: false });
       data = result.data;
       error = result.error;
     } catch (viewError) {

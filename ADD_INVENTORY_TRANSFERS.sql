@@ -175,6 +175,7 @@ SELECT
   t.approved_at,
   t.completed_at,
   t.notes,
+  t.created_at,
   from_site.id AS from_site_id,
   from_site.name AS from_site_name,
   to_site.id AS to_site_id,
@@ -193,7 +194,7 @@ LEFT JOIN user_profiles approver ON t.approved_by = approver.id
 LEFT JOIN user_profiles completer ON t.completed_by = completer.id
 LEFT JOIN inventory_transfer_items ti ON t.id = ti.transfer_id
 GROUP BY t.id, t.transfer_number, t.status, t.requested_at, t.approved_at, t.completed_at,
-         t.notes, from_site.id, from_site.name, to_site.id, to_site.name,
+         t.notes, t.created_at, from_site.id, from_site.name, to_site.id, to_site.name,
          requester.full_name, approver.full_name, completer.full_name
 ORDER BY t.created_at DESC;
 
