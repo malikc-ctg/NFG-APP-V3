@@ -2103,11 +2103,120 @@ async function completeTransfer(transferId) {
 }
 
 // Initialize automated low stock checking
+// Send low stock email notifications
+async function sendLowStockEmailNotifications(lowStockItems) {
+  if (!lowStockItems || lowStockItems.length === 0) return;
+  
+  try {
+    // Get all admin and client users (they should receive low stock alerts)
+    const { data: users, error: usersError } = await supabase
+      .from('user_profiles')
+      .select('id, email, role')
+      .in('role', ['admin', 'client']);
+    
+    if (usersError || !users || users.length === 0) {
+      console.warn('[Low Stock] No admin/client users found for email notifications');
+      return;
+    }
+    
+    // Prepare low stock items summary
+    const itemsSummary = lowStockItems.slice(0, 10).map(item => {
+      const siteName = item.site_name || sites.find(s => s.id === item.site_id)?.name || 'Unknown Site';
+      const itemName = item.item_name || item.name || 'Unknown Item';
+      return `• ${itemName} at ${siteName}: ${item.quantity} ${item.unit || ''} remaining`;
+    }).join('\n');
+    
+    const moreItems = lowStockItems.length > 10 ? `\n... and ${lowStockItems.length - 10} more item(s)` : '';
+    
+    // Send email to each admin/client
+    for (const user of users) {
+      if (!user.email) continue;
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('send-notification-email', {
+          body: {
+            notification: {
+              user_id: user.id,
+              type: 'low_stock',
+              title: `Low Stock Alert: ${lowStockItems.length} Item(s) Need Restocking`,
+              message: `${lowStockItems.length} inventory item(s) are running low on stock and need to be restocked.\n\n${itemsSummary}${moreItems}\n\nPlease review your inventory and create purchase orders as needed.`,
+              link: `${window.location.origin}/inventory.html`,
+              created_at: new Date().toISOString()
+            },
+            user_email: user.email
+          }
+        });
+        
+        if (error) {
+          console.error(`[Low Stock] Failed to send email to ${user.email}:`, error);
+        } else {
+          console.log(`[Low Stock] Email notification sent to ${user.email}`);
+        }
+      } catch (error) {
+        console.error(`[Low Stock] Error sending email to ${user.email}:`, error);
+      }
+    }
+  } catch (error) {
+    console.error('[Low Stock] Error sending email notifications:', error);
+  }
+}
+
+// Send low stock push notifications
+async function sendLowStockPushNotifications(lowStockItems) {
+  if (!lowStockItems || lowStockItems.length === 0) return;
+  
+  try {
+    // Get all admin and client users
+    const { data: users, error: usersError } = await supabase
+      .from('user_profiles')
+      .select('id, email, role')
+      .in('role', ['admin', 'client']);
+    
+    if (usersError || !users || users.length === 0) {
+      console.warn('[Low Stock] No admin/client users found for push notifications');
+      return;
+    }
+    
+    // Send push notification to each user
+    for (const user of users) {
+      try {
+        const { data, error } = await supabase.functions.invoke('send-push-notification', {
+          body: {
+            user_id: user.id,
+            title: 'Low Stock Alert',
+            body: `${lowStockItems.length} item(s) are running low on stock`,
+            data: {
+              type: 'low_stock',
+              count: lowStockItems.length,
+              link: '/inventory.html'
+            }
+          }
+        });
+        
+        if (error) {
+          console.error(`[Low Stock] Failed to send push to user ${user.id}:`, error);
+        } else {
+          console.log(`[Low Stock] Push notification sent to user ${user.id}`);
+        }
+      } catch (error) {
+        console.error(`[Low Stock] Error sending push to user ${user.id}:`, error);
+      }
+    }
+  } catch (error) {
+    console.error('[Low Stock] Error sending push notifications:', error);
+  }
+}
+
 function initLowStockChecking() {
   // Check immediately on load
-  checkLowStock().then(result => {
+  checkLowStock().then(async result => {
     if (result.alerted && result.count > 0) {
       console.log(`🔔 Low stock detected: ${result.count} items`);
+      
+      // Send email and push notifications
+      await sendLowStockEmailNotifications(result.items);
+      await sendLowStockPushNotifications(result.items);
+      
       // Update low stock alerts banner if on inventory page
       if (window.location.pathname.includes('inventory.html')) {
         renderInventory().catch(err => console.error('Error refreshing inventory:', err));
@@ -2116,19 +2225,23 @@ function initLowStockChecking() {
   });
   
   // Check every 6 hours
-  setInterval(() => {
-    checkLowStock().then(result => {
-      if (result.alerted && result.count > 0) {
-        console.log(`🔔 Low stock detected: ${result.count} items`);
-        // Show notification if not on inventory page
-        if (!window.location.pathname.includes('inventory.html')) {
-          toast.info(`${result.count} item(s) are running low on stock. Click to view.`, 'Low Stock Alert', {
-            duration: 10000,
-            onClick: () => window.location.href = './inventory.html'
-          });
-        }
+  setInterval(async () => {
+    const result = await checkLowStock();
+    if (result.alerted && result.count > 0) {
+      console.log(`🔔 Low stock detected: ${result.count} items`);
+      
+      // Send email and push notifications
+      await sendLowStockEmailNotifications(result.items);
+      await sendLowStockPushNotifications(result.items);
+      
+      // Show toast notification if not on inventory page
+      if (!window.location.pathname.includes('inventory.html')) {
+        toast.info(`${result.count} item(s) are running low on stock. Click to view.`, 'Low Stock Alert', {
+          duration: 10000,
+          onClick: () => window.location.href = './inventory.html'
+        });
       }
-    });
+    }
   }, 6 * 60 * 60 * 1000); // 6 hours
 }
 
