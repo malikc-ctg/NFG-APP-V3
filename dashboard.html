@@ -282,18 +282,34 @@
       </section>
 
       <!-- Inventory Overview -->
-      <section class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl shadow-nfg p-4">
-        <div class="flex items-center justify-between gap-2 mb-3">
-          <div class="flex items-center gap-2 md:gap-3">
-            <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-sm md:text-base">Inventory</h3>
+      <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl shadow-nfg p-4">
+          <div class="flex items-center justify-between gap-2 mb-3">
+            <div class="flex items-center gap-2 md:gap-3">
+              <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-sm md:text-base">Inventory</h3>
+              <button onclick="window.location.href='inventory.html'" class="text-xs md:text-sm px-2 md:px-3 py-1 md:py-1.5 rounded-lg md:rounded-xl border border-nfgray hover:bg-nfglight whitespace-nowrap">View All</button>
+            </div>
+            <button onclick="window.location.href='inventory.html'" class="inline-flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 rounded-lg md:rounded-xl bg-nfgblue text-white hover:bg-nfgdark text-xs md:text-sm whitespace-nowrap">
+              <i data-lucide="plus" class="w-3 h-3 md:w-4 md:h-4"></i> <span class="hidden sm:inline">Add </span>Item
+            </button>
+          </div>
+          <div id="inventory-summary" class="space-y-2">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Low Stock Widget -->
+        <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl shadow-nfg p-4">
+          <div class="flex items-center justify-between gap-2 mb-3">
+            <div class="flex items-center gap-2">
+              <i data-lucide="alert-triangle" class="w-4 h-4 text-orange-600 dark:text-orange-400"></i>
+              <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-sm md:text-base">Low Stock Items</h3>
+            </div>
             <button onclick="window.location.href='inventory.html'" class="text-xs md:text-sm px-2 md:px-3 py-1 md:py-1.5 rounded-lg md:rounded-xl border border-nfgray hover:bg-nfglight whitespace-nowrap">View All</button>
           </div>
-          <button onclick="window.location.href='inventory.html'" class="inline-flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 rounded-lg md:rounded-xl bg-nfgblue text-white hover:bg-nfgdark text-xs md:text-sm whitespace-nowrap">
-            <i data-lucide="plus" class="w-3 h-3 md:w-4 md:h-4"></i> <span class="hidden sm:inline">Add </span>Item
-          </button>
-        </div>
-        <div id="inventory-summary" class="space-y-2">
-          <!-- Rendered by JS -->
+          <div id="low-stock-widget" class="space-y-2">
+            <div class="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">Loading...</div>
+          </div>
         </div>
       </section>
       </div>
