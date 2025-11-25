@@ -6,6 +6,24 @@
 -- ============================================
 
 -- ============================================
+-- IMPORTANT: Prerequisites
+-- ============================================
+-- Before running this, ensure you have:
+-- 1. Run ADD_ADVANCED_INVENTORY_FEATURES.sql (Phase 5) for warehouse_locations
+-- 2. Run ADD_INVENTORY_COST_TRACKING.sql (Phase 1) for cost fields
+-- 3. Base inventory tables (inventory_items, site_inventory, etc.)
+-- ============================================
+
+-- Drop views if they exist (for idempotency)
+DROP VIEW IF EXISTS inventory_valuation_report CASCADE;
+DROP VIEW IF EXISTS stock_movement_trends CASCADE;
+DROP VIEW IF EXISTS inventory_abc_analysis CASCADE;
+DROP VIEW IF EXISTS expiring_items_detailed_report CASCADE;
+DROP VIEW IF EXISTS usage_forecast CASCADE;
+DROP VIEW IF EXISTS cost_analysis_report CASCADE;
+DROP FUNCTION IF EXISTS get_inventory_summary_stats() CASCADE;
+
+-- ============================================
 -- 1. Inventory Valuation Report
 -- ============================================
 CREATE OR REPLACE VIEW inventory_valuation_report AS
@@ -29,6 +47,9 @@ LEFT JOIN inventory_categories c ON i.category_id = c.id
 LEFT JOIN warehouse_locations wl ON si.warehouse_location_id = wl.id
 WHERE si.quantity > 0
 ORDER BY s.name, c.name, i.name;
+
+-- Handle case where warehouse_locations table doesn't exist yet
+-- (if Phase 5 not run, this view will still work without warehouse location info)
 
 -- ============================================
 -- 2. Stock Movement Trends (Monthly)
