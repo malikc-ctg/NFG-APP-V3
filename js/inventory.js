@@ -507,8 +507,41 @@ document.getElementById('create-po-from-low-stock-btn')?.addEventListener('click
   await createPOFromLowStockItems();
 });
 
+// Load warehouse locations for a site
+async function loadWarehouseLocations(siteId) {
+  try {
+    const { data, error } = await supabase
+      .from('warehouse_locations')
+      .select('*')
+      .eq('site_id', siteId)
+      .eq('is_active', true)
+      .order('name');
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error loading warehouse locations:', error);
+    return [];
+  }
+}
+
+// Populate warehouse location dropdown
+async function populateWarehouseLocations(selectElement, siteId) {
+  if (!selectElement) return;
+  
+  const locations = await loadWarehouseLocations(siteId);
+  const currentValue = selectElement.value;
+  
+  selectElement.innerHTML = '<option value="">Select location</option>' +
+    locations.map(loc => `<option value="${loc.id}">${sanitizeText(loc.name)}</option>`).join('');
+  
+  if (currentValue) {
+    selectElement.value = currentValue;
+  }
+}
+
 // Manage stock (open modal)
-window.manageStock = function(siteId, itemId, itemName, currentQty) {
+window.manageStock = async function(siteId, itemId, itemName, currentQty) {
   document.getElementById('stock-site-id').value = siteId;
   document.getElementById('stock-item-id').value = itemId;
   document.getElementById('stock-item-name').textContent = itemName;
@@ -517,11 +550,38 @@ window.manageStock = function(siteId, itemId, itemName, currentQty) {
   document.getElementById('stock-notes').value = '';
   document.getElementById('stock-action').value = 'restock';
   
+  // Clear batch tracking fields
+  document.getElementById('stock-batch-number').value = '';
+  document.getElementById('stock-lot-number').value = '';
+  document.getElementById('stock-expiration-date').value = '';
+  document.getElementById('stock-manufactured-date').value = '';
+  document.getElementById('stock-warehouse-location').value = '';
+  document.getElementById('stock-bin-location').value = '';
+  
+  // Load warehouse locations
+  await populateWarehouseLocations(document.getElementById('stock-warehouse-location'), siteId);
+  
+  // Update batch tracking visibility
+  updateBatchTrackingVisibility();
+  
   const modal = document.getElementById('stockModal');
   modal.classList.remove('hidden');
   modal.classList.add('flex');
   if (window.lucide) lucide.createIcons();
 };
+
+// Show/hide batch tracking section based on action
+function updateBatchTrackingVisibility() {
+  const action = document.getElementById('stock-action')?.value;
+  const batchSection = document.getElementById('batch-tracking-section');
+  if (batchSection) {
+    if (action === 'restock') {
+      batchSection.classList.remove('hidden');
+    } else {
+      batchSection.classList.add('hidden');
+    }
+  }
+}
 
 // Inventory history view state
 let historyViewInitialized = false;
@@ -3159,6 +3219,9 @@ document.getElementById('export-history-btn')?.addEventListener('click', () => {
   toast.success('History exported to CSV', 'Success');
 });
 
+// Add event listener for stock action change to show/hide batch tracking
+document.getElementById('stock-action')?.addEventListener('change', updateBatchTrackingVisibility);
+
 // Handle stock form submission
 document.getElementById('stock-form')?.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -3199,6 +3262,14 @@ document.getElementById('stock-form')?.addEventListener('submit', async (e) => {
       quantityChange = quantity - currentQty;
     }
     
+    // Get batch tracking data (only for restock)
+    const batchNumber = action === 'restock' ? formData.get('batch_number')?.trim() : null;
+    const lotNumber = action === 'restock' ? formData.get('lot_number')?.trim() : null;
+    const expirationDate = action === 'restock' ? formData.get('expiration_date') || null : null;
+    const manufacturedDate = action === 'restock' ? formData.get('manufactured_date') || null : null;
+    const warehouseLocationId = action === 'restock' ? (formData.get('warehouse_location_id') || null) : null;
+    const binLocation = action === 'restock' ? formData.get('bin_location')?.trim() || null : null;
+    
     // Update or insert site inventory
     const { error: upsertError } = await supabase
       .from('site_inventory')
@@ -3207,12 +3278,44 @@ document.getElementById('stock-form')?.addEventListener('submit', async (e) => {
         item_id: itemId,
         quantity: newQty,
         updated_at: new Date().toISOString(),
+        bin_location: binLocation,
+        warehouse_location_id: warehouseLocationId ? parseInt(warehouseLocationId, 10) : null,
         ...(action === 'restock' ? { last_restocked_at: new Date().toISOString() } : {})
       }, {
         onConflict: 'site_id,item_id'
       });
     
     if (upsertError) throw upsertError;
+    
+    // Create batch record if batch number provided (for restock)
+    if (action === 'restock' && batchNumber) {
+      try {
+        const { error: batchError } = await supabase
+          .from('inventory_batches')
+          .upsert({
+            item_id: itemId,
+            site_id: siteId,
+            batch_number: batchNumber,
+            lot_number: lotNumber || null,
+            quantity: quantity,
+            expiration_date: expirationDate || null,
+            manufactured_date: manufacturedDate || null,
+            bin_location: binLocation,
+            warehouse_location_id: warehouseLocationId ? parseInt(warehouseLocationId, 10) : null,
+            received_date: new Date().toISOString()
+          }, {
+            onConflict: 'site_id,item_id,batch_number'
+          });
+        
+        if (batchError) {
+          console.warn('Failed to create batch record:', batchError);
+          // Don't fail the whole operation if batch creation fails
+        }
+      } catch (batchErr) {
+        console.warn('Error creating batch:', batchErr);
+        // Continue even if batch creation fails
+      }
+    }
     
     // Record transaction
     const { error: transactionError } = await supabase
@@ -3256,8 +3359,22 @@ document.getElementById('add-item-btn')?.addEventListener('click', async () => {
   document.getElementById('item-reorder').value = '20';
   document.getElementById('item-notes').value = '';
   
+  // Clear advanced fields
+  document.getElementById('item-batch-number').value = '';
+  document.getElementById('item-lot-number').value = '';
+  document.getElementById('item-expiration-date').value = '';
+  document.getElementById('item-manufactured-date').value = '';
+  document.getElementById('item-warehouse-location').value = '';
+  document.getElementById('item-bin-location').value = '';
+  
   // Load categories
   await loadCategoryDropdown();
+  
+  // Load warehouse locations for all sites (if any site is selected in filter)
+  const currentSiteFilter = document.getElementById('site-filter')?.value;
+  if (currentSiteFilter && currentSiteFilter !== 'all') {
+    await populateWarehouseLocations(document.getElementById('item-warehouse-location'), parseInt(currentSiteFilter, 10));
+  }
   
   const modal = document.getElementById('itemModal');
   modal.classList.remove('hidden');

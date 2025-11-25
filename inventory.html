@@ -1119,6 +1119,45 @@
           </div>
         </div>
 
+        <!-- Advanced Features Section -->
+        <div class="border-t border-nfgray pt-4 mt-4">
+          <h5 class="text-sm font-semibold text-nfgblue dark:text-blue-400 mb-3">Advanced Features (Optional)</h5>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-1.5">Batch Number</label>
+              <input type="text" id="item-batch-number" name="batch_number" placeholder="e.g., BATCH-2025-001" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+              <p class="text-xs text-gray-500 mt-1">Track items by batch/lot</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1.5">Lot Number</label>
+              <input type="text" id="item-lot-number" name="lot_number" placeholder="e.g., LOT-12345" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1.5">Expiration Date</label>
+              <input type="date" id="item-expiration-date" name="expiration_date" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+              <p class="text-xs text-gray-500 mt-1">For items with expiration dates</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1.5">Manufactured Date</label>
+              <input type="date" id="item-manufactured-date" name="manufactured_date" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1.5">Warehouse Location</label>
+              <select id="item-warehouse-location" name="warehouse_location_id" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none">
+                <option value="">Select location</option>
+                <!-- Populated by JS -->
+              </select>
+              <p class="text-xs text-gray-500 mt-1">Location within site</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1.5">Bin Location</label>
+              <input type="text" id="item-bin-location" name="bin_location" placeholder="e.g., A-12-B" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+              <p class="text-xs text-gray-500 mt-1">Specific shelf/bin identifier</p>
+            </div>
+          </div>
+        </div>
+
         <div>
           <label class="block text-sm font-medium mb-1.5">Notes</label>
           <textarea id="item-notes" name="notes" rows="2" placeholder="Additional information..." class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none resize-none"></textarea>
@@ -1174,6 +1213,41 @@
         <div>
           <label class="block text-sm font-medium mb-1.5">Quantity <span class="text-red-500">*</span></label>
           <input type="number" id="stock-quantity" name="quantity" min="1" required class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+        </div>
+
+        <!-- Batch/Lot Tracking (for restocking) -->
+        <div id="batch-tracking-section" class="hidden border-t border-nfgray pt-4">
+          <h5 class="text-sm font-semibold text-nfgblue dark:text-blue-400 mb-3">Batch/Lot Information</h5>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-1.5">Batch Number</label>
+              <input type="text" id="stock-batch-number" name="batch_number" placeholder="e.g., BATCH-2025-001" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1.5">Lot Number</label>
+              <input type="text" id="stock-lot-number" name="lot_number" placeholder="e.g., LOT-12345" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1.5">Expiration Date</label>
+              <input type="date" id="stock-expiration-date" name="expiration_date" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1.5">Manufactured Date</label>
+              <input type="date" id="stock-manufactured-date" name="manufactured_date" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1.5">Warehouse Location</label>
+              <select id="stock-warehouse-location" name="warehouse_location_id" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none">
+                <option value="">Select location</option>
+                <!-- Populated by JS -->
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1.5">Bin Location</label>
+              <input type="text" id="stock-bin-location" name="bin_location" placeholder="e.g., A-12-B" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+            </div>
+          </div>
         </div>
 
         <div>
