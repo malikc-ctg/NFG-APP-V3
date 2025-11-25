@@ -107,11 +107,11 @@ SELECT
   b.item_id,
   i.name AS item_name,
   i.unit,
-  DATEDIFF('day', CURRENT_DATE, b.expiration_date) AS days_until_expiration,
+  (b.expiration_date - CURRENT_DATE) AS days_until_expiration,
   CASE 
     WHEN b.expiration_date < CURRENT_DATE THEN 'expired'
-    WHEN DATEDIFF('day', CURRENT_DATE, b.expiration_date) <= 30 THEN 'expiring_soon'
-    WHEN DATEDIFF('day', CURRENT_DATE, b.expiration_date) <= 90 THEN 'expiring_soon'
+    WHEN (b.expiration_date - CURRENT_DATE) <= 30 THEN 'expiring_soon'
+    WHEN (b.expiration_date - CURRENT_DATE) <= 90 THEN 'expiring_soon'
     ELSE 'ok'
   END AS expiration_status
 FROM inventory_batches b
@@ -130,6 +130,7 @@ RETURNS INTEGER AS $$
   FROM inventory_batches
   WHERE expiration_date IS NOT NULL
     AND expiration_date <= CURRENT_DATE + (days_ahead || ' days')::INTERVAL
+    AND expiration_date >= CURRENT_DATE
     AND quantity > 0;
 $$ LANGUAGE SQL;
 
