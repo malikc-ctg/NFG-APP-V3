@@ -3,6 +3,8 @@
 // Phase 6: Advanced Inventory Reporting
 // ============================================
 
+import { supabase } from './supabase.js';
+
 let inventoryReportsInitialized = false;
 let inventoryReportsData = {
   summary: null,
@@ -356,7 +358,14 @@ async function loadUsageForecast() {
   }
 }
 
-// Export functions
+// Export functions to window for onclick handlers
+window.exportInventoryValuationReport = exportInventoryValuationReport;
+window.exportABCAnalysis = exportABCAnalysis;
+window.exportExpiringItems = exportExpiringItems;
+window.exportCostAnalysis = exportCostAnalysis;
+window.exportUsageForecast = exportUsageForecast;
+window.initInventoryReports = initInventoryReports;
+
 function exportInventoryValuationReport() {
   if (!inventoryReportsData.valuation || inventoryReportsData.valuation.length === 0) {
     toast?.error('No data to export', 'Error') || alert('No data to export');
@@ -381,7 +390,11 @@ function exportInventoryValuationReport() {
 
 function exportABCAnalysis() {
   if (!inventoryReportsData.abcAnalysis || inventoryReportsData.abcAnalysis.length === 0) {
-    toast?.error('No data to export', 'Error') || alert('No data to export');
+    if (typeof toast !== 'undefined' && toast.error) {
+      toast.error('No data to export', 'Error');
+    } else {
+      alert('No data to export');
+    }
     return;
   }
   
@@ -400,7 +413,11 @@ function exportABCAnalysis() {
 
 function exportExpiringItems() {
   if (!inventoryReportsData.expiringItems || inventoryReportsData.expiringItems.length === 0) {
-    toast?.error('No data to export', 'Error') || alert('No data to export');
+    if (typeof toast !== 'undefined' && toast.error) {
+      toast.error('No data to export', 'Error');
+    } else {
+      alert('No data to export');
+    }
     return;
   }
   
@@ -422,7 +439,11 @@ function exportExpiringItems() {
 
 function exportCostAnalysis() {
   if (!inventoryReportsData.costAnalysis || inventoryReportsData.costAnalysis.length === 0) {
-    toast?.error('No data to export', 'Error') || alert('No data to export');
+    if (typeof toast !== 'undefined' && toast.error) {
+      toast.error('No data to export', 'Error');
+    } else {
+      alert('No data to export');
+    }
     return;
   }
   
@@ -445,7 +466,11 @@ function exportCostAnalysis() {
 
 function exportUsageForecast() {
   if (!inventoryReportsData.usageForecast || inventoryReportsData.usageForecast.length === 0) {
-    toast?.error('No data to export', 'Error') || alert('No data to export');
+    if (typeof toast !== 'undefined' && toast.error) {
+      toast.error('No data to export', 'Error');
+    } else {
+      alert('No data to export');
+    }
     return;
   }
   
@@ -479,7 +504,11 @@ function exportToCSV(filename, headers, rows) {
   link.click();
   document.body.removeChild(link);
   
-  toast?.success('Report exported successfully', 'Success') || console.log('Report exported');
+  if (typeof toast !== 'undefined' && toast.success) {
+    toast.success('Report exported successfully', 'Success');
+  } else {
+    console.log('Report exported');
+  }
 }
 
 // Helper function to format currency

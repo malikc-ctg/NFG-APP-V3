@@ -1470,7 +1470,7 @@
 
   <!-- PWA Installation -->
   <script type="module" src="./js/pwa.js"></script>
-  <script src="./js/inventory-reports.js"></script>
+  <script type="module" src="./js/inventory-reports.js"></script>
 
   <!-- ========== SCRIPTS ========== -->
   <script>
@@ -2574,13 +2574,6 @@
             if (typeof initInventoryReports === 'function') {
               initInventoryReports();
             }
-            loadTeamData();
-            // Subscribe to realtime updates when Team tab is opened
-            subscribeToJobChanges();
-            // Start timers when Team tab is opened
-            setTimeout(() => {
-              startActiveJobTimers();
-            }, 500);
           } else {
             // Stop timers and unsubscribe when switching away from Team tab
             stopActiveJobTimers();
