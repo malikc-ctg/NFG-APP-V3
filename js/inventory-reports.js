@@ -368,7 +368,11 @@ window.initInventoryReports = initInventoryReports;
 
 function exportInventoryValuationReport() {
   if (!inventoryReportsData.valuation || inventoryReportsData.valuation.length === 0) {
-    toast?.error('No data to export', 'Error') || alert('No data to export');
+    if (typeof toast !== 'undefined' && toast.error) {
+      toast.error('No data to export', 'Error');
+    } else {
+      alert('No data to export');
+    }
     return;
   }
   
