@@ -2741,6 +2741,194 @@ async function updatePurchaseOrderPaymentStatus(poId) {
   }
 }
 
+// ===== Purchase Order Approval Functions =====
+
+// Check if user can approve POs
+async function canUserApprovePOs() {
+  if (!currentUserProfile) return false;
+  return ['admin', 'manager', 'super_admin'].includes(currentUserProfile.role);
+}
+
+// Approve a purchase order
+async function approvePurchaseOrder(poId) {
+  if (!poId) return;
+  
+  const canApprove = await canUserApprovePOs();
+  if (!canApprove) {
+    toast.error('You do not have permission to approve purchase orders', 'Error');
+    return;
+  }
+  
+  const confirmed = await showConfirm(
+    'Are you sure you want to approve this purchase order? It will be moved to pending status.',
+    'Approve Purchase Order'
+  );
+  
+  if (!confirmed) return;
+  
+  try {
+    const { error } = await supabase
+      .from('purchase_orders')
+      .update({
+        status: 'pending',
+        approved_by: currentUser.id,
+        approved_at: new Date().toISOString(),
+        rejected_by: null,
+        rejected_at: null,
+        rejection_reason: null
+      })
+      .eq('id', poId);
+    
+    if (error) throw error;
+    
+    toast.success('Purchase order approved', 'Success');
+    await loadPurchaseOrders();
+    
+    // Reload PO detail if modal is open
+    if (currentPODetailId === poId) {
+      const updated = purchaseOrdersList.find(po => po.id === poId);
+      if (updated) {
+        // Fetch with approval info
+        const { data: poData } = await supabase
+          .from('purchase_orders')
+          .select(`
+            *,
+            suppliers(*),
+            sites(*),
+            approved_by_profile:user_profiles!purchase_orders_approved_by_fkey(id, full_name, email),
+            rejected_by_profile:user_profiles!purchase_orders_rejected_by_fkey(id, full_name, email)
+          `)
+          .eq('id', poId)
+          .single();
+        
+        if (poData) {
+          poData.approved_by_name = poData.approved_by_profile?.full_name;
+          poData.rejected_by_name = poData.rejected_by_profile?.full_name;
+          renderPODetailSummary(poData);
+        }
+      }
+    }
+    
+    // Send notification to creator
+    const po = purchaseOrdersList.find(p => p.id === poId);
+    if (po && po.ordered_by) {
+      await sendPOApprovalNotification(poId, 'approved', po.ordered_by);
+    }
+  } catch (error) {
+    console.error('Failed to approve purchase order:', error);
+    toast.error(error.message || 'Failed to approve purchase order', 'Error');
+  }
+}
+
+// Reject a purchase order
+async function rejectPurchaseOrder(poId) {
+  if (!poId) return;
+  
+  const canApprove = await canUserApprovePOs();
+  if (!canApprove) {
+    toast.error('You do not have permission to reject purchase orders', 'Error');
+    return;
+  }
+  
+  const reason = await showPrompt(
+    'Please provide a reason for rejecting this purchase order:',
+    'Reject Purchase Order',
+    'text',
+    ''
+  );
+  
+  if (reason === null) return; // User cancelled
+  
+  try {
+    const { error } = await supabase
+      .from('purchase_orders')
+      .update({
+        status: 'rejected',
+        rejected_by: currentUser.id,
+        rejected_at: new Date().toISOString(),
+        rejection_reason: reason || 'No reason provided',
+        approved_by: null,
+        approved_at: null
+      })
+      .eq('id', poId);
+    
+    if (error) throw error;
+    
+    toast.success('Purchase order rejected', 'Success');
+    await loadPurchaseOrders();
+    
+    // Reload PO detail if modal is open
+    if (currentPODetailId === poId) {
+      const updated = purchaseOrdersList.find(po => po.id === poId);
+      if (updated) {
+        // Fetch with rejection info
+        const { data: poData } = await supabase
+          .from('purchase_orders')
+          .select(`
+            *,
+            suppliers(*),
+            sites(*),
+            approved_by_profile:user_profiles!purchase_orders_approved_by_fkey(id, full_name, email),
+            rejected_by_profile:user_profiles!purchase_orders_rejected_by_fkey(id, full_name, email)
+          `)
+          .eq('id', poId)
+          .single();
+        
+        if (poData) {
+          poData.approved_by_name = poData.approved_by_profile?.full_name;
+          poData.rejected_by_name = poData.rejected_by_profile?.full_name;
+          renderPODetailSummary(poData);
+        }
+      }
+    }
+    
+    // Send notification to creator
+    const po = purchaseOrdersList.find(p => p.id === poId);
+    if (po && po.ordered_by) {
+      await sendPOApprovalNotification(poId, 'rejected', po.ordered_by, reason);
+    }
+  } catch (error) {
+    console.error('Failed to reject purchase order:', error);
+    toast.error(error.message || 'Failed to reject purchase order', 'Error');
+  }
+}
+
+// Send approval/rejection notification
+async function sendPOApprovalNotification(poId, action, userId, reason = null) {
+  try {
+    const po = purchaseOrdersList.find(p => p.id === poId);
+    if (!po) return;
+    
+    const notification = {
+      user_id: userId,
+      type: action === 'approved' ? 'po_approved' : 'po_rejected',
+      title: action === 'approved' ? 'Purchase Order Approved' : 'Purchase Order Rejected',
+      message: action === 'approved' 
+        ? `Purchase order ${po.po_number} has been approved and is now pending.`
+        : `Purchase order ${po.po_number} has been rejected.${reason ? ` Reason: ${reason}` : ''}`,
+      data: {
+        po_id: poId,
+        po_number: po.po_number,
+        action,
+        reason
+      }
+    };
+    
+    // Create notification in database
+    await supabase.from('notifications').insert(notification);
+    
+    // Send push notification if available
+    if (typeof sendPushNotification === 'function') {
+      await sendPushNotification(userId, notification.title, notification.message, {
+        url: `/inventory.html?po=${poId}`
+      });
+    }
+  } catch (error) {
+    console.error('Failed to send approval notification:', error);
+    // Don't fail the approval/rejection if notification fails
+  }
+}
+
 // ===== Purchase Order Detail (Payments & Documents) =====
 
 async function openPODetailModal(poId) {
@@ -3550,6 +3738,8 @@ window.cancelPurchaseOrder = (poId) => cancelPurchaseOrder(poId);
 window.emailPurchaseOrder = (poId) => emailPurchaseOrder(poId);
 window.openPODetailModal = (poId) => openPODetailModal(poId);
 window.downloadPurchaseOrderDocument = (docId) => downloadPurchaseOrderDocument(docId);
+window.approvePurchaseOrder = (poId) => approvePurchaseOrder(poId);
+window.rejectPurchaseOrder = (poId) => rejectPurchaseOrder(poId);
 
 // Expose transfer functions globally
 window.openTransferModal = () => openTransferModal();
