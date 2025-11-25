@@ -1481,10 +1481,41 @@ async function checkLowStock() {
 // Load transfers
 async function loadTransfers(showToast = false) {
   try {
-    const { data, error } = await supabase
-      .from('inventory_transfers_with_details')
-      .select('*')
-      .order('created_at', { ascending: false });
+    // Try to load from view first, fallback to direct table query if view doesn't exist
+    let data, error;
+    
+    try {
+      const result = await supabase
+        .from('inventory_transfers_with_details')
+        .select('*')
+        .order('requested_at', { ascending: false });
+      data = result.data;
+      error = result.error;
+    } catch (viewError) {
+      // View might not exist, fallback to direct table query
+      console.warn('[Transfers] View not available, using direct table query:', viewError);
+      const result = await supabase
+        .from('inventory_transfers')
+        .select(`
+          *,
+          from_site:sites!inventory_transfers_from_site_id_fkey(name),
+          to_site:sites!inventory_transfers_to_site_id_fkey(name),
+          transfer_items:inventory_transfer_items(count)
+        `)
+        .order('requested_at', { ascending: false });
+      data = result.data;
+      error = result.error;
+      
+      // Transform data to match view structure
+      if (data && !error) {
+        data = data.map(transfer => ({
+          ...transfer,
+          from_site_name: transfer.from_site?.name || 'Unknown',
+          to_site_name: transfer.to_site?.name || 'Unknown',
+          total_items: transfer.transfer_items?.length || 0
+        }));
+      }
+    }
     
     if (error) throw error;
     

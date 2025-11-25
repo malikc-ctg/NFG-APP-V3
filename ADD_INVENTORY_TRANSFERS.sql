@@ -209,6 +209,10 @@ GRANT USAGE, SELECT ON SEQUENCE inventory_transfers_id_seq TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE inventory_transfer_items_id_seq TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE transfer_number_seq TO authenticated;
 
+-- Grant permissions on view
+GRANT SELECT ON inventory_transfers_with_details TO authenticated;
+GRANT SELECT ON inventory_transfers_with_details TO anon;
+
 -- ============================================
 -- Success Message
 -- ============================================
