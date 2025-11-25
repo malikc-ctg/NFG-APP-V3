@@ -166,7 +166,10 @@ $$ LANGUAGE plpgsql;
 -- ============================================
 -- View: Transfers with Details
 -- ============================================
-CREATE OR REPLACE VIEW inventory_transfers_with_details AS
+-- Drop view first if it exists (to avoid column rename issues)
+DROP VIEW IF EXISTS inventory_transfers_with_details CASCADE;
+
+CREATE VIEW inventory_transfers_with_details AS
 SELECT 
   t.id,
   t.transfer_number,
