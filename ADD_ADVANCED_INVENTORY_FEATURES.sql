@@ -163,16 +163,20 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Drop triggers if they exist before creating
+DROP TRIGGER IF EXISTS update_inventory_batches_updated_at ON inventory_batches;
 CREATE TRIGGER update_inventory_batches_updated_at
   BEFORE UPDATE ON inventory_batches
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_warehouse_locations_updated_at ON warehouse_locations;
 CREATE TRIGGER update_warehouse_locations_updated_at
   BEFORE UPDATE ON warehouse_locations
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_inventory_serial_numbers_updated_at ON inventory_serial_numbers;
 CREATE TRIGGER update_inventory_serial_numbers_updated_at
   BEFORE UPDATE ON inventory_serial_numbers
   FOR EACH ROW
