@@ -1229,6 +1229,8 @@ async function loadPurchaseOrders(showToast = false) {
         *,
         suppliers:suppliers(name, contact_name, email),
         sites:sites(name),
+        approved_by_profile:user_profiles!purchase_orders_approved_by_fkey(id, full_name, email),
+        rejected_by_profile:user_profiles!purchase_orders_rejected_by_fkey(id, full_name, email),
         purchase_order_items:purchase_order_items(
           id,
           item_id,
@@ -1239,6 +1241,14 @@ async function loadPurchaseOrders(showToast = false) {
         )
       `)
       .order('created_at', { ascending: false });
+    
+    // Add approval names to each PO
+    if (data) {
+      data.forEach(po => {
+        po.approved_by_name = po.approved_by_profile?.full_name;
+        po.rejected_by_name = po.rejected_by_profile?.full_name;
+      });
+    }
     
     if (error) throw error;
     
@@ -1258,7 +1268,7 @@ async function loadPurchaseOrders(showToast = false) {
 }
 
 function updatePurchaseOrderStats() {
-  const pending = purchaseOrdersList.filter(po => ['draft', 'pending', 'ordered'].includes(po.status)).length;
+  const pending = purchaseOrdersList.filter(po => ['draft', 'pending_approval', 'pending', 'ordered'].includes(po.status)).length;
   const received = purchaseOrdersList.filter(po => po.status === 'received').length;
   const openItems = purchaseOrdersList
     .filter(po => ['pending', 'ordered'].includes(po.status))
@@ -1345,10 +1355,12 @@ function renderPurchaseOrdersTable() {
 function getPOStatusBadge(status) {
   const map = {
     draft: { label: 'Draft', className: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300' },
-    pending: { label: 'Pending', className: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
+    pending_approval: { label: 'Pending Approval', className: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
+    pending: { label: 'Pending', className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
     ordered: { label: 'Ordered', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
     received: { label: 'Received', className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-    cancelled: { label: 'Cancelled', className: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' }
+    cancelled: { label: 'Cancelled', className: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' },
+    rejected: { label: 'Rejected', className: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' }
   };
   return map[status] || map.pending;
 }
@@ -2462,7 +2474,7 @@ async function submitPurchaseOrder(e) {
         site_id: siteId,
         expected_date: expectedDate,
         notes,
-        status: 'pending',
+        status: 'pending_approval', // Changed to require approval
         ordered_by: currentUser?.id || null,
         total_items: totalItems,
         total_cost: totalCost
@@ -2731,15 +2743,37 @@ async function updatePurchaseOrderPaymentStatus(poId) {
 
 // ===== Purchase Order Detail (Payments & Documents) =====
 
-function openPODetailModal(poId) {
+async function openPODetailModal(poId) {
   const modal = document.getElementById('poDetailModal');
   if (!modal) return;
   currentPODetailId = poId;
-  const po = purchaseOrdersList.find(p => p.id === poId);
+  let po = purchaseOrdersList.find(p => p.id === poId);
   if (!po) {
     toast.error('Purchase order not found');
     return;
   }
+  
+  // Fetch full PO with approval info if not already loaded
+  if (!po.approved_by_profile && !po.rejected_by_profile) {
+    const { data: poData } = await supabase
+      .from('purchase_orders')
+      .select(`
+        *,
+        suppliers(*),
+        sites(*),
+        approved_by_profile:user_profiles!purchase_orders_approved_by_fkey(id, full_name, email),
+        rejected_by_profile:user_profiles!purchase_orders_rejected_by_fkey(id, full_name, email)
+      `)
+      .eq('id', poId)
+      .single();
+    
+    if (poData) {
+      poData.approved_by_name = poData.approved_by_profile?.full_name;
+      poData.rejected_by_name = poData.rejected_by_profile?.full_name;
+      po = poData;
+    }
+  }
+  
   renderPODetailSummary(po);
   togglePaymentForm(false);
   toggleDocForm(false);
@@ -2759,6 +2793,50 @@ function renderPODetailSummary(po) {
   const balance = Math.max(0, (po.total_cost || 0) - totalPaid);
   document.getElementById('po-detail-paid').textContent = formatCurrency(totalPaid);
   document.getElementById('po-detail-balance').textContent = formatCurrency(balance);
+  
+  // Show/hide approval buttons based on status and user role
+  const canApprove = currentUserProfile && ['admin', 'manager', 'super_admin'].includes(currentUserProfile.role);
+  const approvalSection = document.getElementById('po-approval-section');
+  const approveBtn = document.getElementById('po-approve-btn');
+  const rejectBtn = document.getElementById('po-reject-btn');
+  const approvalInfo = document.getElementById('po-approval-info');
+  
+  if (approvalSection) {
+    if (po.status === 'pending_approval' && canApprove) {
+      approvalSection.classList.remove('hidden');
+      if (approveBtn) approveBtn.classList.remove('hidden');
+      if (rejectBtn) rejectBtn.classList.remove('hidden');
+      if (approvalInfo) approvalInfo.classList.add('hidden');
+    } else if (po.approved_by || po.rejected_by) {
+      approvalSection.classList.remove('hidden');
+      if (approveBtn) approveBtn.classList.add('hidden');
+      if (rejectBtn) rejectBtn.classList.add('hidden');
+      if (approvalInfo) {
+        approvalInfo.classList.remove('hidden');
+        if (po.approved_by) {
+          approvalInfo.innerHTML = `
+            <div class="flex items-center gap-2 text-green-600 dark:text-green-400">
+              <i data-lucide="check-circle" class="w-4 h-4"></i>
+              <span class="text-sm">Approved by ${po.approved_by_name || 'Manager'} on ${po.approved_at ? new Date(po.approved_at).toLocaleDateString() : '—'}</span>
+            </div>
+          `;
+        } else if (po.rejected_by) {
+          approvalInfo.innerHTML = `
+            <div class="flex items-center gap-2 text-red-600 dark:text-red-400">
+              <i data-lucide="x-circle" class="w-4 h-4"></i>
+              <div class="text-sm">
+                <span>Rejected by ${po.rejected_by_name || 'Manager'} on ${po.rejected_at ? new Date(po.rejected_at).toLocaleDateString() : '—'}</span>
+                ${po.rejection_reason ? `<p class="text-xs text-gray-600 dark:text-gray-400 mt-1">Reason: ${sanitizeText(po.rejection_reason)}</p>` : ''}
+              </div>
+            </div>
+          `;
+        }
+        if (window.lucide) lucide.createIcons();
+      }
+    } else {
+      approvalSection.classList.add('hidden');
+    }
+  }
 }
 
 async function loadPurchaseOrderPayments(poId) {
