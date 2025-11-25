@@ -336,6 +336,136 @@
     </div>
   </div>
 
+  <!-- Transfer Modal -->
+  <div id="transferModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-[70]">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-3xl">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between">
+        <h4 class="text-nfgblue dark:text-blue-400 font-semibold">New Transfer Request</h4>
+        <button data-action="close-modal" data-target="transferModal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="transfer-form" class="p-4 space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">From Site <span class="text-red-500">*</span></label>
+            <select id="transfer-from-site" required class="w-full border border-nfgray rounded-xl px-3 py-2 focus:ring-2 focus:ring-nfgblue outline-none">
+              <option value="">Select source site</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">To Site <span class="text-red-500">*</span></label>
+            <select id="transfer-to-site" required class="w-full border border-nfgray rounded-xl px-3 py-2 focus:ring-2 focus:ring-nfgblue outline-none">
+              <option value="">Select destination site</option>
+            </select>
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium mb-1.5">Notes</label>
+            <textarea id="transfer-notes" rows="2" class="w-full border border-nfgray rounded-xl px-3 py-2 focus:ring-2 focus:ring-nfgblue outline-none"></textarea>
+          </div>
+        </div>
+
+        <div class="border border-nfgray rounded-xl overflow-hidden">
+          <div class="flex items-center justify-between px-3 py-2 border-b border-nfgray bg-nfglight/40 dark:bg-gray-700/40">
+            <h5 class="font-medium text-nfgblue dark:text-blue-400">Items to Transfer</h5>
+            <button type="button" id="add-transfer-item-row" class="inline-flex items-center gap-1 px-3 py-1 rounded-lg border border-nfgray hover:bg-nfglight text-sm">
+              <i data-lucide="plus" class="w-4 h-4"></i> Add Item
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-nfglight/40 border-b border-nfgray">
+                <tr>
+                  <th class="px-3 py-2 text-left font-medium text-nfgblue dark:text-blue-400">Item</th>
+                  <th class="px-3 py-2 text-center font-medium text-nfgblue dark:text-blue-400">Available</th>
+                  <th class="px-3 py-2 text-center font-medium text-nfgblue dark:text-blue-400">Quantity</th>
+                  <th class="px-3 py-2 text-center font-medium text-nfgblue dark:text-blue-400"></th>
+                </tr>
+              </thead>
+              <tbody id="transfer-items-table">
+                <tr data-placeholder="true">
+                  <td colspan="4" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No items added yet</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2">
+          <button type="button" data-action="close-modal" data-target="transferModal" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600">
+            Cancel
+          </button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
+            Create Transfer Request
+          </button>
+        </div>
+        <div id="transfer-form-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Transfer Detail Modal -->
+  <div id="transferDetailModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-[75]">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-3xl">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between">
+        <div>
+          <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Transfer</p>
+          <h4 id="transfer-detail-number" class="text-nfgblue dark:text-blue-400 font-semibold text-lg">Transfer Details</h4>
+        </div>
+        <button data-action="close-modal" data-target="transferDetailModal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-4 space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="border border-nfgray rounded-xl p-3">
+            <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">From Site</p>
+            <p id="transfer-detail-from" class="font-semibold text-nfgblue dark:text-blue-400">—</p>
+          </div>
+          <div class="border border-nfgray rounded-xl p-3">
+            <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">To Site</p>
+            <p id="transfer-detail-to" class="font-semibold text-nfgblue dark:text-blue-400">—</p>
+          </div>
+          <div class="border border-nfgray rounded-xl p-3">
+            <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">Status</p>
+            <p id="transfer-detail-status" class="font-semibold">—</p>
+          </div>
+          <div class="border border-nfgray rounded-xl p-3">
+            <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">Requested</p>
+            <p id="transfer-detail-requested" class="font-semibold">—</p>
+          </div>
+        </div>
+        
+        <div id="transfer-detail-notes" class="border border-nfgray rounded-xl p-3 hidden">
+          <p class="text-xs text-gray-500 dark:text-gray-400 uppercase mb-1">Notes</p>
+          <p id="transfer-detail-notes-text" class="text-sm"></p>
+        </div>
+
+        <div class="border border-nfgray rounded-xl overflow-hidden">
+          <div class="px-3 py-2 border-b border-nfgray bg-nfglight/40 dark:bg-gray-700/40">
+            <h5 class="font-medium text-nfgblue dark:text-blue-400">Transfer Items</h5>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-nfglight/40 border-b border-nfgray">
+                <tr>
+                  <th class="px-3 py-2 text-left font-medium text-nfgblue dark:text-blue-400">Item</th>
+                  <th class="px-3 py-2 text-center font-medium text-nfgblue dark:text-blue-400">Requested</th>
+                  <th class="px-3 py-2 text-center font-medium text-nfgblue dark:text-blue-400">Transferred</th>
+                </tr>
+              </thead>
+              <tbody id="transfer-detail-items">
+                <tr>
+                  <td colspan="3" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">Loading...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   
   <!-- ========== SIDEBAR ========== -->
   <aside id="sidebar" class="w-64 shrink-0 bg-white dark:bg-gray-800 border-r border-nfgray hidden md:flex md:flex-col transition-all">

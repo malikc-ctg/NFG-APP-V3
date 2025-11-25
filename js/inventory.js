@@ -1622,6 +1622,455 @@ function filterTransfers(status) {
   renderTransfers();
 }
 
+// Open transfer modal
+async function openTransferModal() {
+  const modal = document.getElementById('transferModal');
+  if (!modal) return;
+  
+  // Reset form
+  document.getElementById('transfer-form')?.reset();
+  document.getElementById('transfer-form-error')?.classList.add('hidden');
+  
+  // Clear items table
+  const itemsTable = document.getElementById('transfer-items-table');
+  if (itemsTable) {
+    itemsTable.innerHTML = '<tr data-placeholder="true"><td colspan="4" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No items added yet</td></tr>';
+  }
+  
+  // Populate site dropdowns
+  if (!sites.length) {
+    await fetchSites();
+  }
+  
+  const fromSiteSelect = document.getElementById('transfer-from-site');
+  const toSiteSelect = document.getElementById('transfer-to-site');
+  
+  if (fromSiteSelect) {
+    fromSiteSelect.innerHTML = '<option value="">Select source site</option>' + 
+      sites.map(site => `<option value="${site.id}">${sanitizeText(site.name)}</option>`).join('');
+  }
+  
+  if (toSiteSelect) {
+    toSiteSelect.innerHTML = '<option value="">Select destination site</option>' + 
+      sites.map(site => `<option value="${site.id}">${sanitizeText(site.name)}</option>`).join('');
+  }
+  
+  // Add event listener for from site change to load available inventory
+  fromSiteSelect?.addEventListener('change', async (e) => {
+    const siteId = parseInt(e.target.value, 10);
+    if (siteId) {
+      await loadAvailableInventoryForTransfer(siteId);
+    }
+  });
+  
+  // Add item row button
+  document.getElementById('add-transfer-item-row')?.addEventListener('click', addTransferItemRow);
+  
+  // Show modal
+  modal.classList.remove('hidden');
+  
+  if (window.lucide) lucide.createIcons();
+}
+
+// Load available inventory for a site (for transfer)
+async function loadAvailableInventoryForTransfer(siteId) {
+  try {
+    const { data, error } = await supabase
+      .from('site_inventory')
+      .select(`
+        quantity,
+        inventory_items:inventory_items(
+          id,
+          name,
+          unit,
+          category_id,
+          inventory_categories:inventory_categories(name)
+        )
+      `)
+      .eq('site_id', siteId)
+      .gt('quantity', 0)
+      .order('inventory_items(name)');
+    
+    if (error) throw error;
+    
+    // Store for use in transfer item rows
+    window.availableInventoryForTransfer = (data || []).map(item => ({
+      item_id: item.inventory_items.id,
+      name: item.inventory_items.name,
+      unit: item.inventory_items.unit,
+      category: item.inventory_items.inventory_categories?.name || 'Uncategorized',
+      available: item.quantity
+    }));
+    
+    // Update existing item rows with available quantities
+    updateTransferItemRowsAvailability();
+  } catch (error) {
+    console.error('Failed to load available inventory:', error);
+    toast.error('Failed to load available inventory', 'Error');
+  }
+}
+
+// Update transfer item rows with available quantities
+function updateTransferItemRowsAvailability() {
+  const rows = document.querySelectorAll('#transfer-items-table tr[data-item-id]');
+  rows.forEach(row => {
+    const itemId = parseInt(row.dataset.itemId, 10);
+    const availableCell = row.querySelector('.transfer-available');
+    const item = window.availableInventoryForTransfer?.find(i => i.item_id === itemId);
+    
+    if (availableCell && item) {
+      availableCell.textContent = `${item.available} ${item.unit}`;
+    }
+  });
+}
+
+// Add transfer item row
+function addTransferItemRow() {
+  const table = document.getElementById('transfer-items-table');
+  if (!table) return;
+  
+  // Remove placeholder
+  const placeholder = table.querySelector('tr[data-placeholder="true"]');
+  if (placeholder) placeholder.remove();
+  
+  const rowId = Date.now();
+  const availableItems = window.availableInventoryForTransfer || [];
+  
+  const row = document.createElement('tr');
+  row.dataset.rowId = rowId;
+  row.innerHTML = `
+    <td class="px-3 py-2">
+      <select class="transfer-item-select w-full border border-nfgray rounded-lg px-2 py-1.5 text-sm" data-row-id="${rowId}">
+        <option value="">Select item</option>
+        ${availableItems.map(item => 
+          `<option value="${item.item_id}" data-available="${item.available}" data-unit="${item.unit}">${sanitizeText(item.name)} (${item.unit})</option>`
+        ).join('')}
+      </select>
+    </td>
+    <td class="px-3 py-2 text-center">
+      <span class="transfer-available text-sm text-gray-500 dark:text-gray-400">—</span>
+    </td>
+    <td class="px-3 py-2">
+      <input type="number" min="1" step="1" class="transfer-item-qty w-full border border-nfgray rounded-lg px-2 py-1.5 text-sm" placeholder="Qty" data-row-id="${rowId}" />
+    </td>
+    <td class="px-3 py-2 text-center">
+      <button type="button" onclick="removeTransferItemRow(${rowId})" class="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400">
+        <i data-lucide="trash-2" class="w-4 h-4"></i>
+      </button>
+    </td>
+  `;
+  
+  table.appendChild(row);
+  
+  // Add change listener to update available quantity
+  const select = row.querySelector('.transfer-item-select');
+  select?.addEventListener('change', (e) => {
+    const option = e.target.selectedOptions[0];
+    const available = parseInt(option?.dataset.available || '0', 10);
+    const unit = option?.dataset.unit || '';
+    const availableCell = row.querySelector('.transfer-available');
+    if (availableCell) {
+      availableCell.textContent = `${available} ${unit}`;
+    }
+    // Set max on quantity input
+    const qtyInput = row.querySelector('.transfer-item-qty');
+    if (qtyInput) {
+      qtyInput.max = available;
+    }
+  });
+  
+  if (window.lucide) lucide.createIcons();
+}
+
+// Remove transfer item row
+window.removeTransferItemRow = function(rowId) {
+  const row = document.querySelector(`#transfer-items-table tr[data-row-id="${rowId}"]`);
+  if (row) {
+    row.remove();
+    
+    // Show placeholder if no rows left
+    const table = document.getElementById('transfer-items-table');
+    if (table && !table.querySelector('tr[data-row-id]')) {
+      table.innerHTML = '<tr data-placeholder="true"><td colspan="4" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No items added yet</td></tr>';
+    }
+  }
+};
+
+// Submit transfer request
+async function submitTransferRequest(e) {
+  if (e) e.preventDefault();
+  
+  const errorEl = document.getElementById('transfer-form-error');
+  if (errorEl) errorEl.classList.add('hidden');
+  
+  const fromSiteId = parseInt(document.getElementById('transfer-from-site')?.value, 10);
+  const toSiteId = parseInt(document.getElementById('transfer-to-site')?.value, 10);
+  const notes = document.getElementById('transfer-notes')?.value.trim() || null;
+  
+  if (!fromSiteId || !toSiteId) {
+    if (errorEl) {
+      errorEl.textContent = 'Both source and destination sites are required';
+      errorEl.classList.remove('hidden');
+    }
+    return;
+  }
+  
+  if (fromSiteId === toSiteId) {
+    if (errorEl) {
+      errorEl.textContent = 'Source and destination sites must be different';
+      errorEl.classList.remove('hidden');
+    }
+    return;
+  }
+  
+  // Collect items
+  const itemsTable = document.getElementById('transfer-items-table');
+  const rows = itemsTable?.querySelectorAll('tr[data-row-id]') || [];
+  const items = [];
+  
+  for (const row of rows) {
+    const itemId = parseInt(row.querySelector('.transfer-item-select')?.value, 10);
+    const quantity = parseInt(row.querySelector('.transfer-item-qty')?.value, 10);
+    
+    if (itemId && quantity > 0) {
+      items.push({ item_id: itemId, quantity_requested: quantity });
+    }
+  }
+  
+  if (items.length === 0) {
+    if (errorEl) {
+      errorEl.textContent = 'Add at least one item to transfer';
+      errorEl.classList.remove('hidden');
+    }
+    return;
+  }
+  
+  // Get current user
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    toast.error('User not authenticated', 'Error');
+    return;
+  }
+  
+  try {
+    // Create transfer
+    const { data: transfer, error: transferError } = await supabase
+      .from('inventory_transfers')
+      .insert({
+        from_site_id: fromSiteId,
+        to_site_id: toSiteId,
+        requested_by: user.id,
+        status: 'pending',
+        notes: notes
+      })
+      .select()
+      .single();
+    
+    if (transferError) throw transferError;
+    
+    // Create transfer items
+    const transferItems = items.map(item => ({
+      transfer_id: transfer.id,
+      item_id: item.item_id,
+      quantity_requested: item.quantity_requested,
+      quantity_transferred: 0
+    }));
+    
+    const { error: itemsError } = await supabase
+      .from('inventory_transfer_items')
+      .insert(transferItems);
+    
+    if (itemsError) throw itemsError;
+    
+    toast.success('Transfer request created successfully', 'Success');
+    
+    // Close modal
+    document.getElementById('transferModal')?.classList.add('hidden');
+    
+    // Refresh transfers list
+    await loadTransfers(true);
+  } catch (error) {
+    console.error('Failed to create transfer:', error);
+    if (errorEl) {
+      errorEl.textContent = error.message || 'Failed to create transfer request';
+      errorEl.classList.remove('hidden');
+    }
+    toast.error('Failed to create transfer request', 'Error');
+  }
+}
+
+// View transfer details
+async function viewTransferDetails(transferId) {
+  const modal = document.getElementById('transferDetailModal');
+  if (!modal) return;
+  
+  try {
+    // Get transfer with items
+    const { data: transfer, error: transferError } = await supabase
+      .from('inventory_transfers_with_details')
+      .select('*')
+      .eq('id', transferId)
+      .single();
+    
+    if (transferError) throw transferError;
+    
+    // Get transfer items
+    const { data: items, error: itemsError } = await supabase
+      .from('inventory_transfer_items')
+      .select(`
+        *,
+        inventory_items:inventory_items(
+          id,
+          name,
+          unit
+        )
+      `)
+      .eq('transfer_id', transferId);
+    
+    if (itemsError) throw itemsError;
+    
+    // Populate modal
+    document.getElementById('transfer-detail-number').textContent = transfer.transfer_number || '—';
+    document.getElementById('transfer-detail-from').textContent = transfer.from_site_name || '—';
+    document.getElementById('transfer-detail-to').textContent = transfer.to_site_name || '—';
+    
+    const statusConfig = {
+      'pending': { color: 'text-orange-600 dark:text-orange-400', label: 'Pending' },
+      'approved': { color: 'text-blue-600 dark:text-blue-400', label: 'Approved' },
+      'in-transit': { color: 'text-purple-600 dark:text-purple-400', label: 'In Transit' },
+      'completed': { color: 'text-green-600 dark:text-green-400', label: 'Completed' },
+      'cancelled': { color: 'text-red-600 dark:text-red-400', label: 'Cancelled' }
+    };
+    
+    const status = statusConfig[transfer.status] || statusConfig['pending'];
+    const statusEl = document.getElementById('transfer-detail-status');
+    statusEl.textContent = status.label;
+    statusEl.className = `font-semibold ${status.color}`;
+    
+    document.getElementById('transfer-detail-requested').textContent = 
+      transfer.requested_at ? new Date(transfer.requested_at).toLocaleString() : '—';
+    
+    // Notes
+    if (transfer.notes) {
+      document.getElementById('transfer-detail-notes').classList.remove('hidden');
+      document.getElementById('transfer-detail-notes-text').textContent = transfer.notes;
+    } else {
+      document.getElementById('transfer-detail-notes').classList.add('hidden');
+    }
+    
+    // Items
+    const itemsTable = document.getElementById('transfer-detail-items');
+    if (itemsTable) {
+      if (items && items.length > 0) {
+        itemsTable.innerHTML = items.map(item => `
+          <tr>
+            <td class="px-3 py-2">${sanitizeText(item.inventory_items?.name || 'Unknown')}</td>
+            <td class="px-3 py-2 text-center">${item.quantity_requested} ${item.inventory_items?.unit || ''}</td>
+            <td class="px-3 py-2 text-center">${item.quantity_transferred || 0} ${item.inventory_items?.unit || ''}</td>
+          </tr>
+        `).join('');
+      } else {
+        itemsTable.innerHTML = '<tr><td colspan="3" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No items</td></tr>';
+      }
+    }
+    
+    // Show modal
+    modal.classList.remove('hidden');
+  } catch (error) {
+    console.error('Failed to load transfer details:', error);
+    toast.error('Failed to load transfer details', 'Error');
+  }
+}
+
+// Approve transfer
+async function approveTransfer(transferId) {
+  if (!confirm('Are you sure you want to approve this transfer?')) return;
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    toast.error('User not authenticated', 'Error');
+    return;
+  }
+  
+  try {
+    const { error } = await supabase
+      .from('inventory_transfers')
+      .update({
+        status: 'approved',
+        approved_by: user.id,
+        approved_at: new Date().toISOString()
+      })
+      .eq('id', transferId);
+    
+    if (error) throw error;
+    
+    toast.success('Transfer approved successfully', 'Success');
+    await loadTransfers(true);
+  } catch (error) {
+    console.error('Failed to approve transfer:', error);
+    toast.error('Failed to approve transfer', 'Error');
+  }
+}
+
+// Cancel transfer
+async function cancelTransfer(transferId) {
+  if (!confirm('Are you sure you want to cancel this transfer?')) return;
+  
+  try {
+    const { error } = await supabase
+      .from('inventory_transfers')
+      .update({
+        status: 'cancelled'
+      })
+      .eq('id', transferId);
+    
+    if (error) throw error;
+    
+    toast.success('Transfer cancelled successfully', 'Success');
+    await loadTransfers(true);
+  } catch (error) {
+    console.error('Failed to cancel transfer:', error);
+    toast.error('Failed to cancel transfer', 'Error');
+  }
+}
+
+// Complete transfer (process the actual inventory movement)
+async function completeTransfer(transferId) {
+  if (!confirm('Are you sure you want to complete this transfer? This will move inventory between sites.')) return;
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    toast.error('User not authenticated', 'Error');
+    return;
+  }
+  
+  try {
+    // Call the SQL function to process the transfer
+    const { data, error } = await supabase.rpc('process_inventory_transfer', {
+      transfer_id_param: transferId
+    });
+    
+    if (error) throw error;
+    
+    // Update transfer with completer info
+    await supabase
+      .from('inventory_transfers')
+      .update({
+        completed_by: user.id
+      })
+      .eq('id', transferId);
+    
+    toast.success('Transfer completed successfully', 'Success');
+    
+    // Refresh data
+    await loadTransfers(true);
+    await renderInventory(); // Refresh inventory view
+  } catch (error) {
+    console.error('Failed to complete transfer:', error);
+    toast.error(error.message || 'Failed to complete transfer', 'Error');
+  }
+}
+
 // Initialize automated low stock checking
 function initLowStockChecking() {
   // Check immediately on load
@@ -2746,6 +3195,7 @@ document.getElementById('po-supplier')?.addEventListener('change', updatePOItemS
 document.getElementById('add-po-item-row')?.addEventListener('click', () => addPOItemRow());
 document.getElementById('supplier-form')?.addEventListener('submit', saveSupplier);
 document.getElementById('po-form')?.addEventListener('submit', submitPurchaseOrder);
+document.getElementById('transfer-form')?.addEventListener('submit', submitTransferRequest);
 document.getElementById('add-po-payment-btn')?.addEventListener('click', () => togglePaymentForm(true));
 document.getElementById('cancel-po-payment')?.addEventListener('click', () => togglePaymentForm(false));
 document.getElementById('po-payment-form')?.addEventListener('submit', addPurchaseOrderPayment);
@@ -2761,6 +3211,13 @@ window.cancelPurchaseOrder = (poId) => cancelPurchaseOrder(poId);
 window.emailPurchaseOrder = (poId) => emailPurchaseOrder(poId);
 window.openPODetailModal = (poId) => openPODetailModal(poId);
 window.downloadPurchaseOrderDocument = (docId) => downloadPurchaseOrderDocument(docId);
+
+// Expose transfer functions globally
+window.openTransferModal = () => openTransferModal();
+window.viewTransferDetails = (transferId) => viewTransferDetails(transferId);
+window.approveTransfer = (transferId) => approveTransfer(transferId);
+window.cancelTransfer = (transferId) => cancelTransfer(transferId);
+window.completeTransfer = (transferId) => completeTransfer(transferId);
 
 // Site filter - use event delegation to handle custom dropdown changes
 document.addEventListener('change', (e) => {
