@@ -783,7 +783,6 @@ async function initDashboard() {
   
   // Fetch and display upcoming bookings
   await fetchInventorySummary()
-  await fetchLowStockWidget()
   
   // Attach form submit handler
   const form = document.getElementById('add-site-form')
