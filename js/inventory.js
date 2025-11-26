@@ -844,6 +844,7 @@ function attachHistoryFilterListeners() {
     historyFilters = {
       type: 'all',
       site: 'all',
+      jobId: 'all',
       search: '',
       dateFrom: '',
       dateTo: ''
