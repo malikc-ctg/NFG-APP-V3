@@ -584,6 +584,73 @@ function updateBatchTrackingVisibility() {
   }
 }
 
+// Load jobs for a specific site
+async function loadJobsForSite(siteId) {
+  if (!siteId) return [];
+  
+  try {
+    const { data, error } = await supabase
+      .from('jobs')
+      .select('id, title, status, scheduled_date, job_type')
+      .eq('site_id', siteId)
+      .in('status', ['pending', 'in-progress']) // Only active jobs
+      .order('scheduled_date', { ascending: false })
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('[Inventory] Failed to load jobs:', error);
+    return [];
+  }
+}
+
+// Populate job selector dropdown
+async function populateJobSelector(siteId) {
+  const select = document.getElementById('stock-job-id');
+  if (!select) return;
+  
+  // Show loading state
+  select.innerHTML = '<option value="">Loading jobs...</option>';
+  
+  const jobs = await loadJobsForSite(siteId);
+  
+  if (jobs.length === 0) {
+    select.innerHTML = '<option value="">No Job / General Usage</option><option value="" disabled>No active jobs for this site</option>';
+    return;
+  }
+  
+  select.innerHTML = '<option value="">No Job / General Usage</option>' +
+    jobs.map(job => {
+      const statusIcon = job.status === 'in-progress' ? '🟢' : '';
+      const jobType = job.job_type ? `(${job.job_type})` : '';
+      return `<option value="${job.id}">${statusIcon} ${job.title} ${jobType}</option>`;
+    }).join('');
+}
+
+// Show/hide job selector based on action
+function updateJobSelectorVisibility() {
+  const action = document.getElementById('stock-action')?.value;
+  const jobSection = document.getElementById('stock-job-section');
+  
+  if (jobSection) {
+    // Only show for "use" action
+    if (action === 'use') {
+      jobSection.classList.remove('hidden');
+      // Load jobs when showing
+      const siteId = parseInt(document.getElementById('stock-site-id')?.value || '0');
+      if (siteId) {
+        populateJobSelector(siteId);
+      }
+    } else {
+      jobSection.classList.add('hidden');
+      // Clear selection when hidden
+      const jobSelect = document.getElementById('stock-job-id');
+      if (jobSelect) jobSelect.value = '';
+    }
+  }
+}
+
 // Inventory history view state
 let historyViewInitialized = false;
 let historyViewData = [];
@@ -3537,7 +3604,10 @@ document.getElementById('export-history-btn')?.addEventListener('click', () => {
 });
 
 // Add event listener for stock action change to show/hide batch tracking
-document.getElementById('stock-action')?.addEventListener('change', updateBatchTrackingVisibility);
+document.getElementById('stock-action')?.addEventListener('change', () => {
+  updateBatchTrackingVisibility();
+  updateJobSelectorVisibility();
+});
 
 // Handle stock form submission
 document.getElementById('stock-form')?.addEventListener('submit', async (e) => {
@@ -3549,6 +3619,7 @@ document.getElementById('stock-form')?.addEventListener('submit', async (e) => {
   const action = formData.get('transaction_type');
   const quantity = parseInt(formData.get('quantity'));
   const notes = formData.get('notes');
+  const jobId = formData.get('job_id') || null; // Get job ID (can be empty string)
   
   try {
     // Get current stock
@@ -3650,6 +3721,7 @@ document.getElementById('stock-form')?.addEventListener('submit', async (e) => {
       .insert({
         item_id: itemId,
         site_id: siteId,
+        job_id: jobId || null, // Add job_id (null if not selected)
         transaction_type: action,
         quantity_change: quantityChange,
         quantity_before: currentQty,

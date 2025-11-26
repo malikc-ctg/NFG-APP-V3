@@ -1300,6 +1300,24 @@
           <input type="number" id="stock-quantity" name="quantity" min="1" required class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
         </div>
 
+        <!-- Job Selection (only for "use" action) -->
+        <div id="stock-job-section" class="hidden">
+          <label class="block text-sm font-medium mb-1.5">
+            Job <span class="text-gray-400 text-xs font-normal">(Optional)</span>
+          </label>
+          <select 
+            id="stock-job-id" 
+            name="job_id" 
+            class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
+          >
+            <option value="">No Job / General Usage</option>
+            <!-- Populated by JS -->
+          </select>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Link this inventory usage to a specific job
+          </p>
+        </div>
+
         <!-- Batch/Lot Tracking (for restocking) -->
         <div id="batch-tracking-section" class="hidden border-t border-nfgray pt-4">
           <h5 class="text-sm font-semibold text-nfgblue dark:text-blue-400 mb-3">Batch/Lot Information</h5>
