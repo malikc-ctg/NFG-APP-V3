@@ -767,6 +767,7 @@ function initInventoryViewTabs() {
 
 async function initHistoryView() {
   await populateHistorySiteFilter();
+  await populateHistoryJobFilter();
   attachHistoryFilterListeners();
   await loadHistoryActivity(true);
   historyViewInitialized = true;
@@ -785,6 +786,7 @@ async function populateHistorySiteFilter() {
 function attachHistoryFilterListeners() {
   const typeSelect = document.getElementById('history-type-filter');
   const siteSelect = document.getElementById('history-site-filter');
+  const jobSelect = document.getElementById('history-job-filter');
   const searchInput = document.getElementById('history-search-input');
   const dateFromInput = document.getElementById('history-date-from');
   const dateToInput = document.getElementById('history-date-to');
@@ -805,6 +807,10 @@ function attachHistoryFilterListeners() {
   
   siteSelect?.addEventListener('change', () => {
     historyFilters.site = siteSelect.value;
+  });
+  
+  jobSelect?.addEventListener('change', () => {
+    historyFilters.jobId = jobSelect.value;
   });
   
   searchInput?.addEventListener('input', () => {
@@ -830,6 +836,7 @@ function attachHistoryFilterListeners() {
   clearBtn?.addEventListener('click', async () => {
     if (typeSelect) typeSelect.value = 'all';
     if (siteSelect) siteSelect.value = 'all';
+    if (jobSelect) jobSelect.value = 'all';
     if (searchInput) searchInput.value = '';
     if (dateFromInput) dateFromInput.value = '';
     if (dateToInput) dateToInput.value = '';
@@ -855,15 +862,17 @@ async function loadHistoryActivity(showToast = false) {
   
   tableBody.innerHTML = `
     <tr>
-      <td colspan="8" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Loading history...</td>
+      <td colspan="9" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Loading history...</td>
     </tr>
   `;
   
   try {
     const siteFilter = historyFilters.site !== 'all' ? parseInt(historyFilters.site, 10) : null;
+    const jobFilter = historyFilters.jobId !== 'all' ? historyFilters.jobId : null;
     const transactions = await fetchInventoryTransactions({
       type: historyFilters.type !== 'all' ? historyFilters.type : null,
       siteId: Number.isNaN(siteFilter) ? null : siteFilter,
+      jobId: jobFilter,
       dateFrom: historyFilters.dateFrom || null,
       dateTo: historyFilters.dateTo || null,
       limit: 300
@@ -906,7 +915,7 @@ function renderHistoryTable() {
   if (!historyViewData.length) {
     tableBody.innerHTML = `
       <tr>
-        <td colspan="8" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No transactions found for the selected filters</td>
+        <td colspan="9" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No transactions found for the selected filters</td>
       </tr>
     `;
     return;
@@ -935,6 +944,17 @@ function renderHistoryTable() {
           <div class="text-xs text-gray-500">${entry.unit || ''}</div>
         </td>
         <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">${entry.site_name || '—'}</td>
+        <td class="px-4 py-3 text-sm">
+          ${entry.job_id ? `
+            <span class="inline-flex items-center gap-1 text-sm">
+              <i data-lucide="briefcase" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+              <span class="font-medium text-blue-600 dark:text-blue-400">${entry.job_title || 'Unknown Job'}</span>
+              ${entry.job_type ? `<span class="text-xs text-gray-500">(${entry.job_type})</span>` : ''}
+            </span>
+          ` : `
+            <span class="text-gray-400 text-sm">—</span>
+          `}
+        </td>
         <td class="px-4 py-3 text-sm">
           <span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${config.bg}">
             <i data-lucide="${config.icon}" class="w-3.5 h-3.5 ${config.text}"></i>
@@ -972,11 +992,12 @@ function exportHistoryViewData() {
     return;
   }
   
-  const headers = ['Date', 'Item', 'Site', 'Type', 'Change', 'Before', 'After', 'Performed By', 'Notes'];
+  const headers = ['Date', 'Item', 'Site', 'Job', 'Type', 'Change', 'Before', 'After', 'Performed By', 'Notes'];
   const rows = historyViewData.map(entry => [
     new Date(entry.created_at).toLocaleString(),
     entry.item_name,
     entry.site_name || '',
+    entry.job_title || '—',
     entry.transaction_type,
     entry.quantity_change,
     entry.quantity_before,
@@ -3369,9 +3390,11 @@ async function fetchInventoryTransactions(options = {}) {
       notes,
       site_id,
       item_id,
+      job_id,
       user_id,
       inventory_items:inventory_items(name, unit),
-      sites:sites(name)
+      sites:sites(name),
+      jobs:jobs(title, job_type, status)
     `);
   
   if (options.itemId) {
@@ -3384,6 +3407,14 @@ async function fetchInventoryTransactions(options = {}) {
   
   if (options.type) {
     query = query.eq('transaction_type', options.type);
+  }
+  
+  if (options.jobId) {
+    if (options.jobId === 'none') {
+      query = query.is('job_id', null);
+    } else {
+      query = query.eq('job_id', options.jobId);
+    }
   }
   
   if (options.dateFrom) {

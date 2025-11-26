@@ -798,6 +798,14 @@
               </select>
             </div>
             <div>
+              <label class="block text-sm font-medium mb-1 text-nfgblue dark:text-blue-400">Job</label>
+              <select id="history-job-filter" class="w-full border border-nfgray rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none">
+                <option value="all">All Jobs</option>
+                <option value="none">No Job</option>
+                <!-- Populated by JS -->
+              </select>
+            </div>
+            <div>
               <label class="block text-sm font-medium mb-1 text-nfgblue dark:text-blue-400">Search</label>
               <input type="text" id="history-search-input" placeholder="Search item, site, or user" class="w-full border border-nfgray rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none" />
             </div>
@@ -839,6 +847,7 @@
                   <th class="px-4 py-3 text-left font-medium text-nfgblue dark:text-blue-400">Date</th>
                   <th class="px-4 py-3 text-left font-medium text-nfgblue dark:text-blue-400">Item</th>
                   <th class="px-4 py-3 text-left font-medium text-nfgblue dark:text-blue-400">Site</th>
+                  <th class="px-4 py-3 text-left font-medium text-nfgblue dark:text-blue-400">Job</th>
                   <th class="px-4 py-3 text-left font-medium text-nfgblue dark:text-blue-400">Type</th>
                   <th class="px-4 py-3 text-center font-medium text-nfgblue dark:text-blue-400">Change</th>
                   <th class="px-4 py-3 text-center font-medium text-nfgblue dark:text-blue-400">Before → After</th>
@@ -848,7 +857,7 @@
               </thead>
               <tbody id="history-table-body">
                 <tr>
-                  <td colspan="8" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">History data will load once filters are applied</td>
+                  <td colspan="9" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">History data will load once filters are applied</td>
                 </tr>
               </tbody>
             </table>
