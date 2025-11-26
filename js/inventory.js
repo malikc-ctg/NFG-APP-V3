@@ -604,6 +604,7 @@ function initInventoryViewTabs() {
   const suppliersView = document.getElementById('suppliers-view');
   const suppliersActions = document.getElementById('suppliers-inline-actions');
   const transfersView = document.getElementById('transfers-view');
+  const scannerView = document.getElementById('scanner-view');
   
   if (!tabs.length || !inventoryView || !historyView) return;
   
@@ -654,16 +655,41 @@ function initInventoryViewTabs() {
         historyView.classList.add('hidden');
         suppliersView?.classList.add('hidden');
         transfersView?.classList.remove('hidden');
+        scannerView?.classList.add('hidden');
         desktopHistoryActions?.classList.add('hidden');
         suppliersActions?.classList.add('hidden');
         
         if (!transfersViewInitialized) {
           await initTransfersView();
         }
+      } else if (view === 'scanner') {
+        inventoryView.classList.add('hidden');
+        historyView.classList.add('hidden');
+        suppliersView?.classList.add('hidden');
+        transfersView?.classList.add('hidden');
+        scannerView?.classList.remove('hidden');
+        desktopHistoryActions?.classList.add('hidden');
+        suppliersActions?.classList.add('hidden');
+        
+        // Initialize scanner if not already initialized
+        if (!window.inventoryScannerInitialized) {
+          // Dynamically import scanner integration
+          try {
+            const scannerModule = await import('./inventory-scanner-integration.js');
+            const initFn = scannerModule.default || window.initInventoryScanner;
+            if (initFn) {
+              await initFn();
+            }
+          } catch (error) {
+            console.error('[Inventory] Failed to load scanner:', error);
+            toast.error('Scanner feature not available', 'Error');
+          }
+        }
       } else {
         historyView.classList.add('hidden');
         suppliersView?.classList.add('hidden');
         transfersView?.classList.add('hidden');
+        scannerView?.classList.add('hidden');
         inventoryView.classList.remove('hidden');
         desktopHistoryActions?.classList.add('hidden');
         suppliersActions?.classList.add('hidden');
@@ -3948,6 +3974,9 @@ async function init() {
   }
   
   initInventoryViewTabs();
+  
+  // Initialize scanner functionality (lazy load)
+  window.initInventoryScanner = initInventoryScanner;
   fetchUsageTrends().catch((error) => console.warn('Usage trend preload failed:', error));
   
   // Initialize automated low stock checking
