@@ -6,6 +6,8 @@
 
 import { MobileBarcodeScanner } from './barcode-scanner.js';
 import { BarcodeGenerator } from './barcode-generator.js';
+import { supabase } from './supabase.js';
+import { toast } from './notifications.js';
 
 let inventoryScanner = null;
 let scannerSiteId = null;
