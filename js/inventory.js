@@ -3776,6 +3776,15 @@ document.getElementById('stock-form')?.addEventListener('submit', async (e) => {
       clearTransactionPhotos();
     }
     
+    // Clear job context if transaction was successfully saved with job
+    if (jobId) {
+      sessionStorage.removeItem('inventoryJobContext');
+      const badge = document.getElementById('active-job-badge');
+      if (badge) {
+        badge.classList.add('hidden');
+      }
+    }
+    
     await renderInventory();
     toast.success('Stock updated successfully!', 'Success');
     
