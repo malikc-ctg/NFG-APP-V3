@@ -565,10 +565,106 @@ window.manageStock = async function(siteId, itemId, itemName, currentQty) {
   // Update batch tracking visibility
   updateBatchTrackingVisibility();
   
+  // Update job selector visibility (initially hidden since default is restock)
+  updateJobSelectorVisibility();
+  
+  // Check for job context from session storage and auto-select
+  await applyJobContext();
+  
   const modal = document.getElementById('stockModal');
   modal.classList.remove('hidden');
   modal.classList.add('flex');
   if (window.lucide) lucide.createIcons();
+};
+
+// Apply job context from session storage
+async function applyJobContext() {
+  try {
+    const jobContextStr = sessionStorage.getItem('inventoryJobContext');
+    if (!jobContextStr) return;
+    
+    const context = JSON.parse(jobContextStr);
+    const { jobId, jobTitle, siteId: contextSiteId } = context;
+    
+    if (!jobId) return;
+    
+    // Check if site matches (only auto-select if site matches)
+    const currentSiteId = parseInt(document.getElementById('stock-site-id')?.value || '0');
+    if (contextSiteId && contextSiteId !== currentSiteId) {
+      // Site mismatch, don't auto-select
+      return;
+    }
+    
+    // Set action to "use" to show job selector
+    const actionSelect = document.getElementById('stock-action');
+    if (actionSelect && actionSelect.value !== 'use') {
+      actionSelect.value = 'use';
+      updateBatchTrackingVisibility();
+      updateJobSelectorVisibility(); // This will load jobs and populate selector
+    }
+    
+    // Wait for job selector to populate, then select the job
+    setTimeout(async () => {
+      const jobSelect = document.getElementById('stock-job-id');
+      if (jobSelect && jobId) {
+        // Reload jobs to ensure we have the latest list
+        const siteId = parseInt(document.getElementById('stock-site-id')?.value || '0');
+        if (siteId) {
+          await populateJobSelector(siteId);
+        }
+        
+        // Check if the job exists in the dropdown
+        const option = Array.from(jobSelect.options).find(opt => opt.value === jobId);
+        if (option) {
+          jobSelect.value = jobId;
+          // Show active job badge
+          showActiveJobBadge(jobTitle, jobId);
+        } else {
+          // Job not found in dropdown, might not be active anymore
+          console.warn('[Inventory] Job from context not found in dropdown:', jobId);
+        }
+      }
+    }, 600); // Wait for jobs to load
+  } catch (error) {
+    console.error('[Inventory] Failed to apply job context:', error);
+  }
+}
+
+// Show active job badge
+function showActiveJobBadge(jobTitle, jobId) {
+  let badge = document.getElementById('active-job-badge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'active-job-badge';
+    badge.className = 'fixed top-20 right-4 z-40 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2';
+    document.body.appendChild(badge);
+  }
+  
+  badge.innerHTML = `
+    <i data-lucide="briefcase" class="w-4 h-4"></i>
+    <span>Job: <strong>${jobTitle}</strong></span>
+    <button onclick="clearJobContext()" class="ml-2 hover:bg-blue-700 rounded p-1 transition" title="Clear job context">
+      <i data-lucide="x" class="w-3 h-3"></i>
+    </button>
+  `;
+  
+  badge.classList.remove('hidden');
+  if (window.lucide) lucide.createIcons();
+}
+
+// Clear job context
+window.clearJobContext = function() {
+  sessionStorage.removeItem('inventoryJobContext');
+  const badge = document.getElementById('active-job-badge');
+  if (badge) {
+    badge.classList.add('hidden');
+  }
+  // Clear job selection in modal if open
+  const jobSelect = document.getElementById('stock-job-id');
+  if (jobSelect) {
+    jobSelect.value = '';
+  }
+  toast.success('Job context cleared', 'Cleared');
 };
 
 // Show/hide batch tracking section based on action
