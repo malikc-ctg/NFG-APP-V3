@@ -2172,6 +2172,55 @@
       toast.success('Materials exported to CSV', 'Success');
     };
     
+    // Render materials cost breakdown chart
+    function renderMaterialsChart(materials) {
+      const chartEl = document.getElementById('job-materials-chart');
+      if (!chartEl) return;
+      
+      // Group by item and sum costs
+      const itemCosts = {};
+      materials.forEach(m => {
+        const itemName = m.item_name || 'Unknown';
+        if (!itemCosts[itemName]) {
+          itemCosts[itemName] = 0;
+        }
+        itemCosts[itemName] += m.total_cost || 0;
+      });
+      
+      // Sort by cost (descending) and take top 10
+      const sortedItems = Object.entries(itemCosts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10);
+      
+      if (sortedItems.length === 0) {
+        chartEl.innerHTML = '<p class="text-center text-gray-500 text-sm py-8">No cost data available</p>';
+        return;
+      }
+      
+      const maxCost = Math.max(...sortedItems.map(([_, cost]) => cost));
+      
+      // Create simple bar chart with HTML/CSS
+      chartEl.innerHTML = sortedItems.map(([itemName, cost]) => {
+        const percentage = (cost / maxCost) * 100;
+        const barWidth = Math.max(percentage, 5); // Minimum 5% width for visibility
+        
+        return `
+          <div class="mb-3">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs font-medium text-nfgblue dark:text-blue-400 truncate flex-1 mr-2">${itemName}</span>
+              <span class="text-xs font-semibold text-green-600 dark:text-green-400">${formatCurrency(cost)}</span>
+            </div>
+            <div class="w-full bg-nfgray dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+              <div 
+                class="bg-gradient-to-r from-blue-500 to-blue-600 h-full rounded-full transition-all duration-500"
+                style="width: ${barWidth}%"
+              ></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    };
+    
     async function renderJobTasks() {
       const tasks = await getJobTasks(currentJobId);
       const list = document.getElementById('job-tasks-list');
