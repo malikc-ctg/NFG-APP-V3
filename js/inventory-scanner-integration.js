@@ -157,6 +157,14 @@ async function startInventoryScanner() {
       return;
     }
     
+    // Get container
+    const container = document.getElementById('barcode-scanner-container');
+    if (!container) {
+      console.error('[Inventory Scanner] Container not found');
+      toast.error('Scanner container not found', 'Error');
+      return;
+    }
+    
     // Clear container but keep overlay structure
     const staticOverlay = container.querySelector('#scanner-overlay-static');
     const statusDiv = container.querySelector('#scanner-status');
