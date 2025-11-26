@@ -297,10 +297,10 @@ async function handleInventoryBarcodeScan(barcode) {
           const actionSelect = document.getElementById('stock-action');
           if (actionSelect) {
             actionSelect.value = 'use';
-            // Trigger change event to update form
+            // Trigger change event to update form (will show job selector and load jobs)
             actionSelect.dispatchEvent(new Event('change', { bubbles: true }));
           }
-        }, 150);
+        }, 200);
       } else {
         toast.success(`Found: ${item.inventory_items.name}`, 'Item Found');
         toast.info('Use the manage stock button to record usage', 'Info');
