@@ -124,17 +124,7 @@ async function startInventoryScanner() {
   
   try {
     // Show loading state
-    const container = document.getElementById('barcode-scanner-container');
-    if (container) {
-      container.innerHTML = `
-        <div class="flex items-center justify-center h-full">
-          <div class="text-center text-white">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-            <p class="text-sm">Starting camera...</p>
-          </div>
-        </div>
-      `;
-    }
+    showScannerStatus('loading', 'Starting camera...', 'Please wait');
     
     // Check if Html5Qrcode library is loaded
     if (!window.Html5Qrcode) {
@@ -162,20 +152,19 @@ async function startInventoryScanner() {
     
     const hasPermission = await inventoryScanner.init();
     if (!hasPermission) {
-      container.innerHTML = `
-        <div class="flex items-center justify-center h-full">
-          <div class="text-center text-white p-4">
-            <p class="text-lg mb-2">Camera permission required</p>
-            <p class="text-sm text-gray-300">Please allow camera access and try again</p>
-          </div>
-        </div>
-      `;
+      showScannerStatus('error', 'Camera permission required', 'Please allow camera access in browser settings');
       toast.error('Camera permission denied. Please enable camera access.', 'Permission Required');
       return;
     }
     
-    // Restore container for scanner
-    container.innerHTML = '';
+    // Clear container but keep overlay structure
+    const staticOverlay = container.querySelector('#scanner-overlay-static');
+    const statusDiv = container.querySelector('#scanner-status');
+    container.querySelectorAll('video, canvas, iframe').forEach(el => el.remove());
+    
+    // Hide status, show overlay
+    if (statusDiv) statusDiv.classList.add('hidden');
+    if (staticOverlay) staticOverlay.classList.remove('hidden');
     
     const started = await inventoryScanner.startScanning(
       async (decodedText) => {
@@ -191,55 +180,47 @@ async function startInventoryScanner() {
     );
     
     if (!started) {
-      container.innerHTML = `
-        <div class="flex items-center justify-center h-full">
-          <div class="text-center text-white p-4">
-            <p class="text-lg mb-2">Failed to start camera</p>
-            <p class="text-sm text-gray-300">Please check your camera settings</p>
-          </div>
-        </div>
-      `;
+      showScannerStatus('error', 'Failed to start camera', 'Please check your camera settings');
       toast.error('Failed to start camera. Check console for details.', 'Error');
       return;
     }
     
     console.log('[Inventory Scanner] Scanner started successfully');
     
-    // Add overlay after scanner starts
-    setTimeout(() => {
-      if (container && !container.querySelector('.scanner-overlay')) {
-        container.insertAdjacentHTML('beforeend', `
-          <div class="scanner-overlay absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-            <div class="relative">
-              <div class="border-4 border-white rounded-xl w-64 h-64 shadow-lg"></div>
-              <div class="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-lg"></div>
-              <div class="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-lg"></div>
-              <div class="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-lg"></div>
-              <div class="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-lg"></div>
-            </div>
-          </div>
-        `);
-      }
-    }, 500);
+    // Hide status after successful start
+    if (statusDiv) statusDiv.classList.add('hidden');
     
   } catch (error) {
     console.error('[Inventory Scanner] Failed to start scanner:', error);
-    const container = document.getElementById('barcode-scanner-container');
-    if (container) {
-      container.innerHTML = `
-        <div class="flex items-center justify-center h-full">
-          <div class="text-center text-white p-4">
-            <p class="text-lg mb-2">Camera Error</p>
-            <p class="text-sm text-gray-300 mb-4">${error.message || 'Unknown error'}</p>
-            <button onclick="location.reload()" class="px-4 py-2 bg-white text-black rounded-lg">
-              Reload Page
-            </button>
-          </div>
-        </div>
-      `;
-    }
+    showScannerStatus('error', 'Camera Error', error.message || 'Unknown error');
     toast.error('Failed to start camera: ' + (error.message || 'Unknown error'), 'Error');
   }
+}
+
+// Show scanner status message
+function showScannerStatus(type, message, submessage = '') {
+  const statusDiv = document.getElementById('scanner-status');
+  const iconDiv = document.getElementById('scanner-status-icon');
+  const textDiv = document.getElementById('scanner-status-text');
+  const subtextDiv = document.getElementById('scanner-status-subtext');
+  const overlay = document.getElementById('scanner-overlay-static');
+  
+  if (!statusDiv) return;
+  
+  if (type === 'loading') {
+    iconDiv.innerHTML = '<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>';
+  } else if (type === 'error') {
+    iconDiv.innerHTML = '<i data-lucide="alert-circle" class="w-12 h-12 mx-auto"></i>';
+    if (window.lucide) lucide.createIcons();
+  } else {
+    iconDiv.innerHTML = '';
+  }
+  
+  textDiv.textContent = message;
+  subtextDiv.textContent = submessage;
+  
+  statusDiv.classList.remove('hidden');
+  if (overlay) overlay.classList.add('hidden');
 }
 
 // Stop scanner

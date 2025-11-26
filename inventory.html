@@ -940,10 +940,10 @@
       <!-- Scanner View -->
       <div id="scanner-view" class="hidden">
         <!-- Mobile Scanner Container -->
-        <div class="bg-black rounded-xl overflow-hidden" style="min-height: 600px;">
-          <div id="barcode-scanner-container" class="relative w-full" style="height: 500px;">
-            <!-- Scanner overlay with corner indicators -->
-            <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+        <div class="bg-black rounded-xl overflow-hidden" style="min-height: calc(100vh - 400px); max-height: 70vh;">
+          <div id="barcode-scanner-container" class="relative w-full" style="height: calc(100vh - 400px); min-height: 400px; max-height: 70vh;">
+            <!-- Scanner overlay with corner indicators - shown after camera starts -->
+            <div id="scanner-overlay-static" class="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
               <div class="relative">
                 <div class="border-4 border-white rounded-xl w-64 h-64 shadow-lg"></div>
                 <!-- Corner indicators -->
@@ -955,26 +955,35 @@
             </div>
             
             <!-- Instructions -->
-            <div class="absolute bottom-4 left-0 right-0 text-center z-10">
+            <div class="absolute bottom-4 left-0 right-0 text-center z-20 pointer-events-none">
               <p class="text-white text-sm bg-black/70 px-4 py-2 rounded-full inline-block">
                 Point camera at barcode or QR code
               </p>
             </div>
+            
+            <!-- Loading/Error States -->
+            <div id="scanner-status" class="hidden absolute inset-0 flex items-center justify-center z-30 bg-black/80">
+              <div class="text-center text-white p-4">
+                <div id="scanner-status-icon" class="mb-4"></div>
+                <p id="scanner-status-text" class="text-lg font-semibold mb-2"></p>
+                <p id="scanner-status-subtext" class="text-sm text-gray-300"></p>
+              </div>
+            </div>
           </div>
           
           <!-- Scanner Controls -->
-          <div class="bg-white dark:bg-gray-800 border-t border-nfgray p-4 flex items-center justify-around">
-            <button id="scanner-upload-btn" class="flex flex-col items-center gap-1 p-3">
+          <div class="bg-white dark:bg-gray-800 border-t border-nfgray p-3 flex items-center justify-around">
+            <button id="scanner-upload-btn" class="flex flex-col items-center gap-1 p-2 flex-1">
               <i data-lucide="upload" class="w-6 h-6 text-nfgblue"></i>
               <span class="text-xs text-gray-600 dark:text-gray-400">Upload</span>
             </button>
             
-            <button id="scanner-flash-toggle" class="flex flex-col items-center gap-1 p-3">
+            <button id="scanner-flash-toggle" class="flex flex-col items-center gap-1 p-2 flex-1">
               <i data-lucide="flashlight" class="w-6 h-6 text-gray-600 dark:text-gray-400"></i>
               <span class="text-xs text-gray-600 dark:text-gray-400">Flash</span>
             </button>
             
-            <button id="scanner-manual-entry-btn" class="flex flex-col items-center gap-1 p-3">
+            <button id="scanner-manual-entry-btn" class="flex flex-col items-center gap-1 p-2 flex-1">
               <i data-lucide="keyboard" class="w-6 h-6 text-gray-600 dark:text-gray-400"></i>
               <span class="text-xs text-gray-600 dark:text-gray-400">Enter</span>
             </button>
@@ -982,9 +991,9 @@
         </div>
         
         <!-- Site Selector for Scanner -->
-        <div class="mt-4 flex items-center justify-between">
+        <div class="mt-4 p-4 bg-white dark:bg-gray-800 rounded-xl border border-nfgray flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <label class="text-sm font-medium text-nftext dark:text-white">Scan for Site:</label>
-          <select id="scanner-site-select" class="border border-nfgray rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none">
+          <select id="scanner-site-select" class="border border-nfgray rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-nfgblue outline-none bg-white dark:bg-gray-700 text-nftext dark:text-white flex-1 sm:flex-none sm:w-auto">
             <option value="">Select Site</option>
           </select>
         </div>
