@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quick Scanner Test - NFG</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    #scanner-container {
+      width: 100%;
+      height: 400px;
+      background: #000;
+      position: relative;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 p-8">
+  <div class="max-w-2xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">Quick Scanner Test</h1>
+    
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">Instructions</h2>
+      <ol class="list-decimal list-inside space-y-2 text-gray-700">
+        <li>Get any product with a barcode (Coke can, cereal box, etc.)</li>
+        <li>Note the barcode number (digits under the barcode)</li>
+        <li>Add item to inventory in your app</li>
+        <li>Update the barcode in database to match your product</li>
+        <li>Click "Start Scanner" below</li>
+        <li>Point camera at barcode</li>
+      </ol>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">Test Scanner</h2>
+      <div id="scanner-container"></div>
+      <div class="mt-4 flex gap-4">
+        <button 
+          id="start-btn" 
+          class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Start Scanner
+        </button>
+        <button 
+          id="stop-btn" 
+          class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          disabled
+        >
+          Stop Scanner
+        </button>
+      </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">Scan Results</h2>
+      <div id="results" class="space-y-2">
+        <p class="text-gray-500">No scans yet...</p>
+      </div>
+    </div>
+    
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+      <h3 class="font-semibold text-blue-900 mb-2">💡 Quick Database Update</h3>
+      <p class="text-sm text-blue-800 mb-2">After scanning, update your item's barcode:</p>
+      <code class="block bg-white p-3 rounded text-xs overflow-x-auto">
+        UPDATE inventory_items<br>
+        SET barcode = '<span id="scanned-barcode">SCANNED_CODE</span>'<br>
+        WHERE name = 'Your Item Name';
+      </code>
+    </div>
+  </div>
+  
+  <script type="module">
+    import { MobileBarcodeScanner } from './js/barcode-scanner.js';
+    
+    let scanner = null;
+    
+    document.getElementById('start-btn').addEventListener('click', async () => {
+      scanner = new MobileBarcodeScanner('scanner-container');
+      
+      const hasPermission = await scanner.init();
+      if (!hasPermission) {
+        alert('Camera permission denied! Please allow camera access.');
+        return;
+      }
+      
+      const started = await scanner.startScanning(
+        (decodedText, decodedResult) => {
+          addResult(decodedText);
+          document.getElementById('scanned-barcode').textContent = decodedText;
+        },
+        (error) => {
+          console.error('Scanner error:', error);
+        }
+      );
+      
+      if (started) {
+        document.getElementById('start-btn').disabled = true;
+        document.getElementById('stop-btn').disabled = false;
+      }
+    });
+    
+    document.getElementById('stop-btn').addEventListener('click', async () => {
+      if (scanner) {
+        await scanner.stopScanning();
+        document.getElementById('start-btn').disabled = false;
+        document.getElementById('stop-btn').disabled = true;
+      }
+    });
+    
+    function addResult(barcode) {
+      const resultsDiv = document.getElementById('results');
+      const timestamp = new Date().toLocaleString();
+      
+      const resultHTML = `
+        <div class="border rounded p-4 bg-green-50">
+          <div class="flex justify-between items-start mb-2">
+            <p class="font-semibold text-green-800">✅ Scanned Successfully</p>
+            <p class="text-xs text-gray-500">${timestamp}</p>
+          </div>
+          <p class="font-mono text-sm">Barcode: <strong>${barcode}</strong></p>
+          <p class="text-xs text-gray-600 mt-2">
+            Now update your inventory item with this barcode in the database!
+          </p>
+        </div>
+      `;
+      
+      if (resultsDiv.querySelector('.text-gray-500')) {
+        resultsDiv.innerHTML = resultHTML;
+      } else {
+        resultsDiv.insertAdjacentHTML('afterbegin', resultHTML);
+      }
+    }
+  </script>
+</body>
+</html>
+
