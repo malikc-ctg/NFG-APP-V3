@@ -67,14 +67,12 @@ SELECT
   it.created_at as usage_date,
   it.notes,
   it.user_id,
-  up.full_name as used_by,
   it.photo_urls
 FROM inventory_transactions it
 INNER JOIN jobs j ON j.id = it.job_id
 INNER JOIN inventory_items ii ON ii.id = it.item_id
 LEFT JOIN sites s ON s.id = it.site_id
 LEFT JOIN site_inventory si ON si.item_id = it.item_id AND si.site_id = it.site_id
-LEFT JOIN user_profiles up ON up.id = it.user_id
 WHERE it.transaction_type = 'use'
   AND it.job_id IS NOT NULL
 ORDER BY it.created_at DESC;

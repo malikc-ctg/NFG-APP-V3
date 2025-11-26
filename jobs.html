@@ -1974,7 +1974,7 @@
         }
         
         // Render materials list
-        renderJobMaterialsList(materials || [], summary);
+        renderJobMaterialsList(materialsWithUsers, summary);
         
       } catch (error) {
         console.error('[Jobs] Error loading job materials:', error);
