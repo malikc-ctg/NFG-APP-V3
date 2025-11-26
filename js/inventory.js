@@ -1224,14 +1224,13 @@ async function saveSupplier(e) {
 
 async function loadPurchaseOrders(showToast = false) {
   try {
+    // Fetch purchase orders
     const { data, error } = await supabase
       .from('purchase_orders')
       .select(`
         *,
         suppliers:suppliers(name, contact_name, email),
         sites:sites(name),
-        approved_by_profile:user_profiles!purchase_orders_approved_by_fkey(id, full_name, email),
-        rejected_by_profile:user_profiles!purchase_orders_rejected_by_fkey(id, full_name, email),
         purchase_order_items:purchase_order_items(
           id,
           item_id,
@@ -1243,15 +1242,40 @@ async function loadPurchaseOrders(showToast = false) {
       `)
       .order('created_at', { ascending: false });
     
-    // Add approval names to each PO
-    if (data) {
-      data.forEach(po => {
-        po.approved_by_name = po.approved_by_profile?.full_name;
-        po.rejected_by_name = po.rejected_by_profile?.full_name;
-      });
-    }
-    
     if (error) throw error;
+    
+    // Fetch user profiles for approved_by and rejected_by separately
+    if (data && data.length > 0) {
+      const userIds = new Set();
+      data.forEach(po => {
+        if (po.approved_by) userIds.add(po.approved_by);
+        if (po.rejected_by) userIds.add(po.rejected_by);
+      });
+      
+      // Fetch profiles in batch if needed
+      if (userIds.size > 0) {
+        const { data: profiles } = await supabase
+          .from('user_profiles')
+          .select('id, full_name, email')
+          .in('id', Array.from(userIds));
+        
+        // Create lookup map
+        const profileMap = {};
+        if (profiles) {
+          profiles.forEach(profile => {
+            profileMap[profile.id] = profile;
+          });
+        }
+        
+        // Attach profiles to POs
+        data.forEach(po => {
+          po.approved_by_profile = po.approved_by ? profileMap[po.approved_by] : null;
+          po.rejected_by_profile = po.rejected_by ? profileMap[po.rejected_by] : null;
+          po.approved_by_name = po.approved_by_profile?.full_name || null;
+          po.rejected_by_name = po.rejected_by_profile?.full_name || null;
+        });
+      }
+    }
     
     purchaseOrdersList = data || [];
     updatePurchaseOrderStats();
