@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0D47A1">
+  <title>Inventory Scanner - NFG</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            nfgblue: '#0D47A1',
+            nfgdark: '#0A3A84',
+            nfglight: '#E3ECFA',
+            nfgray: '#E5E7EB',
+            nftext: '#1E293B',
+            nfbg: '#F8FAFC'
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="./css/mobile.css">
+  <style>
+    @keyframes slide-up {
+      from {
+        transform: translateY(100%);
+      }
+      to {
+        transform: translateY(0);
+      }
+    }
+    .animate-slide-up {
+      animation: slide-up 0.3s ease-out;
+    }
+    .filter-chip {
+      @apply px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition;
+      @apply bg-gray-100 text-gray-600 border border-gray-200;
+    }
+    .filter-chip.active {
+      @apply bg-nfgblue text-white border-nfgblue;
+    }
+    .chip-status {
+      @apply px-2 py-1 rounded-full text-xs font-medium;
+    }
+    .chip-status.low {
+      @apply bg-orange-100 text-orange-700;
+    }
+  </style>
+</head>
+<body class="bg-black text-white">
+  <!-- Offline Banner -->
+  <div id="offline-banner" class="hidden fixed top-0 left-0 right-0 bg-orange-600 text-white text-center py-2 text-sm z-50">
+    📴 Offline Mode - Changes will sync when online
+  </div>
+  
+  <!-- Sync Indicator -->
+  <div id="sync-indicator" class="hidden fixed top-12 right-4 bg-nfgblue text-white px-3 py-2 rounded-full text-sm z-50 flex items-center gap-2 shadow-lg">
+    <i data-lucide="loader" class="w-4 h-4 animate-spin"></i>
+    Syncing...
+  </div>
+  
+  <!-- Scanner Page -->
+  <div id="scanner-page" class="fixed inset-0 flex flex-col">
+    <!-- Top Bar -->
+    <header class="bg-nfgblue text-white p-4 flex items-center justify-between z-10 shadow-md">
+      <button id="menu-btn" class="p-2">
+        <i data-lucide="menu" class="w-6 h-6"></i>
+      </button>
+      <h1 class="text-lg font-semibold">Scan Item</h1>
+      <button id="site-selector-btn" class="p-2 text-sm flex items-center gap-1">
+        <i data-lucide="map-pin" class="w-4 h-4"></i>
+        <span id="current-site-name">Select Site</span>
+      </button>
+    </header>
+    
+    <!-- Camera Container -->
+    <div id="barcode-scanner-container" class="flex-1 relative overflow-hidden bg-black">
+      <!-- Scanner overlay with corner indicators -->
+      <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+        <div class="relative">
+          <div class="border-4 border-white rounded-xl w-64 h-64 shadow-lg"></div>
+          <!-- Corner indicators -->
+          <div class="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-lg"></div>
+          <div class="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-lg"></div>
+          <div class="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-lg"></div>
+          <div class="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-lg"></div>
+        </div>
+      </div>
+      
+      <!-- Instructions -->
+      <div class="absolute bottom-20 left-0 right-0 text-center z-10">
+        <p class="text-white text-sm bg-black/70 px-4 py-2 rounded-full inline-block">
+          Point camera at barcode or QR code
+        </p>
+      </div>
+    </div>
+    
+    <!-- Bottom Action Bar -->
+    <div class="bg-white dark:bg-gray-800 border-t border-nfgray p-4 flex items-center justify-around">
+      <button id="upload-btn" class="flex flex-col items-center gap-1 p-3">
+        <i data-lucide="upload" class="w-6 h-6 text-nfgblue"></i>
+        <span class="text-xs text-gray-600 dark:text-gray-400">Upload</span>
+      </button>
+      
+      <button id="flash-toggle" class="flex flex-col items-center gap-1 p-3">
+        <i data-lucide="flashlight" class="w-6 h-6 text-gray-600 dark:text-gray-400"></i>
+        <span class="text-xs text-gray-600 dark:text-gray-400">Flash</span>
+      </button>
+      
+      <button id="manual-entry-btn" class="flex flex-col items-center gap-1 p-3">
+        <i data-lucide="keyboard" class="w-6 h-6 text-gray-600 dark:text-gray-400"></i>
+        <span class="text-xs text-gray-600 dark:text-gray-400">Enter</span>
+      </button>
+      
+      <button id="list-view-btn" class="flex flex-col items-center gap-1 p-3">
+        <i data-lucide="list" class="w-6 h-6 text-gray-600 dark:text-gray-400"></i>
+        <span class="text-xs text-gray-600 dark:text-gray-400">List</span>
+      </button>
+    </div>
+  </div>
+  
+  <!-- Item Found Modal -->
+  <div id="item-found-modal" class="hidden fixed inset-0 bg-black/50 z-50">
+    <!-- Content loaded dynamically -->
+  </div>
+  
+  <!-- Manual Entry Modal -->
+  <div id="manual-entry-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md p-6">
+      <h3 class="text-lg font-semibold mb-4 text-nftext dark:text-white">Enter Barcode</h3>
+      <input 
+        type="text" 
+        id="manual-barcode-input" 
+        placeholder="Enter barcode or scan code"
+        class="w-full border border-nfgray rounded-xl px-4 py-3 text-lg mb-4 text-nftext dark:text-white dark:bg-gray-700"
+        autofocus
+      />
+      <div class="flex gap-2">
+        <button id="manual-entry-cancel" class="flex-1 px-4 py-3 rounded-xl border border-nfgray text-nftext dark:text-white">
+          Cancel
+        </button>
+        <button id="manual-entry-submit" class="flex-1 px-4 py-3 rounded-xl bg-nfgblue text-white">
+          Lookup
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Site Selector Modal -->
+  <div id="site-selector-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto">
+      <div class="p-6 border-b border-nfgray">
+        <h3 class="text-lg font-semibold text-nftext dark:text-white">Select Site</h3>
+      </div>
+      <div id="site-list" class="p-4 space-y-2">
+        <!-- Sites loaded here -->
+      </div>
+    </div>
+  </div>
+  
+  <!-- Scripts -->
+  <script type="module" src="./js/mobile-inventory.js"></script>
+</body>
+</html>
+
