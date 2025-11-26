@@ -77,6 +77,8 @@ WHERE it.transaction_type = 'use'
   AND it.job_id IS NOT NULL
 ORDER BY it.created_at DESC;
 
+-- Note: user_profiles join removed from view - fetch user names separately in application code
+
 -- Grant permissions
 GRANT SELECT ON job_materials_detailed TO authenticated;
 GRANT SELECT ON job_materials_detailed TO anon;
