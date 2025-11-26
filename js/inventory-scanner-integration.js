@@ -253,8 +253,10 @@ async function handleInventoryBarcodeScan(barcode) {
     
     if (!item) {
       // Item not found - offer to create it with this barcode
+      // Stop scanner while showing modal
+      await stopInventoryScanner();
       await showCreateItemFromBarcode(barcode);
-      setTimeout(() => startInventoryScanner(), 2000);
+      // Scanner will restart after item creation (handled in createItemFromScannedBarcode)
       return;
     }
     
@@ -619,8 +621,33 @@ async function createItemFromScannedBarcode(modal) {
     toast.success(`Created: ${name}`, 'Item Created');
     modal.remove();
     
-    // Now that item exists, process the scan again
-    setTimeout(() => handleInventoryBarcodeScan(barcode), 500);
+    // Stop scanner before restarting (if it's running)
+    try {
+      if (inventoryScanner) {
+        const status = inventoryScanner.getStatus();
+        if (status && status.isScanning) {
+          await inventoryScanner.stopScanning();
+          // Wait a bit for cleanup
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
+      }
+    } catch (stopError) {
+      console.warn('[Inventory Scanner] Error stopping scanner:', stopError);
+      // Continue anyway
+    }
+    
+    // Now that item exists, restart scanner and process the scan
+    setTimeout(async () => {
+      try {
+        await startInventoryScanner();
+        // After scanner starts, wait a bit then process the scan
+        setTimeout(() => handleInventoryBarcodeScan(barcode), 1000);
+      } catch (error) {
+        console.error('[Inventory Scanner] Failed to restart after item creation:', error);
+        // Still try to process the scan
+        await handleInventoryBarcodeScan(barcode);
+      }
+    }, 500);
     
   } catch (error) {
     console.error('[Inventory Scanner] Failed to create item:', error);
