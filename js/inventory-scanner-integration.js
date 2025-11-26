@@ -263,18 +263,56 @@ async function handleInventoryBarcodeScan(barcode) {
     // Log scan
     await logInventoryScan(barcode, item.id, 'found', 'database');
     
-    // Show item found - open manage stock modal with "use" action
-    const siteInventory = item.site_inventory?.find(si => si.site_id === scannerSiteId);
-    if (siteInventory) {
-      // Open manage stock modal with use action
-      openManageStockModal(item.inventory_items?.id || item.id, scannerSiteId, 'use');
-      toast.success(`Found: ${item.inventory_items?.name || item.name}`, 'Item Found');
-    } else {
-      toast.warning('Item not available at this site', 'Site Mismatch');
+    // Stop scanner IMMEDIATELY to prevent camera conflicts
+    try {
+      if (inventoryScanner) {
+        const status = inventoryScanner.getStatus();
+        if (status && status.isScanning) {
+          await inventoryScanner.stopScanning();
+          // Wait for camera to fully release
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
+    } catch (stopError) {
+      console.warn('[Inventory Scanner] Error stopping scanner:', stopError);
+      // Continue anyway
     }
     
-    // Restart scanner after delay
-    setTimeout(() => startInventoryScanner(), 3000);
+    // Show item found - open manage stock modal with "use" action
+    const siteInventory = item.site_inventory?.find(si => si.site_id === scannerSiteId);
+    if (siteInventory && item.inventory_items) {
+      // Use the existing manageStock function from inventory.js
+      if (window.manageStock) {
+        toast.success(`Found: ${item.inventory_items.name}`, 'Item Found');
+        // Open modal
+        window.manageStock(
+          scannerSiteId, 
+          item.inventory_items.id, 
+          item.inventory_items.name, 
+          siteInventory.quantity || 0
+        );
+        
+        // Set action to "use" after modal opens
+        setTimeout(() => {
+          const actionSelect = document.getElementById('stock-action');
+          if (actionSelect) {
+            actionSelect.value = 'use';
+            // Trigger change event to update form
+            actionSelect.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        }, 150);
+      } else {
+        toast.success(`Found: ${item.inventory_items.name}`, 'Item Found');
+        toast.info('Use the manage stock button to record usage', 'Info');
+      }
+    } else if (item.inventory_items) {
+      toast.warning('Item not available at this site. Add it to site inventory first.', 'Site Mismatch');
+    } else {
+      toast.warning('Item found but site inventory not available', 'Warning');
+    }
+    
+    // Show resume scanning button
+    showResumeScanningButton();
     
   } catch (error) {
     console.error('[Inventory Scanner] Error handling scan:', error);
@@ -621,33 +659,18 @@ async function createItemFromScannedBarcode(modal) {
     toast.success(`Created: ${name}`, 'Item Created');
     modal.remove();
     
-    // Stop scanner before restarting (if it's running)
-    try {
-      if (inventoryScanner) {
-        const status = inventoryScanner.getStatus();
-        if (status && status.isScanning) {
-          await inventoryScanner.stopScanning();
-          // Wait a bit for cleanup
-          await new Promise(resolve => setTimeout(resolve, 300));
-        }
-      }
-    } catch (stopError) {
-      console.warn('[Inventory Scanner] Error stopping scanner:', stopError);
-      // Continue anyway
-    }
-    
-    // Now that item exists, restart scanner and process the scan
+    // Now that item exists, process the scan (which will open manage stock modal)
+    // Don't restart scanner automatically - let user manually resume after closing modal
     setTimeout(async () => {
       try {
-        await startInventoryScanner();
-        // After scanner starts, wait a bit then process the scan
-        setTimeout(() => handleInventoryBarcodeScan(barcode), 1000);
-      } catch (error) {
-        console.error('[Inventory Scanner] Failed to restart after item creation:', error);
-        // Still try to process the scan
         await handleInventoryBarcodeScan(barcode);
+      } catch (error) {
+        console.error('[Inventory Scanner] Failed to process scan after item creation:', error);
+        toast.error('Failed to process scan. Please scan again.', 'Error');
+        // Show resume button
+        showResumeScanningButton();
       }
-    }, 500);
+    }, 300);
     
   } catch (error) {
     console.error('[Inventory Scanner] Failed to create item:', error);
