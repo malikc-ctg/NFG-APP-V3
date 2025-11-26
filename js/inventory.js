@@ -1,5 +1,6 @@
 import { supabase } from './supabase.js';
 import { toast, showConfirm } from './notifications.js';
+import { BarcodeGenerator } from './barcode-generator.js';
 
 let currentUser = null;
 let currentUserProfile = null;
@@ -3673,11 +3674,48 @@ document.getElementById('item-form')?.addEventListener('submit', async (e) => {
   };
   
   try {
-    const { error } = await supabase
+    // Insert item and get the created item back
+    const { data: newItems, error } = await supabase
       .from('inventory_items')
-      .insert(itemData);
+      .insert(itemData)
+      .select()
+      .single();
     
     if (error) throw error;
+    
+    const newItem = newItems;
+    
+    // Generate barcode and QR code for the new item
+    try {
+      const barcode = await BarcodeGenerator.generateBarcode(newItem.id, newItem.name);
+      
+      // Generate and upload QR code
+      const qrCode = await BarcodeGenerator.generateAndUploadQRCode(
+        newItem.id, 
+        newItem.name,
+        null // site_id will be set per site inventory
+      );
+      
+      // Update item with barcode and QR code URL
+      const { error: updateError } = await supabase
+        .from('inventory_items')
+        .update({
+          barcode: barcode,
+          barcode_type: 'CODE128',
+          qr_code_url: qrCode.url || null
+        })
+        .eq('id', newItem.id);
+      
+      if (updateError) {
+        console.warn('Failed to update item with barcode:', updateError);
+        // Don't fail the whole operation if barcode generation fails
+      } else {
+        console.log('✅ Barcode generated:', barcode);
+      }
+    } catch (barcodeError) {
+      console.warn('Barcode generation failed (non-critical):', barcodeError);
+      // Continue even if barcode generation fails
+    }
     
     // Close modal and refresh
     document.getElementById('itemModal').classList.add('hidden');

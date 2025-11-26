@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Barcode Scanner Test - Phase 2.1</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    #scanner-container {
+      width: 100%;
+      height: 400px;
+      background: #000;
+      position: relative;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 p-8">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">Phase 2.1: Barcode Scanner Test</h1>
+    
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">Camera Scanner</h2>
+      <div id="scanner-container"></div>
+      <div class="mt-4 flex gap-4">
+        <button 
+          id="start-scanner-btn" 
+          class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Start Scanner
+        </button>
+        <button 
+          id="stop-scanner-btn" 
+          class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          disabled
+        >
+          Stop Scanner
+        </button>
+        <button 
+          id="upload-file-btn" 
+          class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+        >
+          Scan from File
+        </button>
+      </div>
+      <input 
+        type="file" 
+        id="file-input" 
+        accept="image/*" 
+        class="hidden"
+      />
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">Scan Results</h2>
+      <div id="scan-results" class="space-y-2">
+        <p class="text-gray-500">No scans yet...</p>
+      </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">Barcode Generator Test</h2>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-2">Item ID</label>
+          <input 
+            type="number" 
+            id="test-item-id" 
+            value="123" 
+            class="border rounded px-3 py-2 w-full"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">Item Name</label>
+          <input 
+            type="text" 
+            id="test-item-name" 
+            value="Test Item" 
+            class="border rounded px-3 py-2 w-full"
+          />
+        </div>
+        <button 
+          id="generate-barcode-btn" 
+          class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+        >
+          Generate Barcode & QR Code
+        </button>
+        <div id="barcode-results" class="mt-4"></div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Scripts -->
+  <script type="module">
+    import { MobileBarcodeScanner } from './js/barcode-scanner.js';
+    import { BarcodeGenerator } from './js/barcode-generator.js';
+    
+    let scanner = null;
+    
+    // Scanner controls
+    document.getElementById('start-scanner-btn').addEventListener('click', async () => {
+      scanner = new MobileBarcodeScanner('scanner-container');
+      
+      const hasPermission = await scanner.init();
+      if (!hasPermission) {
+        alert('Camera permission denied! Please allow camera access and try again.');
+        return;
+      }
+      
+      const started = await scanner.startScanning(
+        (decodedText, decodedResult) => {
+          addScanResult(decodedText, decodedResult);
+        },
+        (error) => {
+          console.error('Scanner error:', error);
+        }
+      );
+      
+      if (started) {
+        document.getElementById('start-scanner-btn').disabled = true;
+        document.getElementById('stop-scanner-btn').disabled = false;
+      }
+    });
+    
+    document.getElementById('stop-scanner-btn').addEventListener('click', async () => {
+      if (scanner) {
+        await scanner.stopScanning();
+        document.getElementById('start-scanner-btn').disabled = false;
+        document.getElementById('stop-scanner-btn').disabled = true;
+      }
+    });
+    
+    document.getElementById('upload-file-btn').addEventListener('click', () => {
+      document.getElementById('file-input').click();
+    });
+    
+    document.getElementById('file-input').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      if (!scanner) {
+        scanner = new MobileBarcodeScanner('scanner-container');
+      }
+      
+      try {
+        const result = await scanner.scanFromFile(file);
+        if (result) {
+          addScanResult(result);
+        } else {
+          alert('No barcode/QR code found in image');
+        }
+      } catch (error) {
+        alert('Error scanning file: ' + error.message);
+      }
+    });
+    
+    // Barcode generator test
+    document.getElementById('generate-barcode-btn').addEventListener('click', async () => {
+      const itemId = parseInt(document.getElementById('test-item-id').value);
+      const itemName = document.getElementById('test-item-name').value;
+      
+      if (!itemId || !itemName) {
+        alert('Please enter both Item ID and Item Name');
+        return;
+      }
+      
+      try {
+        const barcode = await BarcodeGenerator.generateBarcode(itemId, itemName);
+        const qrCode = await BarcodeGenerator.generateQRCode(itemId, itemName);
+        
+        const resultsDiv = document.getElementById('barcode-results');
+        resultsDiv.innerHTML = `
+          <div class="border rounded p-4 space-y-4">
+            <div>
+              <p class="text-sm font-medium">Generated Barcode:</p>
+              <p class="font-mono text-lg">${barcode}</p>
+            </div>
+            <div>
+              <p class="text-sm font-medium mb-2">QR Code:</p>
+              <img src="${qrCode.image}" alt="QR Code" class="border rounded max-w-xs">
+            </div>
+            <div>
+              <p class="text-sm font-medium">QR Code Data:</p>
+              <pre class="bg-gray-100 p-2 rounded text-xs overflow-auto">${JSON.stringify(qrCode.data, null, 2)}</pre>
+            </div>
+          </div>
+        `;
+      } catch (error) {
+        alert('Error generating barcode: ' + error.message);
+        console.error(error);
+      }
+    });
+    
+    function addScanResult(decodedText, decodedResult = null) {
+      const resultsDiv = document.getElementById('scan-results');
+      const timestamp = new Date().toLocaleString();
+      
+      // Try to parse as JSON (if it's our QR code format)
+      let parsedData = null;
+      try {
+        parsedData = JSON.parse(decodedText);
+      } catch (e) {
+        // Not JSON, that's fine
+      }
+      
+      const resultHTML = `
+        <div class="border rounded p-4 bg-green-50">
+          <div class="flex justify-between items-start mb-2">
+            <p class="font-semibold text-green-800">✅ Scan Successful</p>
+            <p class="text-xs text-gray-500">${timestamp}</p>
+          </div>
+          <p class="font-mono text-sm mb-2">${decodedText}</p>
+          ${parsedData ? `
+            <details class="mt-2">
+              <summary class="text-sm font-medium cursor-pointer">Parsed Data</summary>
+              <pre class="mt-2 bg-gray-100 p-2 rounded text-xs overflow-auto">${JSON.stringify(parsedData, null, 2)}</pre>
+            </details>
+          ` : ''}
+        </div>
+      `;
+      
+      // Prepend to results
+      if (resultsDiv.querySelector('.text-gray-500')) {
+        resultsDiv.innerHTML = resultHTML;
+      } else {
+        resultsDiv.insertAdjacentHTML('afterbegin', resultHTML);
+      }
+    }
+    
+    console.log('✅ Barcode Scanner Test Page Loaded');
+    console.log('Available functions:');
+    console.log('  - MobileBarcodeScanner');
+    console.log('  - BarcodeGenerator');
+  </script>
+</body>
+</html>
+
