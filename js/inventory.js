@@ -4212,7 +4212,25 @@ async function init() {
     window.initCustomDropdowns();
   }
   
+  // Check for active job context on page load
+  checkActiveJobContext();
+  
   console.log('[Inventory] Initialization complete');
+}
+
+// Check for active job context on page load and show badge
+function checkActiveJobContext() {
+  try {
+    const jobContextStr = sessionStorage.getItem('inventoryJobContext');
+    if (!jobContextStr) return;
+    
+    const context = JSON.parse(jobContextStr);
+    if (context.jobId && context.jobTitle) {
+      showActiveJobBadge(context.jobTitle, context.jobId);
+    }
+  } catch (error) {
+    console.error('[Inventory] Failed to check job context:', error);
+  }
 }
 
 init();
