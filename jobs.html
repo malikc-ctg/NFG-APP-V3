@@ -455,14 +455,25 @@
               <i data-lucide="package" class="w-4 h-4"></i>
               Materials Used
             </h5>
-            <button 
-              id="use-materials-btn" 
-              onclick="openInventoryForJob()"
-              class="text-sm px-3 py-1.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700"
-            >
-              <i data-lucide="package-plus" class="w-4 h-4 inline"></i>
-              Use Materials
-            </button>
+            <div class="flex gap-2">
+              <button 
+                id="export-materials-btn" 
+                onclick="exportJobMaterials()"
+                class="text-sm px-3 py-1.5 rounded-xl border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight dark:hover:bg-gray-700"
+                title="Export to CSV"
+              >
+                <i data-lucide="download" class="w-4 h-4 inline"></i>
+                Export
+              </button>
+              <button 
+                id="use-materials-btn" 
+                onclick="openInventoryForJob()"
+                class="text-sm px-3 py-1.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700"
+              >
+                <i data-lucide="package-plus" class="w-4 h-4 inline"></i>
+                Use Materials
+              </button>
+            </div>
           </div>
           
           <!-- Materials Summary Cards -->
@@ -1973,6 +1984,9 @@
           document.getElementById('job-materials-cost').textContent = formatCurrency(0);
         }
         
+        // Store materials for export
+        currentJobMaterials = materialsWithUsers;
+        
         // Render materials list
         renderJobMaterialsList(materialsWithUsers, summary);
         
@@ -2000,6 +2014,7 @@
     function renderJobMaterialsList(materials, summary) {
       const listBody = document.getElementById('job-materials-list');
       const emptyMsg = document.getElementById('job-materials-empty');
+      const chartContainer = document.getElementById('job-materials-chart-container');
       
       if (!listBody) return;
       
@@ -2008,11 +2023,20 @@
         if (emptyMsg) {
           emptyMsg.classList.remove('hidden');
         }
+        if (chartContainer) {
+          chartContainer.classList.add('hidden');
+        }
         return;
       }
       
       if (emptyMsg) {
         emptyMsg.classList.add('hidden');
+      }
+      
+      // Show and render chart if we have materials
+      if (chartContainer && materials.length > 0) {
+        chartContainer.classList.remove('hidden');
+        renderMaterialsChart(materials);
       }
       
       listBody.innerHTML = materials.map(material => {
@@ -2073,6 +2097,79 @@
       `;
       document.body.appendChild(modal);
       if (window.lucide) lucide.createIcons();
+    };
+    
+    // Store materials data for export
+    let currentJobMaterials = [];
+    
+    // Export job materials to CSV
+    window.exportJobMaterials = function() {
+      if (!currentJobId) {
+        toast.error('No job selected', 'Error');
+        return;
+      }
+      
+      if (!currentJobMaterials || currentJobMaterials.length === 0) {
+        toast.warning('No materials to export', 'Empty');
+        return;
+      }
+      
+      // Get job title for filename
+      const jobTitle = document.getElementById('job-detail-title')?.textContent || 'job';
+      const sanitizedTitle = jobTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      
+      // CSV headers
+      const headers = [
+        'Item Name',
+        'Unit',
+        'Quantity Used',
+        'Unit Cost',
+        'Total Cost',
+        'Usage Date',
+        'Used By',
+        'Notes'
+      ];
+      
+      // CSV rows
+      const rows = currentJobMaterials.map(material => {
+        const date = new Date(material.usage_date).toLocaleString();
+        return [
+          material.item_name || '',
+          material.unit || '',
+          material.quantity_used || 0,
+          (material.unit_cost || 0).toFixed(2),
+          (material.total_cost || 0).toFixed(2),
+          date,
+          material.used_by || '',
+          (material.notes || '').replace(/"/g, '""') // Escape quotes
+        ];
+      });
+      
+      // Add summary row
+      const totalQuantity = currentJobMaterials.reduce((sum, m) => sum + (m.quantity_used || 0), 0);
+      const totalCost = currentJobMaterials.reduce((sum, m) => sum + (m.total_cost || 0), 0);
+      
+      rows.push([]); // Empty row
+      rows.push(['TOTAL', '', totalQuantity, '', totalCost.toFixed(2), '', '', '']);
+      
+      // Create CSV content
+      const csvContent = [
+        headers.map(h => `"${h}"`).join(','),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+      
+      // Create download link
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `job-materials-${sanitizedTitle}-${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success('Materials exported to CSV', 'Success');
     };
     
     async function renderJobTasks() {
