@@ -1340,6 +1340,40 @@
           <textarea id="stock-notes" name="notes" rows="2" placeholder="Why are you changing the stock?" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none resize-none"></textarea>
         </div>
 
+        <!-- Photo Upload Section -->
+        <div>
+          <label class="block text-sm font-medium mb-2">Photos (Optional)</label>
+          <div id="stock-photo-gallery" class="grid grid-cols-4 gap-2 mb-2 min-h-[80px]">
+            <!-- Photos will be inserted here -->
+          </div>
+          <div class="flex gap-2">
+            <button 
+              type="button" 
+              id="stock-add-photo-btn" 
+              class="flex items-center gap-2 px-4 py-2 border border-nfgray rounded-xl hover:bg-nfglight dark:hover:bg-gray-700 transition text-sm"
+            >
+              <i data-lucide="camera" class="w-4 h-4"></i>
+              <span>Take Photo</span>
+            </button>
+            <button 
+              type="button" 
+              id="stock-upload-photo-btn" 
+              class="flex items-center gap-2 px-4 py-2 border border-nfgray rounded-xl hover:bg-nfglight dark:hover:bg-gray-700 transition text-sm"
+            >
+              <i data-lucide="upload" class="w-4 h-4"></i>
+              <span>Upload</span>
+            </button>
+            <input 
+              type="file" 
+              id="stock-photo-input" 
+              accept="image/*" 
+              multiple 
+              class="hidden"
+            />
+          </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Maximum 5 photos per transaction</p>
+        </div>
+
         <div id="stock-form-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl p-3"></div>
 
         <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray dark:border-gray-700">

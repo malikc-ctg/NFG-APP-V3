@@ -3634,6 +3634,16 @@ document.getElementById('stock-form')?.addEventListener('submit', async (e) => {
       }
     }
     
+    // Upload photos if any
+    let photoUrls = [];
+    try {
+      const { uploadTransactionPhotos } = await import('./inventory-photo-handler.js');
+      photoUrls = await uploadTransactionPhotos();
+    } catch (photoError) {
+      console.warn('[Inventory] Failed to upload photos:', photoError);
+      // Don't fail the transaction if photos fail
+    }
+    
     // Record transaction
     const { error: transactionError } = await supabase
       .from('inventory_transactions')
@@ -3645,7 +3655,8 @@ document.getElementById('stock-form')?.addEventListener('submit', async (e) => {
         quantity_before: currentQty,
         quantity_after: newQty,
         user_id: currentUser.id,
-        notes: notes || null
+        notes: notes || null,
+        photo_urls: photoUrls.length > 0 ? photoUrls : null
       });
     
     if (transactionError) throw transactionError;
@@ -3654,6 +3665,12 @@ document.getElementById('stock-form')?.addEventListener('submit', async (e) => {
     document.getElementById('stockModal').classList.add('hidden');
     document.getElementById('stockModal').classList.remove('flex');
     e.target.reset();
+    
+    // Clear photos
+    const { clearTransactionPhotos } = await import('./inventory-photo-handler.js').catch(() => ({}));
+    if (clearTransactionPhotos) {
+      clearTransactionPhotos();
+    }
     
     await renderInventory();
     toast.success('Stock updated successfully!', 'Success');
