@@ -123,26 +123,122 @@ async function startInventoryScanner() {
   }
   
   try {
+    // Show loading state
+    const container = document.getElementById('barcode-scanner-container');
+    if (container) {
+      container.innerHTML = `
+        <div class="flex items-center justify-center h-full">
+          <div class="text-center text-white">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+            <p class="text-sm">Starting camera...</p>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Check if Html5Qrcode library is loaded
+    if (!window.Html5Qrcode) {
+      console.log('[Inventory Scanner] Loading Html5Qrcode library...');
+      // Wait a bit for script to load if it was just added
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      if (!window.Html5Qrcode) {
+        // Try loading it dynamically
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/html5-qrcode@latest/html5-qrcode.min.js';
+        await new Promise((resolve, reject) => {
+          script.onload = () => {
+            if (window.Html5Qrcode) {
+              resolve();
+            } else {
+              reject(new Error('Html5Qrcode library failed to load'));
+            }
+          };
+          script.onerror = () => reject(new Error('Failed to load Html5Qrcode library'));
+          document.head.appendChild(script);
+        });
+      }
+    }
+    
     const hasPermission = await inventoryScanner.init();
     if (!hasPermission) {
+      container.innerHTML = `
+        <div class="flex items-center justify-center h-full">
+          <div class="text-center text-white p-4">
+            <p class="text-lg mb-2">Camera permission required</p>
+            <p class="text-sm text-gray-300">Please allow camera access and try again</p>
+          </div>
+        </div>
+      `;
       toast.error('Camera permission denied. Please enable camera access.', 'Permission Required');
       return;
     }
     
-    await inventoryScanner.startScanning(
+    // Restore container for scanner
+    container.innerHTML = '';
+    
+    const started = await inventoryScanner.startScanning(
       async (decodedText) => {
         console.log('[Inventory Scanner] Scanned:', decodedText);
         await handleInventoryBarcodeScan(decodedText);
       },
       (error) => {
-        console.error('[Inventory Scanner] Scanner error:', error);
+        // Only log non-common errors
+        if (!error.includes('NotFoundException') && !error.includes('No QR code')) {
+          console.error('[Inventory Scanner] Scanner error:', error);
+        }
       }
     );
     
-    console.log('[Inventory Scanner] Scanner started');
+    if (!started) {
+      container.innerHTML = `
+        <div class="flex items-center justify-center h-full">
+          <div class="text-center text-white p-4">
+            <p class="text-lg mb-2">Failed to start camera</p>
+            <p class="text-sm text-gray-300">Please check your camera settings</p>
+          </div>
+        </div>
+      `;
+      toast.error('Failed to start camera. Check console for details.', 'Error');
+      return;
+    }
+    
+    console.log('[Inventory Scanner] Scanner started successfully');
+    
+    // Add overlay after scanner starts
+    setTimeout(() => {
+      if (container && !container.querySelector('.scanner-overlay')) {
+        container.insertAdjacentHTML('beforeend', `
+          <div class="scanner-overlay absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+            <div class="relative">
+              <div class="border-4 border-white rounded-xl w-64 h-64 shadow-lg"></div>
+              <div class="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-lg"></div>
+              <div class="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-lg"></div>
+              <div class="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-lg"></div>
+              <div class="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-lg"></div>
+            </div>
+          </div>
+        `);
+      }
+    }, 500);
+    
   } catch (error) {
     console.error('[Inventory Scanner] Failed to start scanner:', error);
-    toast.error('Failed to start camera. Please try again.', 'Error');
+    const container = document.getElementById('barcode-scanner-container');
+    if (container) {
+      container.innerHTML = `
+        <div class="flex items-center justify-center h-full">
+          <div class="text-center text-white p-4">
+            <p class="text-lg mb-2">Camera Error</p>
+            <p class="text-sm text-gray-300 mb-4">${error.message || 'Unknown error'}</p>
+            <button onclick="location.reload()" class="px-4 py-2 bg-white text-black rounded-lg">
+              Reload Page
+            </button>
+          </div>
+        </div>
+      `;
+    }
+    toast.error('Failed to start camera: ' + (error.message || 'Unknown error'), 'Error');
   }
 }
 
