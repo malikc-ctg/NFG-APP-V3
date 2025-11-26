@@ -165,7 +165,8 @@ async function handleInventoryBarcodeScan(barcode) {
     }
     
     if (!item) {
-      toast.error('Item not found. Please check the barcode.', 'Not Found');
+      // Item not found - offer to create it with this barcode
+      await showCreateItemFromBarcode(barcode);
       setTimeout(() => startInventoryScanner(), 2000);
       return;
     }
@@ -316,6 +317,228 @@ async function handleScannerFileUpload(e) {
   
   // Reset file input
   e.target.value = '';
+}
+
+// Show modal to create item from scanned barcode
+async function showCreateItemFromBarcode(barcode) {
+  return new Promise((resolve) => {
+    // Create modal
+    const modal = document.createElement('div');
+    modal.id = 'create-item-from-barcode-modal';
+    modal.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4';
+    modal.innerHTML = `
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-md p-6">
+        <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-4">
+          New Item Detected
+        </h3>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Barcode <code class="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono">${barcode}</code> not found.
+          Create a new item with this barcode?
+        </p>
+        
+        <form id="create-item-from-barcode-form" class="space-y-4">
+          <input type="hidden" id="scanned-barcode-value" value="${barcode}">
+          
+          <div>
+            <label class="block text-sm font-medium mb-2 text-nftext dark:text-white">Item Name *</label>
+            <input 
+              type="text" 
+              id="new-item-name" 
+              required
+              placeholder="e.g., Coca-Cola, Paper Towels"
+              class="w-full border border-nfgray rounded-xl px-4 py-3 text-nftext dark:text-white dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none"
+              autofocus
+            />
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium mb-2 text-nftext dark:text-white">Category</label>
+            <select 
+              id="new-item-category" 
+              class="w-full border border-nfgray rounded-xl px-4 py-3 text-nftext dark:text-white dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none"
+            >
+              <option value="">Select category...</option>
+            </select>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-2 text-nftext dark:text-white">Unit</label>
+              <input 
+                type="text" 
+                id="new-item-unit" 
+                value="pieces"
+                placeholder="pieces, boxes, etc."
+                class="w-full border border-nfgray rounded-xl px-4 py-3 text-nftext dark:text-white dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2 text-nftext dark:text-white">Low Stock</label>
+              <input 
+                type="number" 
+                id="new-item-threshold" 
+                value="5"
+                min="0"
+                class="w-full border border-nfgray rounded-xl px-4 py-3 text-nftext dark:text-white dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none"
+              />
+            </div>
+          </div>
+          
+          <div class="flex gap-2 pt-4 border-t border-nfgray">
+            <button 
+              type="button" 
+              id="cancel-create-item" 
+              class="flex-1 px-4 py-3 rounded-xl border border-nfgray text-nftext dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              class="flex-1 px-4 py-3 rounded-xl bg-nfgblue text-white hover:bg-nfgdark"
+            >
+              Create Item
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Load categories
+    loadCategoriesForModal();
+    
+    // Handle form submission
+    document.getElementById('create-item-from-barcode-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await createItemFromScannedBarcode(modal);
+      resolve();
+    });
+    
+    // Handle cancel
+    document.getElementById('cancel-create-item').addEventListener('click', () => {
+      modal.remove();
+      resolve();
+    });
+  });
+}
+
+// Load categories for the create modal
+async function loadCategoriesForModal() {
+  try {
+    const { data, error } = await supabase
+      .from('inventory_categories')
+      .select('id, name')
+      .order('name');
+    
+    if (error) throw error;
+    
+    const select = document.getElementById('new-item-category');
+    if (select) {
+      (data || []).forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat.id;
+        option.textContent = cat.name;
+        select.appendChild(option);
+      });
+    }
+  } catch (error) {
+    console.error('[Inventory Scanner] Failed to load categories:', error);
+  }
+}
+
+// Create item from scanned barcode
+async function createItemFromScannedBarcode(modal) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error('Not authenticated', 'Error');
+      return;
+    }
+    
+    const name = document.getElementById('new-item-name').value.trim();
+    const barcode = document.getElementById('scanned-barcode-value').value;
+    const categoryId = document.getElementById('new-item-category').value || null;
+    const unit = document.getElementById('new-item-unit').value.trim() || 'pieces';
+    const threshold = parseInt(document.getElementById('new-item-threshold').value) || 5;
+    
+    if (!name) {
+      toast.error('Item name is required', 'Error');
+      return;
+    }
+    
+    // Create the item with the scanned barcode
+    const { data: newItem, error } = await supabase
+      .from('inventory_items')
+      .insert({
+        name: name,
+        barcode: barcode,
+        barcode_type: 'EAN_13', // Common format for product barcodes
+        category_id: categoryId,
+        unit: unit,
+        low_stock_threshold: threshold,
+        created_by: user.id
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      // Check if barcode already exists (race condition)
+      if (error.code === '23505') {
+        toast.error('Item with this barcode already exists', 'Error');
+        modal.remove();
+        // Try scanning again - item should exist now
+        setTimeout(() => handleInventoryBarcodeScan(barcode), 1000);
+        return;
+      }
+      throw error;
+    }
+    
+    // Generate QR code for the new item
+    try {
+      const { BarcodeGenerator } = await import('./barcode-generator.js');
+      const qrCode = await BarcodeGenerator.generateAndUploadQRCode(
+        newItem.id,
+        newItem.name,
+        null
+      );
+      
+      if (qrCode.url) {
+        await supabase
+          .from('inventory_items')
+          .update({ qr_code_url: qrCode.url })
+          .eq('id', newItem.id);
+      }
+    } catch (qrError) {
+      console.warn('[Inventory Scanner] QR code generation failed:', qrError);
+      // Don't fail the whole operation if QR generation fails
+    }
+    
+    // Add to current site's inventory if site is selected
+    if (scannerSiteId) {
+      const { error: siteInvError } = await supabase
+        .from('site_inventory')
+        .insert({
+          site_id: scannerSiteId,
+          item_id: newItem.id,
+          quantity: 0 // Start with 0, they can add stock later
+        });
+      
+      if (siteInvError && siteInvError.code !== '23505') {
+        console.error('[Inventory Scanner] Failed to add to site inventory:', siteInvError);
+      }
+    }
+    
+    toast.success(`Created: ${name}`, 'Item Created');
+    modal.remove();
+    
+    // Now that item exists, process the scan again
+    setTimeout(() => handleInventoryBarcodeScan(barcode), 500);
+    
+  } catch (error) {
+    console.error('[Inventory Scanner] Failed to create item:', error);
+    toast.error('Failed to create item: ' + error.message, 'Error');
+  }
 }
 
 // Export for use in inventory.js
