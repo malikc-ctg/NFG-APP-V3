@@ -3975,8 +3975,7 @@ async function init() {
   
   initInventoryViewTabs();
   
-  // Initialize scanner functionality (lazy load)
-  window.initInventoryScanner = initInventoryScanner;
+  // Scanner functionality is lazy-loaded when scanner tab is clicked
   fetchUsageTrends().catch((error) => console.warn('Usage trend preload failed:', error));
   
   // Initialize automated low stock checking
