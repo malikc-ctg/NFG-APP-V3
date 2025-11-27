@@ -21,6 +21,7 @@ let existingInventoryItems = []; // For inventory import - item lookup
 let existingCategories = []; // For inventory import - category lookup
 let existingInventoryStock = []; // For inventory import - duplicate checking
 let existingSuppliers = []; // For inventory import - supplier lookup
+let existingUsers = []; // For users import - email uniqueness check
 
 // Step indicator elements (will be queried after DOM ready)
 let stepIndicators = null;
@@ -62,6 +63,13 @@ const FIELD_DEFINITIONS = {
     units: { label: 'Units', required: false, type: 'text', default: 'pieces' },
     reorder_point: { label: 'Reorder Point', required: false, type: 'number', default: 5 },
     supplier: { label: 'Supplier', required: false, type: 'text', lookup: 'supplier' }
+  },
+  users: {
+    full_name: { label: 'Full Name', required: true, type: 'text' },
+    email: { label: 'Email', required: true, type: 'email' },
+    role: { label: 'Role', required: false, type: 'text', default: 'staff' },
+    phone: { label: 'Phone', required: false, type: 'text' },
+    status: { label: 'Status', required: false, type: 'text', default: 'pending' }
   }
 };
 
@@ -261,6 +269,46 @@ const COLUMN_MAPPINGS = {
     'supplier name': 'supplier',
     'vendor': 'supplier',
     'vendor name': 'supplier'
+  },
+  users: {
+    // Full name variations
+    'full name': 'full_name',
+    'full_name': 'full_name',
+    'name': 'full_name',
+    'fullname': 'full_name',
+    'employee name': 'full_name',
+    'worker name': 'full_name',
+    'staff name': 'full_name',
+    'user name': 'full_name',
+    
+    // Email variations
+    'email': 'email',
+    'email address': 'email',
+    'e-mail': 'email',
+    'email_address': 'email',
+    'e-mail address': 'email',
+    
+    // Role variations
+    'role': 'role',
+    'user role': 'role',
+    'employee role': 'role',
+    'position': 'role',
+    'user type': 'role',
+    
+    // Phone variations
+    'phone': 'phone',
+    'phone number': 'phone',
+    'phone_number': 'phone',
+    'telephone': 'phone',
+    'mobile': 'phone',
+    'cell phone': 'phone',
+    'cell': 'phone',
+    
+    // Status variations
+    'status': 'status',
+    'user status': 'status',
+    'account status': 'status',
+    'employee status': 'status'
   }
 };
 
@@ -508,6 +556,8 @@ function selectImportType(type) {
     loadExistingInventoryItems();
     loadExistingInventoryStock();
     loadExistingSuppliers();
+  } else if (type === 'users') {
+    loadExistingUsers();
   }
   
   toast.success(`Selected: ${type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ')} import`);
@@ -981,6 +1031,81 @@ async function validateImportData() {
           rowWarnings.push(`Stock entry already exists for this site+item. Will update quantity.`);
         }
       }
+    } else if (currentImportType === 'users') {
+      // Users import validation
+      
+      // Validate email format and uniqueness
+      if (mappedRow.email && mappedRow.email.trim()) {
+        const email = String(mappedRow.email).trim().toLowerCase();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        
+        if (!emailRegex.test(email)) {
+          rowErrors.push(`Invalid email format: "${mappedRow.email}"`);
+        } else {
+          mappedRow.email = email; // Normalize to lowercase
+          
+          // Check for duplicates within the import
+          const duplicateInImport = csvData.slice(0, index).some((otherRow, otherIndex) => {
+            const otherMappedRow = {};
+            Object.keys(columnMapping).forEach(header => {
+              const field = columnMapping[header];
+              if (field) otherMappedRow[field] = otherRow[header];
+            });
+            return otherMappedRow.email && String(otherMappedRow.email).trim().toLowerCase() === email;
+          });
+          
+          if (duplicateInImport) {
+            rowErrors.push(`Duplicate email in CSV: "${email}"`);
+          } else {
+            // Check against existing users
+            const existingUser = findUserByEmail(email);
+            if (existingUser) {
+              rowWarnings.push(`User with email "${email}" already exists. Will skip or create invitation.`);
+            }
+          }
+        }
+      }
+      
+      // Validate role
+      if (mappedRow.role && mappedRow.role.trim()) {
+        const validRoles = ['admin', 'client', 'staff'];
+        const normalizedRole = mappedRow.role.trim().toLowerCase();
+        
+        if (!validRoles.includes(normalizedRole)) {
+          rowWarnings.push(`Invalid role: "${mappedRow.role}". Must be one of: admin, client, staff. Will default to "staff"`);
+          mappedRow.role = 'staff';
+        } else {
+          mappedRow.role = normalizedRole;
+        }
+      } else {
+        mappedRow.role = 'staff'; // Default
+      }
+      
+      // Validate status
+      if (mappedRow.status && mappedRow.status.trim()) {
+        const validStatuses = ['pending', 'active', 'inactive', 'suspended'];
+        const normalizedStatus = mappedRow.status.trim().toLowerCase();
+        
+        if (!validStatuses.includes(normalizedStatus)) {
+          rowWarnings.push(`Invalid status: "${mappedRow.status}". Will default to "pending"`);
+          mappedRow.status = 'pending';
+        } else {
+          mappedRow.status = normalizedStatus;
+        }
+      } else {
+        mappedRow.status = 'pending'; // Default for new users
+      }
+      
+      // Validate phone format (optional)
+      if (mappedRow.phone && mappedRow.phone.trim()) {
+        // Basic phone validation - just clean up the format
+        mappedRow.phone = String(mappedRow.phone).trim();
+      }
+      
+      // Clean up full_name
+      if (mappedRow.full_name && mappedRow.full_name.trim()) {
+        mappedRow.full_name = String(mappedRow.full_name).trim();
+      }
     }
     
     if (rowErrors.length > 0) {
@@ -1137,10 +1262,14 @@ function goToNextStep() {
       itemType = 'site(s)';
     } else if (currentImportType === 'jobs') {
       itemType = 'job(s)';
+    } else if (currentImportType === 'users') {
+      itemType = 'user invitation(s)';
     } else if (currentImportType === 'inventory_items') {
       itemType = 'inventory item(s)';
     } else if (currentImportType === 'inventory_stock') {
       itemType = 'stock entr(ies)';
+    } else if (currentImportType === 'inventory') {
+      itemType = 'inventory entr(ies)';
     } else {
       itemType = 'item(s)';
     }
@@ -1348,6 +1477,24 @@ async function startImport() {
         };
         
         item._stockData = stockData;
+      } else if (currentImportType === 'users') {
+        // Users import - prepare invitation data
+        // Users will be imported as invitations (they need to set passwords)
+        item.invitationData = {
+          email: item.email,
+          role: item.role || 'staff',
+          full_name: item.full_name || null,
+          phone: item.phone || null
+        };
+        
+        // Clean up data
+        Object.keys(item).forEach(key => {
+          if (key !== 'invitationData' && (item[key] === '' || item[key] === null || item[key] === undefined)) {
+            delete item[key];
+          } else if (typeof item[key] === 'string' && key !== 'invitationData') {
+            item[key] = item[key].trim();
+          }
+        });
       }
       
       return item;
@@ -1494,6 +1641,71 @@ async function startImport() {
               }
             });
         }
+      } else if (currentImportType === 'users') {
+        // Users import - create invitations
+        const invitations = [];
+        
+        // Generate invitation token helper function
+        const generateToken = () => {
+          const array = new Uint8Array(32);
+          crypto.getRandomValues(array);
+          return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+        };
+        
+        for (const user of batchData) {
+          // Check if user already exists
+          const existingUser = findUserByEmail(user.invitationData.email);
+          if (existingUser) {
+            console.log(`⏭️ Skipping ${user.invitationData.email} - user already exists`);
+            continue;
+          }
+          
+          // Check if invitation already exists
+          const { data: existingInvitation } = await supabase
+            .from('user_invitations')
+            .select('id, status')
+            .eq('email', user.invitationData.email)
+            .eq('status', 'pending')
+            .single();
+          
+          if (existingInvitation) {
+            console.log(`⏭️ Skipping ${user.invitationData.email} - pending invitation already exists`);
+            continue;
+          }
+          
+          // Create invitation
+          const token = generateToken();
+          const expiresAt = new Date();
+          expiresAt.setDate(expiresAt.getDate() + 7); // Expires in 7 days
+          
+          const invitation = {
+            email: user.invitationData.email,
+            role: user.invitationData.role || 'staff',
+            invited_by: currentUserId,
+            invitation_token: token,
+            expires_at: expiresAt.toISOString(),
+            status: 'pending'
+          };
+          
+          invitations.push(invitation);
+        }
+        
+        if (invitations.length > 0) {
+          const { data: insertData, error: insertError } = await supabase
+            .from('user_invitations')
+            .insert(invitations)
+            .select();
+          
+          data = insertData;
+          error = insertError;
+          
+          if (!error && data) {
+            console.log(`✅ Created ${data.length} invitation(s)`);
+          }
+        } else {
+          data = [];
+          error = null;
+        }
       } else {
         // Regular import for other types
         let tableName;
@@ -1535,9 +1747,11 @@ async function startImport() {
       } else {
         const itemName = currentImportType === 'sites' ? 'sites' : 
                         currentImportType === 'jobs' ? 'jobs' : 
-                        currentImportType === 'inventory' ? 'inventory entries' : 'items';
+                        currentImportType === 'inventory' ? 'inventory entries' :
+                        currentImportType === 'users' ? 'invitations' : 'items';
         const nameField = currentImportType === 'sites' ? 'name' : 
                          currentImportType === 'jobs' ? 'title' : 
+                         currentImportType === 'users' ? 'email' :
                          'quantity';
         
         console.log(`✅ Successfully imported ${data.length} ${itemName}`);
@@ -1600,8 +1814,8 @@ async function renderImportResults(imported, failed, failedRows) {
     ${imported > 0 ? `
       <div class="flex justify-center mt-6">
         <button id="view-imported-items-btn" class="px-6 py-3 bg-nfgblue dark:bg-blue-900 text-white rounded-xl hover:bg-nfgdark transition inline-flex items-center gap-2 font-medium">
-          <i data-lucide="${currentImportType === 'sites' ? 'building-2' : currentImportType === 'jobs' ? 'clipboard-list' : 'package'}" class="w-5 h-5"></i>
-          View Imported ${currentImportType === 'sites' ? 'Sites' : currentImportType === 'jobs' ? 'Jobs' : 'Inventory'}
+          <i data-lucide="${currentImportType === 'sites' ? 'building-2' : currentImportType === 'jobs' ? 'clipboard-list' : currentImportType === 'users' ? 'users' : 'package'}" class="w-5 h-5"></i>
+          View Imported ${currentImportType === 'sites' ? 'Sites' : currentImportType === 'jobs' ? 'Jobs' : currentImportType === 'users' ? 'Users' : 'Inventory'}
         </button>
       </div>
     ` : ''}
@@ -1623,6 +1837,8 @@ async function renderImportResults(imported, failed, failedRows) {
       itemType = 'job(s)';
     } else if (currentImportType === 'inventory') {
       itemType = 'inventory entr(ies)';
+    } else if (currentImportType === 'users') {
+      itemType = 'invitation(s)';
     } else {
       itemType = 'item(s)';
     }
@@ -1645,6 +1861,12 @@ async function renderImportResults(imported, failed, failedRows) {
         await window.loadInventory();
         toast.success('Inventory refreshed!');
       }
+    }
+  } else if (currentImportType === 'users') {
+    // Refresh user list if settings page is open
+    if (window.location.pathname.includes('settings.html')) {
+      // Users are imported as invitations, which show up in User Management
+      toast.info('User invitations created! Check the User Management section.');
     }
   }
   
@@ -1689,6 +1911,19 @@ async function renderImportResults(imported, failed, failedRows) {
         } else {
           // Navigate to inventory page
           window.location.href = './inventory.html';
+        }
+      } else if (currentImportType === 'users') {
+        // Navigate to settings page (User Management section)
+        if (window.location.pathname.includes('settings.html')) {
+          // If already on settings page, scroll to User Management section
+          const userSection = document.getElementById('user-management-section');
+          if (userSection) {
+            userSection.scrollIntoView({ behavior: 'smooth' });
+          }
+          closeImportModal();
+        } else {
+          // Navigate to settings page
+          window.location.href = './settings.html#user-management-section';
         }
       }
     });
@@ -1975,6 +2210,34 @@ async function loadExistingSuppliers() {
     console.log(`Loaded ${existingSuppliers.length} existing suppliers for validation`);
   } catch (error) {
     console.error('Exception loading existing suppliers:', error);
+  }
+}
+
+// Find user by email
+function findUserByEmail(email) {
+  if (!email || !existingUsers.length) return null;
+  
+  const normalized = String(email).trim().toLowerCase();
+  
+  return existingUsers.find(u => u.email.toLowerCase() === normalized) || null;
+}
+
+// Load existing users for validation
+async function loadExistingUsers() {
+  try {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('id, email, full_name, role, status');
+    
+    if (error) {
+      console.error('Error loading existing users:', error);
+      return;
+    }
+    
+    existingUsers = data || [];
+    console.log(`Loaded ${existingUsers.length} existing users for validation`);
+  } catch (error) {
+    console.error('Exception loading existing users:', error);
   }
 }
 
