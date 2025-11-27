@@ -220,8 +220,19 @@ class InventoryOfflineDB {
     
     // Get all transactions and filter by synced = false
     // IndexedDB doesn't handle boolean indexes well, so we filter in JavaScript
-    const allTransactions = await store.getAll();
-    return allTransactions.filter(tx => tx.synced === false);
+    return new Promise((resolve, reject) => {
+      const request = store.getAll();
+      
+      request.onsuccess = () => {
+        const allTransactions = request.result || [];
+        const pending = allTransactions.filter(tx => tx.synced === false);
+        resolve(pending);
+      };
+      
+      request.onerror = () => {
+        reject(request.error);
+      };
+    });
   }
 
   async markTransactionSynced(transactionId) {
