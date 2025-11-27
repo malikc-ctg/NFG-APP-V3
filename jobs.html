@@ -1984,6 +1984,26 @@
           document.getElementById('job-materials-cost').textContent = formatCurrency(0);
         }
         
+        // Fetch user names separately and merge with materials
+        let materialsWithUsers = materials || [];
+        if (materials && materials.length > 0) {
+          const userIds = [...new Set(materials.map(m => m.user_id).filter(Boolean))];
+          if (userIds.length > 0) {
+            const { data: users } = await supabase
+              .from('user_profiles')
+              .select('id, full_name')
+              .in('id', userIds);
+            
+            const userMap = {};
+            (users || []).forEach(u => { userMap[u.id] = u.full_name; });
+            
+            materialsWithUsers = materials.map(m => ({
+              ...m,
+              used_by: m.user_id ? userMap[m.user_id] || null : null
+            }));
+          }
+        }
+        
         // Store materials for export
         currentJobMaterials = materialsWithUsers;
         
