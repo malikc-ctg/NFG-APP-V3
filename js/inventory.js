@@ -938,6 +938,42 @@ async function populateHistorySiteFilter() {
   select.innerHTML += sitesList.map(site => `<option value="${site.id}">${site.name}</option>`).join('');
 }
 
+async function populateHistoryJobFilter() {
+  const select = document.getElementById('history-job-select');
+  if (!select) return;
+  
+  // Show loading state
+  select.innerHTML = '<option value="all">Loading jobs...</option>';
+  
+  try {
+    // Fetch all jobs (not just active ones for history view)
+    const { data: jobs, error } = await supabase
+      .from('jobs')
+      .select('id, title, job_type, status, site_id, sites:site_id(name)')
+      .order('created_at', { ascending: false })
+      .limit(500); // Limit to most recent 500 jobs
+    
+    if (error) throw error;
+    
+    if (!jobs || jobs.length === 0) {
+      select.innerHTML = '<option value="all">All Jobs</option><option value="none">No Job</option>';
+      return;
+    }
+    
+    // Group jobs by site for better organization
+    select.innerHTML = '<option value="all">All Jobs</option><option value="none">No Job</option>' +
+      jobs.map(job => {
+        const siteName = job.sites?.name || 'Unknown Site';
+        const statusIcon = job.status === 'in-progress' ? '🟢' : job.status === 'completed' ? '✅' : '';
+        const jobType = job.job_type ? `(${job.job_type})` : '';
+        return `<option value="${job.id}">${statusIcon} ${job.title} ${jobType} - ${siteName}</option>`;
+      }).join('');
+  } catch (error) {
+    console.error('[Inventory] Failed to load jobs for filter:', error);
+    select.innerHTML = '<option value="all">All Jobs</option><option value="none">No Job</option>';
+  }
+}
+
 function attachHistoryFilterListeners() {
   const typeSelect = document.getElementById('history-type-filter');
   const siteSelect = document.getElementById('history-site-filter');
