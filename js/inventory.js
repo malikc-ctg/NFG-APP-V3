@@ -167,10 +167,29 @@ async function fetchSiteInventory() {
     
     if (error) throw error;
     
-    return (data || []).map(record => {
-      const item = record.inventory_items || {};
-      const category = item.inventory_categories || {};
-      const threshold = item.low_stock_threshold ?? 0;
+      // Map invalid icon names to valid Lucide icons
+      const iconMapping = {
+        'broom': 'sparkles',
+        'brush': 'sparkles',
+        'mop': 'droplet',
+        'vacuum': 'wind',
+        'spray': 'droplet',
+        'towel': 'square',
+        'bucket': 'droplet',
+        'glove': 'hand',
+        'rag': 'square'
+      };
+      
+      const getValidIcon = (iconName) => {
+        if (!iconName) return 'package';
+        const icon = iconName.toLowerCase().trim();
+        return iconMapping[icon] || icon;
+      };
+      
+      return (data || []).map(record => {
+        const item = record.inventory_items || {};
+        const category = item.inventory_categories || {};
+        const threshold = item.low_stock_threshold ?? 0;
       const status = record.quantity === 0
         ? 'out'
         : record.quantity < threshold
@@ -198,7 +217,7 @@ async function fetchSiteInventory() {
         updated_at: record.updated_at,
         low_stock_threshold: threshold,
         category_name: category.name || 'Uncategorized',
-        category_icon: category.icon || 'package',
+        category_icon: getValidIcon(category.icon),
         stock_status: status
       };
     });
@@ -337,7 +356,7 @@ async function renderInventory() {
           </td>
           <td class="px-4 py-3">
             <div class="flex items-center gap-2">
-              <i data-lucide="${item.category_icon || 'package'}" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
+              <i data-lucide="${sanitizeIconName(item.category_icon)}" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
               <div>
                 <div class="font-medium text-nfgblue dark:text-blue-400">${item.item_name}</div>
                 <div class="text-xs text-gray-500 md:hidden dark:text-gray-400">${item.category_name}</div>
