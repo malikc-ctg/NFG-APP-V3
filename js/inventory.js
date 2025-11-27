@@ -34,6 +34,13 @@ function sanitizeText(value) {
   });
 }
 
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 // Sanitize and validate Lucide icon names
 function sanitizeIconName(iconName) {
   if (!iconName) return 'package';
@@ -1054,7 +1061,7 @@ async function loadHistoryActivity(showToast = false) {
   
   tableBody.innerHTML = `
     <tr>
-      <td colspan="9" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Loading history...</td>
+      <td colspan="10" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Loading history...</td>
     </tr>
   `;
   
@@ -1107,7 +1114,7 @@ function renderHistoryTable() {
   if (!historyViewData.length) {
     tableBody.innerHTML = `
       <tr>
-        <td colspan="9" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No transactions found for the selected filters</td>
+        <td colspan="10" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No transactions found for the selected filters</td>
       </tr>
     `;
     return;
@@ -1158,12 +1165,51 @@ function renderHistoryTable() {
         </td>
         <td class="px-4 py-3 text-center text-sm text-gray-600 dark:text-gray-300">${entry.quantity_before} → ${entry.quantity_after}</td>
         <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">${user}</td>
+        <td class="px-4 py-3 text-sm">
+          ${entry.photo_urls && entry.photo_urls.length > 0 ? (() => {
+            const photoUrlsStr = JSON.stringify(entry.photo_urls);
+            const photoUrlsEscaped = photoUrlsStr.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            const thumbnails = entry.photo_urls.slice(0, 3).map((url, idx) => `
+              <img 
+                src="${escapeHtml(url)}" 
+                alt="Photo ${idx + 1}" 
+                class="w-10 h-10 object-cover rounded border border-nfgray cursor-pointer hover:opacity-80 transition transaction-photo-thumb"
+                data-transaction-id="${entry.id}"
+                data-photo-urls="${photoUrlsEscaped}"
+                loading="lazy"
+              />
+            `).join('');
+            const moreButton = entry.photo_urls.length > 3 ? `
+              <button 
+                class="w-10 h-10 rounded border border-nfgray bg-nfglight hover:bg-nfgray transition flex items-center justify-center text-xs font-medium text-nfgblue transaction-photo-btn"
+                data-transaction-id="${entry.id}"
+                data-photo-urls="${photoUrlsEscaped}"
+              >
+                +${entry.photo_urls.length - 3}
+              </button>
+            ` : '';
+            return `<div class="flex items-center gap-1">${thumbnails}${moreButton}</div>`;
+          })() : `
+            <span class="text-gray-400 text-sm">—</span>
+          `}
+        </td>
         <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">${notes}</td>
       </tr>
     `;
   }).join('');
   
   if (window.lucide) window.lucide.createIcons();
+  
+  // Attach click handlers for photo thumbnails
+  tableBody.querySelectorAll('.transaction-photo-thumb, .transaction-photo-btn').forEach(element => {
+    element.addEventListener('click', function() {
+      const transactionId = parseInt(this.dataset.transactionId);
+      const photoUrls = JSON.parse(this.dataset.photoUrls || '[]');
+      if (photoUrls && photoUrls.length > 0) {
+        viewTransactionPhotos(transactionId, photoUrls);
+      }
+    });
+  });
 }
 
 function updateHistorySummaryCards() {
@@ -3580,6 +3626,7 @@ async function fetchInventoryTransactions(options = {}) {
       quantity_after,
       created_at,
       notes,
+      photo_urls,
       site_id,
       item_id,
       job_id,
@@ -3657,6 +3704,21 @@ async function enrichTransactionsWithUserNames(entries) {
 function transformTransactionRecord(record) {
   const item = record.inventory_items || {};
   const site = record.sites || {};
+  const job = record.jobs || {};
+  
+  // Parse photo_urls if it's a JSON string, otherwise use as-is (array)
+  let photoUrls = [];
+  if (record.photo_urls) {
+    if (typeof record.photo_urls === 'string') {
+      try {
+        photoUrls = JSON.parse(record.photo_urls);
+      } catch (e) {
+        photoUrls = [];
+      }
+    } else if (Array.isArray(record.photo_urls)) {
+      photoUrls = record.photo_urls;
+    }
+  }
   
   return {
     id: record.id,
@@ -3666,11 +3728,16 @@ function transformTransactionRecord(record) {
     quantity_after: record.quantity_after,
     created_at: record.created_at,
     notes: record.notes,
+    photo_urls: photoUrls,
     site_id: record.site_id,
     site_name: site.name || '—',
     item_id: record.item_id,
     item_name: item.name || 'Unknown Item',
     unit: item.unit || '',
+    job_id: record.job_id,
+    job_title: job.title || null,
+    job_type: job.job_type || null,
+    job_status: job.status || null,
     user_id: record.user_id,
     user_name: record.user_name || (record.user_id ? 'Team Member' : 'System')
   };
@@ -4327,6 +4394,141 @@ function checkActiveJobContext() {
     console.error('[Inventory] Failed to check job context:', error);
   }
 }
+
+// View transaction photos in a gallery modal
+window.viewTransactionPhotos = function(transactionId, photoUrls) {
+  // Parse photo URLs if it's a string
+  let photos = [];
+  if (typeof photoUrls === 'string') {
+    try {
+      photos = JSON.parse(photoUrls);
+    } catch (e) {
+      photos = [];
+    }
+  } else if (Array.isArray(photoUrls)) {
+    photos = photoUrls;
+  }
+  
+  if (!photos || photos.length === 0) {
+    toast.error('No photos available for this transaction');
+    return;
+  }
+  
+  // Create modal for photo gallery
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-4';
+  modal.id = 'transaction-photos-modal';
+  
+  let currentPhotoIndex = 0;
+  
+  function renderPhoto() {
+    const photo = photos[currentPhotoIndex];
+    return `
+      <div class="relative max-w-6xl max-h-[90vh] mx-auto">
+        <img 
+          src="${photo}" 
+          alt="Transaction photo ${currentPhotoIndex + 1}" 
+          class="max-w-full max-h-[90vh] object-contain rounded-lg"
+        />
+        ${photos.length > 1 ? `
+          <button 
+            onclick="document.getElementById('transaction-photos-modal').dispatchEvent(new CustomEvent('prevPhoto'))"
+            class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white rounded-full w-12 h-12 flex items-center justify-center transition"
+            ${currentPhotoIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}
+          >
+            <i data-lucide="chevron-left" class="w-6 h-6"></i>
+          </button>
+          <button 
+            onclick="document.getElementById('transaction-photos-modal').dispatchEvent(new CustomEvent('nextPhoto'))"
+            class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white rounded-full w-12 h-12 flex items-center justify-center transition"
+            ${currentPhotoIndex === photos.length - 1 ? 'opacity-50 cursor-not-allowed' : ''}
+          >
+            <i data-lucide="chevron-right" class="w-6 h-6"></i>
+          </button>
+        ` : ''}
+      </div>
+      ${photos.length > 1 ? `
+        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm">
+          ${currentPhotoIndex + 1} / ${photos.length}
+        </div>
+      ` : ''}
+      <div class="absolute top-4 right-4 flex gap-2">
+        ${photos.length > 1 ? `
+          <div class="flex gap-1 bg-black/50 rounded-lg p-2">
+            ${photos.map((_, idx) => `
+              <button
+                onclick="document.getElementById('transaction-photos-modal').dispatchEvent(new CustomEvent('gotoPhoto', { detail: { index: ${idx} } }))"
+                class="w-2 h-2 rounded-full transition ${idx === currentPhotoIndex ? 'bg-white' : 'bg-white/50 hover:bg-white/75'}"
+                title="Photo ${idx + 1}"
+              ></button>
+            `).join('')}
+          </div>
+        ` : ''}
+        <button 
+          onclick="document.getElementById('transaction-photos-modal').remove()"
+          class="bg-white/20 hover:bg-white/30 text-white rounded-full w-10 h-10 flex items-center justify-center transition"
+        >
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+    `;
+  }
+  
+  modal.innerHTML = renderPhoto();
+  
+  // Handle navigation
+  if (photos.length > 1) {
+    modal.addEventListener('prevPhoto', () => {
+      if (currentPhotoIndex > 0) {
+        currentPhotoIndex--;
+        modal.innerHTML = renderPhoto();
+        if (window.lucide) lucide.createIcons();
+      }
+    });
+    
+    modal.addEventListener('nextPhoto', () => {
+      if (currentPhotoIndex < photos.length - 1) {
+        currentPhotoIndex++;
+        modal.innerHTML = renderPhoto();
+        if (window.lucide) lucide.createIcons();
+      }
+    });
+    
+    modal.addEventListener('gotoPhoto', (e) => {
+      const index = e.detail.index;
+      if (index >= 0 && index < photos.length) {
+        currentPhotoIndex = index;
+        modal.innerHTML = renderPhoto();
+        if (window.lucide) lucide.createIcons();
+      }
+    });
+    
+    // Keyboard navigation
+    document.addEventListener('keydown', function handleKeydown(e) {
+      if (!document.getElementById('transaction-photos-modal')) {
+        document.removeEventListener('keydown', handleKeydown);
+        return;
+      }
+      if (e.key === 'ArrowLeft' && currentPhotoIndex > 0) {
+        modal.dispatchEvent(new CustomEvent('prevPhoto'));
+      } else if (e.key === 'ArrowRight' && currentPhotoIndex < photos.length - 1) {
+        modal.dispatchEvent(new CustomEvent('nextPhoto'));
+      } else if (e.key === 'Escape') {
+        modal.remove();
+      }
+    });
+  }
+  
+  // Click outside to close
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.remove();
+    }
+  });
+  
+  document.body.appendChild(modal);
+  if (window.lucide) lucide.createIcons();
+};
 
 init();
 
