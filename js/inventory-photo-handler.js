@@ -6,7 +6,6 @@
 import { PhotoCapture } from './photo-capture.js';
 import { supabase } from './supabase.js';
 import { toast } from './notifications.js';
-import { getCurrentUser } from './auth.js';
 
 const photoCapture = new PhotoCapture();
 const MAX_PHOTOS = 5;
@@ -272,8 +271,9 @@ export async function uploadTransactionPhotos() {
     return [];
   }
   
-  const user = await getCurrentUser();
-  if (!user) {
+  // Get current user from Supabase auth
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
     throw new Error('User not authenticated');
   }
   
