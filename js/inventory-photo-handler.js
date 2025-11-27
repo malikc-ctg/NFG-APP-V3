@@ -336,6 +336,14 @@ export function getTransactionPhotos() {
   return transactionPhotos;
 }
 
+/**
+ * Get photo blobs for offline storage
+ * @returns {Promise<Blob[]>} Array of photo blobs
+ */
+export async function getTransactionPhotoBlobs() {
+  return transactionPhotos.map(photo => photo.blob).filter(Boolean);
+}
+
 // Export for global access
 window.removeTransactionPhoto = removePhoto;
 

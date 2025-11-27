@@ -1,6 +1,8 @@
 import { supabase } from './supabase.js';
 import { toast, showConfirm } from './notifications.js';
 import { BarcodeGenerator } from './barcode-generator.js';
+import { inventoryOfflineDB } from './inventory-offline-db.js';
+import { inventorySyncManager } from './inventory-offline-sync.js';
 
 let currentUser = null;
 let currentUserProfile = null;
@@ -177,11 +179,38 @@ async function fetchUsageTrends(windowDays = USAGE_TREND_WINDOW_DAYS) {
 
 // Fetch site inventory (with stock levels per site)
 async function fetchSiteInventory() {
+  // Check if offline - use cached data
+  if (!navigator.onLine) {
+    console.log('[Inventory] Offline mode - using cached data');
+    const cached = await inventoryOfflineDB.getAllCachedItems();
+    if (cached && cached.length > 0) {
+      // Return cached data in the expected format
+      return cached.map(item => ({
+        ...item,
+        site_name: item.site_name || 'Unknown Site',
+        item_name: item.item_name || item.name || 'Unknown Item',
+        category_name: item.category_name || 'Uncategorized',
+        category_icon: item.category_icon || 'package',
+        stock_status: item.stock_status || 'ok'
+      }));
+    }
+    toast.warning('No cached inventory data available. Please connect to the internet to load inventory.', 'Offline Mode');
+    return [];
+  }
+  
   const viewResult = await supabase
     .from('site_inventory_status')
     .select('*');
   
   if (!viewResult.error && Array.isArray(viewResult.data)) {
+    // Cache the data for offline use
+    try {
+      await inventoryOfflineDB.cacheItems(viewResult.data);
+      // Also cache site inventory quantities
+      await inventoryOfflineDB.cacheSiteInventory(viewResult.data);
+    } catch (cacheError) {
+      console.warn('[Inventory] Failed to cache inventory data:', cacheError);
+    }
     return viewResult.data;
   }
   
@@ -276,6 +305,17 @@ async function fetchSiteInventory() {
 
 // Fetch sites
 async function fetchSites() {
+  // Check if offline - use cached sites
+  if (!navigator.onLine) {
+    console.log('[Inventory] Offline mode - using cached sites');
+    const cached = await inventoryOfflineDB.getCachedSites();
+    if (cached && cached.length > 0) {
+      sites = cached;
+      return sites;
+    }
+    return [];
+  }
+  
   const { data, error } = await supabase
     .from('sites')
     .select('*')
@@ -287,6 +327,12 @@ async function fetchSites() {
   }
   
   sites = data || [];
+  
+  // Cache sites for offline use
+  if (sites.length > 0) {
+    await inventoryOfflineDB.cacheSites(sites);
+  }
+  
   return sites;
 }
 
@@ -3912,19 +3958,33 @@ document.getElementById('stock-form')?.addEventListener('submit', async (e) => {
   const jobId = formData.get('job_id') || null; // Get job ID (can be empty string)
   
   try {
-    // Get current stock
-    const { data: currentStock, error: fetchError } = await supabase
-      .from('site_inventory')
-      .select('quantity')
-      .eq('site_id', siteId)
-      .eq('item_id', itemId)
-      .single();
+    // Get current stock (from cache if offline)
+    let currentQty = 0;
     
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      throw fetchError;
+    if (!navigator.onLine) {
+      // Get from cached inventory
+      try {
+        const cached = await inventoryOfflineDB.getCachedSiteInventory(siteId);
+        const cachedItem = Array.isArray(cached) ? cached.find(item => item.item_id === itemId) : null;
+        currentQty = cachedItem?.quantity || 0;
+      } catch (error) {
+        console.warn('[Inventory] Failed to get cached inventory:', error);
+        currentQty = 0;
+      }
+    } else {
+      const { data: currentStock, error: fetchError } = await supabase
+        .from('site_inventory')
+        .select('quantity')
+        .eq('site_id', siteId)
+        .eq('item_id', itemId)
+        .single();
+      
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
+      }
+      
+      currentQty = currentStock?.quantity || 0;
     }
-    
-    const currentQty = currentStock?.quantity || 0;
     let newQty = currentQty;
     let quantityChange = 0;
     
@@ -3995,33 +4055,85 @@ document.getElementById('stock-form')?.addEventListener('submit', async (e) => {
       }
     }
     
-    // Upload photos if any
+    // Check if offline
+    const isOffline = !navigator.onLine;
+    
+    // Upload photos if any (or save to IndexedDB if offline)
     let photoUrls = [];
-    try {
-      const { uploadTransactionPhotos } = await import('./inventory-photo-handler.js');
-      photoUrls = await uploadTransactionPhotos();
-    } catch (photoError) {
-      console.warn('[Inventory] Failed to upload photos:', photoError);
-      // Don't fail the transaction if photos fail
+    let photoBlobs = [];
+    
+    if (isOffline) {
+      // Get photo blobs from the photo handler
+      try {
+        const { getTransactionPhotoBlobs } = await import('./inventory-photo-handler.js');
+        photoBlobs = await getTransactionPhotoBlobs();
+      } catch (photoError) {
+        console.warn('[Inventory] Failed to get photo blobs:', photoError);
+      }
+    } else {
+      // Upload photos online
+      try {
+        const { uploadTransactionPhotos } = await import('./inventory-photo-handler.js');
+        photoUrls = await uploadTransactionPhotos();
+      } catch (photoError) {
+        console.warn('[Inventory] Failed to upload photos:', photoError);
+        // Don't fail the transaction if photos fail
+      }
     }
     
-    // Record transaction
-    const { error: transactionError } = await supabase
-      .from('inventory_transactions')
-      .insert({
-        item_id: itemId,
-        site_id: siteId,
-        job_id: jobId || null, // Add job_id (null if not selected)
-        transaction_type: action,
-        quantity_change: quantityChange,
-        quantity_before: currentQty,
-        quantity_after: newQty,
-        user_id: currentUser.id,
-        notes: notes || null,
-        photo_urls: photoUrls.length > 0 ? photoUrls : null
-      });
-    
-    if (transactionError) throw transactionError;
+    if (isOffline) {
+      // Queue transaction for offline sync
+      try {
+        const pendingTxId = await inventoryOfflineDB.savePendingTransaction({
+          item_id: itemId,
+          site_id: siteId,
+          job_id: jobId || null,
+          transaction_type: action,
+          quantity_change: quantityChange,
+          quantity_before: currentQty,
+          quantity_after: newQty,
+          notes: notes || null
+        });
+        
+        // Save photo blobs to IndexedDB
+        if (photoBlobs && photoBlobs.length > 0) {
+          for (const blob of photoBlobs) {
+            await inventoryOfflineDB.savePhotoBlob(pendingTxId, blob);
+          }
+        }
+        
+        // Update cached inventory quantity
+        await inventoryOfflineDB.updateCachedSiteInventoryQuantity(siteId, itemId, newQty);
+        
+        toast.info('Transaction queued for sync when online', 'Offline Mode');
+        updateOfflineIndicator();
+      } catch (error) {
+        console.error('[Inventory] Failed to queue offline transaction:', error);
+        toast.error('Failed to queue transaction. Please try again.', 'Error');
+        throw error;
+      }
+    } else {
+      // Record transaction online
+      const { error: transactionError } = await supabase
+        .from('inventory_transactions')
+        .insert({
+          item_id: itemId,
+          site_id: siteId,
+          job_id: jobId || null, // Add job_id (null if not selected)
+          transaction_type: action,
+          quantity_change: quantityChange,
+          quantity_before: currentQty,
+          quantity_after: newQty,
+          user_id: currentUser.id,
+          notes: notes || null,
+          photo_urls: photoUrls.length > 0 ? photoUrls : null
+        });
+      
+      if (transactionError) throw transactionError;
+      
+      // Update cached inventory
+      await inventoryOfflineDB.updateCachedSiteInventoryQuantity(siteId, itemId, newQty);
+    }
     
     // Close modal and refresh
     document.getElementById('stockModal').classList.add('hidden');
@@ -4303,6 +4415,74 @@ async function loadSiteFilter() {
     }
   }
 }
+
+// ========== OFFLINE INDICATOR ==========
+
+function updateOfflineIndicator() {
+  const indicator = document.getElementById('inventory-offline-indicator');
+  const icon = document.getElementById('inventory-offline-icon');
+  const text = document.getElementById('inventory-offline-text');
+  const pendingCount = document.getElementById('inventory-pending-count');
+  
+  if (!indicator) return;
+  
+  const isOffline = !navigator.onLine;
+  
+  if (isOffline) {
+    indicator.classList.remove('hidden');
+    icon.className = 'w-3 h-3 rounded-full bg-yellow-500 animate-pulse';
+    text.textContent = 'Offline';
+    
+    // Get pending count
+    inventoryOfflineDB.getPendingCount().then(count => {
+      if (count > 0) {
+        pendingCount.textContent = `(${count} pending)`;
+        pendingCount.classList.remove('hidden');
+      } else {
+        pendingCount.classList.add('hidden');
+      }
+    });
+  } else {
+    // Check for pending transactions
+    inventoryOfflineDB.getPendingCount().then(count => {
+      if (count > 0) {
+        indicator.classList.remove('hidden');
+        icon.className = 'w-3 h-3 rounded-full bg-blue-500';
+        text.textContent = 'Syncing';
+        pendingCount.textContent = `(${count} pending)`;
+        pendingCount.classList.remove('hidden');
+      } else {
+        indicator.classList.add('hidden');
+      }
+    });
+  }
+}
+
+// Listen for online/offline events
+window.addEventListener('online', () => {
+  updateOfflineIndicator();
+  // Auto-sync when coming online
+  setTimeout(() => {
+    inventorySyncManager.syncPendingTransactions();
+  }, 1000);
+});
+
+window.addEventListener('offline', () => {
+  updateOfflineIndicator();
+});
+
+// Initialize offline indicator after a short delay to ensure DOM is ready
+setTimeout(() => {
+  updateOfflineIndicator();
+}, 1000);
+
+// Listen for sync status updates
+window.addEventListener('inventory-sync-status', (event) => {
+  updateOfflineIndicator();
+});
+
+// Update indicator periodically
+setInterval(updateOfflineIndicator, 5000);
 
 // Logout
 document.getElementById('logout-btn')?.addEventListener('click', async () => {
