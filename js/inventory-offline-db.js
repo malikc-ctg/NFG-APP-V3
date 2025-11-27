@@ -217,8 +217,11 @@ class InventoryOfflineDB {
     await this.initPromise;
     const transaction = this.db.transaction(['pendingTransactions'], 'readonly');
     const store = transaction.objectStore('pendingTransactions');
-    const index = store.index('synced');
-    return index.getAll(false); // Get all unsynced
+    
+    // Get all transactions and filter by synced = false
+    // IndexedDB doesn't handle boolean indexes well, so we filter in JavaScript
+    const allTransactions = await store.getAll();
+    return allTransactions.filter(tx => tx.synced === false);
   }
 
   async markTransactionSynced(transactionId) {
