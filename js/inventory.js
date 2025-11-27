@@ -34,6 +34,46 @@ function sanitizeText(value) {
   });
 }
 
+// Sanitize and validate Lucide icon names
+function sanitizeIconName(iconName) {
+  if (!iconName) return 'package';
+  
+  // Map invalid icon names to valid Lucide icons
+  const iconMapping = {
+    'broom': 'sparkles',
+    'brush': 'sparkles',
+    'mop': 'droplet',
+    'vacuum': 'wind',
+    'spray': 'droplet',
+    'towel': 'square',
+    'bucket': 'droplet',
+    'glove': 'hand',
+    'rag': 'square',
+    'cleaning': 'sparkles',
+    'chemical': 'droplet',
+    'tool': 'wrench'
+  };
+  
+  const icon = String(iconName).toLowerCase().trim();
+  
+  // Check if it's in our mapping
+  if (iconMapping[icon]) {
+    return iconMapping[icon];
+  }
+  
+  // List of common valid Lucide icons (common ones used in the app)
+  const validIcons = [
+    'package', 'sparkles', 'droplet', 'wrench', 'file-text', 'shield', 
+    'trash-2', 'check-circle', 'x-circle', 'alert-triangle', 'package-x',
+    'alert-circle', 'history', 'shopping-cart', 'plus', 'x', 'scan',
+    'map-pin', 'calendar', 'clipboard-check', 'file-chart-column',
+    'message-circle', 'settings', 'layout-dashboard'
+  ];
+  
+  // If it's a valid icon, use it; otherwise fallback to 'package'
+  return validIcons.includes(icon) ? icon : 'package';
+}
+
 function formatCurrency(amount) {
   const value = Number(amount) || 0;
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
@@ -217,7 +257,7 @@ async function fetchSiteInventory() {
         updated_at: record.updated_at,
         low_stock_threshold: threshold,
         category_name: category.name || 'Uncategorized',
-        category_icon: getValidIcon(category.icon),
+        category_icon: sanitizeIconName(category.icon),
         stock_status: status
       };
     });
