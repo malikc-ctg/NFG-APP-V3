@@ -4637,7 +4637,7 @@
       grid.innerHTML = employees.map(emp => {
         const initials = getInitials(emp.full_name || emp.email);
         const roleBadge = getRoleBadge(emp.role);
-        const statusBadge = getStatusBadge(emp.status);
+        const statusBadge = getEmployeeStatusBadge(emp.status);
         const avatarUrl = emp.profile_picture || '';
         
         return `
@@ -4709,7 +4709,7 @@
       return badges[role] || '<span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">' + (role || 'Unknown') + '</span>';
     }
     
-    function getStatusBadge(status) {
+    function getEmployeeStatusBadge(status) {
       const badges = {
         'active': '<span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">Active</span>',
         'pending': '<span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300">Pending</span>',
