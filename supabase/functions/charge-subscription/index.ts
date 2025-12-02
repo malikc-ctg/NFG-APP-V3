@@ -253,23 +253,58 @@ async function processSubscriptionCharge(
     }
 
     if (!paymentResult.success) {
-      // Payment failed - mark as past_due
+      // Payment failed - handle failure with retry logic
+      const failureCount = (subscription.metadata?.payment_failure_count as number) || 0
+      const newFailureCount = failureCount + 1
+      
+      // Calculate grace period end (7 days from now)
+      const gracePeriodEnd = new Date()
+      gracePeriodEnd.setDate(gracePeriodEnd.getDate() + 7)
+      
+      // Determine status based on failure count
+      let newStatus = 'past_due'
+      if (newFailureCount >= 3) {
+        newStatus = 'unpaid' // After 3 failures, suspend
+      }
+      
       await supabaseAdmin
         .from('platform_subscriptions')
         .update({
-          status: 'past_due',
+          status: newStatus,
           metadata: {
             ...(subscription.metadata || {}),
             last_payment_attempt: new Date().toISOString(),
-            last_payment_error: paymentResult.error
+            last_payment_error: paymentResult.error || 'Payment failed',
+            payment_failure_count: newFailureCount,
+            grace_period_end: gracePeriodEnd.toISOString(),
+            next_retry_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() // Retry in 3 days
           }
         })
         .eq('id', subscription.id)
+      
+      // Create failed payment record
+      await supabaseAdmin
+        .from('platform_payments')
+        .insert({
+          company_id: subscription.company_id,
+          subscription_id: subscription.id,
+          amount: amount,
+          currency: subscription.currency || 'usd',
+          gateway: 'stripe',
+          gateway_account_id: stripeAccountId,
+          status: 'failed',
+          payment_type: 'subscription',
+          failure_reason: paymentResult.error || 'Payment failed',
+          gateway_metadata: {
+            failure_count: newFailureCount
+          }
+        })
 
       return {
         subscription_id: subscription.id,
         success: false,
-        error: paymentResult.error || 'Payment failed'
+        error: paymentResult.error || 'Payment failed',
+        failure_count: newFailureCount
       }
     }
 
@@ -291,7 +326,11 @@ async function processSubscriptionCharge(
         cancel_at_period_end: false, // Reset if was set
         metadata: {
           ...(subscription.metadata || {}),
-          last_payment_success: new Date().toISOString()
+          last_payment_success: new Date().toISOString(),
+          payment_failure_count: 0, // Reset failure count on success
+          last_payment_error: null,
+          grace_period_end: null,
+          next_retry_date: null
         }
       })
       .eq('id', subscription.id)
