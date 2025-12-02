@@ -893,6 +893,14 @@
           </div>
         </section>
 
+        <!-- Subscription Management -->
+        <section id="subscription-section" class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl shadow-nfg p-6">
+          <!-- Populated by subscription-management.js -->
+          <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+            <p>Loading subscription information...</p>
+          </div>
+        </section>
+
         <!-- About -->
         <section class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl shadow-nfg p-6">
           <div class="flex items-center gap-3 mb-4">
@@ -2582,6 +2590,24 @@
   
   <!-- Payment Gateway Connection -->
   <script type="module" src="./js/payment-gateway-connection.js"></script>
+  
+  <!-- Subscription Management -->
+  <script type="module">
+    import { initSubscriptionManagement } from './js/subscription-management.js'
+    
+    // Initialize subscription management when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        if (document.getElementById('subscription-section')) {
+          initSubscriptionManagement()
+        }
+      })
+    } else {
+      if (document.getElementById('subscription-section')) {
+        initSubscriptionManagement()
+      }
+    }
+  </script>
   
   <!-- Notification Center -->
   <script type="module" src="./js/notification-center.js"></script>

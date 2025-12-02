@@ -147,7 +147,7 @@ async function initiateOAuth(
     const redirectUri = `${supabaseUrl}/functions/v1/stripe-connect-oauth?action=callback`
 
     // Store OAuth session
-    const { error: sessionError } = await supabaseAdmin
+    const { error: sessionError, data: sessionData } = await supabaseAdmin
       .from('gateway_oauth_sessions')
       .insert({
         company_id: companyId,
@@ -156,10 +156,12 @@ async function initiateOAuth(
         status: 'pending',
         expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 minutes
       })
+      .select()
 
     if (sessionError) {
       console.error('Error creating OAuth session:', sessionError)
-      throw new Error('Failed to create OAuth session')
+      console.error('Error details:', JSON.stringify(sessionError, null, 2))
+      throw new Error(`Failed to create OAuth session: ${sessionError.message || 'Unknown error'}`)
     }
 
     // Build Stripe OAuth URL
