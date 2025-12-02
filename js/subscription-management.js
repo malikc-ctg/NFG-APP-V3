@@ -858,6 +858,7 @@ export async function cancelSubscription() {
     
     await loadCurrentSubscription()
     renderSubscriptionSection()
+    await loadPaymentHistory()
 
   } catch (error) {
     console.error('[Subscription] Error canceling subscription:', error)
