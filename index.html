@@ -83,6 +83,7 @@
 
   <script type="module" src="./js/supabase.js"></script>
   <script type="module" src="./js/auth.js"></script>
+  <script type="module" src="./js/client-auth.js"></script>
   
   <!-- Login Form Handler -->
   <script type="module">
@@ -133,8 +134,9 @@
           throw error
         }
         
-        console.log('✅ Sign in successful, redirecting to dashboard...')
-        window.location.href = './dashboard.html'
+        console.log('✅ Sign in successful, redirecting based on role...')
+        const { checkClientAuth } = await import('./js/client-auth.js')
+        await checkClientAuth()
       } catch (error) {
         console.error('❌ Login failed:', error)
       } finally {
@@ -148,7 +150,7 @@
       try {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
-          options: { redirectTo: `${window.location.origin}/dashboard.html` }
+          options: { redirectTo: `${window.location.origin}/index.html` }
         })
         if (error) throw error
       } catch (err) {
@@ -165,7 +167,7 @@
       try {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'azure',
-          options: { redirectTo: `${window.location.origin}/dashboard.html` }
+          options: { redirectTo: `${window.location.origin}/index.html` }
         })
         if (error) throw error
       } catch (err) {
@@ -199,7 +201,8 @@
         
         console.log('✅ Demo account created, signing in...')
         await supabase.auth.signInWithPassword({ email, password })
-        window.location.href = './dashboard.html'
+        const { checkClientAuth } = await import('./js/client-auth.js')
+        await checkClientAuth()
       } catch (error) {
         console.error('❌ Demo account creation failed:', error)
         errorEl.textContent = error.message || 'Failed to create demo account'

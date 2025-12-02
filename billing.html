@@ -1,0 +1,842 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NFG — Billing & Invoicing</title>
+  <link rel="icon" type="image/png" href="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/NFG%20one.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL05GRyBvbmUucG5nIiwiaWF0IjoxNzYyOTc5NzU5LCJleHAiOjQ4ODUwNDM3NTl9.fnJIDQep2yYlgGKlBRNnkrUoUzXzG7eac39GG6NQPuU">
+
+  <!-- PWA Support -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0D47A1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="NFG">
+  <link rel="apple-touch-icon" href="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/NFG%20one.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL05GRyBvbmUucG5nIiwiaWF0IjoxNzYyOTc5NzU5LCJleHAiOjQ4ODUwNDM3NTl9.fnJIDQep2yYlgGKlBRNnkrUoUzXzG7eac39GG6NQPuU">
+
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN + NFG theme -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            nfgblue: '#0D47A1',
+            nfgdark: '#0A3A84',
+            nfglight: '#E3ECFA',
+            nfgray: '#E5E7EB',
+            nftext: '#1E293B',
+            nfbg: '#F8FAFC'
+          },
+          fontFamily: { inter: ['Inter','sans-serif'] },
+          borderRadius: { xl: '12px' },
+          boxShadow: { nfg: '0 4px 14px rgba(13,71,161,0.06)' }
+        }
+      }
+    }
+  </script>
+
+  <!-- Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Custom Dropdown Styles -->
+  <link rel="stylesheet" href="./css/custom-dropdown.css">
+  
+  <!-- Mobile Menu Styles -->
+  <link rel="stylesheet" href="./css/mobile-menu.css">
+  
+  <!-- Notification System -->
+  <link rel="stylesheet" href="./css/notifications.css">
+  
+  <!-- Page Loader -->
+  <link rel="stylesheet" href="./css/loader.css">
+  
+  <!-- Dark Mode -->
+  <link rel="stylesheet" href="./css/dark-mode.css">
+  <script src="./js/dark-mode.js"></script>
+
+  <!-- Notification Center -->
+  <link rel="stylesheet" href="./css/notification-center.css">
+</head>
+
+<body class="font-inter bg-nfbg dark:bg-gray-900 min-h-screen flex text-nftext dark:text-gray-200">
+  <!-- Full-Page Loader -->
+  <div id="page-loader">
+    <div class="loader-logo">
+      <img src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/2.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzLzIucG5nIiwiaWF0IjoxNzYxODY2MTE0LCJleHAiOjQ4ODM5MzAxMTR9.E1JoQZxqPy0HOKna6YfjPCfin5Pc3QF0paEV7qzVfDw" alt="NFG">
+    </div>
+    <div class="banter-loader">
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+    </div>
+    <div class="loader-text">Loading Billing...</div>
+    <div class="loader-text-subtitle">Please wait</div>
+  </div>
+
+  <!-- ========== SIDEBAR ========== -->
+  <aside id="sidebar" class="w-64 shrink-0 bg-white dark:bg-gray-800 border-r border-nfgray hidden md:flex md:flex-col transition-all">
+    <div class="p-5 flex items-center justify-center">
+      <img 
+        src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/2.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzLzIucG5nIiwiaWF0IjoxNzYxODY2MTE0LCJleHAiOjQ4ODM5MzAxMTR9.E1JoQZxqPy0HOKna6YfjPCfin5Pc3QF0paEV7qzVfDw" 
+        alt="NFG" 
+        class="h-32 w-auto"
+      />
+    </div>
+    <nav class="px-3 pb-4 flex-1 space-y-1">
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="dashboard.html">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="sites.html">
+        <i data-lucide="map-pin" class="w-4 h-4"></i> Sites
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="bookings.html">
+        <i data-lucide="calendar" class="w-4 h-4"></i> Bookings
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="jobs.html">
+        <i data-lucide="clipboard-check" class="w-4 h-4"></i> Jobs
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="inventory.html">
+        <i data-lucide="package" class="w-4 h-4"></i> Inventory
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight dark:bg-gray-700 text-nfgblue dark:text-blue-400 font-medium w-full text-left" href="billing.html">
+        <i data-lucide="dollar-sign" class="w-4 h-4"></i> Billing
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="reports.html">
+        <i data-lucide="file-chart-column" class="w-4 h-4"></i> Reports
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="messages.html">
+        <i data-lucide="message-circle" class="w-4 h-4"></i> Messages
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="settings.html">
+        <i data-lucide="settings" class="w-4 h-4"></i> Settings
+      </a>
+    </nav>
+    <div class="p-4 border-t border-nfgray dark:border-gray-700">
+      <button id="logout-btn" data-action="logout" class="w-full border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight rounded-xl py-2 font-medium">
+        Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- ========== MAIN ========== -->
+  <div class="flex-1 flex flex-col min-w-0">
+    <!-- TOPBAR -->
+    <header class="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-nfgray dark:border-gray-700">
+      <div class="h-14 px-2 sm:px-4 md:px-6 flex items-center justify-between gap-1 sm:gap-2">
+        <div class="flex items-center gap-1 sm:gap-2 min-w-0 flex-1">
+          <button class="md:hidden p-1.5 sm:p-2 rounded-lg border border-nfgray text-nfgblue dark:text-blue-400 flex-shrink-0" data-action="toggle-sidebar" aria-label="Toggle sidebar">
+            <i data-lucide="menu" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+          </button>
+          <h1 class="text-nfgblue dark:text-blue-400 font-semibold text-sm sm:text-base truncate">Billing & Invoicing</h1>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="filter-btn" class="p-2 rounded-lg border border-nfgray hover:bg-nfglight">
+            <i data-lucide="filter" class="w-4 h-4"></i>
+          </button>
+          <button id="new-invoice-btn" class="px-3 py-1.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark text-sm flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">New Invoice</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <main class="p-4 md:p-6 space-y-6 overflow-y-auto">
+      <!-- Page Tabs -->
+      <div class="flex gap-2 border-b border-nfgray dark:border-gray-700 overflow-x-auto">
+        <button id="tab-invoices" class="billing-page-tab px-4 py-2 text-sm font-medium text-nfgblue dark:text-blue-400 border-b-2 border-nfgblue dark:border-blue-400 whitespace-nowrap" data-tab="invoices">
+          <i data-lucide="file-text" class="w-4 h-4 inline mr-1"></i>
+          Invoices
+        </button>
+        <button id="tab-reports" class="billing-page-tab px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-tab="reports">
+          <i data-lucide="bar-chart-3" class="w-4 h-4 inline mr-1"></i>
+          Reports
+        </button>
+      </div>
+
+      <!-- Invoices Tab Content -->
+      <div id="content-invoices" class="billing-tab-content space-y-6">
+      <!-- Summary Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm text-gray-500 dark:text-gray-400">Total Revenue</span>
+            <i data-lucide="dollar-sign" class="w-4 h-4 text-green-600 dark:text-green-400"></i>
+          </div>
+          <p id="summary-total-revenue" class="text-2xl font-semibold text-green-600 dark:text-green-400">$0.00</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">All time</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm text-gray-500 dark:text-gray-400">Outstanding</span>
+            <i data-lucide="clock" class="w-4 h-4 text-yellow-600 dark:text-yellow-400"></i>
+          </div>
+          <p id="summary-outstanding" class="text-2xl font-semibold text-yellow-600 dark:text-yellow-400">$0.00</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Unpaid invoices</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm text-gray-500 dark:text-gray-400">Overdue</span>
+            <i data-lucide="alert-circle" class="w-4 h-4 text-red-600 dark:text-red-400"></i>
+          </div>
+          <p id="summary-overdue" class="text-2xl font-semibold text-red-600 dark:text-red-400">$0.00</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Past due date</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm text-gray-500 dark:text-gray-400">Paid This Month</span>
+            <i data-lucide="check-circle" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+          </div>
+          <p id="summary-paid-month" class="text-2xl font-semibold text-blue-600 dark:text-blue-400">$0.00</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Current month</p>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div id="filters-section" class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4 hidden">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Status</label>
+            <select id="filter-status" class="w-full border border-nfgray rounded-xl p-2.5">
+              <option value="all">All Statuses</option>
+              <option value="draft">Draft</option>
+              <option value="sent">Sent</option>
+              <option value="paid">Paid</option>
+              <option value="overdue">Overdue</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Client</label>
+            <select id="filter-client" class="w-full border border-nfgray rounded-xl p-2.5">
+              <option value="all">All Clients</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">From Date</label>
+            <input type="date" id="filter-date-from" class="w-full border border-nfgray rounded-xl p-2.5">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">To Date</label>
+            <input type="date" id="filter-date-to" class="w-full border border-nfgray rounded-xl p-2.5">
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-2 mt-4">
+          <button id="clear-filters" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight">
+            Clear Filters
+          </button>
+        </div>
+      </div>
+
+      <!-- Status Tabs -->
+      <div class="flex gap-2 border-b border-nfgray overflow-x-auto">
+        <button class="invoice-status-tab px-4 py-2 text-sm font-medium text-nfgblue dark:text-blue-400 border-b-2 border-nfgblue whitespace-nowrap" data-status="all">
+          All Invoices
+        </button>
+        <button class="invoice-status-tab px-4 py-2 text-sm font-medium text-gray-500 hover:text-nfgblue border-b-2 border-transparent whitespace-nowrap" data-status="draft">
+          Draft
+        </button>
+        <button class="invoice-status-tab px-4 py-2 text-sm font-medium text-gray-500 hover:text-nfgblue border-b-2 border-transparent whitespace-nowrap" data-status="sent">
+          Sent
+        </button>
+        <button class="invoice-status-tab px-4 py-2 text-sm font-medium text-gray-500 hover:text-nfgblue border-b-2 border-transparent whitespace-nowrap" data-status="paid">
+          Paid
+        </button>
+        <button class="invoice-status-tab px-4 py-2 text-sm font-medium text-gray-500 hover:text-nfgblue border-b-2 border-transparent whitespace-nowrap" data-status="overdue">
+          Overdue
+        </button>
+      </div>
+
+      <!-- Invoices Table -->
+      <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-nfglight/30 dark:bg-gray-700/50 border-b border-nfgray">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Invoice #</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Client / Site</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Issue Date</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Due Date</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Amount</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Balance</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Status</th>
+                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="invoices-table-body" class="divide-y divide-nfgray">
+              <tr>
+                <td colspan="8" class="px-4 py-12 text-center text-gray-500 dark:text-gray-400">Loading invoices...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      </div>
+      <!-- END Invoices Tab Content -->
+
+      <!-- Reports Tab Content -->
+      <div id="content-reports" class="billing-tab-content hidden space-y-6">
+        <!-- Period Filter -->
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4">
+          <div class="flex flex-wrap items-center gap-3">
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Period:</label>
+            <select id="report-period" class="px-3 py-2 rounded-xl border border-nfgray dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm">
+              <option value="all">All Time</option>
+              <option value="this_month" selected>This Month</option>
+              <option value="last_month">Last Month</option>
+              <option value="this_quarter">This Quarter</option>
+              <option value="this_year">This Year</option>
+              <option value="custom">Custom Range</option>
+            </select>
+            <div id="custom-date-range" class="hidden flex items-center gap-2">
+              <input type="date" id="report-date-from" class="px-3 py-2 rounded-xl border border-nfgray dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm">
+              <span class="text-gray-500">to</span>
+              <input type="date" id="report-date-to" class="px-3 py-2 rounded-xl border border-nfgray dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm">
+            </div>
+            <button id="refresh-reports" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark text-sm">
+              <i data-lucide="refresh-cw" class="w-4 h-4 inline mr-1"></i>
+              Refresh
+            </button>
+          </div>
+        </div>
+
+        <!-- Financial Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm text-gray-500 dark:text-gray-400">Total Revenue</span>
+              <i data-lucide="trending-up" class="w-4 h-4 text-green-600 dark:text-green-400"></i>
+            </div>
+            <p id="report-total-revenue" class="text-2xl font-semibold text-green-600 dark:text-green-400">$0.00</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm text-gray-500 dark:text-gray-400">Total Expenses</span>
+              <i data-lucide="trending-down" class="w-4 h-4 text-red-600 dark:text-red-400"></i>
+            </div>
+            <p id="report-total-expenses" class="text-2xl font-semibold text-red-600 dark:text-red-400">$0.00</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm text-gray-500 dark:text-gray-400">Net Profit</span>
+              <i data-lucide="dollar-sign" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
+            </div>
+            <p id="report-net-profit" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">$0.00</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm text-gray-500 dark:text-gray-400">Outstanding</span>
+              <i data-lucide="clock" class="w-4 h-4 text-orange-600 dark:text-orange-400"></i>
+            </div>
+            <p id="report-outstanding" class="text-2xl font-semibold text-orange-600 dark:text-orange-400">$0.00</p>
+          </div>
+        </div>
+
+        <!-- Revenue Reports -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Revenue by Period Chart -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Revenue by Period</h3>
+              <button onclick="exportRevenueReport()" class="text-sm px-3 py-1.5 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700">
+                <i data-lucide="download" class="w-4 h-4 inline mr-1"></i> Export
+              </button>
+            </div>
+            <div style="height: 300px; position: relative;">
+              <canvas id="revenue-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Revenue by Client -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Top Clients by Revenue</h3>
+              <button onclick="exportClientRevenueReport()" class="text-sm px-3 py-1.5 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700">
+                <i data-lucide="download" class="w-4 h-4 inline mr-1"></i> Export
+              </button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="border-b border-nfgray dark:border-gray-700">
+                  <tr>
+                    <th class="pb-2 text-left font-medium text-gray-500 dark:text-gray-400">Client</th>
+                    <th class="pb-2 text-right font-medium text-gray-500 dark:text-gray-400">Revenue</th>
+                    <th class="pb-2 text-right font-medium text-gray-500 dark:text-gray-400">Invoices</th>
+                  </tr>
+                </thead>
+                <tbody id="client-revenue-table">
+                  <tr>
+                    <td colspan="3" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Loading...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Outstanding Invoices & Aging Report -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Outstanding Invoices Report -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Outstanding Invoices</h3>
+              <button onclick="exportOutstandingReport()" class="text-sm px-3 py-1.5 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700">
+                <i data-lucide="download" class="w-4 h-4 inline mr-1"></i> Export
+              </button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="border-b border-nfgray dark:border-gray-700">
+                  <tr>
+                    <th class="pb-2 text-left font-medium text-gray-500 dark:text-gray-400">Invoice #</th>
+                    <th class="pb-2 text-left font-medium text-gray-500 dark:text-gray-400">Client</th>
+                    <th class="pb-2 text-right font-medium text-gray-500 dark:text-gray-400">Amount</th>
+                    <th class="pb-2 text-right font-medium text-gray-500 dark:text-gray-400">Due Date</th>
+                    <th class="pb-2 text-left font-medium text-gray-500 dark:text-gray-400">Days Overdue</th>
+                  </tr>
+                </thead>
+                <tbody id="outstanding-invoices-table">
+                  <tr>
+                    <td colspan="5" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Loading...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Aging Report -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Aging Report</h3>
+              <button onclick="exportAgingReport()" class="text-sm px-3 py-1.5 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700">
+                <i data-lucide="download" class="w-4 h-4 inline mr-1"></i> Export
+              </button>
+            </div>
+            <div class="space-y-3">
+              <div class="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <span class="font-medium">Current (0-30 days)</span>
+                <span id="aging-current" class="text-green-600 dark:text-green-400 font-bold">$0.00</span>
+              </div>
+              <div class="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                <span class="font-medium">31-60 days</span>
+                <span id="aging-31-60" class="text-yellow-600 dark:text-yellow-400 font-bold">$0.00</span>
+              </div>
+              <div class="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                <span class="font-medium">61-90 days</span>
+                <span id="aging-61-90" class="text-orange-600 dark:text-orange-400 font-bold">$0.00</span>
+              </div>
+              <div class="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                <span class="font-medium">Over 90 days</span>
+                <span id="aging-over-90" class="text-red-600 dark:text-red-400 font-bold">$0.00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment History Report -->
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Payment History</h3>
+            <button onclick="exportPaymentHistoryReport()" class="text-sm px-3 py-1.5 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700">
+              <i data-lucide="download" class="w-4 h-4 inline mr-1"></i> Export
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="border-b border-nfgray dark:border-gray-700">
+                <tr>
+                  <th class="pb-2 text-left font-medium text-gray-500 dark:text-gray-400">Date</th>
+                  <th class="pb-2 text-left font-medium text-gray-500 dark:text-gray-400">Invoice #</th>
+                  <th class="pb-2 text-left font-medium text-gray-500 dark:text-gray-400">Client</th>
+                  <th class="pb-2 text-right font-medium text-gray-500 dark:text-gray-400">Amount</th>
+                  <th class="pb-2 text-left font-medium text-gray-500 dark:text-gray-400">Method</th>
+                </tr>
+              </thead>
+              <tbody id="payment-history-table">
+                <tr>
+                  <td colspan="5" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Loading...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- END Reports Tab Content -->
+    </main>
+  </div>
+
+  <!-- Mobile Sidebar -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-40 md:hidden hidden" data-action="toggle-sidebar"></div>
+  <aside id="mobile-sidebar" class="fixed left-0 top-0 h-full w-64 bg-white dark:bg-gray-800 border-r border-nfgray z-50 transform -translate-x-full transition-transform md:hidden flex flex-col">
+    <div class="p-5 flex items-center justify-between">
+      <img 
+        src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/2.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzLzIucG5nIiwiaWF0IjoxNzYxODY2MTE0LCJleHAiOjQ4ODM5MzAxMTR9.E1JoQZxqPy0HOKna6YfjPCfin5Pc3QF0paEV7qzVfDw" 
+        alt="NFG" 
+        class="h-24 w-auto"
+      />
+      <button data-action="toggle-sidebar" class="p-2 rounded-lg hover:bg-nfglight">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <nav class="px-3 pb-4 flex-1 space-y-1">
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="dashboard.html">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="sites.html">
+        <i data-lucide="map-pin" class="w-4 h-4"></i> Sites
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="bookings.html">
+        <i data-lucide="calendar" class="w-4 h-4"></i> Bookings
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="jobs.html">
+        <i data-lucide="clipboard-check" class="w-4 h-4"></i> Jobs
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="inventory.html">
+        <i data-lucide="package" class="w-4 h-4"></i> Inventory
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight dark:bg-gray-700 text-nfgblue dark:text-blue-400 font-medium w-full text-left" href="billing.html">
+        <i data-lucide="dollar-sign" class="w-4 h-4"></i> Billing
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="reports.html">
+        <i data-lucide="file-chart-column" class="w-4 h-4"></i> Reports
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="messages.html">
+        <i data-lucide="message-circle" class="w-4 h-4"></i> Messages
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="settings.html">
+        <i data-lucide="settings" class="w-4 h-4"></i> Settings
+      </a>
+    </nav>
+    <div class="p-4 border-t border-nfgray dark:border-gray-700">
+      <button id="mobile-logout-btn" data-action="logout" class="w-full border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight rounded-xl py-2 font-medium">
+        Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- Create/Edit Invoice Modal -->
+  <div id="invoiceModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 z-10">
+        <h4 id="invoice-modal-title" class="text-nfgblue dark:text-blue-400 font-semibold text-lg">New Invoice</h4>
+        <button data-action="close-modal" data-target="invoiceModal" class="p-1 rounded-lg hover:bg-nfglight">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="invoice-form" class="p-6 space-y-6">
+        <!-- Basic Info -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Client *</label>
+            <select id="invoice-client" required class="w-full border border-nfgray rounded-xl p-2.5">
+              <option value="">Select a client</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Site</label>
+            <select id="invoice-site" class="w-full border border-nfgray rounded-xl p-2.5">
+              <option value="">Select a site</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Job (Optional)</label>
+            <select id="invoice-job" class="w-full border border-nfgray rounded-xl p-2.5">
+              <option value="">No job linked</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Invoice Number</label>
+            <input type="text" id="invoice-number" readonly class="w-full border border-nfgray rounded-xl p-2.5 bg-gray-50 dark:bg-gray-700" placeholder="Auto-generated">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Issue Date *</label>
+            <input type="date" id="invoice-issue-date" required class="w-full border border-nfgray rounded-xl p-2.5">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Due Date *</label>
+            <input type="date" id="invoice-due-date" required class="w-full border border-nfgray rounded-xl p-2.5">
+          </div>
+        </div>
+
+        <!-- Line Items -->
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h5 class="text-nfgblue dark:text-blue-400 font-semibold">Line Items</h5>
+            <button type="button" id="add-line-item-btn" class="px-3 py-1.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark text-sm flex items-center gap-2">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              Add Item
+            </button>
+          </div>
+          <div id="line-items-container" class="space-y-2">
+            <!-- Line items will be added here -->
+          </div>
+        </div>
+
+        <!-- Totals -->
+        <div class="border-t border-nfgray pt-4">
+          <div class="flex justify-end">
+            <div class="w-full md:w-64 space-y-2">
+              <div class="flex justify-between text-sm">
+                <span>Subtotal:</span>
+                <span id="invoice-subtotal">$0.00</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span>Tax Rate (%):</span>
+                <input type="number" id="invoice-tax-rate" step="0.01" min="0" max="100" value="0" class="w-20 border border-nfgray rounded p-1 text-right">
+              </div>
+              <div class="flex justify-between text-sm">
+                <span>Tax Amount:</span>
+                <span id="invoice-tax-amount">$0.00</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span>Discount:</span>
+                <div class="flex items-center gap-2">
+                  <input type="number" id="invoice-discount-amount" step="0.01" min="0" value="0" class="w-24 border border-nfgray rounded p-1 text-right" placeholder="Amount">
+                  <span class="text-gray-500">or</span>
+                  <input type="number" id="invoice-discount-percent" step="0.01" min="0" max="100" value="0" class="w-20 border border-nfgray rounded p-1 text-right" placeholder="%">
+                </div>
+              </div>
+              <div class="flex justify-between font-semibold text-lg border-t border-nfgray pt-2">
+                <span>Total:</span>
+                <span id="invoice-total" class="text-nfgblue dark:text-blue-400">$0.00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes & Terms -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Notes</label>
+            <textarea id="invoice-notes" rows="3" class="w-full border border-nfgray rounded-xl p-2.5" placeholder="Internal notes..."></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Payment Terms</label>
+            <textarea id="invoice-terms" rows="3" class="w-full border border-nfgray rounded-xl p-2.5" placeholder="Payment terms..."></textarea>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-end gap-2 pt-4 border-t border-nfgray">
+          <button type="button" data-action="close-modal" data-target="invoiceModal" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight">
+            Cancel
+          </button>
+          <button type="submit" id="save-invoice-btn" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
+            Save Invoice
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Invoice Detail Modal -->
+  <div id="invoiceDetailModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 z-10">
+        <div>
+          <h4 id="invoice-detail-number" class="text-nfgblue dark:text-blue-400 font-semibold text-lg">INV-2024-001</h4>
+          <p id="invoice-detail-client" class="text-sm text-gray-500 dark:text-gray-400">Client Name</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="send-invoice-btn" class="hidden px-3 py-1.5 rounded-lg border border-green-600 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 text-sm font-medium">
+            <i data-lucide="send" class="w-4 h-4 inline mr-1"></i>
+            Send Invoice
+          </button>
+          <button id="add-payment-btn" class="hidden px-3 py-1.5 rounded-lg border border-green-600 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 text-sm font-medium">
+            <i data-lucide="dollar-sign" class="w-4 h-4 inline mr-1"></i>
+            Add Payment
+          </button>
+          <button data-action="close-modal" data-target="invoiceDetailModal" class="p-1 rounded-lg hover:bg-nfglight">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <div id="invoice-detail-content" class="p-6 space-y-6">
+        <!-- Content will be populated -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Payment Modal -->
+  <div id="add-payment-modal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 z-10">
+        <h4 class="text-nfgblue dark:text-blue-400 font-semibold text-lg flex items-center gap-2">
+          <i data-lucide="dollar-sign" class="w-5 h-5"></i>
+          Add Payment
+        </h4>
+        <button data-action="close-modal" data-target="add-payment-modal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="add-payment-form" class="p-6 space-y-6">
+        <!-- Invoice Info (Read-only) -->
+        <div class="bg-nfglight/30 dark:bg-gray-700/30 border border-nfgray dark:border-gray-600 rounded-xl p-4">
+          <div class="space-y-2">
+            <div>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Invoice</p>
+              <p id="payment-invoice-number" class="font-semibold text-nfgblue dark:text-blue-400">—</p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Current Balance Due</p>
+              <p id="payment-balance-due" class="font-bold text-lg text-orange-600 dark:text-orange-400">$0.00</p>
+              <p id="payment-new-balance-hint" class="hidden text-xs text-gray-500 dark:text-gray-400 mt-1">New balance after payment</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Amount -->
+        <div>
+          <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Payment Amount ($) <span class="text-red-500">*</span></label>
+          <input 
+            type="number" 
+            id="payment-amount" 
+            step="0.01" 
+            min="0" 
+            required 
+            class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm"
+            placeholder="0.00"
+          />
+          <p id="payment-amount-error" class="hidden text-xs text-red-500 mt-1"></p>
+        </div>
+
+        <!-- Payment Date -->
+        <div>
+          <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Payment Date <span class="text-red-500">*</span></label>
+          <input 
+            type="date" 
+            id="payment-date" 
+            required 
+            class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm"
+          />
+        </div>
+
+        <!-- Payment Method -->
+        <div>
+          <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Payment Method <span class="text-red-500">*</span></label>
+          <select 
+            id="payment-method" 
+            required 
+            class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm"
+          >
+            <option value="">Select payment method</option>
+            <option value="cash">💵 Cash</option>
+            <option value="check">📝 Check</option>
+            <option value="credit_card">💳 Credit Card</option>
+            <option value="bank_transfer">🏦 Bank Transfer</option>
+            <option value="other">📄 Other</option>
+          </select>
+        </div>
+
+        <!-- Reference Number -->
+        <div>
+          <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Reference Number</label>
+          <input 
+            type="text" 
+            id="payment-reference" 
+            class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm"
+            placeholder="Check #, Transaction ID, etc."
+          />
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Optional: Check number, transaction ID, or other reference</p>
+        </div>
+
+        <!-- Notes -->
+        <div>
+          <label class="block text-sm font-medium mb-1.5 dark:text-gray-200">Notes</label>
+          <textarea 
+            id="payment-notes" 
+            rows="3" 
+            class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm resize-none"
+            placeholder="Optional notes about this payment"
+          ></textarea>
+        </div>
+
+        <!-- Error Message -->
+        <div id="payment-error-message" class="hidden bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3">
+          <p class="text-sm text-red-600 dark:text-red-400"></p>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-nfgray dark:border-gray-600">
+          <button 
+            type="button" 
+            data-action="close-modal" 
+            data-target="add-payment-modal" 
+            class="px-4 py-2 rounded-xl border border-nfgray dark:border-gray-600 hover:bg-nfglight dark:hover:bg-gray-700 font-medium"
+          >
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            class="px-4 py-2 rounded-xl bg-green-600 dark:bg-green-700 text-white hover:bg-green-700 dark:hover:bg-green-600 font-medium"
+          >
+            <i data-lucide="dollar-sign" class="w-4 h-4 inline mr-1"></i>
+            Record Payment
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module" src="./js/supabase.js"></script>
+  <script type="module" src="./js/billing.js"></script>
+  <script>
+    // Mobile sidebar toggle
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('[data-action="toggle-sidebar"]')) {
+        const sidebar = document.getElementById('mobile-sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        sidebar?.classList.toggle('-translate-x-full');
+        overlay?.classList.toggle('hidden');
+      }
+      if (e.target.closest('[data-action="close-modal"]')) {
+        const target = e.target.closest('[data-action="close-modal"]').dataset.target;
+        document.getElementById(target)?.classList.add('hidden');
+      }
+      if (e.target.closest('[data-action="logout"]')) {
+        import('./js/supabase.js').then(({ supabase }) => {
+          supabase.auth.signOut().then(() => {
+            window.location.href = './index.html';
+          });
+        });
+      }
+    });
+
+    // Filter toggle
+    document.getElementById('filter-btn')?.addEventListener('click', () => {
+      document.getElementById('filters-section')?.classList.toggle('hidden');
+    });
+
+    // Initialize icons
+    if (window.lucide) {
+      lucide.createIcons();
+      setInterval(() => lucide.createIcons(), 1000);
+    }
+
+    // Hide loader
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        document.getElementById('page-loader')?.classList.add('hidden');
+      }, 300);
+    });
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NFG — Client Portal</title>
+  <link rel="icon" type="image/png" href="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/NFG%20one.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL05GRyBvbmUucG5nIiwiaWF0IjoxNzYyOTc5NzU5LCJleHAiOjQ4ODUwNDM3NTl9.fnJIDQep2yYlgGKlBRNnkrUoUzXzG7eac39GG6NQPuU">
+
+  <!-- PWA Support -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0D47A1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="NFG">
+  <link rel="apple-touch-icon" href="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/NFG%20one.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL05GRyBvbmUucG5nIiwiaWF0IjoxNzYyOTc5NzU5LCJleHAiOjQ4ODUwNDM3NTl9.fnJIDQep2yYlgGKlBRNnkrUoUzXzG7eac39GG6NQPuU">
+
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN + NFG theme -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            nfgblue: '#0D47A1',
+            nfgdark: '#0A3A84',
+            nfglight: '#E3ECFA',
+            nfgray: '#E5E7EB',
+            nftext: '#1E293B',
+            nfbg: '#F8FAFC'
+          },
+          fontFamily: { inter: ['Inter','sans-serif'] },
+          borderRadius: { xl: '12px' },
+          boxShadow: { nfg: '0 4px 14px rgba(13,71,161,0.06)' }
+        }
+      }
+    }
+  </script>
+
+  <!-- Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Custom Dropdown Styles -->
+  <link rel="stylesheet" href="./css/custom-dropdown.css">
+  
+  <!-- Mobile Menu Styles -->
+  <link rel="stylesheet" href="./css/mobile-menu.css">
+  
+  <!-- Notification System -->
+  <link rel="stylesheet" href="./css/notifications.css">
+  
+  <!-- Page Loader -->
+  <link rel="stylesheet" href="./css/loader.css">
+  
+  <!-- Dark Mode -->
+  <link rel="stylesheet" href="./css/dark-mode.css">
+  <script src="./js/dark-mode.js"></script>
+
+  <!-- Notification Center -->
+  <link rel="stylesheet" href="./css/notification-center.css">
+</head>
+
+<body class="font-inter bg-nfbg dark:bg-gray-900 min-h-screen flex text-nftext dark:text-gray-200">
+  <!-- Full-Page Loader -->
+  <div id="page-loader">
+    <div class="loader-logo">
+      <img src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/2.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzLzIucG5nIiwiaWF0IjoxNzYxODY2MTE0LCJleHAiOjQ4ODM5MzAxMTR9.E1JoQZxqPy0HOKna6YfjPCfin5Pc3QF0paEV7qzVfDw" alt="NFG">
+    </div>
+    <div class="banter-loader">
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+    </div>
+    <div class="loader-text">Loading Client Portal...</div>
+    <div class="loader-text-subtitle">Please wait</div>
+  </div>
+
+  <!-- ========== SIDEBAR ========== -->
+  <aside id="sidebar" class="w-64 shrink-0 bg-white dark:bg-gray-800 border-r border-nfgray hidden md:flex md:flex-col transition-all">
+    <div class="p-5 flex items-center justify-center">
+      <img 
+        src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/2.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzLzIucG5nIiwiaWF0IjoxNzYxODY2MTE0LCJleHAiOjQ4ODM5MzAxMTR9.E1JoQZxqPy0HOKna6YfjPCfin5Pc3QF0paEV7qzVfDw" 
+        alt="NFG" 
+        class="h-32 w-auto"
+      />
+    </div>
+    <nav class="px-3 pb-4 flex-1 space-y-1">
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight dark:bg-gray-700 text-nfgblue dark:text-blue-400 font-medium w-full text-left" href="client-portal.html">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="client-jobs.html">
+        <i data-lucide="clipboard-check" class="w-4 h-4"></i> Jobs
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="client-invoices.html">
+        <i data-lucide="file-text" class="w-4 h-4"></i> Invoices
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="client-requests.html">
+        <i data-lucide="wrench" class="w-4 h-4"></i> Service Requests
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="client-messages.html">
+        <i data-lucide="message-circle" class="w-4 h-4"></i> Messages
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="client-settings.html">
+        <i data-lucide="settings" class="w-4 h-4"></i> Settings
+      </a>
+    </nav>
+    <div class="p-4 border-t border-nfgray dark:border-gray-700">
+      <button id="logout-btn" class="w-full border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight rounded-xl py-2 font-medium">
+        Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- ========== MAIN ========== -->
+  <div class="flex-1 flex flex-col min-w-0">
+    <!-- TOPBAR -->
+    <header class="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-nfgray dark:border-gray-700">
+      <div class="h-14 px-2 sm:px-4 md:px-6 flex items-center justify-between gap-1 sm:gap-2">
+        <div class="flex items-center gap-1 sm:gap-2 min-w-0 flex-1">
+          <button class="md:hidden p-1.5 sm:p-2 rounded-lg border border-nfgray text-nfgblue dark:text-blue-400 flex-shrink-0" data-action="toggle-sidebar" aria-label="Toggle sidebar">
+            <i data-lucide="menu" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+          </button>
+          <h1 class="text-nfgblue dark:text-blue-400 font-semibold text-sm sm:text-base truncate">Client Portal</h1>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="client-name" class="text-sm text-gray-600 dark:text-gray-400 hidden sm:inline">Loading...</span>
+          <button id="request-service-btn" class="px-3 py-1.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark text-sm flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Request Service</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <main class="p-4 md:p-6 space-y-6 overflow-y-auto">
+      <!-- Welcome Section -->
+      <div>
+        <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Welcome, <span id="welcome-name">Loading...</span></h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your facilities and track service requests</p>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Active Sites</p>
+              <p id="summary-active-sites" class="text-2xl font-bold text-nfgblue dark:text-blue-400 mt-1">0</p>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-nfglight dark:bg-gray-700 flex items-center justify-center">
+              <i data-lucide="map-pin" class="w-6 h-6 text-nfgblue dark:text-blue-400"></i>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Pending Jobs</p>
+              <p id="summary-pending-jobs" class="text-2xl font-bold text-orange-600 dark:text-orange-400 mt-1">0</p>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+              <i data-lucide="clock" class="w-6 h-6 text-orange-600 dark:text-orange-400"></i>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Total Invoices</p>
+              <p id="summary-total-invoices" class="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">0</p>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+              <i data-lucide="file-text" class="w-6 h-6 text-green-600 dark:text-green-400"></i>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Pending Payment</p>
+              <p id="summary-pending-payment" class="text-2xl font-bold text-red-600 dark:text-red-400 mt-1">$0</p>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+              <i data-lucide="dollar-sign" class="w-6 h-6 text-red-600 dark:text-red-400"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- My Sites Section -->
+      <section class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">My Sites</h3>
+          <a href="client-jobs.html" class="text-sm text-nfgblue dark:text-blue-400 hover:underline">View All</a>
+        </div>
+        <div id="sites-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Sites will be rendered here -->
+          <div class="text-center py-8 text-gray-500 dark:text-gray-400">Loading sites...</div>
+        </div>
+      </section>
+
+      <!-- Recent Jobs Section -->
+      <section class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Recent Jobs</h3>
+          <a href="client-jobs.html" class="text-sm text-nfgblue dark:text-blue-400 hover:underline">View All</a>
+        </div>
+        <div id="recent-jobs-list" class="space-y-3">
+          <!-- Jobs will be rendered here -->
+          <div class="text-center py-8 text-gray-500 dark:text-gray-400">Loading jobs...</div>
+        </div>
+      </section>
+
+      <!-- Upcoming Work Section -->
+      <section class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Upcoming Scheduled Work</h3>
+          <a href="client-jobs.html" class="text-sm text-nfgblue dark:text-blue-400 hover:underline">View All</a>
+        </div>
+        <div id="upcoming-work-list" class="space-y-3">
+          <!-- Upcoming work will be rendered here -->
+          <div class="text-center py-8 text-gray-500 dark:text-gray-400">No upcoming work scheduled</div>
+        </div>
+      </section>
+
+      <!-- Pending Invoices Section -->
+      <section class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Pending Invoices</h3>
+          <a href="client-invoices.html" class="text-sm text-nfgblue dark:text-blue-400 hover:underline">View All</a>
+        </div>
+        <div id="pending-invoices-list" class="space-y-3">
+          <!-- Invoices will be rendered here -->
+          <div class="text-center py-8 text-gray-500 dark:text-gray-400">No pending invoices</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Mobile Sidebar Overlay -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-40 md:hidden hidden" data-action="toggle-sidebar"></div>
+
+  <!-- Mobile Sidebar -->
+  <aside id="mobile-sidebar" class="fixed left-0 top-0 h-full w-64 bg-white dark:bg-gray-800 border-r border-nfgray z-50 transform -translate-x-full transition-transform md:hidden flex flex-col">
+    <div class="p-5 flex items-center justify-between">
+      <img 
+        src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/2.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzLzIucG5nIiwiaWF0IjoxNzYxODY2MTE0LCJleHAiOjQ4ODM5MzAxMTR9.E1JoQZxqPy0HOKna6YfjPCfin5Pc3QF0paEV7qzVfDw" 
+        alt="NFG" 
+        class="h-24 w-auto"
+      />
+      <button data-action="toggle-sidebar" class="p-2 rounded-lg hover:bg-nfglight">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <nav class="px-3 pb-4 flex-1 space-y-1">
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight dark:bg-gray-700 text-nfgblue dark:text-blue-400 font-medium w-full text-left" href="client-portal.html">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="client-jobs.html">
+        <i data-lucide="clipboard-check" class="w-4 h-4"></i> Jobs
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="client-invoices.html">
+        <i data-lucide="file-text" class="w-4 h-4"></i> Invoices
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="client-requests.html">
+        <i data-lucide="wrench" class="w-4 h-4"></i> Service Requests
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="client-messages.html">
+        <i data-lucide="message-circle" class="w-4 h-4"></i> Messages
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="client-settings.html">
+        <i data-lucide="settings" class="w-4 h-4"></i> Settings
+      </a>
+    </nav>
+    <div class="p-4 border-t border-nfgray dark:border-gray-700">
+      <button id="mobile-logout-btn" class="w-full border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight rounded-xl py-2 font-medium">
+        Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- Notification Container -->
+  <div id="notification-container"></div>
+
+  <!-- Scripts -->
+  <script type="module" src="./js/supabase.js"></script>
+  <script type="module" src="./js/client-auth.js"></script>
+  <script type="module" src="./js/client-portal.js"></script>
+  <script type="module" src="./js/notifications.js"></script>
+  <script>
+    // Mobile sidebar toggle
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('[data-action="toggle-sidebar"]')) {
+        const sidebar = document.getElementById('mobile-sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        sidebar?.classList.toggle('-translate-x-full');
+        overlay?.classList.toggle('hidden');
+      }
+    });
+
+    // Initialize icons
+    if (window.lucide) {
+      lucide.createIcons();
+      setInterval(() => lucide.createIcons(), 1000);
+    }
+
+    // Hide loader when page is ready
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        document.getElementById('page-loader')?.classList.add('hidden');
+      }, 300);
+    });
+  </script>
+</body>
+</html>
+

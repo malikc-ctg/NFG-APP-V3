@@ -17,9 +17,12 @@ interface OAuthRequest {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  // Handle CORS preflight requests - MUST be absolute first
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders,
+    })
   }
 
   try {
@@ -30,12 +33,16 @@ serve(async (req) => {
 
     // Handle OAuth callback (GET request from Stripe redirect)
     if (req.method === 'GET' && (code || action === 'callback')) {
-      return await handleOAuthCallbackGET(url)
+      const result = await handleOAuthCallbackGET(url)
+      return new Response(result.body, {
+        status: result.status,
+        headers: { ...corsHeaders, ...result.headers },
+      })
     }
 
     // For POST requests, require authorization
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader && req.method !== 'GET') {
+    if (!authHeader) {
       return new Response(
         JSON.stringify({ error: 'Missing authorization header' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -90,31 +97,27 @@ serve(async (req) => {
       )
     }
 
-    // Parse request body
+    // Parse request body for POST requests
     const body: OAuthRequest = await req.json().catch(() => ({}))
-    const action = body.action || 'initiate'
-    const url = new URL(req.url)
-    const code = url.searchParams.get('code') || body.code
-    const state = url.searchParams.get('state') || body.state
-
-    // Handle OAuth callback
-    if (action === 'callback' || code) {
-      return await handleOAuthCallback(
-        supabaseAdmin,
-        companyId,
-        code!,
-        state!,
-        stripeSecretKey,
-        stripeClientId
-      )
-    }
+    const bodyAction = body.action || 'initiate'
 
     // Handle OAuth initiation
-    return await initiateOAuth(
-      supabaseAdmin,
-      companyId,
-      user.id,
-      stripeClientId
+    if (bodyAction === 'initiate') {
+      const result = await initiateOAuth(
+        supabaseAdmin,
+        companyId,
+        user.id,
+        stripeClientId
+      )
+      return new Response(result.body, {
+        status: result.status,
+        headers: { ...corsHeaders, ...result.headers },
+      })
+    }
+
+    return new Response(
+      JSON.stringify({ error: 'Invalid action' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
@@ -167,13 +170,14 @@ async function initiateOAuth(
     oauthUrl.searchParams.set('scope', 'read_write')
     oauthUrl.searchParams.set('state', stateToken)
 
-    return new Response(
-      JSON.stringify({
+    return {
+      body: JSON.stringify({
         url: oauthUrl.toString(),
         state: stateToken,
       }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    }
 
   } catch (error) {
     console.error('Error initiating OAuth:', error)
@@ -189,10 +193,21 @@ async function handleOAuthCallbackGET(url: URL) {
   const state = url.searchParams.get('state')
 
   if (!code || !state) {
-    return new Response(
-      JSON.stringify({ error: 'Missing code or state parameter' }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    return {
+      body: `<!DOCTYPE html>
+      <html>
+      <head>
+        <title>Stripe Connection Failed</title>
+        <meta http-equiv="refresh" content="3;url=/settings.html?oauth_error=missing_params">
+      </head>
+      <body>
+        <h1>Connection Failed</h1>
+        <p>Missing code or state parameter. Redirecting...</p>
+      </body>
+      </html>`,
+      status: 400,
+      headers: { 'Content-Type': 'text/html' },
+    }
   }
 
   // Create Supabase admin client
@@ -210,9 +225,8 @@ async function handleOAuthCallbackGET(url: URL) {
     .single()
 
   if (sessionError || !session) {
-    // Return HTML redirect to settings page with error
-    return new Response(
-      `<!DOCTYPE html>
+    return {
+      body: `<!DOCTYPE html>
       <html>
       <head>
         <title>Stripe Connection Failed</title>
@@ -223,8 +237,9 @@ async function handleOAuthCallbackGET(url: URL) {
         <p>Invalid or expired OAuth session. Redirecting...</p>
       </body>
       </html>`,
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
-    )
+      status: 400,
+      headers: { 'Content-Type': 'text/html' },
+    }
   }
 
   const companyId = session.company_id
@@ -233,8 +248,8 @@ async function handleOAuthCallbackGET(url: URL) {
   const stripeClientId = Deno.env.get('STRIPE_CONNECT_CLIENT_ID')
 
   if (!stripeSecretKey || !stripeClientId) {
-    return new Response(
-      `<!DOCTYPE html>
+    return {
+      body: `<!DOCTYPE html>
       <html>
       <head>
         <title>Configuration Error</title>
@@ -245,8 +260,9 @@ async function handleOAuthCallbackGET(url: URL) {
         <p>Payment gateway not configured. Redirecting...</p>
       </body>
       </html>`,
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
-    )
+      status: 500,
+      headers: { 'Content-Type': 'text/html' },
+    }
   }
 
   // Process callback
@@ -260,30 +276,27 @@ async function handleOAuthCallbackGET(url: URL) {
   )
 
   // If successful, redirect to settings page
-  if (result.ok) {
-    const data = await result.json()
-    if (data.success) {
-      // Redirect to settings page with success
-      return new Response(
-        `<!DOCTYPE html>
-        <html>
-        <head>
-          <title>Stripe Connected</title>
-          <meta http-equiv="refresh" content="2;url=/settings.html?oauth_success=true">
-        </head>
-        <body>
-          <h1>Successfully Connected!</h1>
-          <p>Your Stripe account has been connected. Redirecting to settings...</p>
-        </body>
-        </html>`,
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
-      )
+  if (result.success) {
+    return {
+      body: `<!DOCTYPE html>
+      <html>
+      <head>
+        <title>Stripe Connected</title>
+        <meta http-equiv="refresh" content="2;url=/settings.html?oauth_success=true">
+      </head>
+      <body>
+        <h1>Successfully Connected!</h1>
+        <p>Your Stripe account has been connected. Redirecting to settings...</p>
+      </body>
+      </html>`,
+      status: 200,
+      headers: { 'Content-Type': 'text/html' },
     }
   }
 
   // Error occurred, redirect with error
-  return new Response(
-    `<!DOCTYPE html>
+  return {
+    body: `<!DOCTYPE html>
     <html>
     <head>
       <title>Connection Failed</title>
@@ -294,8 +307,9 @@ async function handleOAuthCallbackGET(url: URL) {
       <p>An error occurred while connecting your Stripe account. Redirecting...</p>
     </body>
     </html>`,
-    { status: 400, headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
-  )
+    status: 400,
+    headers: { 'Content-Type': 'text/html' },
+  }
 }
 
 /**
@@ -308,7 +322,7 @@ async function handleOAuthCallback(
   state: string,
   stripeSecretKey: string,
   stripeClientId: string
-) {
+): Promise<{ success: boolean; error?: string }> {
   try {
     // Verify state token
     const { data: session, error: sessionError } = await supabaseAdmin
@@ -320,10 +334,7 @@ async function handleOAuthCallback(
       .single()
 
     if (sessionError || !session) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid or expired OAuth session' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      return { success: false, error: 'Invalid or expired OAuth session' }
     }
 
     // Check if session expired
@@ -333,10 +344,7 @@ async function handleOAuthCallback(
         .update({ status: 'expired' })
         .eq('id', session.id)
 
-      return new Response(
-        JSON.stringify({ error: 'OAuth session expired' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      return { success: false, error: 'OAuth session expired' }
     }
 
     // Exchange code for access token with Stripe
@@ -364,20 +372,14 @@ async function handleOAuthCallback(
         .update({ status: 'failed' })
         .eq('id', session.id)
 
-      return new Response(
-        JSON.stringify({ error: 'Failed to exchange OAuth code' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      return { success: false, error: 'Failed to exchange OAuth code' }
     }
 
     const tokenData = await tokenResponse.json()
     const { access_token, stripe_user_id, stripe_publishable_key } = tokenData
 
     if (!access_token || !stripe_user_id) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid OAuth response from Stripe' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      return { success: false, error: 'Invalid OAuth response from Stripe' }
     }
 
     // Get Stripe account details
@@ -421,7 +423,7 @@ async function handleOAuthCallback(
         payment_gateway_account_status: accountData?.charges_enabled ? 'active' : 'pending',
         payment_gateway_dashboard_link: dashboardLink,
         payment_gateway_metadata: {
-          access_token: access_token, // Store securely - should be encrypted in production
+          access_token: access_token,
           publishable_key: stripe_publishable_key,
           account_type: accountData?.type || 'standard',
           charges_enabled: accountData?.charges_enabled || false,
@@ -435,11 +437,11 @@ async function handleOAuthCallback(
 
     if (updateError) {
       console.error('Error updating company profile:', updateError)
-      throw new Error('Failed to update company profile')
+      return { success: false, error: 'Failed to update company profile' }
     }
 
     // Update or create gateway connection record
-    const { error: connectionError } = await supabaseAdmin
+    await supabaseAdmin
       .from('payment_gateway_connections')
       .upsert({
         company_id: companyId,
@@ -458,11 +460,6 @@ async function handleOAuthCallback(
         onConflict: 'company_id,gateway',
       })
 
-    if (connectionError) {
-      console.error('Error creating gateway connection:', connectionError)
-      // Non-fatal, continue
-    }
-
     // Update OAuth session
     await supabaseAdmin
       .from('gateway_oauth_sessions')
@@ -473,19 +470,10 @@ async function handleOAuthCallback(
       })
       .eq('id', session.id)
 
-    // Return success response (will redirect in frontend)
-    return new Response(
-      JSON.stringify({
-        success: true,
-        account_id: stripe_user_id,
-        status: accountData?.charges_enabled ? 'active' : 'pending',
-        dashboard_link: dashboardLink,
-      }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    return { success: true }
 
   } catch (error) {
     console.error('Error handling OAuth callback:', error)
-    throw error
+    return { success: false, error: error.message }
   }
 }

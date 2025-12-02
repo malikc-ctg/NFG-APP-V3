@@ -1668,7 +1668,7 @@
           generateBtn.classList.add('hidden');
           viewLink.classList.remove('hidden');
           invoiceNumberText.textContent = invoice.invoice_number;
-          viewLink.href = `reports.html?tab=billing&invoice=${invoice.id}`;
+          viewLink.href = `billing.html?invoice=${invoice.id}`;
           
           const statusText = invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1);
           const amount = parseFloat(invoice.total_amount || 0);
@@ -1775,8 +1775,8 @@
           jobType: job.job_type || 'cleaning'
         }));
 
-        // Redirect to reports billing tab
-        window.location.href = 'reports.html?tab=billing&create_invoice=true';
+        // Redirect to billing page with job data
+        window.location.href = 'billing.html?create_from_job=true';
 
       } catch (error) {
         console.error('[Jobs] Error generating invoice from job:', error);

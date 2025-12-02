@@ -306,15 +306,32 @@ async function handleConnectGateway() {
   try {
     toast.info('Preparing Stripe connection...');
 
-    // Call Edge Function to create OAuth link
-    const { data, error } = await supabase.functions.invoke('stripe-connect-oauth', {
-      body: { action: 'initiate' }
-    });
-    
-    if (error) {
-      console.error('[Payment Gateway] OAuth initiation error:', error);
-      throw error;
+    // Get auth token
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error('Not authenticated');
     }
+
+    // Import SUPABASE_URL
+    const { SUPABASE_URL } = await import('./supabase.js');
+    
+    // Call Edge Function directly with fetch
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/stripe-connect-oauth`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ action: 'initiate' })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[Payment Gateway] OAuth initiation error:', errorText);
+      throw new Error(`Failed to initiate OAuth: ${response.status}`);
+    }
+
+    const data = await response.json();
     
     if (data?.url) {
       // Store state for callback verification

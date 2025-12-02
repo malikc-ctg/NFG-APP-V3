@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NFG — Messages</title>
+  <link rel="icon" type="image/png" href="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/NFG%20one.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL05GRyBvbmUucG5nIiwiaWF0IjoxNzYyOTc5NzU5LCJleHAiOjQ4ODUwNDM3NTl9.fnJIDQep2yYlgGKlBRNnkrUoUzXzG7eac39GG6NQPuU">
+  <script type="module">
+    // Redirect to main messages page with client filter
+    import { supabase } from './js/supabase.js';
+    import { requireClient } from './js/client-auth.js';
+    
+    async function init() {
+      const authResult = await requireClient();
+      if (!authResult) return;
+      
+      // Redirect to messages page
+      window.location.href = './messages.html';
+    }
+    
+    init();
+  </script>
+</head>
+<body>
+  <div class="flex items-center justify-center min-h-screen">
+    <p>Redirecting to messages...</p>
+  </div>
+</body>
+</html>
+
