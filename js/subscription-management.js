@@ -112,6 +112,9 @@ async function loadCurrentSubscription() {
   }
 }
 
+// Store current billing cycle for plan selection
+let currentBillingCycleSelection = 'monthly'
+
 /**
  * Render subscription section in settings page
  */
@@ -120,7 +123,7 @@ function renderSubscriptionSection() {
   if (!container) return
 
   const currentPlan = currentSubscription?.plan_name || null
-  const billingCycle = currentSubscription?.billing_cycle || 'monthly'
+  const billingCycle = currentSubscription?.billing_cycle || currentBillingCycleSelection
   const status = currentSubscription?.status || 'none'
   const nextBillingDate = currentSubscription?.current_period_end
     ? new Date(currentSubscription.current_period_end).toLocaleDateString()
@@ -149,6 +152,28 @@ function renderSubscriptionSection() {
       ${currentSubscription && status === 'active' ? renderManageSubscription(currentSubscription) : ''}
     </div>
   `
+  
+  // Add event listeners for billing cycle toggle (only if no active subscription)
+  if (!currentSubscription) {
+    setTimeout(() => {
+      const monthlyBtn = document.getElementById('billing-cycle-monthly')
+      const yearlyBtn = document.getElementById('billing-cycle-yearly')
+      
+      if (monthlyBtn) {
+        monthlyBtn.addEventListener('click', () => {
+          currentBillingCycleSelection = 'monthly'
+          renderSubscriptionSection()
+        })
+      }
+      
+      if (yearlyBtn) {
+        yearlyBtn.addEventListener('click', () => {
+          currentBillingCycleSelection = 'yearly'
+          renderSubscriptionSection()
+        })
+      }
+    }, 100)
+  }
 }
 
 /**
@@ -386,19 +411,277 @@ export async function selectPlan(planName, billingCycle) {
 }
 
 /**
+ * Calculate proration for plan change
+ */
+function calculateProration(currentPlan, newPlan, currentBillingCycle, newBillingCycle, periodStart, periodEnd) {
+  const now = new Date()
+  const periodStartDate = new Date(periodStart)
+  const periodEndDate = new Date(periodEnd)
+  
+  // Calculate days used and days remaining
+  const totalDays = Math.ceil((periodEndDate - periodStartDate) / (1000 * 60 * 60 * 24))
+  const daysUsed = Math.ceil((now - periodStartDate) / (1000 * 60 * 60 * 24))
+  const daysRemaining = totalDays - daysUsed
+  
+  // Get current plan price
+  const currentPrice = currentBillingCycle === 'yearly' 
+    ? SUBSCRIPTION_PLANS[currentPlan].priceAnnual 
+    : SUBSCRIPTION_PLANS[currentPlan].price
+  
+  // Get new plan price
+  const newPrice = newBillingCycle === 'yearly'
+    ? SUBSCRIPTION_PLANS[newPlan].priceAnnual
+    : SUBSCRIPTION_PLANS[newPlan].price
+  
+  // Calculate daily rates
+  const currentDailyRate = currentPrice / totalDays
+  const newDailyRate = newBillingCycle === 'yearly' 
+    ? newPrice / 365 
+    : newPrice / 30
+  
+  // Calculate credits and charges
+  const unusedCredit = currentDailyRate * daysRemaining
+  const newCharge = newDailyRate * daysRemaining
+  
+  // Proration amount (positive = charge more, negative = refund)
+  const prorationAmount = newCharge - unusedCredit
+  
+  return {
+    daysUsed,
+    daysRemaining,
+    totalDays,
+    currentPrice,
+    newPrice,
+    unusedCredit,
+    newCharge,
+    prorationAmount,
+    willCharge: prorationAmount > 0,
+    willRefund: prorationAmount < 0
+  }
+}
+
+/**
+ * Show plan change modal
+ */
+function showPlanChangeModal(isUpgrade) {
+  if (!currentSubscription) return
+  
+  const currentPlan = currentSubscription.plan_name
+  const availablePlans = Object.keys(SUBSCRIPTION_PLANS).filter(plan => {
+    if (isUpgrade) {
+      // For upgrade: show plans higher than current
+      const planOrder = ['starter', 'professional', 'enterprise']
+      return planOrder.indexOf(plan) > planOrder.indexOf(currentPlan)
+    } else {
+      // For downgrade: show plans lower than current
+      const planOrder = ['starter', 'professional', 'enterprise']
+      return planOrder.indexOf(plan) < planOrder.indexOf(currentPlan)
+    }
+  })
+  
+  if (availablePlans.length === 0) {
+    toast.warning(`No plans available to ${isUpgrade ? 'upgrade' : 'downgrade'} to`)
+    return
+  }
+  
+  // Create modal HTML
+  const modalHTML = `
+    <div id="plan-change-modal" class="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div class="p-6 border-b border-nfgray dark:border-gray-700">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xl font-semibold text-nfgblue dark:text-blue-400">
+              ${isUpgrade ? 'Upgrade' : 'Downgrade'} Subscription
+            </h3>
+            <button onclick="closePlanChangeModal()" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+              <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+          </div>
+        </div>
+        
+        <div class="p-6 space-y-4">
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            Select a new plan. Your subscription will be prorated based on the remaining time in your current billing period.
+          </p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            ${availablePlans.map(planKey => {
+              const plan = SUBSCRIPTION_PLANS[planKey]
+              const currentBillingCycle = currentSubscription.billing_cycle
+              const proration = calculateProration(
+                currentPlan,
+                planKey,
+                currentBillingCycle,
+                currentBillingCycle, // Keep same billing cycle for now
+                currentSubscription.current_period_start,
+                currentSubscription.current_period_end
+              )
+              
+              return `
+                <div class="border-2 rounded-xl p-4 border-nfgray dark:border-gray-600 hover:border-nfgblue dark:hover:border-blue-500 transition cursor-pointer plan-option" data-plan="${planKey}">
+                  <h4 class="font-semibold text-nfgtext dark:text-gray-100 mb-2">${plan.name}</h4>
+                  <p class="text-2xl font-bold text-nfgblue dark:text-blue-400 mb-1">
+                    $${currentBillingCycle === 'yearly' ? (plan.priceAnnual / 12).toFixed(2) : plan.price}/month
+                  </p>
+                  ${proration.willCharge ? `
+                    <p class="text-sm text-orange-600 dark:text-orange-400">
+                      Additional charge: $${Math.abs(proration.prorationAmount).toFixed(2)}
+                    </p>
+                  ` : proration.willRefund ? `
+                    <p class="text-sm text-green-600 dark:text-green-400">
+                      Credit: $${Math.abs(proration.prorationAmount).toFixed(2)}
+                    </p>
+                  ` : `
+                    <p class="text-sm text-gray-500 dark:text-gray-400">No additional charge</p>
+                  `}
+                </div>
+              `
+            }).join('')}
+          </div>
+          
+          <div class="flex items-center justify-end gap-3 pt-4 border-t border-nfgray dark:border-gray-700">
+            <button onclick="closePlanChangeModal()" class="px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 font-medium">
+              Cancel
+            </button>
+            <button id="confirm-plan-change-btn" class="px-4 py-2 rounded-lg bg-nfgblue hover:bg-blue-700 text-white font-medium" disabled>
+              Confirm Change
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `
+  
+  // Remove existing modal if any
+  const existingModal = document.getElementById('plan-change-modal')
+  if (existingModal) existingModal.remove()
+  
+  // Add modal to body
+  document.body.insertAdjacentHTML('beforeend', modalHTML)
+  
+  // Initialize Lucide icons
+  if (window.lucide) {
+    window.lucide.createIcons()
+  }
+  
+  // Add event listeners
+  let selectedPlan = null
+  document.querySelectorAll('.plan-option').forEach(option => {
+    option.addEventListener('click', () => {
+      document.querySelectorAll('.plan-option').forEach(o => {
+        o.classList.remove('border-nfgblue', 'bg-blue-50', 'dark:bg-blue-900/20')
+        o.classList.add('border-nfgray', 'dark:border-gray-600')
+      })
+      option.classList.remove('border-nfgray', 'dark:border-gray-600')
+      option.classList.add('border-nfgblue', 'dark:border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20')
+      selectedPlan = option.dataset.plan
+      document.getElementById('confirm-plan-change-btn').disabled = false
+    })
+  })
+  
+  document.getElementById('confirm-plan-change-btn').addEventListener('click', () => {
+    if (selectedPlan) {
+      closePlanChangeModal()
+      changePlan(selectedPlan, currentSubscription.billing_cycle)
+    }
+  })
+}
+
+/**
+ * Close plan change modal
+ */
+function closePlanChangeModal() {
+  const modal = document.getElementById('plan-change-modal')
+  if (modal) modal.remove()
+}
+
+/**
+ * Change subscription plan (upgrade or downgrade)
+ */
+async function changePlan(newPlanName, billingCycle) {
+  if (!currentSubscription) return
+  
+  try {
+    toast.info('Updating subscription...')
+    
+    const currentPlan = currentSubscription.plan_name
+    const currentBillingCycle = currentSubscription.billing_cycle
+    
+    // Calculate proration
+    const proration = calculateProration(
+      currentPlan,
+      newPlanName,
+      currentBillingCycle,
+      billingCycle,
+      currentSubscription.current_period_start,
+      currentSubscription.current_period_end
+    )
+    
+    // Get new plan price
+    const newPlan = SUBSCRIPTION_PLANS[newPlanName]
+    const newAmount = billingCycle === 'yearly' ? newPlan.priceAnnual : newPlan.price
+    
+    // Update subscription
+    const { error } = await supabase
+      .from('platform_subscriptions')
+      .update({
+        plan_name: newPlanName,
+        amount: newAmount,
+        billing_cycle: billingCycle,
+        // Keep same period dates (proration is handled in payment)
+        metadata: {
+          ...(currentSubscription.metadata || {}),
+          previous_plan: currentPlan,
+          changed_at: new Date().toISOString(),
+          proration: {
+            amount: proration.prorationAmount,
+            days_remaining: proration.daysRemaining,
+            unused_credit: proration.unusedCredit,
+            new_charge: proration.newCharge
+          }
+        }
+      })
+      .eq('id', currentSubscription.id)
+    
+    if (error) throw error
+    
+    // Show success message with proration info
+    if (proration.willCharge) {
+      toast.success(
+        `Plan ${newPlanName === 'enterprise' ? 'upgraded' : 'changed'} successfully! ` +
+        `Additional charge of $${Math.abs(proration.prorationAmount).toFixed(2)} will be applied.`
+      )
+    } else if (proration.willRefund) {
+      toast.success(
+        `Plan ${newPlanName === 'starter' ? 'downgraded' : 'changed'} successfully! ` +
+        `Credit of $${Math.abs(proration.prorationAmount).toFixed(2)} will be applied to your account.`
+      )
+    } else {
+      toast.success('Plan changed successfully!')
+    }
+    
+    // Reload subscription
+    await loadCurrentSubscription()
+    renderSubscriptionSection()
+    
+  } catch (error) {
+    console.error('[Subscription] Error changing plan:', error)
+    toast.error('Failed to change plan: ' + error.message)
+  }
+}
+
+/**
  * Upgrade subscription plan
  */
 export async function upgradePlan() {
-  // Implementation for Phase 5.4
-  toast.info('Upgrade functionality coming soon')
+  showPlanChangeModal(true)
 }
 
 /**
  * Downgrade subscription plan
  */
 export async function downgradePlan() {
-  // Implementation for Phase 5.4
-  toast.info('Downgrade functionality coming soon')
+  showPlanChangeModal(false)
 }
 
 /**
@@ -443,4 +726,5 @@ window.selectPlan = selectPlan
 window.upgradePlan = upgradePlan
 window.downgradePlan = downgradePlan
 window.cancelSubscription = cancelSubscription
+window.closePlanChangeModal = closePlanChangeModal
 
