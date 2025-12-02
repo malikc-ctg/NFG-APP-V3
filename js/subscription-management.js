@@ -153,6 +153,13 @@ function renderSubscriptionSection() {
     </div>
   `
   
+  // Load payment history if subscription exists
+  if (currentSubscription && status === 'active') {
+    setTimeout(() => {
+      loadPaymentHistory()
+    }, 100)
+  }
+  
   // Add event listeners for billing cycle toggle (only if no active subscription)
   if (!currentSubscription) {
     setTimeout(() => {
@@ -311,6 +318,9 @@ function renderPlanCard(planKey, plan, billingCycle) {
  * Render subscription management options
  */
 function renderManageSubscription(subscription) {
+  const isDue = new Date(subscription.current_period_end) <= new Date()
+  const isPastDue = subscription.status === 'past_due'
+  
   return `
     <div class="border-t border-nfgray dark:border-gray-700 pt-6 mt-6">
       <h4 class="text-lg font-semibold text-nfgtext dark:text-gray-100 mb-4">Manage Subscription</h4>
@@ -331,12 +341,28 @@ function renderManageSubscription(subscription) {
             Downgrade Plan
           </button>
         ` : ''}
+        ${(isDue || isPastDue) ? `
+          <button 
+            onclick="chargeSubscription()"
+            class="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium transition-colors"
+          >
+            ${isPastDue ? 'Retry Payment' : 'Pay Now'}
+          </button>
+        ` : ''}
         <button 
           onclick="cancelSubscription()"
           class="px-4 py-2 rounded-lg border border-red-300 hover:bg-red-50 dark:border-red-700 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 font-medium transition-colors"
         >
           Cancel Subscription
         </button>
+      </div>
+    </div>
+    
+    <!-- Payment History -->
+    <div class="border-t border-nfgray dark:border-gray-700 pt-6 mt-6">
+      <h4 class="text-lg font-semibold text-nfgtext dark:text-gray-100 mb-4">Payment History</h4>
+      <div id="subscription-payment-history" class="space-y-2">
+        <p class="text-sm text-gray-500 dark:text-gray-400">Loading payment history...</p>
       </div>
     </div>
   `
@@ -398,6 +424,7 @@ export async function selectPlan(planName, billingCycle) {
     // Reload subscription
     await loadCurrentSubscription()
     renderSubscriptionSection()
+    await loadPaymentHistory()
 
     // If manual payment, show instructions
     if (company?.payment_gateway === 'manual') {
@@ -407,6 +434,122 @@ export async function selectPlan(planName, billingCycle) {
   } catch (error) {
     console.error('[Subscription] Error creating subscription:', error)
     toast.error('Failed to create subscription: ' + error.message)
+  }
+}
+
+/**
+ * Charge subscription (manual trigger)
+ */
+export async function chargeSubscription() {
+  if (!currentSubscription) return
+
+  const confirmed = confirm(
+    `Charge ${SUBSCRIPTION_PLANS[currentSubscription.plan_name].name} subscription? ` +
+    `Amount: $${currentSubscription.amount.toFixed(2)}`
+  )
+
+  if (!confirmed) return
+
+  try {
+    toast.info('Processing payment...')
+
+    // Get auth token
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) throw new Error('Not authenticated')
+
+    // Call Edge Function
+    const { SUPABASE_URL } = await import('./supabase.js')
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/charge-subscription`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        subscription_id: currentSubscription.id,
+        manual: true
+      })
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Payment failed')
+    }
+
+    const result = await response.json()
+
+    if (result.successful > 0) {
+      toast.success('Payment processed successfully!')
+    } else {
+      toast.error('Payment failed: ' + (result.results[0]?.error || 'Unknown error'))
+    }
+
+    // Reload subscription and payment history
+    await loadCurrentSubscription()
+    renderSubscriptionSection()
+    await loadPaymentHistory()
+
+  } catch (error) {
+    console.error('[Subscription] Error charging subscription:', error)
+    toast.error('Failed to process payment: ' + error.message)
+  }
+}
+
+/**
+ * Load payment history for current subscription
+ */
+async function loadPaymentHistory() {
+  if (!currentSubscription) return
+
+  const container = document.getElementById('subscription-payment-history')
+  if (!container) return
+
+  try {
+    const { data: payments, error } = await supabase
+      .from('platform_payments')
+      .select('*')
+      .eq('subscription_id', currentSubscription.id)
+      .order('created_at', { ascending: false })
+      .limit(10)
+
+    if (error) throw error
+
+    if (!payments || payments.length === 0) {
+      container.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">No payment history yet</p>'
+      return
+    }
+
+    container.innerHTML = payments.map(payment => {
+      const date = new Date(payment.created_at).toLocaleDateString()
+      const statusColor = payment.status === 'succeeded' 
+        ? 'text-green-600 dark:text-green-400' 
+        : payment.status === 'failed'
+        ? 'text-red-600 dark:text-red-400'
+        : 'text-yellow-600 dark:text-yellow-400'
+      
+      return `
+        <div class="flex items-center justify-between p-3 bg-nfglight dark:bg-gray-700/50 rounded-lg border border-nfgray dark:border-gray-600">
+          <div>
+            <p class="font-medium text-nfgtext dark:text-gray-100">$${payment.amount.toFixed(2)}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">${date}</p>
+          </div>
+          <div class="text-right">
+            <span class="px-2 py-1 rounded-full text-xs font-medium ${statusColor} capitalize">
+              ${payment.status}
+            </span>
+            ${payment.gateway_payment_id ? `
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                ${payment.gateway}
+              </p>
+            ` : ''}
+          </div>
+        </div>
+      `
+    }).join('')
+
+  } catch (error) {
+    console.error('[Subscription] Error loading payment history:', error)
+    container.innerHTML = '<p class="text-sm text-red-600 dark:text-red-400">Error loading payment history</p>'
   }
 }
 
@@ -663,6 +806,7 @@ async function changePlan(newPlanName, billingCycle) {
     // Reload subscription
     await loadCurrentSubscription()
     renderSubscriptionSection()
+    await loadPaymentHistory()
     
   } catch (error) {
     console.error('[Subscription] Error changing plan:', error)
@@ -726,5 +870,6 @@ window.selectPlan = selectPlan
 window.upgradePlan = upgradePlan
 window.downgradePlan = downgradePlan
 window.cancelSubscription = cancelSubscription
+window.chargeSubscription = chargeSubscription
 window.closePlanChangeModal = closePlanChangeModal
 
