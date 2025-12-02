@@ -3,7 +3,7 @@
  * Handles payment gateway selection and connection for companies
  */
 
-import { supabase } from './supabase.js'
+import { supabase, SUPABASE_URL } from './supabase.js'
 import { toast } from './notifications.js'
 
 let currentCompanyProfile = null;
@@ -312,9 +312,6 @@ async function handleConnectGateway() {
       throw new Error('Not authenticated');
     }
 
-    // Import SUPABASE_URL
-    const { SUPABASE_URL } = await import('./supabase.js');
-    
     // Call Edge Function directly with fetch
     const response = await fetch(`${SUPABASE_URL}/functions/v1/stripe-connect-oauth`, {
       method: 'POST',
