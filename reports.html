@@ -769,6 +769,70 @@
             </table>
           </div>
         </div>
+
+        <!-- Payment History Section -->
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg">
+          <div class="p-6 border-b border-nfgray dark:border-gray-700 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Payment History</h3>
+            <button id="refresh-payments-btn" class="px-4 py-2 rounded-xl border border-nfgray dark:border-gray-600 hover:bg-nfglight dark:hover:bg-gray-700 text-sm font-medium flex items-center gap-2">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+              Refresh
+            </button>
+          </div>
+
+          <!-- Payment Filters -->
+          <div class="p-4 border-b border-nfgray dark:border-gray-700 flex flex-wrap gap-3">
+            <select id="payment-method-filter" class="px-3 py-2 rounded-xl border border-nfgray dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm">
+              <option value="">All Methods</option>
+              <option value="cash">Cash</option>
+              <option value="check">Check</option>
+              <option value="credit_card">Credit Card</option>
+              <option value="bank_transfer">Bank Transfer</option>
+              <option value="other">Other</option>
+            </select>
+            <select id="payment-status-filter" class="px-3 py-2 rounded-xl border border-nfgray dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm">
+              <option value="">All Status</option>
+              <option value="succeeded">Success</option>
+              <option value="pending">Pending</option>
+              <option value="failed">Failed</option>
+              <option value="refunded">Refunded</option>
+            </select>
+            <select id="payment-client-filter" class="px-3 py-2 rounded-xl border border-nfgray dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm">
+              <option value="">All Clients</option>
+            </select>
+            <input type="date" id="payment-date-from" class="px-3 py-2 rounded-xl border border-nfgray dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm">
+            <input type="date" id="payment-date-to" class="px-3 py-2 rounded-xl border border-nfgray dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-nfgblue outline-none text-sm">
+            <button id="apply-payment-filters" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark text-sm">
+              Apply Filters
+            </button>
+            <button id="clear-payment-filters" class="px-4 py-2 rounded-xl border border-nfgray dark:border-gray-600 hover:bg-nfglight dark:hover:bg-gray-700 text-sm">
+              Clear
+            </button>
+          </div>
+
+          <!-- Payments Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-nfglight dark:bg-gray-700">
+                <tr>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Date</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Invoice #</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Client</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Amount</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Method</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Reference</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="payments-table-body" class="divide-y divide-nfgray dark:divide-gray-700">
+                <tr>
+                  <td colspan="8" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Loading payments...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
       <!-- END Billing Tab Content -->
 
@@ -3438,6 +3502,8 @@
         await loadInvoices();
         await loadRevenueChart();
         await loadClientFilter();
+        await loadPayments();
+        await loadPaymentClientFilter();
       } catch (error) {
         console.error('[Billing] Error loading billing data:', error);
         toast.error('Failed to load billing data', 'Error');
@@ -5825,6 +5891,214 @@
       if (window.lucide) lucide.createIcons();
     }
     
+    // Load payments
+    async function loadPayments() {
+      try {
+        const methodFilter = document.getElementById('payment-method-filter')?.value || '';
+        const statusFilter = document.getElementById('payment-status-filter')?.value || '';
+        const clientFilter = document.getElementById('payment-client-filter')?.value || '';
+        const dateFrom = document.getElementById('payment-date-from')?.value || '';
+        const dateTo = document.getElementById('payment-date-to')?.value || '';
+
+        let query = supabase
+          .from('payments')
+          .select('*')
+          .order('payment_date', { ascending: false })
+          .order('created_at', { ascending: false });
+
+        if (methodFilter) query = query.eq('payment_method', methodFilter);
+        if (statusFilter) query = query.eq('payment_status', statusFilter);
+        if (dateFrom) query = query.gte('payment_date', dateFrom);
+        if (dateTo) query = query.lte('payment_date', dateTo);
+
+        const { data: payments, error } = await query;
+
+        if (error) {
+          console.error('[Billing] Error loading payments:', error);
+          renderPaymentsTable([]);
+          return;
+        }
+
+        if (!payments || payments.length === 0) {
+          renderPaymentsTable([]);
+          return;
+        }
+
+        // Filter by client if needed
+        let filteredPayments = payments;
+        if (clientFilter) {
+          // Get invoice IDs for this client
+          const { data: invoices } = await supabase
+            .from('invoices')
+            .select('id')
+            .eq('client_id', clientFilter);
+          
+          const invoiceIds = invoices?.map(inv => inv.id) || [];
+          filteredPayments = payments.filter(p => invoiceIds.includes(p.invoice_id));
+        }
+
+        // Enrich payments with invoice and client data
+        const invoiceIds = [...new Set(filteredPayments.filter(p => p.invoice_id).map(p => p.invoice_id))];
+        
+        // Fetch invoices
+        let invoicesMap = new Map();
+        if (invoiceIds.length > 0) {
+          const { data: invoices } = await supabase
+            .from('invoices')
+            .select('id, invoice_number, client_id')
+            .in('id', invoiceIds);
+          
+          invoices?.forEach(inv => invoicesMap.set(inv.id, inv));
+        }
+
+        // Fetch clients
+        const clientIds = [...new Set(invoicesMap.values().map(inv => inv.client_id).filter(Boolean))];
+        let clientsMap = new Map();
+        if (clientIds.length > 0) {
+          const { data: clients } = await supabase
+            .from('user_profiles')
+            .select('id, full_name, email')
+            .in('id', clientIds);
+          
+          clients?.forEach(client => clientsMap.set(client.id, client));
+        }
+
+        // Enrich payments
+        const enrichedPayments = filteredPayments.map(payment => ({
+          ...payment,
+          invoice: invoicesMap.get(payment.invoice_id),
+          client: payment.invoice ? clientsMap.get(payment.invoice.client_id) : null
+        }));
+
+        renderPaymentsTable(enrichedPayments);
+
+      } catch (error) {
+        console.error('[Billing] Error loading payments:', error);
+        renderPaymentsTable([]);
+      }
+    }
+
+    // Render payments table
+    function renderPaymentsTable(payments) {
+      const tbody = document.getElementById('payments-table-body');
+      if (!tbody) return;
+
+      if (payments.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No payments found</td></tr>';
+        return;
+      }
+
+      const statusColors = {
+        'succeeded': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+        'pending': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+        'processing': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+        'failed': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+        'refunded': 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+        'canceled': 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+      };
+
+      const methodLabels = {
+        'cash': 'Cash',
+        'check': 'Check',
+        'credit_card': 'Credit Card',
+        'bank_transfer': 'Bank Transfer',
+        'other': 'Other'
+      };
+
+      tbody.innerHTML = payments.map(payment => {
+        const invoiceNumber = payment.invoice?.invoice_number || 'N/A';
+        const clientName = payment.client?.full_name || payment.client?.email || 'N/A';
+        const amount = parseFloat(payment.amount || 0);
+        const status = payment.payment_status || 'succeeded';
+        const statusClass = statusColors[status] || statusColors.succeeded;
+        const methodLabel = methodLabels[payment.payment_method] || payment.payment_method || 'N/A';
+
+        return `
+          <tr class="hover:bg-nfglight/30 dark:hover:bg-gray-700/30">
+            <td class="px-4 py-3 text-sm">${new Date(payment.payment_date || payment.created_at).toLocaleDateString()}</td>
+            <td class="px-4 py-3 text-sm font-medium">${invoiceNumber}</td>
+            <td class="px-4 py-3 text-sm">${clientName}</td>
+            <td class="px-4 py-3 text-sm font-medium">$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td class="px-4 py-3 text-sm">${methodLabel}</td>
+            <td class="px-4 py-3">
+              <span class="px-2 py-1 rounded-lg text-xs font-medium ${statusClass}">
+                ${status}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">${payment.reference_number || payment.gateway_payment_id || '—'}</td>
+            <td class="px-4 py-3">
+              <div class="flex gap-2">
+                ${payment.invoice_id ? `<button onclick="viewInvoice('${payment.invoice_id}')" class="text-nfgblue dark:text-blue-400 hover:underline text-sm">Invoice</button>` : ''}
+                ${payment.receipt_url ? `<a href="${payment.receipt_url}" target="_blank" class="text-green-600 dark:text-green-400 hover:underline text-sm">Receipt</a>` : ''}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // Load payment client filter dropdown
+    async function loadPaymentClientFilter() {
+      try {
+        // Fetch payments with invoice_id
+        const { data: payments, error } = await supabase
+          .from('payments')
+          .select('invoice_id');
+
+        if (error) {
+          console.error('[Billing] Error loading payments for client filter:', error);
+          return;
+        }
+
+        if (!payments || payments.length === 0) return;
+
+        // Get unique invoice IDs
+        const invoiceIds = [...new Set(payments.filter(p => p.invoice_id).map(p => p.invoice_id))];
+        if (invoiceIds.length === 0) return;
+
+        // Fetch invoices to get client IDs
+        const { data: invoices } = await supabase
+          .from('invoices')
+          .select('client_id')
+          .in('id', invoiceIds);
+
+        if (!invoices || invoices.length === 0) return;
+
+        // Get unique client IDs
+        const clientIds = [...new Set(invoices.filter(inv => inv.client_id).map(inv => inv.client_id))];
+        if (clientIds.length === 0) return;
+
+        // Fetch user profiles
+        const { data: profiles } = await supabase
+          .from('user_profiles')
+          .select('id, full_name, email')
+          .in('id', clientIds);
+
+        if (!profiles || profiles.length === 0) return;
+
+        const clientFilter = document.getElementById('payment-client-filter');
+        if (!clientFilter) return;
+
+        // Clear existing options (keep "All Clients")
+        const allClientsOption = clientFilter.querySelector('option[value=""]');
+        clientFilter.innerHTML = '';
+        if (allClientsOption) clientFilter.appendChild(allClientsOption);
+
+        // Add client options
+        profiles.forEach(profile => {
+          const option = document.createElement('option');
+          option.value = profile.id;
+          option.textContent = profile.full_name || profile.email || 'Unknown Client';
+          clientFilter.appendChild(option);
+        });
+
+      } catch (error) {
+        console.error('[Billing] Error loading payment client filter:', error);
+      }
+    }
+    
     // Load client filter dropdown
     async function loadClientFilter() {
       try {
@@ -7547,6 +7821,18 @@
       document.getElementById('create-invoice-btn')?.addEventListener('click', () => {
         openCreateInvoiceModal();
       });
+
+      // Payment History Event Listeners
+      document.getElementById('apply-payment-filters')?.addEventListener('click', loadPayments);
+      document.getElementById('clear-payment-filters')?.addEventListener('click', () => {
+        document.getElementById('payment-method-filter').value = '';
+        document.getElementById('payment-status-filter').value = '';
+        document.getElementById('payment-client-filter').value = '';
+        document.getElementById('payment-date-from').value = '';
+        document.getElementById('payment-date-to').value = '';
+        loadPayments();
+      });
+      document.getElementById('refresh-payments-btn')?.addEventListener('click', loadPayments);
       
       // Expenses event listeners
       document.getElementById('add-expense-btn')?.addEventListener('click', () => {
