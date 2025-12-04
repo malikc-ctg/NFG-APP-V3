@@ -2385,6 +2385,30 @@
                 const completedJob = { ...job, status: 'completed' };
                 const recurrenceResult = await handleJobCompletion(completedJob);
                 
+                // Send job completion email to client
+                try {
+                  const { sendJobCompletedEmail } = await import('./js/email-service.js');
+                  if (job.client_id) {
+                    const { data: client } = await supabase
+                      .from('user_profiles')
+                      .select('email, full_name')
+                      .eq('id', job.client_id)
+                      .single();
+
+                    if (client?.email) {
+                      await sendJobCompletedEmail(
+                        completedJob,
+                        client.full_name || client.email,
+                        client.email
+                      );
+                      console.log('✅ Job completion email sent to:', client.email);
+                    }
+                  }
+                } catch (emailError) {
+                  console.warn('⚠️ Failed to send job completion email:', emailError);
+                  // Don't fail job completion if email fails
+                }
+                
                 toast.success(`${recurrenceResult.message}\nTotal time: ${formatDuration(totalDuration)}`, 'Job Completed! 🎉');
                 document.getElementById('jobDetailModal').classList.add('hidden');
                 document.getElementById('jobDetailModal').classList.remove('flex');
@@ -3431,6 +3455,41 @@
           console.warn('⚠️ Failed to create job assignment notification:', notifError);
         }
 
+        // Send job assignment email automatically
+        try {
+          const { sendJobAssignedEmail } = await import('./js/email-service.js');
+          const { data: worker } = await supabase
+            .from('user_profiles')
+            .select('email, full_name')
+            .eq('id', workerId)
+            .single();
+          
+          const { data: siteData } = await supabase
+            .from('sites')
+            .select('name')
+            .eq('id', job.site_id)
+            .single();
+
+          const { data: jobData } = await supabase
+            .from('jobs')
+            .select('*')
+            .eq('id', currentJobId)
+            .single();
+
+          if (worker?.email && jobData) {
+            await sendJobAssignedEmail(
+              jobData,
+              siteData || { name: siteName },
+              worker.email,
+              worker.full_name || worker.email
+            );
+            console.log('✅ Job assignment email sent to:', worker.email);
+          }
+        } catch (emailError) {
+          console.warn('⚠️ Failed to send job assignment email:', emailError);
+          // Don't fail assignment if email fails
+        }
+
         document.getElementById('assignWorkerModal').classList.add('hidden');
         document.getElementById('assignWorkerModal').classList.remove('flex');
         e.target.reset();
@@ -3862,6 +3921,7 @@
   
   <!-- Notification Center -->
   <script type="module" src="./js/notification-center.js"></script>
+  <script type="module" src="./js/email-service.js"></script>
   
   <!-- Hide loader when page is ready -->
   <script>

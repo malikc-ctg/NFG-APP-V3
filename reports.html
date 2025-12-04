@@ -1471,6 +1471,7 @@
   <!-- PWA Installation -->
   <script type="module" src="./js/pwa.js"></script>
   <script type="module" src="./js/inventory-reports.js"></script>
+  <script type="module" src="./js/email-service.js"></script>
 
   <!-- ========== SCRIPTS ========== -->
   <script>
@@ -6641,6 +6642,28 @@
         
         // Success
         toast.success(`Invoice ${invoice.invoice_number} created successfully`, 'Invoice Created');
+        
+        // Send invoice email automatically
+        try {
+          const { sendInvoiceSentEmail } = await import('./js/email-service.js');
+          const { data: client } = await supabase
+            .from('user_profiles')
+            .select('email, full_name')
+            .eq('id', invoice.client_id)
+            .single();
+          
+          if (client?.email) {
+            await sendInvoiceSentEmail(
+              invoice,
+              { email: client.email, name: client.full_name || client.email },
+              'Northern Facilities Group'
+            );
+            console.log('✅ Invoice email sent to:', client.email);
+          }
+        } catch (emailError) {
+          console.warn('⚠️ Failed to send invoice email:', emailError);
+          // Don't fail invoice creation if email fails
+        }
         
         // Close modal
         document.getElementById('create-invoice-modal').classList.add('hidden');

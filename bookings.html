@@ -2621,6 +2621,28 @@
           console.warn('⚠️ Failed to create booking notifications:', notifError);
         }
 
+        // Send booking confirmation email to client
+        try {
+          const { sendBookingCreatedEmail } = await import('./js/email-service.js');
+          const { data: client } = await supabase
+            .from('user_profiles')
+            .select('email, full_name')
+            .eq('id', booking.client_id)
+            .single();
+
+          if (client?.email) {
+            await sendBookingCreatedEmail(
+              booking,
+              client.full_name || client.email,
+              client.email
+            );
+            console.log('✅ Booking confirmation email sent to:', client.email);
+          }
+        } catch (emailError) {
+          console.warn('⚠️ Failed to send booking confirmation email:', emailError);
+          // Don't fail booking creation if email fails
+        }
+
         // Step 3: Save selected services to booking_services
         if (selectedServices.size > 0) {
           const serviceRecords = Array.from(selectedServices).map(serviceId => ({
@@ -4996,6 +5018,7 @@
   
   <!-- Notification Center -->
   <script type="module" src="./js/notification-center.js"></script>
+  <script type="module" src="./js/email-service.js"></script>
   
   <!-- Hide loader when page is ready -->
   <script>

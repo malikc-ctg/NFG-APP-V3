@@ -207,6 +207,44 @@ async function handlePaymentSucceeded(paymentIntent: any, supabase: any, stripeS
       })
       .eq('id', dbPaymentIntent.id)
 
+    // Send payment confirmation email automatically
+    if (invoice?.client_id) {
+      try {
+        const { data: client } = await supabase
+          .from('user_profiles')
+          .select('email, full_name')
+          .eq('id', invoice.client_id)
+          .single()
+
+        if (client?.email) {
+          await supabase.functions.invoke('send-automated-email', {
+            body: {
+              emailType: 'payment_received',
+              recipientEmail: client.email,
+              data: {
+                payment: {
+                  amount: paymentAmount,
+                  payment_method: paymentIntent.payment_method_types?.[0] === 'us_bank_account' ? 'bank_transfer' : 'credit_card',
+                  payment_date: new Date().toISOString().split('T')[0],
+                  receipt_url: receiptUrl
+                },
+                invoice: {
+                  invoice_number: invoice.invoice_number,
+                  id: invoice.id
+                },
+                clientName: client.full_name || client.email,
+                baseUrl: 'https://nfgone.ca'
+              }
+            }
+          })
+          console.log('✅ Payment confirmation email sent to:', client.email)
+        }
+      } catch (emailError) {
+        console.error('Failed to send payment email:', emailError)
+        // Don't fail the webhook if email fails
+      }
+    }
+
     console.log('✅ Payment processed successfully:', paymentIntent.id)
 
   } catch (error) {
