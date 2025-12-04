@@ -98,9 +98,13 @@ async function generateInvoiceSentEmail(data: any, supabase: any) {
         <p style="margin: 8px 0 0; font-size: 14px; color: #666;"><strong>Due Date:</strong> ${new Date(invoice.due_date).toLocaleDateString()}</p>
       </div>
       <p>You can view and pay this invoice online by clicking the button below.</p>
+      <p style="margin-top: 12px; font-size: 13px; color: #666;">Or pay directly using this link:</p>
+      <p style="margin: 8px 0; font-size: 12px; word-break: break-all; color: #0D47A1;">
+        ${data.baseUrl || 'https://nfgone.ca'}/payment.html?invoice_id=${invoice.id}
+      </p>
     `,
-    ctaText: 'View & Pay Invoice',
-    ctaLink: `${data.baseUrl || 'https://nfgone.ca'}/client-portal.html?invoice=${invoice.id}`,
+    ctaText: 'Pay Invoice Now',
+    ctaLink: `${data.baseUrl || 'https://nfgone.ca'}/payment.html?invoice_id=${invoice.id}`,
     footer: 'Thank you for your business!'
   })
 
