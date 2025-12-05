@@ -154,6 +154,7 @@ CREATE INDEX IF NOT EXISTS idx_platform_subscriptions_company_id ON platform_sub
 ALTER TABLE company_profiles ENABLE ROW LEVEL SECURITY;
 
 -- Drop existing policies to recreate with tenant isolation
+-- Old policy names
 DROP POLICY IF EXISTS "Enable select for users" ON company_profiles;
 DROP POLICY IF EXISTS "Users can view their company" ON company_profiles;
 DROP POLICY IF EXISTS "Users can insert their company" ON company_profiles;
@@ -162,6 +163,11 @@ DROP POLICY IF EXISTS "Company owners can update their company" ON company_profi
 DROP POLICY IF EXISTS "Enable update for owners" ON company_profiles;
 DROP POLICY IF EXISTS "Company owners can delete their company" ON company_profiles;
 DROP POLICY IF EXISTS "Enable delete for owners" ON company_profiles;
+-- New policy names (in case script was partially run before)
+DROP POLICY IF EXISTS "tenant_isolation_select" ON company_profiles;
+DROP POLICY IF EXISTS "tenant_isolation_insert" ON company_profiles;
+DROP POLICY IF EXISTS "tenant_isolation_update" ON company_profiles;
+DROP POLICY IF EXISTS "tenant_isolation_delete" ON company_profiles;
 
 -- SELECT: Users can only see their own company
 CREATE POLICY "tenant_isolation_select" ON company_profiles
