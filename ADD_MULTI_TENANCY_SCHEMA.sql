@@ -73,13 +73,22 @@ BEGIN
     ADD COLUMN subdomain TEXT UNIQUE;
   END IF;
 
-  -- White label enabled flag
+  -- White label enabled flag (PREMIUM FEATURE - default false)
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns 
     WHERE table_name = 'company_profiles' AND column_name = 'white_label_enabled'
   ) THEN
     ALTER TABLE company_profiles 
-    ADD COLUMN white_label_enabled BOOLEAN DEFAULT true;
+    ADD COLUMN white_label_enabled BOOLEAN DEFAULT false;
+  END IF;
+  
+  -- Subscription tier (free, basic, premium, enterprise)
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'company_profiles' AND column_name = 'subscription_tier'
+  ) THEN
+    ALTER TABLE company_profiles 
+    ADD COLUMN subscription_tier TEXT DEFAULT 'basic' CHECK (subscription_tier IN ('free', 'basic', 'premium', 'enterprise'));
   END IF;
 
   -- Ensure updated_at exists and has trigger

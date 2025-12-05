@@ -37,7 +37,8 @@ SET
     logo_url, 
     'https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/2.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzLzIucG5nIiwiaWF0IjoxNzYxODY2MTE0LCJleHAiOjQ4ODM5MzAxMTR9.E1JoQZxqPy0HOKna6YfjPCfin5Pc3QF0paEV7qzVfDw'
   ),
-  white_label_enabled = true,
+  white_label_enabled = true, -- NFG gets white-label (premium feature)
+  subscription_tier = COALESCE(subscription_tier, 'premium'), -- NFG on premium tier
   subdomain = COALESCE(subdomain, 'nfg'), -- Optional: nfg.handl.it
   updated_at = NOW()
 WHERE 
@@ -136,12 +137,14 @@ SET
   company_display_name = COALESCE(company_display_name, company_name),
   primary_color = COALESCE(primary_color, '#0D47A1'),
   secondary_color = COALESCE(secondary_color, '#0A3A84'),
-  white_label_enabled = COALESCE(white_label_enabled, true),
+  white_label_enabled = COALESCE(white_label_enabled, false), -- Default: no white-label (premium feature)
+  subscription_tier = COALESCE(subscription_tier, 'basic'), -- Default: basic tier
   updated_at = NOW()
 WHERE 
   platform_name IS NULL
   OR company_display_name IS NULL
-  OR primary_color IS NULL;
+  OR primary_color IS NULL
+  OR white_label_enabled IS NULL;
 
 -- ==========================================
 -- SUCCESS MESSAGE
