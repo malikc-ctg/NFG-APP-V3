@@ -26,7 +26,8 @@ ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS:
   - secondary_color TEXT -- Accent color
   - domain TEXT -- Custom domain (optional)
   - subdomain TEXT -- handl.it/{subdomain} (optional)
-  - white_label_enabled BOOLEAN DEFAULT true
+  - white_label_enabled BOOLEAN DEFAULT false -- PREMIUM FEATURE (not standard)
+  - subscription_tier TEXT DEFAULT 'basic' -- free, basic, premium, enterprise
   - created_at TIMESTAMPTZ DEFAULT NOW()
   - updated_at TIMESTAMPTZ DEFAULT NOW()
 ```
